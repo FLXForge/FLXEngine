@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "FLX Game",
+
+  "type": "object",
+
+  "properties": {
+
+    "name": {
+      "type": "string"
+    },
+
+    "description": {
+      "type": "string"
+    },
+
+    "screen": {
+
+      "type": "object",
+
+      "properties": {
+
+        "title": {
+          "type": "string"
+        },
+
+        "width": {
+          "type": "integer"
+        },
+
+        "height": {
+          "type": "integer"
+        }
+
+      }
+
+    },
+
+    "scale": {
+      "type": "integer"
+    },
+
+    "children": {
+
+      "type": "array",
+
+      "items": {
+
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "node.schema.json" }
+        ]
+
+      }
+
+    }
+
+  },
+
+  "required": [
+    "name",
+    "screen",
+    "children"
+  ]
+}

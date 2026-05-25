@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FLX Node",
+  "type": "object",
+
+  "properties": {
+
+    "name": {
+      "type": "string"
+    },
+
+    "description": {
+      "type": "string"
+    },
+
+    "group": {
+      "type": "string"
+    },
+
+    "visible": {
+      "type": "boolean"
+    },
+
+    "origin": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+
+    "size": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+
+    "color": {
+      "type": "string"
+    },
+
+    "speed": {
+      "type": "number"
+    },
+
+    "angle": {
+      "type": "number"
+    },
+
+    "behavior": {
+      "type": "object",
+      "properties": {
+
+        "scripts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+
+      }
+    },
+
+    "children": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "#" }
+        ]
+      }
+    }
+
+  },
+
+  "required": [
+    "name"
+  ]
+}

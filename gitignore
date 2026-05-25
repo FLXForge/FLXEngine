@@ -1,0 +1,39 @@
+# Build
+/build/
+/out/
+/bin/
+/obj/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Visual Studio
+.vs/
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Generated binaries
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
+
+# Logs
+*.log
+
+# Temporary
+*.tmp
+*.temp
+
+# OS
+Thumbs.db
+.DS_Store

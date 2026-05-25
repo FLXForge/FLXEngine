@@ -1,0 +1,6 @@
+name:Pong
+version:1.0
+flxEngineVersion:0.0.1
+path:./
+main:game.json
+notes:First FLX example

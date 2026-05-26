@@ -13,5 +13,6 @@ struct GameConfig
     int screenHeight = 180;
     int scale = 3;
 
+    std::vector<std::string> programScripts;
     std::vector<std::string> children;
 };

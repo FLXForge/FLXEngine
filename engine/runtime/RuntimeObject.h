@@ -31,6 +31,15 @@ public:
     float speed;
     float angle;
     float originSpeed;
+    
+    Vector2 velocity;
+
+    float rotationSpeed;
+    float acceleration;
+    float maxSpeed;
+    float inertia;
+
+    std::string shapeType;
 
     std::vector<std::string> scripts;
     std::vector<std::string> resolvedScriptPaths;

@@ -104,22 +104,50 @@ static JSValue jsAdvance(
     JSValue yValue = JS_GetPropertyStr(context, self, "y");
     JSValue speedValue = JS_GetPropertyStr(context, self, "speed");
     JSValue angleValue = JS_GetPropertyStr(context, self, "angle");
+    JSValue velocityXValue = JS_GetPropertyStr(context, self, "velocityX");
+    JSValue velocityYValue = JS_GetPropertyStr(context, self, "velocityY");
+    JSValue motionValue = JS_GetPropertyStr(context, self, "motion");
+    JSValue accelerationValue = JS_GetPropertyStr(context, motionValue, "acceleration");
+    JSValue inertiaValue = JS_GetPropertyStr(context, motionValue, "inertia");
 
     double x = 0.0;
     double y = 0.0;
     double speed = 0.0;
     double angle = 0.0;
+    double velocityX = 0.0;
+    double velocityY = 0.0;
+    double acceleration = 0.0;
+    double inertia = 1.0;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
     JS_ToFloat64(context, &speed, speedValue);
     JS_ToFloat64(context, &angle, angleValue);
+    JS_ToFloat64(context, &velocityX, velocityXValue);
+    JS_ToFloat64(context, &velocityY, velocityYValue);
+    JS_ToFloat64(context, &acceleration, accelerationValue);
+    JS_ToFloat64(context, &inertia, inertiaValue);
 
-    const double radians = angle * DEG2RAD;
     const double delta = GetFrameTime();
 
-    x += std::cos(radians) * speed * delta;
-    y += std::sin(radians) * speed * delta;
+    if (acceleration > 0.0)
+    {
+        x += velocityX * delta;
+        y += velocityY * delta;
+
+        velocityX *= inertia;
+        velocityY *= inertia;
+
+        JS_SetPropertyStr(context, self, "velocityX", JS_NewFloat64(context, velocityX));
+        JS_SetPropertyStr(context, self, "velocityY", JS_NewFloat64(context, velocityY));
+    }
+    else
+    {
+        const double radians = angle * DEG2RAD;
+
+        x += std::cos(radians) * speed * delta;
+        y += std::sin(radians) * speed * delta;
+    }
 
     JS_SetPropertyStr(context, self, "x", JS_NewFloat64(context, x));
     JS_SetPropertyStr(context, self, "y", JS_NewFloat64(context, y));
@@ -128,6 +156,11 @@ static JSValue jsAdvance(
     JS_FreeValue(context, yValue);
     JS_FreeValue(context, speedValue);
     JS_FreeValue(context, angleValue);
+    JS_FreeValue(context, velocityXValue);
+    JS_FreeValue(context, velocityYValue);
+    JS_FreeValue(context, accelerationValue);
+    JS_FreeValue(context, inertiaValue);
+    JS_FreeValue(context, motionValue);
 
     return JS_UNDEFINED;
 }
@@ -253,6 +286,97 @@ static JSValue jsAccelerate(
     JSValueConst* argv
 )
 {
+    if (argc < 1)
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue self = argv[0];
+
+    if (argc >= 2)
+    {
+        double amount = 0.0;
+        JS_ToFloat64(context, &amount, argv[1]);
+
+        JSValue speedValue = JS_GetPropertyStr(context, self, "speed");
+
+        double speed = 0.0;
+        JS_ToFloat64(context, &speed, speedValue);
+
+        speed += amount;
+
+        JS_SetPropertyStr(context, self, "speed", JS_NewFloat64(context, speed));
+
+        JS_FreeValue(context, speedValue);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue motionValue = JS_GetPropertyStr(context, self, "motion");
+    JSValue accelerationValue = JS_GetPropertyStr(context, motionValue, "acceleration");
+    JSValue maxSpeedValue = JS_GetPropertyStr(context, motionValue, "maxSpeed");
+    JSValue angleValue = JS_GetPropertyStr(context, self, "angle");
+    JSValue velocityXValue = JS_GetPropertyStr(context, self, "velocityX");
+    JSValue velocityYValue = JS_GetPropertyStr(context, self, "velocityY");
+
+    double acceleration = 0.0;
+    double maxSpeed = 0.0;
+    double angle = 0.0;
+    double velocityX = 0.0;
+    double velocityY = 0.0;
+
+    JS_ToFloat64(context, &acceleration, accelerationValue);
+    JS_ToFloat64(context, &maxSpeed, maxSpeedValue);
+    JS_ToFloat64(context, &angle, angleValue);
+    JS_ToFloat64(context, &velocityX, velocityXValue);
+    JS_ToFloat64(context, &velocityY, velocityYValue);
+
+    if (acceleration > 0.0)
+    {
+        const double radians = (angle - 90.0) * DEG2RAD;
+        const double delta = GetFrameTime();
+
+        velocityX += std::cos(radians) * acceleration * delta;
+        velocityY += std::sin(radians) * acceleration * delta;
+
+        if (maxSpeed > 0.0)
+        {
+            const double currentSpeed =
+                std::sqrt(
+                    velocityX * velocityX +
+                    velocityY * velocityY
+                );
+
+            if (currentSpeed > maxSpeed)
+            {
+                const double factor = maxSpeed / currentSpeed;
+
+                velocityX *= factor;
+                velocityY *= factor;
+            }
+        }
+
+        JS_SetPropertyStr(context, self, "velocityX", JS_NewFloat64(context, velocityX));
+        JS_SetPropertyStr(context, self, "velocityY", JS_NewFloat64(context, velocityY));
+    }
+
+    JS_FreeValue(context, motionValue);
+    JS_FreeValue(context, accelerationValue);
+    JS_FreeValue(context, maxSpeedValue);
+    JS_FreeValue(context, angleValue);
+    JS_FreeValue(context, velocityXValue);
+    JS_FreeValue(context, velocityYValue);
+
+    return JS_UNDEFINED;
+}
+
+static JSValue jsRotate(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
     if (argc < 2)
     {
         return JS_UNDEFINED;
@@ -260,30 +384,42 @@ static JSValue jsAccelerate(
 
     JSValue self = argv[0];
 
-    double amount = 0.0;
-    JS_ToFloat64(context, &amount, argv[1]);
+    double direction = 0.0;
+    JS_ToFloat64(context, &direction, argv[1]);
 
-    JSValue speedValue =
-        JS_GetPropertyStr(context, self, "speed");
+    JSValue angleValue =
+        JS_GetPropertyStr(context, self, "angle");
 
-    double speed = 0.0;
-    JS_ToFloat64(context, &speed, speedValue);
+    JSValue motionValue =
+        JS_GetPropertyStr(context, self, "motion");
 
-    speed += amount;
+    JSValue rotationSpeedValue =
+        JS_GetPropertyStr(context, motionValue, "rotationSpeed");
+
+    double angle = 0.0;
+    double rotationSpeed = 0.0;
+
+    JS_ToFloat64(context, &angle, angleValue);
+    JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
+
+    const double delta =
+        GetFrameTime();
+
+    angle += direction * rotationSpeed * delta;
 
     JS_SetPropertyStr(
         context,
         self,
-        "speed",
-        JS_NewFloat64(context, speed)
+        "angle",
+        JS_NewFloat64(context, angle)
     );
 
-    JS_FreeValue(context, speedValue);
+    JS_FreeValue(context, angleValue);
+    JS_FreeValue(context, motionValue);
+    JS_FreeValue(context, rotationSpeedValue);
 
     return JS_UNDEFINED;
 }
-
-
 
 static JSValue jsKeyUp(
     JSContext* context,
@@ -308,6 +444,32 @@ static JSValue jsKeyDown(
     return JS_NewBool(
         context,
         IsKeyDown(KEY_DOWN)
+    );
+}
+
+static JSValue jsKeyLeft(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    return JS_NewBool(
+        context,
+        IsKeyDown(KEY_LEFT)
+    );
+}
+
+static JSValue jsKeyRight(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    return JS_NewBool(
+        context,
+        IsKeyDown(KEY_RIGHT)
     );
 }
 
@@ -518,6 +680,13 @@ void ScriptBindings::registerAll(
     JS_SetPropertyStr(
         context,
         global,
+        "rotate",
+        JS_NewCFunction(context, jsRotate, "rotate", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
         "to_origin",
         JS_NewCFunction(context, jsToOrigin, "to_origin", 1)
     );
@@ -536,6 +705,20 @@ void ScriptBindings::registerAll(
         key,
         "down",
         JS_NewCFunction(context, jsKeyDown, "down", 0)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        key,
+        "left",
+        JS_NewCFunction(context, jsKeyLeft, "left", 0)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        key,
+        "right",
+        JS_NewCFunction(context, jsKeyRight, "right", 0)
     );
 
     JS_SetPropertyStr(

@@ -41,6 +41,20 @@
       "type": "integer"
     },
 
+    "program": {
+      "type": "object",
+      "properties": {
+        "scripts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [ "scripts" ],
+      "additionalProperties": false
+    },
+
     "children": {
 
       "type": "array",

@@ -27,6 +27,7 @@ ScriptEngine::~ScriptEngine()
     {
         ScriptModule& module = pair.second;
 
+        JS_FreeValue(context, module.gameStart);
         JS_FreeValue(context, module.start);
         JS_FreeValue(context, module.action);
         JS_FreeValue(context, module.motion);
@@ -66,6 +67,62 @@ void ScriptEngine::eval(const std::string& code)
 
 void ScriptEngine::callScriptFunction(
     const std::string& script,
+    const std::string& function
+)
+{
+    JSValue func =
+        getCachedFunction(script, function);
+
+    if (!JS_IsFunction(context, func))
+    {
+        return;
+    }
+
+    JSValue global =
+        JS_GetGlobalObject(context);
+
+    JSValue result =
+        JS_Call(
+            context,
+            func,
+            global,
+            0,
+            nullptr
+        );
+
+    if (JS_IsException(result))
+    {
+        JSValue exception =
+            JS_GetException(context);
+
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
+        const char* message =
+            JS_ToCString(context, exception);
+
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
+        Logger::error(
+            "script",
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
+        );
+
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
+    }
+
+    JS_FreeValue(context, result);
+    JS_FreeValue(context, global);
+}
+
+void ScriptEngine::callScriptFunction(
+    const std::string& script,
     const std::string& function,
     RuntimeObject& object
 )
@@ -100,16 +157,26 @@ void ScriptEngine::callScriptFunction(
         JSValue exception =
             JS_GetException(context);
 
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
         const char* message =
             JS_ToCString(context, exception);
 
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
         Logger::error(
             "script",
-            message != nullptr ? message : "Unknown JS error"
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
         JS_FreeCString(context, message);
         JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
     }
 
     applyJsObject(object, self);
@@ -162,16 +229,26 @@ void ScriptEngine::callScriptFunction(
         JSValue exception =
             JS_GetException(context);
 
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
         const char* message =
             JS_ToCString(context, exception);
 
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
         Logger::error(
             "script",
-            message != nullptr ? message : "Unknown JS error"
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
         JS_FreeCString(context, message);
         JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
     }
 
     applyJsObject(object, self);
@@ -208,6 +285,7 @@ void ScriptEngine::loadScript(const std::string& path)
         "Flx.scripts[" + std::string("'") + path + "'] = (function(){"
         + code +
         " return {"
+        "gameStart: typeof gameStart === 'function' ? gameStart : undefined,"
         "start: typeof start === 'function' ? start : undefined,"
         "action: typeof action === 'function' ? action : undefined,"
         "motion: typeof motion === 'function' ? motion : undefined,"
@@ -241,6 +319,9 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     ScriptModule scriptModule;
 
+    JSValue gameStart =
+        JS_GetPropertyStr(context, module, "gameStart");
+
     JSValue start =
         JS_GetPropertyStr(context, module, "start");
 
@@ -255,6 +336,9 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     JSValue draw =
         JS_GetPropertyStr(context, module, "draw");
+
+    scriptModule.gameStart =
+        JS_DupValue(context, gameStart);
 
     scriptModule.start =
         JS_DupValue(context, start);
@@ -273,6 +357,7 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     scriptModules[path] = scriptModule;
 
+    JS_FreeValue(context, gameStart);
     JS_FreeValue(context, start);
     JS_FreeValue(context, action);
     JS_FreeValue(context, motion);
@@ -298,6 +383,11 @@ JSValue ScriptEngine::getCachedFunction(
     }
 
     ScriptModule& module = it->second;
+
+    if (function == "gameStart")
+    {
+        return module.gameStart;
+    }
 
     if (function == "start")
     {
@@ -363,25 +453,39 @@ void ScriptEngine::applyJsObject(
     JSValue angleValue =
         JS_GetPropertyStr(context, jsObject, "angle");
 
+    JSValue velocityXValue =
+        JS_GetPropertyStr(context, jsObject, "velocityX");
+
+    JSValue velocityYValue =
+        JS_GetPropertyStr(context, jsObject, "velocityY");
+
     double x = source.position.x;
     double y = source.position.y;
     double speed = source.speed;
     double angle = source.angle;
+    double velocityX = source.velocity.x;
+    double velocityY = source.velocity.y;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
     JS_ToFloat64(context, &speed, speedValue);
     JS_ToFloat64(context, &angle, angleValue);
+    JS_ToFloat64(context, &velocityX, velocityXValue);
+    JS_ToFloat64(context, &velocityY, velocityYValue);
 
     source.position.x = static_cast<float>(x);
     source.position.y = static_cast<float>(y);
     source.speed = static_cast<float>(speed);
     source.angle = static_cast<float>(angle);
+    source.velocity.x = static_cast<float>(velocityX);
+    source.velocity.y = static_cast<float>(velocityY);
 
     JS_FreeValue(context, xValue);
     JS_FreeValue(context, yValue);
     JS_FreeValue(context, speedValue);
     JS_FreeValue(context, angleValue);
+    JS_FreeValue(context, velocityXValue);
+    JS_FreeValue(context, velocityYValue);
 }
 
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
@@ -464,6 +568,58 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
         self,
         "originSpeed",
         JS_NewFloat64(context, object.originSpeed)
+    );
+
+    JSValue motion =
+        JS_NewObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "rotationSpeed",
+        JS_NewFloat64(context, object.rotationSpeed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "acceleration",
+        JS_NewFloat64(context, object.acceleration)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "inertia",
+        JS_NewFloat64(context, object.inertia)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "maxSpeed",
+        JS_NewFloat64(context, object.maxSpeed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "motion",
+        motion
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "velocityX",
+        JS_NewFloat64(context, object.velocity.x)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "velocityY",
+        JS_NewFloat64(context, object.velocity.y)
     );
 
     return self;

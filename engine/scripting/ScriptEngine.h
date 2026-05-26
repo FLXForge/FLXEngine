@@ -23,6 +23,11 @@ public:
 
     void callScriptFunction(
         const std::string& script,
+        const std::string& function
+    );
+
+    void callScriptFunction(
+        const std::string& script,
         const std::string& function,
         RuntimeObject& object
     );

@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "name": "Ship",
+
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+
+  "shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+      "width": 18,
+      "height": 24
+    }
+  },
+
+  "motion": {
+    "rotationSpeed": 180,
+    "acceleration": 120,
+    "inertia": 0.99,
+    "maxSpeed": 180
+  },
+
+  "group": "ship",
+
+  "behavior": {
+    "scripts": [ "scripts/ship" ]
+  }
+}

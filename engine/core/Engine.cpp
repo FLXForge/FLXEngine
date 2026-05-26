@@ -117,6 +117,15 @@ void Engine::configureScriptEngine()
 
 void Engine::loadScripts()
 {
+    for (const auto& programScript : gameConfig.programScripts) {
+        const std::string programScriptPath =
+            resolveScriptPath(projectBasePath, programScript);
+
+        scriptEngine.loadScript(programScriptPath);
+
+        scriptEngine.callScriptFunction(programScriptPath, "gameStart");
+    }
+
     for (auto& object : objects)
     {
         for (const auto& script : object.scripts)

@@ -1,0 +1,18 @@
+{
+  "$schema": "../../tools/schemas/game.schema.json",
+  "name": "Asteroids",
+  "description": "Example of more famous game",
+
+  "screen": {
+    "title": "Asteroids",
+    "width": 640,
+    "height": 320
+  },
+  "scale": 3,
+
+  "children": ["levels/level"],
+
+  "program": {
+    "scripts": [ "scripts/program" ]
+  }
+}

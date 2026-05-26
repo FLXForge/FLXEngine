@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../tools/schemas/node.schema.json",
+  "name": "Level",
+
+  "children": [
+    "ship"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "motion.schema.json",
+  "title": "FLX Motion",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "rotationSpeed": {
+      "type": "number"
+    },
+
+    "acceleration": {
+      "type": "number"
+    },
+
+    "inertia": {
+      "type": "number"
+    },
+
+    "maxSpeed": {
+      "type": "number"
+    }
+  }
+}

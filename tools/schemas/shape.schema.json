@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shape.schema.json",
+  "title": "FLX Shape",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [ "type", "color", "size" ],
+
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [ "rectangle", "triangle", "text" ]
+    },
+
+    "color": {
+      "type": "string"
+    },
+
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "width", "height" ],
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+
+    "text": {
+      "type": "string"
+    },
+
+    "fontSize": {
+      "type": "number"
+    }
+  }
+}

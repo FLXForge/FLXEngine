@@ -2,34 +2,54 @@
 #include "../debug/Logger.h"
 
 #include <fstream>
-#include <iostream>
+#include <filesystem>
 #include <nlohmann/json.hpp>
 #include <raylib.h>
 
-std::vector<RuntimeObject> JsonLoader::loadObjects(
-    const std::string& path
-)
+namespace
 {
-    std::vector<RuntimeObject> objects;
-
-    std::ifstream file(path);
-
-    if (!file.is_open())
+    std::string ensureJsonExtension(const std::string& path)
     {
-        Logger::error(
-            "json",
-            "The file could not be opened " + path
-        );
-        return objects;
+        if (path.ends_with(".json"))
+        {
+            return path;
+        }
+
+        return path + ".json";
     }
 
-    nlohmann::json data;
-    file >> data;
+    std::filesystem::path resolveChildPath(
+        const std::filesystem::path& parentFile,
+        const std::string& child
+    )
+    {
+        return parentFile.parent_path() / ensureJsonExtension(child);
+    }
 
-    for (const auto& object : data["children"])
+    bool loadJson(
+        const std::filesystem::path& path,
+        nlohmann::json& data
+    )
+    {
+        std::ifstream file(path);
+
+        if (!file.is_open())
+        {
+            Logger::error(
+                "json",
+                "The file could not be opened " + path.string()
+            );
+            return false;
+        }
+
+        file >> data;
+        return true;
+    }
+
+    RuntimeObject parseDrawable(const nlohmann::json& object)
     {
         const std::string name =
-            object["name"].get<std::string>();
+            object.value("name", "Unnamed");
 
         const float x =
             object["origin"]["x"].get<float>();
@@ -37,11 +57,30 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
         const float y =
             object["origin"]["y"].get<float>();
 
-        const float width =
-            object["size"]["width"].get<float>();
+        std::string shapeType = "rectangle";
+        float width = 0.0f;
+        float height = 0.0f;
 
-        const float height =
-            object["size"]["height"].get<float>();
+        if (object.contains("shape"))
+        {
+            const auto& shape = object["shape"];
+
+            shapeType = shape.value("type", "rectangle");
+
+            width =
+                shape["size"]["width"].get<float>();
+
+            height =
+                shape["size"]["height"].get<float>();
+        }
+        else
+        {
+            width =
+                object["size"]["width"].get<float>();
+
+            height =
+                object["size"]["height"].get<float>();
+        }
 
         RuntimeObject runtimeObject(
             name,
@@ -49,6 +88,8 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
             Vector2{ width, height },
             WHITE
         );
+
+        runtimeObject.shapeType = shapeType;
 
         if (object.contains("speed"))
         {
@@ -63,6 +104,35 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
         {
             runtimeObject.angle =
                 object["angle"].get<float>();
+        }
+
+        if (object.contains("motion"))
+        {
+            const auto& motion = object["motion"];
+
+            if (motion.contains("rotationSpeed"))
+            {
+                runtimeObject.rotationSpeed =
+                    motion["rotationSpeed"].get<float>();
+            }
+
+            if (motion.contains("acceleration"))
+            {
+                runtimeObject.acceleration =
+                    motion["acceleration"].get<float>();
+            }
+
+            if (motion.contains("inertia"))
+            {
+                runtimeObject.inertia =
+                    motion["inertia"].get<float>();
+            }
+
+            if (motion.contains("maxSpeed"))
+            {
+                runtimeObject.maxSpeed =
+                    motion["maxSpeed"].get<float>();
+            }
         }
 
         if (object.contains("group"))
@@ -92,8 +162,72 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
             }
         }
 
-        objects.push_back(runtimeObject);
+        return runtimeObject;
     }
+
+    void loadNodeRecursive(
+        const std::filesystem::path& path,
+        std::vector<RuntimeObject>& objects
+    )
+    {
+        nlohmann::json data;
+
+        if (!loadJson(path, data))
+        {
+            return;
+        }
+
+        if (data.contains("shape"))
+        {
+            objects.push_back(parseDrawable(data));
+            return;
+        }
+
+        if (!data.contains("children"))
+        {
+            return;
+        }
+
+        for (const auto& child : data["children"])
+        {
+            if (child.is_string())
+            {
+                const auto childPath =
+                    resolveChildPath(
+                        path,
+                        child.get<std::string>()
+                    );
+
+                loadNodeRecursive(childPath, objects);
+            }
+            else if (child.is_object())
+            {
+                if (child.contains("origin"))
+                {
+                    objects.push_back(parseDrawable(child));
+                }
+                else
+                {
+                    Logger::warning(
+                        "json",
+                        "Inline child without origin is not supported yet"
+                    );
+                }
+            }
+        }
+    }
+}
+
+std::vector<RuntimeObject> JsonLoader::loadObjects(
+    const std::string& path
+)
+{
+    std::vector<RuntimeObject> objects;
+
+    loadNodeRecursive(
+        std::filesystem::path(path),
+        objects
+    );
 
     return objects;
 }
@@ -102,19 +236,12 @@ GameConfig JsonLoader::loadGameConfig(const std::string& path)
 {
     GameConfig config;
 
-    std::ifstream file(path);
+    nlohmann::json data;
 
-    if (!file.is_open())
+    if (!loadJson(path, data))
     {
-        Logger::error(
-            "json",
-            "The file could not be opened " + path
-        );
         return config;
     }
-
-    nlohmann::json data;
-    file >> data;
 
     if (data.contains("name"))
     {
@@ -149,6 +276,21 @@ GameConfig JsonLoader::loadGameConfig(const std::string& path)
     if (data.contains("scale"))
     {
         config.scale = data["scale"].get<int>();
+    }
+
+    if (data.contains("program"))
+    {
+        const auto& program = data["program"];
+
+        if (program.contains("scripts"))
+        {
+            for (const auto& script : program["scripts"])
+            {
+                config.programScripts.push_back(
+                    script.get<std::string>()
+                );
+            }
+        }
     }
 
     if (data.contains("children"))

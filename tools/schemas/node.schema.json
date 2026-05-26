@@ -66,10 +66,7 @@
     "children": {
       "type": "array",
       "items": {
-        "oneOf": [
-          { "type": "string" },
-          { "$ref": "#" }
-        ]
+        "type": "string"
       }
     }
 

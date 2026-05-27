@@ -1,5 +1,7 @@
 #include "RuntimeObject.h"
 
+#include <cmath>
+
 static Vector2 rotatePoint(
     Vector2 point,
     Vector2 center,
@@ -42,25 +44,125 @@ RuntimeObject::RuntimeObject(
     this->originSpeed = speed;
     this->group = "";
     this->visible = true;
-    this->shapeType = "rectangle";
+    this->shapeType = "block";
     this->rotationSpeed = 0.0f;
     this->acceleration = 0.0f;
     this->maxSpeed = 0.0f;
     this->inertia = 1.0f;
     this->velocity = Vector2{ 0.0f, 0.0f };
+    this->boundsMode = "none";
+    this->boundsOverflow = false;
 }
 
-void RuntimeObject::draw(int scale) const
+void RuntimeObject::draw(
+    int scale,
+    float screenWidth,
+    float screenHeight
+) const
 {
     if (!visible)
     {
         return;
     }
 
+    drawAt(position, scale);
+
+    if (boundsMode != "wrap" || !boundsOverflow)
+    {
+        return;
+    }
+
+    const float radius =
+        std::sqrt(
+            size.x * size.x +
+            size.y * size.y
+        ) / 2.0f;
+
+    const bool overflowLeft =
+        position.x - radius < 0.0f;
+
+    const bool overflowRight =
+        position.x + radius > screenWidth;
+
+    const bool overflowTop =
+        position.y - radius < 0.0f;
+
+    const bool overflowBottom =
+        position.y + radius > screenHeight;
+
+    if (overflowLeft)
+    {
+        drawAt(
+            Vector2{ position.x + screenWidth, position.y },
+            scale
+        );
+    }
+
+    if (overflowRight)
+    {
+        drawAt(
+            Vector2{ position.x - screenWidth, position.y },
+            scale
+        );
+    }
+
+    if (overflowTop)
+    {
+        drawAt(
+            Vector2{ position.x, position.y + screenHeight },
+            scale
+        );
+    }
+
+    if (overflowBottom)
+    {
+        drawAt(
+            Vector2{ position.x, position.y - screenHeight },
+            scale
+        );
+    }
+
+    // Esquinas: cuando toca dos bordes a la vez.
+    if (overflowLeft && overflowTop)
+    {
+        drawAt(
+            Vector2{ position.x + screenWidth, position.y + screenHeight },
+            scale
+        );
+    }
+
+    if (overflowLeft && overflowBottom)
+    {
+        drawAt(
+            Vector2{ position.x + screenWidth, position.y - screenHeight },
+            scale
+        );
+    }
+
+    if (overflowRight && overflowTop)
+    {
+        drawAt(
+            Vector2{ position.x - screenWidth, position.y + screenHeight },
+            scale
+        );
+    }
+
+    if (overflowRight && overflowBottom)
+    {
+        drawAt(
+            Vector2{ position.x - screenWidth, position.y - screenHeight },
+            scale
+        );
+    }
+}
+
+void RuntimeObject::drawAt(Vector2 drawPosition, int scale) const
+{
+
     if (shapeType == "triangle")
     {
-        const float x = position.x * scale;
-        const float y = position.y * scale;
+        const float x = drawPosition.x * scale;
+        const float y = drawPosition.y * scale;
 
         const float width = size.x * scale;
         const float height = size.y * scale;
@@ -90,6 +192,33 @@ void RuntimeObject::draw(int scale) const
         DrawLineV(left, right, color);
         DrawLineV(right, top, color);
     }
+    else if (shapeType == "rectangle")
+    {
+        const float x = drawPosition.x * scale;
+        const float y = drawPosition.y * scale;
+
+        const float width = size.x * scale;
+        const float height = size.y * scale;
+
+        Rectangle rect = {
+            x,
+            y,
+            width,
+            height
+        };
+
+        Vector2 origin = {
+            width / 2.0f,
+            height / 2.0f
+        };
+
+        DrawRectanglePro(
+            rect,
+            origin,
+            angle,
+            color
+        );
+    }
     else
     {
         DrawRectangle(
@@ -99,6 +228,34 @@ void RuntimeObject::draw(int scale) const
             static_cast<int>(size.y * scale),
             color
         );
+    } 
+}
+
+void RuntimeObject::applyBounds(
+    float screenWidth,
+    float screenHeight
+)
+{
+    if (boundsMode != "wrap")
+    {
+        return;
     }
-    
+
+    if (position.x < 0.0f)
+    {
+        position.x = screenWidth;
+    }
+    else if (position.x > screenWidth)
+    {
+        position.x = 0.0f;
+    }
+
+    if (position.y < 0.0f)
+    {
+        position.y = screenHeight;
+    }
+    else if (position.y > screenHeight)
+    {
+        position.y = 0.0f;
+    }
 }

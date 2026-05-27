@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripting | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="scripting">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Scripting</h1>
+
+            <p>
+                FLX utiliza JavaScript para definir comportamiento durante la ejecución del runtime.
+            </p>
+
+            <p>
+                Los scripts permiten reaccionar al ciclo de vida de los objetos,
+                acceder al contexto del runtime y modificar propiedades en tiempo real.
+            </p>
+
+            <p class="placeholder">
+                FLX está en desarrollo activo. Algunas funciones y estructuras pueden cambiar durante las versiones 0.x.
+            </p>
+
+            <hr />
+
+            <h2>Estructura básica</h2>
+
+            <p>
+                Un script FLX es un archivo JavaScript estándar.
+            </p>
+
+            <p>
+                Los scripts se asocian normalmente mediante el bloque
+                <code>behavior</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>"behavior": {
+    "scripts": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                El runtime cargará automáticamente:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">script path</div>
+<pre><code>scripts/tofu.js</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Reference</h2>
+
+            <p>
+                FLX proporciona definiciones TypeScript para facilitar
+                autocompletado y validación en el editor.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.js</div>
+<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+</code></pre>
+            </div>
+
+            <p>
+                Esto permite utilizar ayudas de desarrollo en editores compatibles
+                como Visual Studio Code.
+            </p>
+
+            <hr />
+
+            <h2>Ciclo de vida</h2>
+
+            <p>
+                El runtime ejecuta automáticamente determinadas funciones
+                cuando existen dentro del script.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">lifecycle.js</div>
+<pre><code>function start(self) {}
+
+function action(self) {}
+
+function motion(self) {}
+
+function collision(self, other) {}
+
+function draw(self) {}
+
+function end(self) {}
+</code></pre>
+            </div>
+
+            <h3>Funciones</h3>
+
+            <ul>
+                <li><code>start</code>: llamada al inicializar el objeto.</li>
+                <li><code>action</code>: lógica principal e inputs.</li>
+                <li><code>motion</code>: movimiento y transformaciones.</li>
+                <li><code>collision</code>: gestión de colisiones.</li>
+                <li><code>draw</code>: lógica de dibujado adicional.</li>
+                <li><code>end</code>: llamada antes de destruir el objeto.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Acceso a propiedades</h2>
+
+            <p>
+                Los scripts pueden acceder y modificar propiedades de los objetos.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">properties.js</div>
+<pre><code>function action(self) {
+
+    self.origin.x += 1;
+
+    self.motion.maxSpeed = 250;
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esto permite combinar estructuras JSON con lógica dinámica durante la ejecución.
+            </p>
+
+            <hr />
+
+            <h2>Program scripts</h2>
+
+            <p>
+                Los scripts también pueden asociarse al bloque
+                <code>program</code> del principal.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>"program": {
+    "scripts": [ "scripts/program" ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                Estos scripts permiten implementar lógica global del runtime.
+            </p>
+
+            <hr />
+
+            <h2>Buenas prácticas</h2>
+
+            <ul>
+                <li>Mantener scripts pequeños y especializados.</li>
+                <li>Separar lógica global y lógica de objeto.</li>
+                <li>Usar JSON para configuración y JavaScript para comportamiento.</li>
+                <li>Evitar modificar estructuras innecesariamente durante <code>draw()</code>.</li>
+            </ul>
+
+            <hr />
+
+            <h2>API</h2>
+
+            <p>
+                Las funciones auxiliares proporcionadas por FLX
+                se documentan en la sección API.
+            </p>
+
+            <ul>
+                <li><a class="link" href="api.html">FLX API</a></li>
+            </ul>
+
+            <hr />
+
+            <h2>Siguiente paso</h2>
+
+            <p class="placeholder">
+                Una vez comprendido el sistema de scripting,
+                puedes continuar explorando:
+            </p>
+
+            <ul>
+                <li><a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li><a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li><a class="link" href="api.html">FLX API</a></li>
+                <li><a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+            </ul>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

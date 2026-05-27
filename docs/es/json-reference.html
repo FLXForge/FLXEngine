@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Referencia JSON</h1>
+
+            <p>
+                Esta sección documenta las estructuras JSON utilizadas por FLX
+                para definir el principal, los objetos y sus propiedades.
+            </p>
+
+            <p class="placeholder">
+                FLX está en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
+            </p>
+
+            <h2>Tipos de JSON</h2>
+
+            <p>
+                Actualmente FLX utiliza distintos archivos JSON según la función que cumplen dentro del runtime.
+            </p>
+
+            <ul>
+                <li><code>main</code>: define el punto principal del runtime.</li>
+                <li><code>node</code>: define contenedor que puede tener otros elementos.</li>
+                <li><code>drawable</code>: define objetos que pueden representarse visualmente.</li>
+            </ul>
+
+            <hr />
+
+            <h2 class="placeholder">Main JSON</h2>
+
+            <p>
+                El archivo principal organiza la estructura base del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>{
+    "$schema": "tools/schemas/main.schema.json",
+    "name": "Main",
+    "description": "This is a description.",
+
+    "screen": {
+        "title": "Title in window",
+        "width": 320,
+        "height": 180
+    },
+
+    "scale": 3,
+
+    "children": [ ... ],
+
+    "program": {
+        "scripts": [ "scripts/program" ]
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
+                <li><code>name</code>: nombre lógico del principal. <i>[ Obligatorio ]</i></li>
+                <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#screen">screen</a>: configuración de ventana o superficie de ejecución. <i>[ Obligatorio ]</i></li>
+                <li><code>scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#children">children</a>: lista de estructuras cargados por el principal. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#program">program</a>: scripts asociados al programa. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <h2 id="screen">Screen</h2>
+
+            <p>
+                El bloque <code>screen</code> define las propiedades básicas de la ventana.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">screen</div>
+<pre><code>"screen": {
+    "title": "Title in window",
+    "width": 320,
+    "height": 180
+}
+</code></pre>
+            </div>
+
+            <ul>
+                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
+                <li><code>width</code>: ancho interno de referencia. <i>[ Obligatorio ]</i></li>
+                <li><code>height</code>: alto interno de referencia. <i>[ Obligatorio ]</i></li>
+            </ul>
+
+            <h2 id="children">Children</h2>
+
+            <p>
+                El campo <code>children</code> permite declarar objetos contenidos por el principal.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">children (link)</div>
+<pre><code>"children": [ "objects/tofu" ]</code></pre>
+                <div class="code-header">children (inline)</div>
+<pre><code>"children": [ {"name": "Tofu", ... } ]</code></pre>
+                <div class="code-header">children (mix)</div>
+<pre><code>"children": [ "objects/tofu" , {"name": "Tofu", ... }, ... ]</code></pre>
+            </div>
+
+            <p>
+                Cada valor hace referencia a un objeto que el runtime debe cargar.
+            </p>
+
+            <p>
+                Puede referirse como un fichero externo (no es necesario añadir la extensión JSON) o declararse en línea.
+            </p>
+
+            <h2 id="program">Program</h2>
+
+            <p>
+                El campo <code>program</code> permite declarar scripts con lógica asociada al programa.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">children</div>
+<pre><code>"program": {
+    "scripts": [ "scripts/program" ]
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensión) cargados para el objeto.</li>
+            </ul>
+
+            <hr />
+
+            <h2 class="placeholder">Node JSON</h2>
+
+            <p>
+                Un <code>node</code> define un conjunto de objetos, no se representa a nivel visual pero puede contener lógica.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "tools/schemas/node.schema.json",
+    "name": "Level",
+    "description" : "This is a description.",
+
+    "children": [...]
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
+                <li><code>name</code>: nombre lógico del principal. <i>[ Obligatorio ]</i></li>
+                <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#children">children</a>: lista de objetos cargados por el principal. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <hr />
+
+            <h2 id="drawable" class="placeholder">Drawable JSON</h2>
+
+            <p>
+                Un archivo <code>drawable</code> define un objeto que puede representarse visualmente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "../tools/schemas/drawable.schema.json",
+    "name": "Tofu",
+
+    "origin": {
+        "x": 157,
+        "y": 87
+    },
+
+    "shape": {
+        "type": "triangle",
+        "color": "WHITE",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "motion": {
+      "rotationSpeed": 180,
+      "acceleration": 120,
+      "inertia": 0.99,
+      "maxSpeed": 180
+    },
+
+    "bounds": {
+      "mode": "wrap",
+      "overflow": true
+    },
+
+    "group": "paddle",
+
+    "behavior": {
+        "scripts": [ "tofu" ]
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
+                <li><code>name</code>: nombre lógico del objeto. <i>[ Obligatorio ]</i></li>
+                <li><a class="link" href="#origin">origin</a>: posición inicial del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#shape">shape</a>: información visual del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#motion">motion</a>: configuración de movimiento, si existe. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los límites de la pantalla. <i>[ Opcional ]</i></li>
+                <li><code>group</code>: grupo lógico asociado al objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <h2 id="origin">Origin</h2>
+
+            <p>
+                Define la posición inicial del objeto dentro del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">origin</div>
+<pre><code>"origin": {
+    "x": 157,
+    "y": 87
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>x</code>: Coordenada X (en referencia al origen de coordenadas, esquina superior izquierda) <i>[ Obligatorio ]</i></li>
+                <li><code>y</code>: Coordenada Y (en referencia al origen de coordenadas, esquina superior izquierda) <i>[ Obligatorio ]</i></li>
+            </ul>
+
+            <h2>Shape</h2>
+
+            <p>
+                Define la representación visual básica del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+        "width": 18,
+        "height": 24
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>type</code>: tipo de forma a dibujar. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>block</code>: bloque sólido por defecto. No aplica mecánicas de rotación.</li>
+                        <li><code>rectangle</code>: rectángulo con soporte para rotación y movimiento orientado.</li>
+                        <li><code>triangle</code>: triángulo sin relleno.</li>
+                        <li><code>text</code>: texto renderizable.</li>
+                    </ul>
+                </li>
+                <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#size">size</a>: tamaño del objeto. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <h2 id="size">Size</h2>
+
+            <p>
+                Define el tamaño del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"size": {
+    "width": 18,
+    "height": 24
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>width</code>: anchura del objeto en pixels.</li>
+                <li><code>height</code>: altura del objeto en pixels.</li>
+            </ul>
+
+            <h2 id="motion">Motion</h2>
+
+            <p>
+                Define propiedades relacionadas con el movimiento del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"motion": {
+    "rotationSpeed": 180,
+    "acceleration": 120,
+    "inertia": 0.99,
+    "maxSpeed": 180
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>rotationSpeed</code>: velocidad de rotación.</li>
+                <li><code>acceleration</code>: aceleración aplicada al objeto.</li>
+                <li><code>inertia</code>: conservación del movimiento.</li>
+                <li><code>maxSpeed</code>: velocidad máxima.</li>
+            </ul>
+
+            <h2 id="bounds">Bounds</h2>
+
+            <p>
+                Define comportamiento del objeto al alcanzar los límites de la pantalla.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"bounds": {
+    "mode": "wrap",
+    "overflow": true
+},
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>mode</code>: modo del comportamiento. [ Opcional ]
+                <ul>
+                    <li><code>none</code>: sin comportamiento especial.</li>
+                    <li><code>wrap</code>: al alcanzar un límite, el objeto aparecerá en el lado opuesto manteniendo su dirección.</li>
+                </ul>
+                </li>
+                <li>
+                    <code>overflow</code>: controla cómo se aplica el comportamiento de límites. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>true</code>: el objeto comenzará a aparecer por el lado opuesto mientras desaparece progresivamente.</li>
+                        <li><code>false</code>: el objeto reaparece inmediatamente al alcanzar el límite.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h2 id="behavior">Behavior</h2>
+
+            <p>
+                Define los scripts asociados al objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code>"behavior": {
+    "scripts": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensión) cargados para el objeto.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Siguiente paso</h2>
+
+            <p class="placeholder">
+                Una vez comprendida la estructura de los JSON,
+                puedes profundizar en:
+            </p>
+
+            <ul>
+                <li><a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li><a class="link" href="scripting.html">Scripting</a></li>
+                <li><a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

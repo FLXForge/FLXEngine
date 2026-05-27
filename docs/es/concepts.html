@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptos básicos | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="concepts">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Conceptos básicos</h1>
+
+            <p>
+                FLX organiza los proyectos mediante estructuras de datos,
+                objetos, scripts y ciclos de vida claramente definidos.
+            </p>
+
+            <h2>Proyecto</h2>
+
+            <p>
+                Todo proyecto FLX parte de un archivo principal con extensión <code>.flx</code>.
+            </p>
+
+            <p>
+                Este archivo define la estructura general del proyecto:
+            </p>
+
+            <ul>
+                <li>Principal (main)</li>
+                <li>Scripts</li>
+                <li>Configuración</li>
+                <li>Recursos</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">project.flx</div>
+<pre><code>name:Asteroids
+version:1.0
+flxEngineVersion:0.0.1
+main:game.json
+</code></pre>
+            </div>
+
+            <h2>Principal (Main)</h2>
+
+            <p>
+                El principal es el punto de entrada del runtime.
+            </p>
+
+            <p>
+                Desde él se organizan objetos, scripts y lógica de ejecución.
+            </p>
+
+            <p>
+                El principal puede utilizarse para representar:
+            </p>
+
+            <ul>
+                <li>Un nivel</li>
+                <li>Un menú</li>
+                <li>Una pantalla de carga</li>
+                <li>Un estado concreto del proyecto</li>
+                <li>Una presentación</li>
+                <li>Una narración</li>
+                <li>Y lo que el desarrollador imagine...</li>
+            </ul>
+
+            <h2>Objeto</h2>
+
+            <p>
+                Los objetos representan elementos activos dentro del runtime.
+            </p>
+
+            <p>
+                Un objeto puede:
+            </p>
+
+            <ul>
+                <li>Dibujarse</li>
+                <li>Moverse</li>
+                <li>Colisionar</li>
+                <li>Ejecutar scripts</li>
+                <li>Contener datos</li>
+            </ul>
+
+            <p>
+                La estructura de un objeto se define normalmente mediante JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+    "name": "Ship",
+
+    "shape": {
+        "type": "triangle"
+    },
+
+    "motion": {
+        "maxSpeed": 180
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Scripts</h2>
+
+            <p>
+                FLX utiliza JavaScript para definir comportamientos.
+            </p>
+
+            <p>
+                Los scripts tienen acceso al contexto del runtime y pueden reaccionar
+                a distintos momentos del ciclo de vida.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">player.js</div>
+<pre><code>function action(self) {
+    if (Key.up()) {
+        accelerate(self);
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Ciclo de vida</h2>
+
+            <p>
+                Durante la ejecución, FLX procesa una serie de etapas
+                en cada iteración del bucle principal.
+            </p>
+
+            <ol>
+                <li>Inicialización de datos</li>
+                <li>Inicio del runtime</li>
+                <li>Lectura de inputs</li>
+                <li>Ejecución de lógica</li>
+                <li>Procesamiento de movimiento</li>
+                <li>Gestión de colisiones</li>
+                <li>Dibujado</li>
+            </ol>
+
+            <p>
+                Los scripts pueden reaccionar a estas etapas mediante funciones específicas.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">lifecycle.js</div>
+<pre><code>function start(self) {}
+function action(self) {}
+function motion(self) {}
+function collision(self, other) {}
+function draw(self) {}
+function end(self) {}
+</code></pre>
+            </div>
+
+            <p class="placeholder">
+                Los siguientes apartados profundizan en cada uno de estos sistemas.
+            </p>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

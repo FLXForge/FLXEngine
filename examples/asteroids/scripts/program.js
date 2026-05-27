@@ -1,4 +1,4 @@
-/// <reference path="../../../../scripting tools/flx.d.ts" />
+/// <reference path="../../../../tools/scripts/flx.d.ts" />
 
 /*
 	Define the lives when game start

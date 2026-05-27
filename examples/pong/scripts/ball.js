@@ -1,4 +1,4 @@
-/// <reference path="../../../../scripting tools/flx.d.ts" />
+/// <reference path="../../../../tools/scripts/flx.d.ts" />
 
 /*
     The ball always moves forward. The collision determines its trajectory depending on what it hits:

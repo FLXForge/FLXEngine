@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API FLX | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="api">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>FLX API</h1>
+
+            <p>
+                This section documents the JavaScript functions exposed by FLX to the runtime.
+            </p>
+
+            <p class="placeholder">
+                FLX is under active development. Some functions may change during the 0.x versions.
+            </p>
+
+            <hr />
+
+            <h2>accelerate(object)</h2>
+
+            <p>
+                Applies acceleration to the object using its <code>motion</code> configuration.
+                It uses <code>acceleration</code>, <code>maxSpeed</code>, <code>angle</code>,
+                <code>velocityX</code> and <code>velocityY</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">accelerate</div>
+<pre><code>accelerate(ship);</code></pre>
+            </div>
+
+            <h3>Configuration used</h3>
+
+            <ul>
+                <li><code>motion.acceleration</code>: acceleration force.</li>
+                <li><code>motion.maxSpeed</code>: maximum allowed speed.</li>
+                <li><code>angle</code>: current object direction.</li>
+                <li><code>velocityX</code> and <code>velocityY</code>: accumulated velocity.</li>
+            </ul>
+
+            <hr />
+
+            <h2>accelerate(object, amount)</h2>
+
+            <p>
+                Direct variant that adds a specific amount to <code>speed</code>.
+                It does not use the advanced <code>motion</code> configuration.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">accelerate amount</div>
+<pre><code>accelerate(ball, 20);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>advance(object)</h2>
+
+            <p>
+                Moves the object forward according to its current configuration.
+            </p>
+
+            <p>
+                If the object has <code>motion.acceleration</code> greater than zero,
+                it uses <code>velocityX</code>, <code>velocityY</code> and <code>inertia</code>.
+                Otherwise, it advances using <code>angle</code> and <code>speed</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">advance</div>
+<pre><code>function motion(ship) {
+    advance(ship);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>bounce_x(object)</h2>
+
+            <p>
+                Reverses horizontal movement by modifying the object angle.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">bounce_x</div>
+<pre><code>bounce_x(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>bounce_y(object)</h2>
+
+            <p>
+                Reverses vertical movement by modifying the object angle.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">bounce_y</div>
+<pre><code>bounce_y(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>console.log(...values)</h2>
+
+            <p>
+                Sends messages to the internal FLX logger.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">console.log</div>
+<pre><code>console.log("Ship position:", ship.x, ship.y);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>follow_y(object, targetName)</h2>
+
+            <p>
+                Moves an object vertically to follow another object by name.
+                It compares the vertical center of both objects and adjusts the Y position.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_y</div>
+<pre><code>follow_y(enemy, "Ball");</code></pre>
+            </div>
+
+            <h3>Configuration used</h3>
+
+            <ul>
+                <li><code>y</code>: object vertical position.</li>
+                <li><code>height</code>: object height.</li>
+                <li><code>speed</code>: follow speed.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Key.down()</h2>
+
+            <p>
+                Returns <code>true</code> while the down arrow key is pressed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.down</div>
+<pre><code>if (Key.down()) {
+    move_y(tofu, DOWN);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.left()</h2>
+
+            <p>
+                Returns <code>true</code> while the left arrow key is pressed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.left</div>
+<pre><code>if (Key.left()) {
+    move_x(tofu, LEFT);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.right()</h2>
+
+            <p>
+                Returns <code>true</code> while the right arrow key is pressed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.right</div>
+<pre><code>if (Key.right()) {
+    move_x(tofu, RIGHT);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.up()</h2>
+
+            <p>
+                Returns <code>true</code> while the up arrow key is pressed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.up</div>
+<pre><code>if (Key.up()) {
+    move_y(tofu, UP);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>move_x(object, direction)</h2>
+
+            <p>
+                Moves the object horizontally using <code>speed</code> and frame time.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_x</div>
+<pre><code>move_x(tofu, LEFT);
+move_x(tofu, RIGHT);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>move_y(object, direction)</h2>
+
+            <p>
+                Moves the object vertically using <code>speed</code> and frame time.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_y</div>
+<pre><code>move_y(tofu, UP);
+move_y(tofu, DOWN);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>probability(chance, base)</h2>
+
+            <p>
+                Randomly returns <code>true</code> according
+                to the specified probability.
+            </p>
+
+            <p>
+                If <code>base</code> is not specified,
+                the default value is <code>100</code>.
+            </p>
+
+            <p>
+                For example:
+            </p>
+
+            <ul>
+                <li><code>probability(30)</code> → approximately 30 out of every 100 calls.</li>
+                <li><code>probability(20, 1000)</code> → approximately 20 out of every 1000 calls.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">probability</div>
+<pre><code>if (probability(5)) {
+    spawn("enemy");
+}
+
+if (probability(1, 1000)) {
+    spawn("rare_enemy");
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>rotate(object, direction)</h2>
+
+            <p>
+                Rotates the object using <code>motion.rotationSpeed</code> and frame time.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rotate</div>
+<pre><code>rotate(ship, LEFT);
+rotate(ship, RIGHT);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>to_origin(object)</h2>
+
+            <p>
+                Restores the object to its origin values.
+                It sets <code>x</code>, <code>y</code> and <code>speed</code> from
+                <code>originX</code>, <code>originY</code> and <code>originSpeed</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">to_origin</div>
+<pre><code>to_origin(ball);</code></pre>
+            </div>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

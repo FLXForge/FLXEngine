@@ -57,7 +57,7 @@ namespace
         const float y =
             object["origin"]["y"].get<float>();
 
-        std::string shapeType = "rectangle";
+        std::string shapeType = "block";
         float width = 0.0f;
         float height = 0.0f;
 
@@ -65,7 +65,7 @@ namespace
         {
             const auto& shape = object["shape"];
 
-            shapeType = shape.value("type", "rectangle");
+            shapeType = shape.value("type", "block");
 
             width =
                 shape["size"]["width"].get<float>();
@@ -132,6 +132,23 @@ namespace
             {
                 runtimeObject.maxSpeed =
                     motion["maxSpeed"].get<float>();
+            }
+        }
+
+        if (object.contains("bounds"))
+        {
+            const auto& bounds = object["bounds"];
+
+            if (bounds.contains("mode"))
+            {
+                runtimeObject.boundsMode =
+                    bounds["mode"].get<std::string>();
+            }
+
+            if (bounds.contains("overflow"))
+            {
+                runtimeObject.boundsOverflow =
+                    bounds["overflow"].get<bool>();
             }
         }
 

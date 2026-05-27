@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripting | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="scripting">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Scripting</h1>
+
+            <p>
+                FLX uses JavaScript to define behavior during runtime execution.
+            </p>
+
+            <p>
+                Scripts can react to object lifecycle stages,
+                access the runtime context and modify properties in real time.
+            </p>
+
+            <p class="placeholder">
+                FLX is under active development. Some functions and structures may change during the 0.x versions.
+            </p>
+
+            <hr />
+
+            <h2>Basic Structure</h2>
+
+            <p>
+                An FLX script is a standard JavaScript file.
+            </p>
+
+            <p>
+                Scripts are usually associated through the
+                <code>behavior</code> block.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>"behavior": {
+    "scripts": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                The runtime will automatically load:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">script path</div>
+<pre><code>scripts/tofu.js</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Reference</h2>
+
+            <p>
+                FLX provides TypeScript definitions to improve
+                autocomplete and editor validation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.js</div>
+<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+</code></pre>
+            </div>
+
+            <p>
+                This allows development assistance in compatible editors
+                such as Visual Studio Code.
+            </p>
+
+            <hr />
+
+            <h2>Lifecycle</h2>
+
+            <p>
+                The runtime automatically executes specific functions
+                when they exist inside the script.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">lifecycle.js</div>
+<pre><code>function start(self) {}
+
+function action(self) {}
+
+function motion(self) {}
+
+function collision(self, other) {}
+
+function draw(self) {}
+
+function end(self) {}
+</code></pre>
+            </div>
+
+            <h3>Functions</h3>
+
+            <ul>
+                <li><code>start</code>: called when the object is initialized.</li>
+                <li><code>action</code>: main logic and input handling.</li>
+                <li><code>motion</code>: movement and transformations.</li>
+                <li><code>collision</code>: collision handling.</li>
+                <li><code>draw</code>: additional drawing logic.</li>
+                <li><code>end</code>: called before destroying the object.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Property Access</h2>
+
+            <p>
+                Scripts can access and modify object properties.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">properties.js</div>
+<pre><code>function action(self) {
+
+    self.origin.x += 1;
+
+    self.motion.maxSpeed = 250;
+}
+</code></pre>
+            </div>
+
+            <p>
+                This allows combining JSON structures with dynamic runtime logic.
+            </p>
+
+            <hr />
+
+            <h2>Program Scripts</h2>
+
+            <p>
+                Scripts can also be associated with the
+                <code>program</code> block of the main structure.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>"program": {
+    "scripts": [ "scripts/program" ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                These scripts allow implementing global runtime logic.
+            </p>
+
+            <hr />
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li>Keep scripts small and specialized.</li>
+                <li>Separate global logic from object logic.</li>
+                <li>Use JSON for configuration and JavaScript for behavior.</li>
+                <li>Avoid modifying structures unnecessarily during <code>draw()</code>.</li>
+            </ul>
+
+            <hr />
+
+            <h2>API</h2>
+
+            <p>
+                Helper functions provided by FLX
+                are documented in the API section.
+            </p>
+
+            <ul>
+                <li><a class="link" href="api.html">FLX API</a></li>
+            </ul>
+
+            <hr />
+
+            <h2>Next Step</h2>
+
+            <p class="placeholder">
+                Once the scripting system is understood,
+                you can continue exploring:
+            </p>
+
+            <ul>
+                <li><a class="link" href="concepts.html">Core Concepts</a></li>
+                <li><a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li><a class="link" href="api.html">FLX API</a></li>
+                <li><a class="link" href="howdo.html">How do...?</a></li>
+            </ul>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

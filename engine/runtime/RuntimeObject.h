@@ -14,7 +14,14 @@ public:
         Color color
     );
 
-    void draw(int scale) const;
+    void draw(
+        int scale,
+        float screenWidth,
+        float screenHeight
+    ) const;
+    void drawAt(Vector2 drawPosition, int scale) const;
+
+    void applyBounds(float screenWidth, float screenHeight);
 
 public:
     std::string name;
@@ -40,6 +47,9 @@ public:
     float inertia;
 
     std::string shapeType;
+
+    std::string boundsMode;
+    bool boundsOverflow;
 
     std::vector<std::string> scripts;
     std::vector<std::string> resolvedScriptPaths;

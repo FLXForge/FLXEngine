@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Concepts | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="concepts">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Core Concepts</h1>
+
+            <p>
+                FLX organizes projects through data structures,
+                objects, scripts and clearly defined lifecycles.
+            </p>
+
+            <h2>Project</h2>
+
+            <p>
+                Every FLX project starts from a main file using the <code>.flx</code> extension.
+            </p>
+
+            <p>
+                This file defines the general project structure:
+            </p>
+
+            <ul>
+                <li>Main</li>
+                <li>Scripts</li>
+                <li>Configuration</li>
+                <li>Assets</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">project.flx</div>
+<pre><code>name:Asteroids
+version:1.0
+flxEngineVersion:0.0.1
+main:game.json
+</code></pre>
+            </div>
+
+            <h2>Main</h2>
+
+            <p>
+                The main file acts as the runtime entry point.
+            </p>
+
+            <p>
+                From it, objects, scripts and execution logic are organized.
+            </p>
+
+            <p>
+                The main structure can represent:
+            </p>
+
+            <ul>
+                <li>A level</li>
+                <li>A menu</li>
+                <li>A loading screen</li>
+                <li>A specific project state</li>
+                <li>A presentation</li>
+                <li>A narrative sequence</li>
+                <li>Anything the developer can imagine...</li>
+            </ul>
+
+            <h2>Object</h2>
+
+            <p>
+                Objects represent active elements inside the runtime.
+            </p>
+
+            <p>
+                An object can:
+            </p>
+
+            <ul>
+                <li>Be rendered</li>
+                <li>Move</li>
+                <li>Collide</li>
+                <li>Execute scripts</li>
+                <li>Store data</li>
+            </ul>
+
+            <p>
+                Object structures are commonly defined through JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+    "name": "Ship",
+
+    "shape": {
+        "type": "triangle"
+    },
+
+    "motion": {
+        "maxSpeed": 180
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Scripts</h2>
+
+            <p>
+                FLX uses JavaScript to define behaviors.
+            </p>
+
+            <p>
+                Scripts have access to the runtime context and can react
+                to different lifecycle stages.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">player.js</div>
+<pre><code>function action(self) {
+    if (Key.up()) {
+        accelerate(self);
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Lifecycle</h2>
+
+            <p>
+                During execution, FLX processes a series of stages
+                during each iteration of the main loop.
+            </p>
+
+            <ol>
+                <li>Data initialization</li>
+                <li>Runtime startup</li>
+                <li>Input processing</li>
+                <li>Logic execution</li>
+                <li>Motion processing</li>
+                <li>Collision handling</li>
+                <li>Rendering</li>
+            </ol>
+
+            <p>
+                Scripts can react to these stages through specific functions.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">lifecycle.js</div>
+<pre><code>function start(self) {}
+function action(self) {}
+function motion(self) {}
+function collision(self, other) {}
+function draw(self) {}
+function end(self) {}
+</code></pre>
+            </div>
+
+            <p class="placeholder">
+                The following sections explore each of these systems in greater depth.
+            </p>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

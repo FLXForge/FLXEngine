@@ -10,7 +10,8 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": [ "rectangle", "triangle", "text" ]
+      "enum": [ "block", "rectangle", "triangle", "text" ],
+      "default": "block"
     },
 
     "color": {

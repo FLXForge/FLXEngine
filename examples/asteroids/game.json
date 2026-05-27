@@ -1,5 +1,5 @@
 {
-  "$schema": "../../tools/schemas/game.schema.json",
+  "$schema": "../../tools/schemas/main.schema.json",
   "name": "Asteroids",
   "description": "Example of more famous game",
 

@@ -9,6 +9,8 @@
 #include <raylib.h>
 
 #include <cmath>
+#include <cstdlib>
+#include <random>
 #include <iostream>
 
 static ScriptEngine* activeScriptEngine = nullptr;
@@ -38,6 +40,52 @@ static JSValue consoleLog(
     }
 
     return JS_UNDEFINED;
+}
+
+static JSValue jsProbability(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    if (argc < 1)
+    {
+        return JS_NewBool(context, false);
+    }
+
+    int chance = 0;
+    int base = 100;
+
+    JS_ToInt32(context, &chance, argv[0]);
+
+    if (argc >= 2)
+    {
+        JS_ToInt32(context, &base, argv[1]);
+    }
+
+    if (base <= 0)
+    {
+        return JS_NewBool(context, false);
+    }
+
+    if (chance <= 0)
+    {
+        return JS_NewBool(context, false);
+    }
+
+    if (chance >= base)
+    {
+        return JS_NewBool(context, true);
+    }
+
+    const int value =
+        GetRandomValue(1, base);
+
+    return JS_NewBool(
+        context,
+        value <= chance
+    );
 }
 
 static JSValue jsMoveX(
@@ -627,6 +675,13 @@ void ScriptBindings::registerAll(
     JS_SetPropertyStr(context, global, "LEFT", JS_NewInt32(context, LEFT));
     JS_SetPropertyStr(context, global, "RIGHT", JS_NewInt32(context, RIGHT));
     JS_SetPropertyStr(context, global, "STOP", JS_NewInt32(context, STOP));
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "probability",
+        JS_NewCFunction(context, jsProbability, "probability", 2)
+    );
 
     JS_SetPropertyStr(
         context,

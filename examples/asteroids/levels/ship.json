@@ -23,6 +23,11 @@
     "maxSpeed": 180
   },
 
+  "bounds": {
+    "mode": "wrap",
+    "overflow": true
+  },
+
   "group": "ship",
 
   "behavior": {

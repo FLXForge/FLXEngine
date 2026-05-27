@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducción | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="home">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Introducción</h1>
+
+            <section class="hero">
+                <div class="logo-block">
+                    <img src="../assets/FLX_engine_logo_w.svg" width="400" alt="FLX Engine logo">
+                </div>
+
+                <div class="hero-text">
+                    <h2>Un pequeño motor 2D basado en datos</h2>
+                    <p>
+                        Crea escenas con JSON, define comportamientos con JavaScript
+                        y deja que el núcleo en C++ haga el resto.
+                    </p>
+                </div>
+            </section>
+
+            <h2>La filosofía FLX: obtener resultados rápidamente</h2>
+
+            <p>
+                En FLX, la escena, los objetos y los actores se definen mediante datos
+                estructurados y ordenados en JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">scene.json</div>
+<pre><code>{
+    "$schema": "../../../tools/schemas/drawable.schema.json",
+    "name": "Ship",
+
+    "shape": {
+        "type": "triangle",
+        "color": "WHITE",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "motion": {
+        "rotationSpeed": 180,
+        "acceleration": 120,
+        "inertia": 0.99,
+        "maxSpeed": 180
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Qué es. Dónde está. Cómo se construye.
+            </p>
+
+            <p>
+                La lógica del juego se maneja mediante scripts sencillos en JavaScript.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">player.js</div>
+<pre><code>/// &lt;reference path="../../../../tools/scripts/flx.d.ts" /&gt;
+
+function action(self) {
+    if (Key.up()) {
+        accelerate(self);
+    }
+}
+
+function motion(self) {
+    advance(self);
+}
+</code></pre>
+            </div>
+
+            <p>
+                Qué hace. Hacia dónde se mueve. Cómo responde.
+            </p>
+
+            <p class="placeholder">
+                ¿Quieres saber más? Empieza por los
+                <a class="link" href="getting-started.html">primeros pasos</a>.
+            </p>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

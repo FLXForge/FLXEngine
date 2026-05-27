@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="getting-started">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Getting Started</h1>
+
+            <p>
+                This section shows the minimum structure required
+                to run an FLX project.
+            </p>
+
+            <p>
+                The goal is to understand how a project is organized,
+                how its files relate to each other and how to execute
+                a first functional runtime.
+            </p>
+
+            <h2>Minimal Structure</h2>
+
+            <p>
+                An FLX project can start with only a few files.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Project structure</div>
+<pre><code>Asteroids/
+│
+├── first.flx
+├── world.json
+├── tofu.json
+└── tofu.js
+</code></pre>
+            </div>
+
+            <p>
+                Each file has a specific role inside the runtime.
+            </p>
+
+            <h2>Main File</h2>
+
+            <p>
+                Every project starts with a <code>.flx</code> file.
+            </p>
+
+            <p>
+                This file defines the main project configuration
+                and the runtime entry point.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">first.flx</div>
+<pre><code>name:My first FLX
+version:1.0
+flxEngineVersion:0.0.1
+main:world.json
+</code></pre>
+            </div>
+
+            <h2>Main</h2>
+
+            <p>
+                The main structure organizes the rest of the active runtime logic and objects.
+            </p>
+
+            <p>
+                In this example, the main structure represents a world containing a single object:
+                a tofu block.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>{
+    "$schema": "../tools/schemas/main.schema.json",
+    "name": "World",
+    "description": "This is the world where Tofu lives.",
+
+    "screen": {
+        "title": "My first FLX",
+        "width": 320,
+        "height": 180
+    },
+    "scale": 3,
+
+    "children": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <h2>Object</h2>
+
+            <p>
+                Objects define data and properties used during execution.
+            </p>
+
+            <p>
+                An object can contain:
+            </p>
+
+            <ul>
+                <li>Shape</li>
+                <li>Movement</li>
+                <li>Scripts</li>
+                <li>Collisions</li>
+                <li>Custom data</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "../tools/schemas/drawable.schema.json",
+    "name": "Tofu",
+
+    "origin": {
+        "x": 157,
+        "y": 87
+    },
+
+    "shape": {
+        "color": "WHITE",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "behavior": {
+        "scripts": [ "tofu" ]
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Scripts</h2>
+
+            <p>
+                Scripts use JavaScript to define behavior.
+            </p>
+
+            <p>
+                During runtime, FLX automatically executes
+                specific lifecycle functions.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.js</div>
+<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+
+function action(tofu) {
+    if (Key.up()) {
+        move_y(tofu, UP);
+    }
+
+    if (Key.down()) {
+        move_y(tofu, DOWN);
+    }
+
+    if (Key.left()) {
+        move_x(tofu, LEFT);
+    }
+
+    if (Key.right()) {
+        move_x(tofu, RIGHT);
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Execution</h2>
+
+            <p>
+                Once the main files are defined,
+                the runtime can be executed by indicating
+                the <code>.flx</code> file.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Terminal</div>
+<pre><code>.\FlxEngine project.flx
+</code></pre>
+            </div>
+
+            <p>
+                If everything is correctly configured,
+                the runtime will load the main structure,
+                initialize the objects and start
+                the execution loop.
+            </p>
+
+            <p>
+                Our tofu will appear in the world we created
+                and we will be able to move it using the arrow keys.
+            </p>
+
+            <h2>Next Step</h2>
+
+            <p class="placeholder">
+                Once the basic structure is understood,
+                you can continue exploring:
+            </p>
+
+            <ul>
+                <li><a class="link" href="concepts.html">Core Concepts</a></li>
+                <li><a class="link" href="scripting.html">Scripting</a></li>
+                <li><a class="link" href="json-reference.html">JSON Reference</a></li>
+            </ul>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

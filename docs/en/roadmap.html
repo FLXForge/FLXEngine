@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadmap | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="roadmap">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Roadmap</h1>
+
+            <p>
+                FLX is developed incrementally and through practical experimentation.
+            </p>
+
+            <p>
+                Each example adds new runtime capabilities,
+                helps validate real architecture
+                and reveals necessary improvements before moving forward.
+            </p>
+
+            <p class="placeholder">
+                This section acts as both a development diary
+                and a general direction overview for the project.
+            </p>
+
+            <hr />
+
+            <h2>Completed</h2>
+
+            <h3>Pong Example</h3>
+
+            <p>
+                First functional example used to build and validate
+                the base engine structure.
+            </p>
+
+            <h3>Implemented systems</h3>
+
+            <ul>
+                <li>Base engine structure</li>
+                <li>Initial lifecycle</li>
+                <li>Movement API</li>
+                <li>Basic collisions</li>
+                <li>Horizontal and vertical bounce</li>
+                <li>Basic AI enemy</li>
+                <li>Respawn system (<code>to_origin()</code>)</li>
+                <li>Log console</li>
+                <li>JSON and JavaScript support</li>
+                <li>JSON Schemas</li>
+                <li>TypeScript definitions (<code>.d.ts</code>)</li>
+            </ul>
+
+            <hr />
+
+            <h2>In Development</h2>
+
+            <h3>Asteroids Example</h3>
+
+            <p>
+                Second runtime example.
+            </p>
+
+            <p>
+                Currently used to validate:
+            </p>
+
+            <ul>
+                <li><code>shape</code> system</li>
+                <li><code>motion</code> JSON system</li>
+                <li>Rotation</li>
+                <li>New API functions</li>
+                <li>Screen wrapping</li>
+                <li>HTML documentation</li>
+            </ul>
+
+            <h3>Currently in development</h3>
+
+            <ul>
+                <li>Object spawning (lasers / asteroids)</li>
+                <li>UI and text</li>
+                <li>More robust lifecycle</li>
+                <li><code>game</code> / <code>level</code> context</li>
+                <li>Signals and object communication</li>
+            </ul>
+
+            <hr />
+
+            <h2>Planned</h2>
+
+            <h3>Arkanoid Example</h3>
+
+            <p>
+                Third main runtime example.
+            </p>
+
+            <p>
+                It will help validate:
+            </p>
+
+            <ul>
+                <li>Rule-based object spawning</li>
+                <li>Basic sound system</li>
+                <li>Levels</li>
+                <li>Power ups</li>
+                <li>State changes</li>
+                <li>Timers</li>
+            </ul>
+
+            <hr />
+
+            <h2>Next Phase</h2>
+
+            <p>
+                After completing the three main examples,
+                FLX will enter a normalization and refinement phase.
+            </p>
+
+            <p>
+                The objective will be:
+            </p>
+
+            <ul>
+                <li>Unify architecture and naming</li>
+                <li>Refine APIs</li>
+                <li>Reduce duplication</li>
+                <li>Improve runtime consistency</li>
+                <li>Make the examples more complete and polished</li>
+            </ul>
+
+            <hr />
+
+            <h2>Technical debt and pending improvements</h2>
+
+            <ul>
+                <li>Normalize Pong to the new <code>shape</code>/<code>motion</code> schema.</li>
+
+                <li>Review whether <code>program</code> should remain the final name.</li>
+
+                <li>
+                    Centralize JavaScript wrapper functions
+                    to avoid modifying multiple locations for each new lifecycle.
+                </li>
+
+                <li>Normalize JSON paths the same way scripts are handled.</li>
+
+                <li>
+                    Improve warnings:
+                    optional missing lifecycle functions should not generate warnings.
+                </li>
+
+                <li>
+                    Define a more robust lifecycle:
+                    <code>gameStart</code>,
+                    <code>start</code>,
+                    <code>action</code>,
+                    <code>motion</code>,
+                    <code>collision</code>,
+                    <code>draw</code>,
+                    <code>end</code>/<code>dead</code>.
+                </li>
+
+                <li>
+                    Define runtime destruction:
+                    <code>kill()</code>,
+                    <code>dead</code>/<code>end</code> lifecycle.
+                </li>
+
+                <li>Define spawn / prefabs / templates system.</li>
+
+                <li>
+                    Define <code>game</code>/<code>level</code> context
+                    and persistent state between levels.
+                </li>
+
+                <li>
+                    Properly separate and document
+                    <code>block</code>,
+                    <code>rectangle</code>
+                    and <code>triangle</code>.
+                </li>
+
+                <li>
+                    Future:
+                    wrap-aware collisions using radius and offsets.
+                </li>
+            </ul>
+
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

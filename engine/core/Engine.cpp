@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <raylib.h>
+#include <filesystem>
 
 Engine::Engine()
 {
@@ -66,7 +67,7 @@ void Engine::loadProject(const std::string& flxPath)
 
     Logger::info(
         "project",
-        "Loaded game: " + gameConfig.name
+        "Loaded main: " + gameConfig.name
     );
 
     objects.clear();
@@ -75,6 +76,11 @@ void Engine::loadProject(const std::string& flxPath)
     {
         const std::string childPath =
             resolveJsonPath(projectBasePath, child);
+
+        Logger::info(
+            "project",
+            "Loaded child: " + childPath
+        );
 
         std::vector<RuntimeObject> childObjects =
             JsonLoader::loadObjects(childPath);
@@ -152,7 +158,7 @@ std::string Engine::resolveJsonPath(
         resolved += ".json";
     }
 
-    return basePath + "/" + resolved;
+    return std::filesystem::path(basePath + "/" + resolved).generic_string();
 }
 
 std::string Engine::resolveScriptPath(
@@ -167,7 +173,7 @@ std::string Engine::resolveScriptPath(
         resolved += ".js";
     }
 
-    return basePath + "/" + resolved;
+    return std::filesystem::path(basePath + "/" + resolved).generic_string();
 }
 
 void Engine::update()
@@ -210,6 +216,10 @@ void Engine::motionPhase()
                 );
             }
         }
+        object.applyBounds(
+            static_cast<float>(gameConfig.screenWidth),
+            static_cast<float>(gameConfig.screenHeight)
+        );
     }
 }
 
@@ -262,7 +272,11 @@ void Engine::draw()
 
     for (const auto& object : objects)
     {
-        object.draw(screenScale);
+        object.draw(
+            gameConfig.scale,
+            static_cast<float>(gameConfig.screenWidth),
+            static_cast<float>(gameConfig.screenHeight)
+        );
     }
 
     EndDrawing();

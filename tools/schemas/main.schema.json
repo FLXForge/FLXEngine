@@ -68,6 +68,10 @@
 
       }
 
+    },
+
+    "spawns": {
+      "$ref": "spawns.schema.json"
     }
 
   },

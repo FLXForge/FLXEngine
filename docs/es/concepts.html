@@ -115,6 +115,35 @@ main:game.json
 </code></pre>
             </div>
 
+            <h2>Tipos de shape</h2>
+
+            <p>
+                FLX proporciona distintos tipos básicos de representación visual.
+            </p>
+
+            <ul>
+                <li><code>block</code>: utiliza <code>origin</code> como esquina superior izquierda.</li>
+
+                <li><code>rectangle</code>: utiliza <code>origin</code> como centro.</li>
+
+                <li><code>triangle</code>: utiliza <code>origin</code> como centro.</li>
+
+                <li><code>line</code>: utiliza <code>origin</code> como centro.</li>
+            </ul>
+
+            <p>
+                Los objetos pueden utilizar colores declarados directamente desde JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape.json</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "color": "WHITE"
+}
+</code></pre>
+            </div>
+
             <h2>Scripts</h2>
 
             <p>
@@ -135,6 +164,52 @@ main:game.json
 }
 </code></pre>
             </div>
+
+            <h2>Movimiento y runtime</h2>
+
+            <p>
+                FLX combina un sistema clásico basado en <code>speed</code>
+                con un sistema avanzado basado en aceleración e inercia.
+            </p>
+
+            <p>
+                Las funciones de movimiento utilizan automáticamente
+                la convención angular FLX.
+            </p>
+
+            <ul>
+                <li><code>advance()</code>: desplaza el objeto usando su dirección actual.</li>
+
+                <li><code>rotate()</code>: modifica <code>angle</code> usando <code>rotationSpeed</code>.</li>
+
+                <li><code>bounce_x()</code>: invierte la dirección horizontal.</li>
+
+                <li><code>bounce_y()</code>: invierte la dirección vertical.</li>
+            </ul>
+
+            <p>
+                Los valores <code>velocityX</code> y <code>velocityY</code>
+                representan velocidades runtime internas.
+            </p>
+
+            <p>
+                Estos valores son afectados por:
+            </p>
+
+            <ul>
+                <li><code>acceleration</code></li>
+                <li><code>inertia</code></li>
+                <li><code>advance()</code></li>
+            </ul>
+
+            <p>
+                Los scripts se cargan una única vez y son cacheados
+                mediante rutas normalizadas.
+            </p>
+
+            <p>
+                Las instancias creadas mediante spawn reutilizan scripts ya cargados.
+            </p>
 
             <h2>Ciclo de vida</h2>
 
@@ -171,6 +246,39 @@ function end(self) {}
             <p class="placeholder">
                 Los siguientes apartados profundizan en cada uno de estos sistemas.
             </p>
+
+            <h2>Sistema de coordenadas y ángulos</h2>
+
+            <p>
+                FLX utiliza un sistema de coordenadas 2D con origen
+                en la esquina superior izquierda de la pantalla.
+            </p>
+
+            <ul>
+                <li><code>x</code> crece hacia la derecha.</li>
+                <li><code>y</code> crece hacia abajo.</li>
+                <li>Subir implica reducir <code>y</code>.</li>
+                <li>Bajar implica aumentar <code>y</code>.</li>
+            </ul>
+
+            <p>
+                Los ángulos siguen la convención FLX:
+            </p>
+
+            <ul>
+                <li><code>0°</code>: arriba.</li>
+                <li><code>90°</code>: derecha.</li>
+                <li><code>180°</code>: abajo.</li>
+                <li><code>270°</code>: izquierda.</li>
+                <li>Los ángulos positivos giran en sentido horario.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">rotation</div>
+<pre><code>rotate(ship, RIGHT);
+advance(ship);
+</code></pre>
+            </div>
 
         </article>
     </main>

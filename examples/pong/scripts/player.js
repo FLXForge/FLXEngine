@@ -5,11 +5,11 @@
 */
 
 function action(self) {
-    if (Key.up()) {
+    if (Key.down(KEY_UP)) {
         move_y(self, UP);
     }
 
-    if (Key.down()) {
+    if (Key.down(KEY_DOWN)) {
         move_y(self, DOWN);
     }
 }

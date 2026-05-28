@@ -10,7 +10,7 @@
   },
   "scale": 3,
 
-  "children": ["levels/level"],
+  "children": ["space/level"],
 
   "program": {
     "scripts": [ "scripts/program" ]

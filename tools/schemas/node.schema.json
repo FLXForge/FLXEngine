@@ -68,8 +68,11 @@
       "items": {
         "type": "string"
       }
-    }
+    },
 
+    "spawns": {
+      "$ref": "spawns.schema.json"
+    }
   },
 
   "required": [

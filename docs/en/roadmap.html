@@ -79,12 +79,51 @@
             </p>
 
             <ul>
-                <li><code>shape</code> system</li>
-                <li><code>motion</code> JSON system</li>
-                <li>Rotation</li>
-                <li>New API functions</li>
-                <li>Screen wrapping</li>
-                <li>HTML documentation</li>
+                <li><code>shape</code> system.</li>
+
+                <li>JSON-based <code>motion</code> system.</li>
+
+                <li>Rotation and unified FLX angular convention, also applied to Pong.</li>
+
+                <li>New API functions and runtime scripting evolution.</li>
+
+                <li>Screen wrapping and <code>bounds</code> behavior system.</li>
+
+                <li>Living HTML documentation synchronized with real development.</li>
+
+                <li>Real color support directly from JSON.</li>
+
+                <li>New <code>shape.type = line</code> support.</li>
+
+                <li>
+                    Scalable input system:
+                    <code>Key.down(KEY_*)</code> and
+                    <code>Key.pressed(KEY_*)</code>.
+                </li>
+
+                <li><code>KEY_*</code> constants exposed to JavaScript.</li>
+
+                <li>
+                    Probability system:
+                    <code>probability(chance, base)</code>.
+                </li>
+
+                <li>Declarative spawns defined directly in JSON.</li>
+
+                <li>Prefabs loaded and cached without immediate instantiation.</li>
+
+                <li>
+                    Runtime instantiation through
+                    <code>spawn(self, "laser")</code>.
+                </li>
+
+                <li>Dynamic object creation from prefabs.</li>
+
+                <li>Rotated local offsets based on object angle.</li>
+
+                <li>Prefab script loading and caching through <code>ScriptEngine</code>.</li>
+
+                <li>Functional ship shooting system.</li>
             </ul>
 
             <h3>Currently in development</h3>
@@ -146,20 +185,24 @@
             <h2>Technical debt and pending improvements</h2>
 
             <ul>
+
                 <li>Normalize Pong to the new <code>shape</code>/<code>motion</code> schema.</li>
 
                 <li>Review whether <code>program</code> should remain the final name.</li>
 
-                <li>
-                    Centralize JavaScript wrapper functions
-                    to avoid modifying multiple locations for each new lifecycle.
-                </li>
+                <li>Centralize JavaScript wrapper functions to avoid modifying multiple locations for each new lifecycle.</li>
+
+                <li>Refactor the JS wrapper using a centralized function registry system.</li>
 
                 <li>Normalize JSON paths the same way scripts are handled.</li>
 
                 <li>
                     Improve warnings:
                     optional missing lifecycle functions should not generate warnings.
+                </li>
+
+                <li>
+                    Missing optional lifecycle functions should remain silent.
                 </li>
 
                 <li>
@@ -179,11 +222,31 @@
                     <code>dead</code>/<code>end</code> lifecycle.
                 </li>
 
-                <li>Define spawn / prefabs / templates system.</li>
+                <li>
+                    Properly define
+                    <code>lifetime</code>,
+                    timers
+                    and <code>delta</code> management.
+                </li>
+
+                <li>Define a complete spawn / prefabs / templates system.</li>
 
                 <li>
-                    Define <code>game</code>/<code>level</code> context
-                    and persistent state between levels.
+                    Implement a safe spawn queue:
+                    avoid direct <code>push_back</code> during object iteration.
+                </li>
+
+                <li>
+                    Properly implement
+                    <code>motion.inherit = live</code>.
+                </li>
+
+                <li>Define <code>game</code>/<code>level</code> context and persistent state between levels.</li>
+
+                <li>
+                    Explore a semantic input layer
+                    (<code>Control.*</code>)
+                    above <code>Key</code>.
                 </li>
 
                 <li>
@@ -194,9 +257,14 @@
                 </li>
 
                 <li>
+                    Improve overflow-aware collisions.
+                </li>
+
+                <li>
                     Future:
                     wrap-aware collisions using radius and offsets.
                 </li>
+
             </ul>
 
         </article>

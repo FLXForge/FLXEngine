@@ -3,6 +3,6 @@
   "name": "Level",
 
   "children": [
-    "ship"
+    "ship/ship"
   ]
 }

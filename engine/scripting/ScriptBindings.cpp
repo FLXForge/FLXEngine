@@ -191,7 +191,8 @@ static JSValue jsAdvance(
     }
     else
     {
-        const double radians = angle * DEG2RAD;
+        const double radians =
+            (angle - 90.0) * DEG2RAD;
 
         x += std::cos(radians) * speed * delta;
         y += std::sin(radians) * speed * delta;
@@ -279,7 +280,7 @@ static JSValue jsBounceX(
     double angle = 0.0;
     JS_ToFloat64(context, &angle, angleValue);
 
-    angle = 180.0 - angle;
+    angle = -angle;
 
     JS_SetPropertyStr(
         context,
@@ -313,7 +314,7 @@ static JSValue jsBounceY(
     double angle = 0.0;
     JS_ToFloat64(context, &angle, angleValue);
 
-    angle = -angle;
+    angle = 180.0 - angle;
 
     JS_SetPropertyStr(
         context,
@@ -469,55 +470,45 @@ static JSValue jsRotate(
     return JS_UNDEFINED;
 }
 
-static JSValue jsKeyUp(
+static JSValue jsKeyDownGeneric(
     JSContext* context,
     JSValueConst thisValue,
     int argc,
     JSValueConst* argv
 )
 {
+    if (argc < 1)
+    {
+        return JS_NewBool(context, false);
+    }
+
+    int key = 0;
+    JS_ToInt32(context, &key, argv[0]);
+
     return JS_NewBool(
         context,
-        IsKeyDown(KEY_UP)
+        IsKeyDown(key)
     );
 }
 
-static JSValue jsKeyDown(
+static JSValue jsKeyPressedGeneric(
     JSContext* context,
     JSValueConst thisValue,
     int argc,
     JSValueConst* argv
 )
 {
-    return JS_NewBool(
-        context,
-        IsKeyDown(KEY_DOWN)
-    );
-}
+    if (argc < 1)
+    {
+        return JS_NewBool(context, false);
+    }
 
-static JSValue jsKeyLeft(
-    JSContext* context,
-    JSValueConst thisValue,
-    int argc,
-    JSValueConst* argv
-)
-{
-    return JS_NewBool(
-        context,
-        IsKeyDown(KEY_LEFT)
-    );
-}
+    int key = 0;
+    JS_ToInt32(context, &key, argv[0]);
 
-static JSValue jsKeyRight(
-    JSContext* context,
-    JSValueConst thisValue,
-    int argc,
-    JSValueConst* argv
-)
-{
     return JS_NewBool(
         context,
-        IsKeyDown(KEY_RIGHT)
+        IsKeyPressed(key)
     );
 }
 
@@ -644,6 +635,113 @@ static JSValue jsToOrigin(
     return JS_UNDEFINED;
 }
 
+static JSValue jsSpawn(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    if (argc < 2 || activeScriptEngine == nullptr)
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue self = argv[0];
+
+    const char* spawnName =
+        JS_ToCString(context, argv[1]);
+
+    if (spawnName == nullptr)
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue nameValue =
+        JS_GetPropertyStr(context, self, "name");
+
+    const char* objectName =
+        JS_ToCString(context, nameValue);
+
+    if (objectName == nullptr)
+    {
+        JS_FreeCString(context, spawnName);
+        JS_FreeValue(context, nameValue);
+        return JS_UNDEFINED;
+    }
+
+    RuntimeObject* source =
+        activeScriptEngine->findObjectByName(objectName);
+
+    if (source == nullptr)
+    {
+        Logger::warning(
+            "spawn",
+            "Spawner object not found: " + std::string(objectName)
+        );
+
+        JS_FreeCString(context, spawnName);
+        JS_FreeCString(context, objectName);
+        JS_FreeValue(context, nameValue);
+
+        return JS_UNDEFINED;
+    }
+
+    auto it =
+        source->spawns.find(spawnName);
+
+    if (it == source->spawns.end())
+    {
+        Logger::warning(
+            "spawn",
+            "Spawn not found: " + std::string(spawnName) +
+            " in " + std::string(objectName)
+        );
+
+        JS_FreeCString(context, spawnName);
+        JS_FreeCString(context, objectName);
+        JS_FreeValue(context, nameValue);
+
+        return JS_UNDEFINED;
+    }
+
+    const SpawnDefinition& spawnDefinition =
+        it->second;
+
+    RuntimeObject* prefab =
+        activeScriptEngine->findPrefabByName(spawnDefinition.prefab);
+
+    if (prefab == nullptr)
+    {
+        Logger::warning(
+            "spawn",
+            "Prefab not found: " + spawnDefinition.prefab
+        );
+
+        JS_FreeCString(context, spawnName);
+        JS_FreeCString(context, objectName);
+        JS_FreeValue(context, nameValue);
+
+        return JS_UNDEFINED;
+    }
+
+    Logger::info(
+        "spawn",
+        "Prefab ready: " + prefab->name
+    );
+
+    activeScriptEngine->spawnObject(
+        *source,
+        spawnDefinition,
+        *prefab
+    );
+
+    JS_FreeCString(context, spawnName);
+    JS_FreeCString(context, objectName);
+    JS_FreeValue(context, nameValue);
+
+    return JS_UNDEFINED;
+}
 
 void ScriptBindings::registerAll(
     JSContext* context,
@@ -675,6 +773,12 @@ void ScriptBindings::registerAll(
     JS_SetPropertyStr(context, global, "LEFT", JS_NewInt32(context, LEFT));
     JS_SetPropertyStr(context, global, "RIGHT", JS_NewInt32(context, RIGHT));
     JS_SetPropertyStr(context, global, "STOP", JS_NewInt32(context, STOP));
+
+    JS_SetPropertyStr(context, global, "KEY_UP", JS_NewInt32(context, KEY_UP));
+    JS_SetPropertyStr(context, global, "KEY_DOWN", JS_NewInt32(context, KEY_DOWN));
+    JS_SetPropertyStr(context, global, "KEY_LEFT", JS_NewInt32(context, KEY_LEFT));
+    JS_SetPropertyStr(context, global, "KEY_RIGHT", JS_NewInt32(context, KEY_RIGHT));
+    JS_SetPropertyStr(context, global, "KEY_SPACE", JS_NewInt32(context, KEY_SPACE));
 
     JS_SetPropertyStr(
         context,
@@ -746,34 +850,27 @@ void ScriptBindings::registerAll(
         JS_NewCFunction(context, jsToOrigin, "to_origin", 1)
     );
 
+    JS_SetPropertyStr(
+        context,
+        global,
+        "spawn",
+        JS_NewCFunction(context, jsSpawn, "spawn", 2)
+    );
+
     JSValue key = JS_NewObject(context);
 
     JS_SetPropertyStr(
         context,
         key,
-        "up",
-        JS_NewCFunction(context, jsKeyUp, "up", 0)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        key,
         "down",
-        JS_NewCFunction(context, jsKeyDown, "down", 0)
+        JS_NewCFunction(context, jsKeyDownGeneric, "down", 1)
     );
 
     JS_SetPropertyStr(
         context,
         key,
-        "left",
-        JS_NewCFunction(context, jsKeyLeft, "left", 0)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        key,
-        "right",
-        JS_NewCFunction(context, jsKeyRight, "right", 0)
+        "pressed",
+        JS_NewCFunction(context, jsKeyPressedGeneric, "pressed", 1)
     );
 
     JS_SetPropertyStr(

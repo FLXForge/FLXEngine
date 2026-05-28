@@ -4,23 +4,28 @@
     The player moves the ship using:
         -up key to accelerate with acceleration, inertia and max speed defined in motion
         -left and right keys to rotate using the rotation speed defined in motion
+        -space key shoot (laser spawn)
 */
 
-function action(self) {
+function action(ship) {
 
-    if (Key.up()) {
-        accelerate(self);
+    if (Key.down(KEY_UP)) {
+        accelerate(ship);
     }
 
-    if (Key.left()) {
-        rotate(self, LEFT);
+    if (Key.down(KEY_LEFT)) {
+        rotate(ship, LEFT);
     }
 
-    if (Key.right()) {
-        rotate(self, RIGHT);
+    if (Key.down(KEY_RIGHT)) {
+        rotate(ship, RIGHT);
+    }
+
+    if (Key.pressed(KEY_SPACE)) {
+        spawn(ship, "laser");
     }
 }
 
-function motion(self) {
-    advance(self);
+function motion(ship) {
+    advance(ship);
 }

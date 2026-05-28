@@ -6,6 +6,12 @@
   "additionalProperties": false,
 
   "properties": {
+    "inherit": {
+      "type": "string",
+      "enum": [ "none", "creation", "live" ],
+      "default": "none"
+    },
+
     "rotationSpeed": {
       "type": "number"
     },

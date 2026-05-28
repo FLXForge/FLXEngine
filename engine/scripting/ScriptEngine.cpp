@@ -436,6 +436,50 @@ RuntimeObject* ScriptEngine::findObjectByName(
     return findObject(name);
 }
 
+void ScriptEngine::setFindPrefabFunction(
+    FindPrefabFunction function
+)
+{
+    findPrefab = function;
+}
+
+RuntimeObject* ScriptEngine::findPrefabByName(
+    const std::string& name
+)
+{
+    if (!findPrefab)
+    {
+        return nullptr;
+    }
+
+    return findPrefab(name);
+}
+
+void ScriptEngine::setSpawnObjectFunction(
+    SpawnObjectFunction function
+)
+{
+    spawnObjectFunction = function;
+}
+
+void ScriptEngine::spawnObject(
+    RuntimeObject& source,
+    const SpawnDefinition& spawnDefinition,
+    const RuntimeObject& prefab
+)
+{
+    if (!spawnObjectFunction)
+    {
+        return;
+    }
+
+    spawnObjectFunction(
+        source,
+        spawnDefinition,
+        prefab
+    );
+}
+
 void ScriptEngine::applyJsObject(
     RuntimeObject& source,
     JSValue jsObject

@@ -32,6 +32,56 @@
 
             <hr />
 
+            <h2>Constantes</h2>
+
+            <p>
+                FLX expone constantes globales para trabajar con direcciones
+                y teclas de forma legible.
+            </p>
+
+            <h3>Dirección</h3>
+
+            <ul>
+                <li><code>UP</code>: dirección hacia arriba.</li>
+                <li><code>DOWN</code>: dirección hacia abajo.</li>
+                <li><code>LEFT</code>: dirección hacia la izquierda.</li>
+                <li><code>RIGHT</code>: dirección hacia la derecha.</li>
+                <li><code>STOP</code>: movimiento neutro o detenido.</li>
+            </ul>
+
+            <h3>Teclado</h3>
+
+            <ul>
+                <li><code>KEY_UP</code>: flecha superior.</li>
+                <li><code>KEY_DOWN</code>: flecha inferior.</li>
+                <li><code>KEY_LEFT</code>: flecha izquierda.</li>
+                <li><code>KEY_RIGHT</code>: flecha derecha.</li>
+                <li><code>KEY_SPACE</code>: barra espaciadora.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Convenciones RuntimeObject</h2>
+
+            <h3>angle</h3>
+
+            <p>
+                La propiedad <code>angle</code> representa la rotación actual del objeto en grados.
+            </p>
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
+
             <h2>accelerate(object)</h2>
 
             <p>
@@ -152,62 +202,38 @@
 
             <hr />
 
-            <h2>Key.down()</h2>
+            <h2>Key.down(key)</h2>
 
             <p>
-                Devuelve <code>true</code> mientras la flecha inferior está pulsada.
+                Devuelve <code>true</code> mientras la tecla indicada está pulsada.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Key.down</div>
-<pre><code>if (Key.down()) {
-    move_y(tofu, DOWN);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.left()</h2>
-
-            <p>
-                Devuelve <code>true</code> mientras la flecha izquierda está pulsada.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.left</div>
-<pre><code>if (Key.left()) {
-    move_x(tofu, LEFT);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.right()</h2>
-
-            <p>
-                Devuelve <code>true</code> mientras la flecha derecha está pulsada.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.right</div>
-<pre><code>if (Key.right()) {
-    move_x(tofu, RIGHT);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.up()</h2>
-
-            <p>
-                Devuelve <code>true</code> mientras la flecha superior está pulsada.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.up</div>
-<pre><code>if (Key.up()) {
+<pre><code>if (Key.down(KEY_UP)) {
     move_y(tofu, UP);
-}</code></pre>
+}
+
+if (Key.down(KEY_LEFT)) {
+    move_x(tofu, LEFT);
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.pressed(key)</h2>
+
+            <p>
+                Devuelve <code>true</code> solo en el frame en el que la tecla indicada empieza a pulsarse.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.pressed</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
             </div>
 
             <hr />
@@ -264,11 +290,11 @@ move_y(tofu, DOWN);</code></pre>
             <div class="code-card">
                 <div class="code-header">probability</div>
 <pre><code>if (probability(5)) {
-    spawn("enemy");
+    spawn(self, "enemy");
 }
 
 if (probability(1, 1000)) {
-    spawn("rare_enemy");
+    spawn(self, "rare_enemy");
 }
 </code></pre>
             </div>
@@ -286,6 +312,34 @@ if (probability(1, 1000)) {
 <pre><code>rotate(ship, LEFT);
 rotate(ship, RIGHT);</code></pre>
             </div>
+
+            <hr />
+
+            <h2>spawn(object, spawnName)</h2>
+
+            <p>
+                Crea una instancia de un prefab usando una definición de spawn declarada
+                en el JSON del objeto.
+            </p>
+
+            <p>
+                El parámetro <code>spawnName</code> identifica qué definición de spawn debe utilizarse.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawn</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
+                <li><code>spawnName</code>: nombre de la definición de spawn declarada en el JSON.</li>
+            </ul>
 
             <hr />
 

@@ -32,6 +32,56 @@
 
             <hr />
 
+            <h2>Constants</h2>
+
+            <p>
+                FLX exposes global constants to work with directions
+                and keyboard input in a readable way.
+            </p>
+
+            <h3>Direction</h3>
+
+            <ul>
+                <li><code>UP</code>: upward direction.</li>
+                <li><code>DOWN</code>: downward direction.</li>
+                <li><code>LEFT</code>: left direction.</li>
+                <li><code>RIGHT</code>: right direction.</li>
+                <li><code>STOP</code>: neutral or stopped movement.</li>
+            </ul>
+
+            <h3>Keyboard</h3>
+
+            <ul>
+                <li><code>KEY_UP</code>: up arrow key.</li>
+                <li><code>KEY_DOWN</code>: down arrow key.</li>
+                <li><code>KEY_LEFT</code>: left arrow key.</li>
+                <li><code>KEY_RIGHT</code>: right arrow key.</li>
+                <li><code>KEY_SPACE</code>: space bar.</li>
+            </ul>
+
+            <hr />
+
+            <h2>RuntimeObject Conventions</h2>
+
+            <h3>angle</h3>
+
+            <p>
+                The <code>angle</code> property represents the current object rotation in degrees.
+            </p>
+
+            <p>
+                FLX uses the following convention:
+            </p>
+
+            <ul>
+                <li><code>0</code>: up.</li>
+                <li><code>90</code>: right.</li>
+                <li><code>180</code>: down.</li>
+                <li><code>270</code>: left.</li>
+            </ul>
+
+            <hr />
+
             <h2>accelerate(object)</h2>
 
             <p>
@@ -73,7 +123,7 @@
             <h2>advance(object)</h2>
 
             <p>
-                Moves the object forward according to its current configuration.
+                Moves the object according to its current configuration.
             </p>
 
             <p>
@@ -152,62 +202,39 @@
 
             <hr />
 
-            <h2>Key.down()</h2>
+            <h2>Key.down(key)</h2>
 
             <p>
-                Returns <code>true</code> while the down arrow key is pressed.
+                Returns <code>true</code> while the specified key is pressed.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Key.down</div>
-<pre><code>if (Key.down()) {
-    move_y(tofu, DOWN);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.left()</h2>
-
-            <p>
-                Returns <code>true</code> while the left arrow key is pressed.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.left</div>
-<pre><code>if (Key.left()) {
-    move_x(tofu, LEFT);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.right()</h2>
-
-            <p>
-                Returns <code>true</code> while the right arrow key is pressed.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.right</div>
-<pre><code>if (Key.right()) {
-    move_x(tofu, RIGHT);
-}</code></pre>
-            </div>
-
-            <hr />
-
-            <h2>Key.up()</h2>
-
-            <p>
-                Returns <code>true</code> while the up arrow key is pressed.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.up</div>
-<pre><code>if (Key.up()) {
+<pre><code>if (Key.down(KEY_UP)) {
     move_y(tofu, UP);
-}</code></pre>
+}
+
+if (Key.down(KEY_LEFT)) {
+    move_x(tofu, LEFT);
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.pressed(key)</h2>
+
+            <p>
+                Returns <code>true</code> only on the frame
+                the specified key starts being pressed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.pressed</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
             </div>
 
             <hr />
@@ -264,11 +291,11 @@ move_y(tofu, DOWN);</code></pre>
             <div class="code-card">
                 <div class="code-header">probability</div>
 <pre><code>if (probability(5)) {
-    spawn("enemy");
+    spawn(self, "enemy");
 }
 
 if (probability(1, 1000)) {
-    spawn("rare_enemy");
+    spawn(self, "rare_enemy");
 }
 </code></pre>
             </div>
@@ -289,11 +316,40 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
+            <h2>spawn(object, spawnName)</h2>
+
+            <p>
+                Creates a prefab instance using a spawn definition
+                declared in the object JSON.
+            </p>
+
+            <p>
+                The <code>spawnName</code> parameter identifies
+                which spawn definition should be used.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawn</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuration used</h3>
+
+            <ul>
+                <li><code>object</code>: object from which the spawn is executed.</li>
+                <li><code>spawnName</code>: name of the spawn definition declared in JSON.</li>
+            </ul>
+
+            <hr />
+
             <h2>to_origin(object)</h2>
 
             <p>
                 Restores the object to its origin values.
-                It sets <code>x</code>, <code>y</code> and <code>speed</code> from
+                It restores <code>x</code>, <code>y</code> and <code>speed</code> using
                 <code>originX</code>, <code>originY</code> and <code>originSpeed</code>.
             </p>
 

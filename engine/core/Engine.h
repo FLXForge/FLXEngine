@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <unordered_map>
 
 class Engine
 {
@@ -36,6 +37,7 @@ private:
     void initWindow();
     void configureScriptEngine();
     void loadScripts();
+    void loadPrefabs();
 
     std::string resolveJsonPath(
         const std::string& basePath,
@@ -47,6 +49,7 @@ private:
         const std::string& file
     ) const;
 
+    std::unordered_map<std::string, RuntimeObject> prefabs;
 private:
 
     int screenWidth;

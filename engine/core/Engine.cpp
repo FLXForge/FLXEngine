@@ -92,6 +92,8 @@ void Engine::loadProject(const std::string& flxPath)
         );
     }
 
+    loadPrefabs();
+
     screenWidth = gameConfig.screenWidth;
     screenHeight = gameConfig.screenHeight;
     screenScale = gameConfig.scale;
@@ -119,6 +121,71 @@ void Engine::configureScriptEngine()
             return find(name);
         }
     );
+
+    scriptEngine.setFindPrefabFunction(
+        [this](const std::string& name) -> RuntimeObject*
+        {
+            auto it = prefabs.find(name);
+
+            if (it == prefabs.end())
+            {
+                return nullptr;
+            }
+
+            return &it->second;
+        }
+    );
+
+    scriptEngine.setSpawnObjectFunction(
+        [this](
+            RuntimeObject& source,
+            const SpawnDefinition& spawnDefinition,
+            const RuntimeObject& prefab
+            )
+        {
+            RuntimeObject instance = prefab;
+
+            const float radians =
+                source.angle * DEG2RAD;
+
+            const float rotatedX =
+                spawnDefinition.offset.x * std::cos(radians) -
+                spawnDefinition.offset.y * std::sin(radians);
+
+            const float rotatedY =
+                spawnDefinition.offset.x * std::sin(radians) +
+                spawnDefinition.offset.y * std::cos(radians);
+
+            instance.position = Vector2{
+                source.position.x + rotatedX,
+                source.position.y + rotatedY
+            };
+
+            instance.origin =
+                instance.position;
+
+            instance.angle =
+                source.angle;
+
+            for (const auto& script : instance.scripts)
+            {
+                const std::string scriptPath =
+                    resolveScriptPath(projectBasePath, script);
+
+                instance.resolvedScriptPaths.push_back(scriptPath);
+
+                scriptEngine.loadScript(scriptPath);
+
+            }
+
+            objects.push_back(instance);
+
+            Logger::info(
+                "spawn",
+                "Spawned instance: " + instance.name
+            );
+        }
+    );
 }
 
 void Engine::loadScripts()
@@ -142,6 +209,56 @@ void Engine::loadScripts()
             object.resolvedScriptPaths.push_back(scriptPath);
 
             scriptEngine.loadScript(scriptPath);
+        }
+    }
+}
+
+void Engine::loadPrefabs()
+{
+    for (const auto& object : objects)
+    {
+        for (const auto& pair : object.spawns)
+        {
+            const std::string& spawnName =
+                pair.first;
+
+            const SpawnDefinition& spawnDefinition =
+                pair.second;
+
+            if (prefabs.contains(spawnDefinition.prefab))
+            {
+                continue;
+            }
+
+            const std::string prefabPath =
+                resolveJsonPath(
+                    projectBasePath,
+                    spawnDefinition.prefab
+                );
+
+            std::vector<RuntimeObject> prefabObjects =
+                JsonLoader::loadObjects(prefabPath);
+
+            if (prefabObjects.empty())
+            {
+                Logger::warning(
+                    "project",
+                    "Prefab could not be loaded: " +
+                    spawnDefinition.prefab
+                );
+
+                continue;
+            }
+
+            prefabs.emplace(
+                spawnDefinition.prefab,
+                prefabObjects.front()
+            );
+
+            Logger::info(
+                "project",
+                "Loaded prefab: " + spawnDefinition.prefab
+            );
         }
     }
 }

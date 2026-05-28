@@ -44,6 +44,10 @@
 
     "behavior": {
       "$ref": "behavior.schema.json"
+    },
+
+    "spawns": {
+      "$ref": "spawns.schema.json"
     }
   }
 }

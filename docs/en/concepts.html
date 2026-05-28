@@ -30,7 +30,7 @@
             <h2>Project</h2>
 
             <p>
-                Every FLX project starts from a main file using the <code>.flx</code> extension.
+                Every FLX project starts from a main file with the <code>.flx</code> extension.
             </p>
 
             <p>
@@ -41,7 +41,7 @@
                 <li>Main</li>
                 <li>Scripts</li>
                 <li>Configuration</li>
-                <li>Assets</li>
+                <li>Resources</li>
             </ul>
 
             <div class="code-card">
@@ -56,11 +56,11 @@ main:game.json
             <h2>Main</h2>
 
             <p>
-                The main file acts as the runtime entry point.
+                The main structure is the runtime entry point.
             </p>
 
             <p>
-                From it, objects, scripts and execution logic are organized.
+                Objects, scripts and runtime logic are organized from it.
             </p>
 
             <p>
@@ -73,7 +73,7 @@ main:game.json
                 <li>A loading screen</li>
                 <li>A specific project state</li>
                 <li>A presentation</li>
-                <li>A narrative sequence</li>
+                <li>A narrative</li>
                 <li>Anything the developer can imagine...</li>
             </ul>
 
@@ -92,11 +92,11 @@ main:game.json
                 <li>Move</li>
                 <li>Collide</li>
                 <li>Execute scripts</li>
-                <li>Store data</li>
+                <li>Contain data</li>
             </ul>
 
             <p>
-                Object structures are commonly defined through JSON.
+                Object structure is usually defined through JSON.
             </p>
 
             <div class="code-card">
@@ -115,6 +115,35 @@ main:game.json
 </code></pre>
             </div>
 
+            <h2>Shape Types</h2>
+
+            <p>
+                FLX provides several basic visual representation types.
+            </p>
+
+            <ul>
+                <li><code>block</code>: uses <code>origin</code> as top-left corner.</li>
+
+                <li><code>rectangle</code>: uses <code>origin</code> as center.</li>
+
+                <li><code>triangle</code>: uses <code>origin</code> as center.</li>
+
+                <li><code>line</code>: uses <code>origin</code> as center.</li>
+            </ul>
+
+            <p>
+                Objects can use colors declared directly from JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape.json</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "color": "WHITE"
+}
+</code></pre>
+            </div>
+
             <h2>Scripts</h2>
 
             <p>
@@ -129,27 +158,73 @@ main:game.json
             <div class="code-card">
                 <div class="code-header">player.js</div>
 <pre><code>function action(self) {
-    if (Key.up()) {
+    if (Key.down(KEY_UP)) {
         accelerate(self);
     }
 }
 </code></pre>
             </div>
 
+            <h2>Movement and Runtime</h2>
+
+            <p>
+                FLX combines a classic <code>speed</code>-based system
+                with an advanced acceleration and inertia-based system.
+            </p>
+
+            <p>
+                Movement functions automatically use
+                the FLX angular convention.
+            </p>
+
+            <ul>
+                <li><code>advance()</code>: moves the object using its current direction.</li>
+
+                <li><code>rotate()</code>: modifies <code>angle</code> using <code>rotationSpeed</code>.</li>
+
+                <li><code>bounce_x()</code>: reverses horizontal direction.</li>
+
+                <li><code>bounce_y()</code>: reverses vertical direction.</li>
+            </ul>
+
+            <p>
+                <code>velocityX</code> and <code>velocityY</code>
+                represent internal runtime motion values.
+            </p>
+
+            <p>
+                These values are affected by:
+            </p>
+
+            <ul>
+                <li><code>acceleration</code></li>
+                <li><code>inertia</code></li>
+                <li><code>advance()</code></li>
+            </ul>
+
+            <p>
+                Scripts are loaded only once and cached
+                using normalized paths.
+            </p>
+
+            <p>
+                Spawned instances reuse already loaded scripts.
+            </p>
+
             <h2>Lifecycle</h2>
 
             <p>
                 During execution, FLX processes a series of stages
-                during each iteration of the main loop.
+                on every main loop iteration.
             </p>
 
             <ol>
                 <li>Data initialization</li>
-                <li>Runtime startup</li>
-                <li>Input processing</li>
+                <li>Runtime start</li>
+                <li>Input reading</li>
                 <li>Logic execution</li>
-                <li>Motion processing</li>
-                <li>Collision handling</li>
+                <li>Movement processing</li>
+                <li>Collision management</li>
                 <li>Rendering</li>
             </ol>
 
@@ -169,8 +244,41 @@ function end(self) {}
             </div>
 
             <p class="placeholder">
-                The following sections explore each of these systems in greater depth.
+                The following sections explore each of these systems in more depth.
             </p>
+
+            <h2>Coordinate and Angle System</h2>
+
+            <p>
+                FLX uses a 2D coordinate system with the origin
+                located at the top-left corner of the screen.
+            </p>
+
+            <ul>
+                <li><code>x</code> grows to the right.</li>
+                <li><code>y</code> grows downward.</li>
+                <li>Moving up decreases <code>y</code>.</li>
+                <li>Moving down increases <code>y</code>.</li>
+            </ul>
+
+            <p>
+                Angles follow the FLX convention:
+            </p>
+
+            <ul>
+                <li><code>0°</code>: up.</li>
+                <li><code>90°</code>: right.</li>
+                <li><code>180°</code>: down.</li>
+                <li><code>270°</code>: left.</li>
+                <li>Positive angles rotate clockwise.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">rotation</div>
+<pre><code>rotate(ship, RIGHT);
+advance(ship);
+</code></pre>
+            </div>
 
         </article>
     </main>

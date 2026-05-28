@@ -24,7 +24,7 @@
 
             <p>
                 This section documents the JSON structures used by FLX
-                to define the main structure, objects and their properties.
+                to define the main runtime structure, objects and their properties.
             </p>
 
             <p class="placeholder">
@@ -39,7 +39,7 @@
 
             <ul>
                 <li><code>main</code>: defines the main runtime entry point.</li>
-                <li><code>node</code>: defines a container that can hold other elements.</li>
+                <li><code>node</code>: defines a container that can contain other elements.</li>
                 <li><code>drawable</code>: defines objects that can be visually represented.</li>
             </ul>
 
@@ -68,6 +68,8 @@
 
     "children": [ ... ],
 
+    "spawns": { ... },
+
     "program": {
         "scripts": [ "scripts/program" ]
     }
@@ -79,11 +81,12 @@
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical name of the main structure. <i>[ Mandatory ]</i></li>
+                <li><code>name</code>: logical name of the main structure. <i>[ Required ]</i></li>
                 <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#screen">screen</a>: window or runtime surface configuration. <i>[ Mandatory ]</i></li>
-                <li><code>scale</code>: render scale factor. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#screen">screen</a>: window or runtime surface configuration. <i>[ Required ]</i></li>
+                <li><code>scale</code>: rendering scale factor. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#children">children</a>: list of structures loaded by the main structure. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#program">program</a>: scripts associated with the program. <i>[ Optional ]</i></li>
             </ul>
 
@@ -105,14 +108,14 @@
 
             <ul>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
-                <li><code>width</code>: internal reference width. <i>[ Mandatory ]</i></li>
-                <li><code>height</code>: internal reference height. <i>[ Mandatory ]</i></li>
+                <li><code>width</code>: internal reference width. <i>[ Required ]</i></li>
+                <li><code>height</code>: internal reference height. <i>[ Required ]</i></li>
             </ul>
 
             <h2 id="children">Children</h2>
 
             <p>
-                The <code>children</code> field allows declaring structures contained by the main structure.
+                The <code>children</code> field allows declaring objects contained by the main structure.
             </p>
 
             <div class="code-card">
@@ -123,15 +126,15 @@
 <pre><code>"children": [ {"name": "Tofu", ... } ]</code></pre>
 
                 <div class="code-header">children (mix)</div>
-<pre><code>"children": [ "objects/tofu", {"name": "Tofu", ... }, ... ]</code></pre>
+<pre><code>"children": [ "objects/tofu" , {"name": "Tofu", ... }, ... ]</code></pre>
             </div>
 
             <p>
-                Each value references a structure that the runtime must load.
+                Each value references an object that the runtime should load.
             </p>
 
             <p>
-                A child can reference an external file
+                It can reference an external file
                 (the JSON extension is not required)
                 or be declared inline.
             </p>
@@ -139,7 +142,7 @@
             <h2 id="program">Program</h2>
 
             <p>
-                The <code>program</code> field allows declaring scripts associated with program-level logic.
+                The <code>program</code> field allows declaring scripts associated with the program logic.
             </p>
 
             <div class="code-card">
@@ -153,7 +156,7 @@
             <h3>Fields</h3>
 
             <ul>
-                <li><code>scripts</code>: list of JavaScript scripts loaded for the program (extension not required).</li>
+                <li><code>scripts</code>: list of JavaScript scripts loaded for the object (extension not required).</li>
             </ul>
 
             <hr />
@@ -162,17 +165,19 @@
 
             <p>
                 A <code>node</code> defines a group of objects.
-                It is not visually represented but can contain logic.
+                It is not visually rendered but can contain logic.
             </p>
 
             <div class="code-card">
-                <div class="code-header">level.json</div>
+                <div class="code-header">tofu.json</div>
 <pre><code>{
     "$schema": "tools/schemas/node.schema.json",
     "name": "Level",
-    "description": "This is a description.",
+    "description" : "This is a description.",
 
-    "children": [ ... ]
+    "children": [...],
+
+    "spawns": {...}
 }
 </code></pre>
             </div>
@@ -181,9 +186,10 @@
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical node name. <i>[ Mandatory ]</i></li>
+                <li><code>name</code>: logical name of the main structure. <i>[ Required ]</i></li>
                 <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#children">children</a>: list of loaded structures. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#children">children</a>: list of objects loaded by the main structure. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
             </ul>
 
             <hr />
@@ -215,15 +221,26 @@
     },
 
     "motion": {
-        "rotationSpeed": 180,
-        "acceleration": 120,
-        "inertia": 0.99,
-        "maxSpeed": 180
+      "inherit": "creation",
+      "rotationSpeed": 180,
+      "acceleration": 120,
+      "inertia": 0.99,
+      "maxSpeed": 180
     },
 
     "bounds": {
       "mode": "wrap",
       "overflow": true
+    },
+
+    "spawns": {
+        "laser": {
+            "prefab": "objects/laser",
+            "offset": {
+                "x": 0,
+                "y": -12
+            }
+        }
     },
 
     "group": "paddle",
@@ -239,11 +256,12 @@
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical object name. <i>[ Mandatory ]</i></li>
+                <li><code>name</code>: logical object name. <i>[ Required ]</i></li>
                 <li><a class="link" href="#origin">origin</a>: initial object position. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#shape">shape</a>: visual object information. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#motion">motion</a>: motion configuration, if present. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#motion">motion</a>: movement configuration, if present. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching the screen boundaries. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
@@ -266,8 +284,8 @@
             <h3>Fields</h3>
 
             <ul>
-                <li><code>x</code>: X coordinate (relative to the top-left origin). <i>[ Mandatory ]</i></li>
-                <li><code>y</code>: Y coordinate (relative to the top-left origin). <i>[ Mandatory ]</i></li>
+                <li><code>x</code>: X coordinate (relative to the coordinate origin, top-left corner). <i>[ Required ]</i></li>
+                <li><code>y</code>: Y coordinate (relative to the coordinate origin, top-left corner). <i>[ Required ]</i></li>
             </ul>
 
             <h2>Shape</h2>
@@ -294,14 +312,18 @@
             <ul>
                 <li>
                     <code>type</code>: shape type to render. <i>[ Optional ]</i>
+
                     <ul>
                         <li><code>block</code>: default solid block. Rotation mechanics are not applied.</li>
                         <li><code>rectangle</code>: rectangle with support for rotation and directional movement.</li>
                         <li><code>triangle</code>: unfilled triangle.</li>
+                        <li><code>line</code>: line defined between two points.</li>
                         <li><code>text</code>: renderable text.</li>
                     </ul>
                 </li>
+
                 <li><code>color</code>: object color. <i>[ Optional ]</i></li>
+
                 <li><a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i></li>
             </ul>
 
@@ -330,12 +352,13 @@
             <h2 id="motion">Motion</h2>
 
             <p>
-                Defines movement-related properties for the object.
+                Defines properties related to object movement.
             </p>
 
             <div class="code-card">
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
+    "inherit": "creation",
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -347,9 +370,18 @@
             <h3>Fields</h3>
 
             <ul>
+                <li>
+                    <code>inherit</code>: defines how the spawned object inherits movement. <i>[ Optional ]</i>
+
+                    <ul>
+                        <li><code>none</code>: no movement inheritance.</li>
+                        <li><code>creation</code>: inherits the initial movement at spawn time.</li>
+                    </ul>
+                </li>
+
                 <li><code>rotationSpeed</code>: rotation speed.</li>
                 <li><code>acceleration</code>: acceleration applied to the object.</li>
-                <li><code>inertia</code>: movement preservation factor.</li>
+                <li><code>inertia</code>: movement preservation.</li>
                 <li><code>maxSpeed</code>: maximum speed.</li>
             </ul>
 
@@ -364,7 +396,7 @@
 <pre><code>"bounds": {
     "mode": "wrap",
     "overflow": true
-}
+},
 </code></pre>
             </div>
 
@@ -372,7 +404,7 @@
 
             <ul>
                 <li>
-                    <code>mode</code>: boundary behavior mode. <i>[ Optional ]</i>
+                    <code>mode</code>: behavior mode. <i>[ Optional ]</i>
 
                     <ul>
                         <li><code>none</code>: no special behavior.</li>
@@ -385,15 +417,60 @@
 
                     <ul>
                         <li><code>true</code>: the object progressively disappears while appearing on the opposite side.</li>
-                        <li><code>false</code>: the object reappears immediately when reaching the boundary.</li>
+                        <li><code>false</code>: the object immediately reappears when reaching the boundary.</li>
                     </ul>
                 </li>
             </ul>
 
+            <h2 id="spawns">Spawns</h2>
+
+            <p>
+                Defines objects that can be dynamically instantiated from the runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawns</div>
+<pre><code>"spawns": {
+    "laser": {
+        "prefab": "objects/laser",
+
+        "offset": {
+            "x": 0,
+            "y": -12
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Spawn definitions use prefabs previously loaded by the runtime.
+            </p>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>prefab</code>:
+                    prefab path that should be instantiated.
+                    <i>[ Required ]</i>
+                </li>
+
+                <li>
+                    <code>offset</code>:
+                    local offset applied to the spawn.
+                    <i>[ Optional ]</i>
+                </li>
+            </ul>
+
+            <p>
+                The offset uses the current object rotation as reference.
+            </p>
+
             <h2 id="behavior">Behavior</h2>
 
             <p>
-                Defines the scripts associated with the object.
+                Defines scripts associated with the object.
             </p>
 
             <div class="code-card">
@@ -407,7 +484,7 @@
             <h3>Fields</h3>
 
             <ul>
-                <li><code>scripts</code>: list of JavaScript scripts loaded for the object (extension not required).</li>
+                <li><code>scripts</code>: list of JavaScript scripts loaded for the object (extension not required). <i>[ Required ]</i></li>
             </ul>
 
             <hr />
@@ -415,14 +492,14 @@
             <h2>Next Step</h2>
 
             <p class="placeholder">
-                Once the JSON structure is understood,
-                you can continue exploring:
+                Once you understand the JSON structure,
+                you can continue with:
             </p>
 
             <ul>
                 <li><a class="link" href="concepts.html">Core Concepts</a></li>
                 <li><a class="link" href="scripting.html">Scripting</a></li>
-                <li><a class="link" href="howdo.html">How do...?</a></li>
+                <li><a class="link" href="howdo.html">How do I...?</a></li>
             </ul>
 
         </article>

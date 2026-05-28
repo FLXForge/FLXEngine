@@ -68,6 +68,8 @@
 
     "children": [ ... ],
 
+    "spawns": { ... },
+
     "program": {
         "scripts": [ "scripts/program" ]
     }
@@ -84,6 +86,7 @@
                 <li><a class="link" href="#screen">screen</a>: configuración de ventana o superficie de ejecución. <i>[ Obligatorio ]</i></li>
                 <li><code>scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: lista de estructuras cargados por el principal. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#program">program</a>: scripts asociados al programa. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -167,7 +170,9 @@
     "name": "Level",
     "description" : "This is a description.",
 
-    "children": [...]
+    "children": [...],
+
+    "spawns": {...}
 }
 </code></pre>
             </div>
@@ -179,6 +184,7 @@
                 <li><code>name</code>: nombre lógico del principal. <i>[ Obligatorio ]</i></li>
                 <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: lista de objetos cargados por el principal. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
             </ul>
 
             <hr />
@@ -221,6 +227,16 @@
       "overflow": true
     },
 
+    "spawns": {
+        "laser": {
+            "prefab": "objects/laser",
+            "offset": {
+                "x": 0,
+                "y": -12
+            }
+        }
+    },
+
     "group": "paddle",
 
     "behavior": {
@@ -239,6 +255,7 @@
                 <li><a class="link" href="#shape">shape</a>: información visual del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#motion">motion</a>: configuración de movimiento, si existe. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los límites de la pantalla. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lógico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
@@ -293,6 +310,7 @@
                         <li><code>block</code>: bloque sólido por defecto. No aplica mecánicas de rotación.</li>
                         <li><code>rectangle</code>: rectángulo con soporte para rotación y movimiento orientado.</li>
                         <li><code>triangle</code>: triángulo sin relleno.</li>
+                        <li><code>line</code>: línea definida entre dos puntos.</li>
                         <li><code>text</code>: texto renderizable.</li>
                     </ul>
                 </li>
@@ -331,6 +349,7 @@
             <div class="code-card">
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
+    "inherit": "creation",
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -342,6 +361,14 @@
             <h3>Campos</h3>
 
             <ul>
+                <li>
+                    <code>inherit</code>: define cómo hereda movimiento el objeto generado. <i>[ Opcional ]</i>
+
+                    <ul>
+                        <li><code>none</code>: no hereda movimiento.</li>
+                        <li><code>creation</code>: hereda el movimiento inicial en el momento del spawn.</li>
+                    </ul>
+                </li>
                 <li><code>rotationSpeed</code>: velocidad de rotación.</li>
                 <li><code>acceleration</code>: aceleración aplicada al objeto.</li>
                 <li><code>inertia</code>: conservación del movimiento.</li>
@@ -366,11 +393,12 @@
             <h3>Campos</h3>
 
             <ul>
-                <li><code>mode</code>: modo del comportamiento. [ Opcional ]
-                <ul>
-                    <li><code>none</code>: sin comportamiento especial.</li>
-                    <li><code>wrap</code>: al alcanzar un límite, el objeto aparecerá en el lado opuesto manteniendo su dirección.</li>
-                </ul>
+                <li>
+                    <code>mode</code>: modo del comportamiento. [ Opcional ]
+                    <ul>
+                        <li><code>none</code>: sin comportamiento especial.</li>
+                        <li><code>wrap</code>: al alcanzar un límite, el objeto aparecerá en el lado opuesto manteniendo su dirección.</li>
+                    </ul>
                 </li>
                 <li>
                     <code>overflow</code>: controla cómo se aplica el comportamiento de límites. <i>[ Opcional ]</i>
@@ -380,6 +408,51 @@
                     </ul>
                 </li>
             </ul>
+
+            <h2 id="spawns">Spawns</h2>
+
+            <p>
+                Define objetos que pueden instanciarse dinámicamente desde el runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawns</div>
+<pre><code>"spawns": {
+    "laser": {
+        "prefab": "objects/laser",
+
+        "offset": {
+            "x": 0,
+            "y": -12
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Las definiciones de spawn utilizan prefabs previamente cargados por el runtime.
+            </p>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>prefab</code>:
+                    ruta del prefab que debe instanciarse.
+                    <i>[ Obligatorio ]</i>
+                </li>
+
+                <li>
+                    <code>offset</code>:
+                    desplazamiento local aplicado al spawn.
+                    <i>[ Opcional ]</i>
+                </li>
+            </ul>
+
+            <p>
+                El offset utiliza la rotación actual del objeto como referencia.
+            </p>
 
             <h2 id="behavior">Behavior</h2>
 
@@ -398,7 +471,7 @@
             <h3>Campos</h3>
 
             <ul>
-                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensión) cargados para el objeto.</li>
+                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensión) cargados para el objeto. [ Obligatorio ]</li>
             </ul>
 
             <hr />

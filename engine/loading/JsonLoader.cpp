@@ -8,6 +8,61 @@
 
 namespace
 {
+    Color parseColor(const std::string& colorName)
+    {
+        if (colorName == "RED")
+        {
+            return RED;
+        }
+
+        if (colorName == "GREEN")
+        {
+            return GREEN;
+        }
+
+        if (colorName == "BLUE")
+        {
+            return BLUE;
+        }
+
+        if (colorName == "BLACK")
+        {
+            return BLACK;
+        }
+
+        if (colorName == "YELLOW")
+        {
+            return YELLOW;
+        }
+
+        if (colorName == "ORANGE")
+        {
+            return ORANGE;
+        }
+
+        if (colorName == "PURPLE")
+        {
+            return PURPLE;
+        }
+
+        if (colorName == "GRAY")
+        {
+            return GRAY;
+        }
+
+        if (colorName == "WHITE")
+        {
+            return WHITE;
+        }
+
+        Logger::warning(
+            "json",
+            "Unknown color '" + colorName + "', using WHITE"
+        );
+
+        return WHITE;
+    }
+
     std::string ensureJsonExtension(const std::string& path)
     {
         if (path.ends_with(".json"))
@@ -51,11 +106,14 @@ namespace
         const std::string name =
             object.value("name", "Unnamed");
 
-        const float x =
-            object["origin"]["x"].get<float>();
+        float x = 0.0f;
+        float y = 0.0f;
 
-        const float y =
-            object["origin"]["y"].get<float>();
+        if (object.contains("origin"))
+        {
+            x =object["origin"]["x"].get<float>();
+            y =object["origin"]["y"].get<float>();
+        }
 
         std::string shapeType = "block";
         float width = 0.0f;
@@ -82,11 +140,25 @@ namespace
                 object["size"]["height"].get<float>();
         }
 
+        Color color = WHITE;
+
+        if (object.contains("shape"))
+        {
+            const auto& shape = object["shape"];
+
+            if (shape.contains("color"))
+            {
+                color = parseColor(
+                    shape["color"].get<std::string>()
+                );
+            }
+        }
+
         RuntimeObject runtimeObject(
             name,
             Vector2{ x, y },
             Vector2{ width, height },
-            WHITE
+            color
         );
 
         runtimeObject.shapeType = shapeType;
@@ -176,6 +248,34 @@ namespace
                         script.get<std::string>()
                     );
                 }
+            }
+        }
+
+        if (object.contains("spawns"))
+        {
+            const auto& spawns = object["spawns"];
+
+            for (auto it = spawns.begin(); it != spawns.end(); ++it)
+            {
+                SpawnDefinition spawn;
+
+                const auto& spawnData = it.value();
+
+                spawn.prefab =
+                    spawnData["prefab"].get<std::string>();
+
+                spawn.offset = Vector2{ 0.0f, 0.0f };
+
+                if (spawnData.contains("offset"))
+                {
+                    spawn.offset.x =
+                        spawnData["offset"].value("x", 0.0f);
+
+                    spawn.offset.y =
+                        spawnData["offset"].value("y", 0.0f);
+                }
+
+                runtimeObject.spawns[it.key()] = spawn;
             }
         }
 

@@ -32,5 +32,15 @@
 
   "behavior": {
     "scripts": [ "scripts/ship" ]
+  },
+
+  "spawns": {
+    "laser": {
+      "prefab": "space/ship/laser",
+      "offset": {
+        "x": 0,
+        "y": -14
+      }
+    }
   }
 }

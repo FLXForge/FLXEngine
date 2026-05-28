@@ -21,6 +21,21 @@ declare const RIGHT: number;
 /** Neutral movement constant. */
 declare const STOP: number;
 
+/** Keyboard key constant. */
+declare const KEY_UP: number;
+
+/** Keyboard key constant. */
+declare const KEY_DOWN: number;
+
+/** Keyboard key constant. */
+declare const KEY_LEFT: number;
+
+/** Keyboard key constant. */
+declare const KEY_RIGHT: number;
+
+/** Keyboard key constant. */
+declare const KEY_SPACE: number;
+
 /**
  * Motion configuration exposed from JSON.
  */
@@ -66,13 +81,21 @@ interface RuntimeObject {
     /** Initial movement speed. */
     originSpeed: number;
 
-    /** Current movement angle, in degrees. */
+    /**
+     * Current object rotation in degrees.
+     *
+     * FLX convention:
+     * 0 = up
+     * 90 = right
+     * 180 = down
+     * 270 = left
+     */
     angle: number;
 
-    /** Current X velocity. Used by motion-based movement. */
+    /** Current horizontal velocity. Used by motion-based movement. */
     velocityX: number;
 
-    /** Current Y velocity. Used by motion-based movement. */
+    /** Current vertical  velocity. Used by motion-based movement. */
     velocityY: number;
 
     /** Initial X position. */
@@ -89,17 +112,21 @@ interface RuntimeObject {
  * Keyboard input helper.
  */
 declare const Key: {
-    /** Returns true while the up key is pressed. */
-    up(): boolean;
+    /**
+     * Returns true while the given key is pressed.
+     *
+     * @example
+     * Key.down(KEY_UP)
+     */
+    down(key: number): boolean;
 
-    /** Returns true while the down key is pressed. */
-    down(): boolean;
-
-    /** Returns true while the left key is pressed. */
-    left(): boolean;
-
-    /** Returns true while the right key is pressed. */
-    right(): boolean;
+    /**
+     * Returns true only on the frame the given key is pressed.
+     *
+     * @example
+     * Key.pressed(KEY_SPACE)
+     */
+    pressed(key: number): boolean;
 };
 
 /**
@@ -180,6 +207,18 @@ declare function to_origin(self: RuntimeObject): void;
  * }
  */
 declare function probability(chance: number, base?: number): boolean;
+
+/**
+ * Spawns a prefab instance using the spawn definition
+ * declared in the object JSON.
+ *
+ * @example
+ * spawn(self, "laser");
+ */
+declare function spawn(
+    self: RuntimeObject,
+    spawnName: string
+): void;
 
 /**
  * Optional game lifecycle function.

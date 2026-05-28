@@ -18,12 +18,222 @@
         <div id="sidebar"></div>
 
         <article class="doc-content">
+
             <p class="eyebrow">FLX Documentation</p>
             <h1>Examples</h1>
 
-            <p class="placeholder">
-                This page is ready to document the core concepts of the engine.
+            <p>
+                FLX examples are not only visual demonstrations.
             </p>
+
+            <p>
+                Each project exists to validate specific runtime systems,
+                discover real-world problems
+                and help define the engine architecture through practical use cases.
+            </p>
+
+            <p class="placeholder">
+                Each example represents a different stage in the evolution of FLX.
+            </p>
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Complete</p>
+                    </div>
+                    <div><h2 class="example-title">PONG</h2></div>
+                </div>
+
+                <p class="example-tagline">
+                    Two paddles. One ball. The beginning of everything.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/examples/pong-cover.png" alt="Pong cover">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-01.png" alt="Pong gameplay">
+                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-02.png" alt="Pong gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Pong was the first example used to build the foundation of the runtime.
+                </p>
+
+                <p>
+                    Although visually simple,
+                    it helped validate the lifecycle,
+                    basic movement,
+                    collisions,
+                    bouncing,
+                    scripting
+                    and the initial engine architecture.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>What can be learned</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Basic FLX project structure</li>
+                            <li>Classic speed-based movement</li>
+                            <li>Simple collisions</li>
+                            <li>Input and scripting</li>
+                            <li>Basic AI</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/pong">
+                            View example repository
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status progress">In Development</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">ASTEROIDS</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Inertia, rotation and space chaos.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/examples/asteroids-cover.png" alt="Asteroids cover">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Asteroids represents the second major evolution phase of the runtime.
+                </p>
+
+                <p>
+                    This example introduces advanced movement,
+                    acceleration,
+                    inertia,
+                    rotation,
+                    screen wrapping,
+                    dynamic spawns
+                    and reusable prefabs.
+                </p>
+
+                <p>
+                    It is also helping consolidate
+                    the documentation,
+                    APIs
+                    and internal engine conventions.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>What can be learned</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Advanced motion system</li>
+                            <li>Rotation and FLX angular convention</li>
+                            <li>Spawn and prefabs</li>
+                            <li>Screen wrapping</li>
+                            <li>Acceleration-based movement</li>
+                            <li>More complex runtime architecture</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/asteroids">
+                            View example repository
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status planned">Planned</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">ARKANOID</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Bounces, power ups and emergent rules.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/examples/arkanoid-cover.png" alt="Arkanoid">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Arkanoid gameplay">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Arkanoid gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Arkanoid will be used to validate
+                    more complex systems related to state,
+                    levels
+                    and runtime control.
+                </p>
+
+                <p>
+                    This example will help develop:
+                    timers,
+                    power ups,
+                    sound systems,
+                    spawn rules
+                    and dynamic state transitions.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>What can be learned</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>State systems</li>
+                            <li>Levels and progression</li>
+                            <li>Power ups</li>
+                            <li>Timers</li>
+                            <li>Rule-based spawning</li>
+                            <li>Sound management</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/arkanoid">
+                            View example repository
+                        </a>
+                    </p>
+                </section>
+            </section>
+
         </article>
     </main>
 

@@ -3,6 +3,13 @@
 #include <string>
 #include <raylib.h>
 #include <vector>
+#include <unordered_map>
+
+struct SpawnDefinition
+{
+    std::string prefab;
+    Vector2 offset;
+};
 
 class RuntimeObject
 {
@@ -13,6 +20,8 @@ public:
         Vector2 size,
         Color color
     );
+
+    std::unordered_map<std::string, SpawnDefinition> spawns;
 
     void draw(
         int scale,

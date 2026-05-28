@@ -78,18 +78,57 @@
             </p>
 
             <ul>
-                <li>Sistema de formas (<code>shape</code>)</li>
-                <li>Sistema <code>motion</code> en JSON</li>
-                <li>Rotación</li>
-                <li>Nuevas funciones de API</li>
-                <li>Wrap screen</li>
-                <li>Documentación HTML</li>
+                <li>Sistema de formas (<code>shape</code>).</li>
+
+                <li>Sistema <code>motion</code> basado en JSON.</li>
+
+                <li>Rotación y convención angular FLX unificada también en Pong.</li>
+
+                <li>Nuevas funciones de API y evolución del runtime scripting.</li>
+
+                <li>Sistema de wrap screen y comportamiento <code>bounds</code>.</li>
+
+                <li>Documentación HTML viva y sincronizada con el desarrollo real.</li>
+
+                <li>Soporte de color real desde JSON.</li>
+
+                <li>Nuevo tipo <code>shape.type = line</code>.</li>
+
+                <li>
+                    Sistema de input escalable:
+                    <code>Key.down(KEY_*)</code> y
+                    <code>Key.pressed(KEY_*)</code>.
+                </li>
+
+                <li>Constantes <code>KEY_*</code> expuestas a JavaScript.</li>
+
+                <li>
+                    Sistema probabilístico:
+                    <code>probability(chance, base)</code>.
+                </li>
+
+                <li>Spawns declarativos definidos directamente en JSON.</li>
+
+                <li>Prefabs cargados y cacheados sin instanciación inmediata.</li>
+
+                <li>
+                    Instanciación runtime mediante
+                    <code>spawn(self, "laser")</code>.
+                </li>
+
+                <li>Creación dinámica de objetos desde prefabs.</li>
+
+                <li>Offsets locales rotados según el ángulo del objeto.</li>
+
+                <li>Carga y caché de scripts de prefab mediante <code>ScriptEngine</code>.</li>
+
+                <li>Sistema de disparo funcional desde la nave.</li>
             </ul>
 
             <h3>Actualmente en desarrollo</h3>
 
             <ul>
-                <li>Spawn de objetos (láseres / asteroides)</li>
+                <li>Spawn de objetos (asteroides)</li>
                 <li>UI y texto</li>
                 <li>Lifecycle más sólido</li>
                 <li>Contexto <code>game</code> / <code>level</code></li>
@@ -145,17 +184,24 @@
             <h2>Deuda técnica y mejoras pendientes</h2>
 
             <ul>
+
                 <li>Normalizar Pong al nuevo schema <code>shape</code>/<code>motion</code>.</li>
 
                 <li>Revisar si <code>program</code> sigue siendo el nombre definitivo.</li>
 
                 <li>Centralizar funciones del wrapper JavaScript para evitar modificar múltiples puntos por cada nuevo lifecycle.</li>
 
+                <li>Refactorizar el wrapper JS mediante un sistema de registro centralizado de funciones.</li>
+
                 <li>Normalizar rutas JSON igual que scripts.</li>
 
                 <li>
                     Mejorar warnings:
                     no avisar cuando un lifecycle opcional no exista.
+                </li>
+
+                <li>
+                    Los lifecycle opcionales ausentes deberían permanecer silenciosos.
                 </li>
 
                 <li>
@@ -175,9 +221,32 @@
                     lifecycle <code>dead</code>/<code>end</code>.
                 </li>
 
-                <li>Definir sistema de spawn / prefabs / templates.</li>
+                <li>
+                    Definir correctamente
+                    <code>lifetime</code>,
+                    temporizadores
+                    y gestión de <code>delta</code>.
+                </li>
+
+                <li>Definir sistema completo de spawn / prefabs / templates.</li>
+
+                <li>
+                    Implementar spawn queue segura:
+                    evitar <code>push_back</code> directo durante iteración de objetos.
+                </li>
+
+                <li>
+                    Implementar correctamente
+                    <code>motion.inherit = live</code>.
+                </li>
 
                 <li>Definir contexto <code>game</code>/<code>level</code> y persistencia entre niveles.</li>
+
+                <li>
+                    Explorar una capa de input semántico
+                    (<code>Control.*</code>)
+                    por encima de <code>Key</code>.
+                </li>
 
                 <li>
                     Separar y documentar correctamente
@@ -187,9 +256,14 @@
                 </li>
 
                 <li>
+                    Mejorar colisiones overflow-aware.
+                </li>
+
+                <li>
                     Futuro:
                     colisiones wrap-aware utilizando radios y offsets.
                 </li>
+
             </ul>
 
         </article>

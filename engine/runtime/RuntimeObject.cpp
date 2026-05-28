@@ -219,6 +219,37 @@ void RuntimeObject::drawAt(Vector2 drawPosition, int scale) const
             color
         );
     }
+    else if (shapeType == "line")
+    {
+        const float x = drawPosition.x * scale;
+        const float y = drawPosition.y * scale;
+
+        const float thickness = size.x * scale;
+        const float length = size.y * scale;
+
+        const float radians =
+            angle * DEG2RAD;
+
+        Vector2 start = {
+            x,
+            y - length / 2.0f
+        };
+
+        Vector2 end = {
+            x,
+            y + length / 2.0f
+        };
+
+        start = rotatePoint(start, Vector2{ x, y }, angle);
+        end = rotatePoint(end, Vector2{ x, y }, angle);
+
+        DrawLineEx(
+            start,
+            end,
+            thickness,
+            color
+        );
+    }
     else
     {
         DrawRectangle(

@@ -27,6 +27,8 @@ private:
     void actionPhase();
     void motionPhase();
     void collisionPhase();
+    void deadPhase();
+    void cleanupDeadObjects();
 
     void loadObjectsFromJson(const std::string& path);
 
@@ -35,8 +37,10 @@ private:
 
     void loadProject(const std::string& flxPath);
     void initWindow();
+    void bornObject(RuntimeObject& object);
     void configureScriptEngine();
     void loadScripts();
+    void flushSpawnQueue();
     void loadPrefabs();
 
     std::string resolveJsonPath(
@@ -49,6 +53,7 @@ private:
         const std::string& file
     ) const;
 
+    std::vector<RuntimeObject> pendingObjects;
     std::unordered_map<std::string, RuntimeObject> prefabs;
 private:
 

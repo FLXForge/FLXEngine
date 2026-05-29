@@ -479,3 +479,25 @@ hr {
             min-height: 180px;
         }
 }
+
+.doc-path {
+    list-style: none;
+    padding-left: 0;
+}
+
+.doc-path li {
+    margin: 0.4rem 0;
+}
+
+.doc-path .current {
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.doc-path .recommended a {
+    font-weight: 700;
+}
+
+.doc-path .recommended::before {
+    content: "→ ";
+}

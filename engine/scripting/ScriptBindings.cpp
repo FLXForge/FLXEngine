@@ -42,6 +42,43 @@ static JSValue consoleLog(
     return JS_UNDEFINED;
 }
 
+static JSValue jsKill(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    if (argc < 1)
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue self = argv[0];
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "alive",
+        JS_NewBool(context, false)
+    );
+
+    return JS_UNDEFINED;
+}
+
+static JSValue jsDelta(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    return JS_NewFloat64(
+        context,
+        GetFrameTime()
+    );
+}
+
 static JSValue jsProbability(
     JSContext* context,
     JSValueConst thisValue,
@@ -779,6 +816,20 @@ void ScriptBindings::registerAll(
     JS_SetPropertyStr(context, global, "KEY_LEFT", JS_NewInt32(context, KEY_LEFT));
     JS_SetPropertyStr(context, global, "KEY_RIGHT", JS_NewInt32(context, KEY_RIGHT));
     JS_SetPropertyStr(context, global, "KEY_SPACE", JS_NewInt32(context, KEY_SPACE));
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "kill",
+        JS_NewCFunction(context, jsKill, "kill", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "delta",
+        JS_NewCFunction(context, jsDelta, "delta", 0)
+    );
 
     JS_SetPropertyStr(
         context,

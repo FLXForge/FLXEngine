@@ -180,6 +180,26 @@
 
             <hr />
 
+            <hr />
+
+            <h2>delta()</h2>
+
+            <p>
+                Retorna el tiempo transcurrido, en segundos, desde el frame anterior.
+            </p>
+
+            <p>
+                Permite crear movimientos, temporizadores y comportamientos independientes
+                de la velocidad de ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">delta</div>
+<pre><code>function motion(object) {
+    object.x += 120 * delta();
+}</code></pre>
+            </div>
+
             <h2>follow_y(object, targetName)</h2>
 
             <p>
@@ -238,6 +258,26 @@ if (Key.down(KEY_LEFT)) {
 
             <hr />
 
+            <hr />
+
+            <h2>kill(object)</h2>
+
+            <p>
+                Marca un objeto para ser destruido.
+            </p>
+
+            <p>
+                El objeto no se elimina inmediatamente, sino al final del frame actual.
+                Esto evita modificar la lista de objetos mientras el runtime la está procesando.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">kill</div>
+<pre><code>function collision(object, other) {
+    kill(object);
+}</code></pre>
+            </div>
+
             <h2>move_x(object, direction)</h2>
 
             <p>
@@ -290,11 +330,11 @@ move_y(tofu, DOWN);</code></pre>
             <div class="code-card">
                 <div class="code-header">probability</div>
 <pre><code>if (probability(5)) {
-    spawn(self, "enemy");
+    spawn(object, "enemy");
 }
 
 if (probability(1, 1000)) {
-    spawn(self, "rare_enemy");
+    spawn(object, "rare_enemy");
 }
 </code></pre>
             </div>
@@ -356,6 +396,32 @@ rotate(ship, RIGHT);</code></pre>
 <pre><code>to_origin(ball);</code></pre>
             </div>
 
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li class="current">↓ FLX API ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="examples.html">Ejemplos</a> → Recomendado</li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
     </main>
 

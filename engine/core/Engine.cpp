@@ -6,6 +6,7 @@
 #include "../scripting/ScriptEngine.h"
 #include "../debug/Logger.h"
 
+#include <algorithm>
 #include <iostream>
 #include <raylib.h>
 #include <filesystem>
@@ -113,6 +114,38 @@ void Engine::initWindow()
     );
 }
 
+void Engine::bornObject(RuntimeObject& object)
+{
+    Logger::debug("Llamadas a born");
+    for (const auto& scriptPath : object.resolvedScriptPaths)
+    {
+        scriptEngine.callScriptFunction(
+            scriptPath,
+            "born",
+            object
+        );
+    }
+}
+
+void Engine::flushSpawnQueue()
+{
+    for (auto& object : pendingObjects)
+    {
+        bornObject(object);
+
+        objects.push_back(
+            std::move(object)
+        );
+
+        Logger::info(
+            "spawn",
+            "Spawned instance"
+        );
+    }
+
+    pendingObjects.clear();
+}
+
 void Engine::configureScriptEngine()
 {
     scriptEngine.setFindObjectFunction(
@@ -178,11 +211,11 @@ void Engine::configureScriptEngine()
 
             }
 
-            objects.push_back(instance);
+            pendingObjects.push_back(instance);
 
             Logger::info(
                 "spawn",
-                "Spawned instance: " + instance.name
+                "Queued instance: " + instance.name
             );
         }
     );
@@ -196,7 +229,7 @@ void Engine::loadScripts()
 
         scriptEngine.loadScript(programScriptPath);
 
-        scriptEngine.callScriptFunction(programScriptPath, "gameStart");
+        scriptEngine.callScriptFunction(programScriptPath, "start");
     }
 
     for (auto& object : objects)
@@ -210,6 +243,8 @@ void Engine::loadScripts()
 
             scriptEngine.loadScript(scriptPath);
         }
+
+        bornObject(object);
     }
 }
 
@@ -296,14 +331,27 @@ std::string Engine::resolveScriptPath(
 void Engine::update()
 {
     actionPhase();
+    flushSpawnQueue();
+
     motionPhase();
+    flushSpawnQueue();
+
     collisionPhase();
+    flushSpawnQueue();
+
+    deadPhase();
+    cleanupDeadObjects();
 }
 
 void Engine::actionPhase()
 {
     for (auto& object : objects)
     {
+        if (!object.alive)
+        {
+            continue;
+        }
+
         if (!object.scripts.empty())
         {
             for (const auto& scriptPath : object.resolvedScriptPaths)
@@ -322,6 +370,11 @@ void Engine::motionPhase()
 {
     for (auto& object : objects)
     {
+        if (!object.alive)
+        {
+            continue;
+        }
+
         if (!object.scripts.empty())
         {
             for (const auto& scriptPath : object.resolvedScriptPaths)
@@ -348,6 +401,11 @@ void Engine::collisionPhase()
         {
             RuntimeObject& a = objects[i];
             RuntimeObject& b = objects[j];
+
+            if (!a.alive || !b.alive)
+            {
+                continue;
+            }
 
             if (RuntimeHelpers::intersects(a, b))
             {
@@ -379,6 +437,43 @@ void Engine::collisionPhase()
             }
         }
     }
+}
+
+void Engine::deadPhase()
+{
+    for (auto& object : objects)
+    {
+        if (object.alive || object.deadCalled)
+        {
+            continue;
+        }
+
+        for (const auto& scriptPath : object.resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "dead",
+                object
+            );
+        }
+
+        object.deadCalled = true;
+    }
+}
+
+void Engine::cleanupDeadObjects()
+{
+    objects.erase(
+        std::remove_if(
+            objects.begin(),
+            objects.end(),
+            [](const RuntimeObject& object)
+            {
+                return !object.alive;
+            }
+        ),
+        objects.end()
+    );
 }
 
 void Engine::draw()

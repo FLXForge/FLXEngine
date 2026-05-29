@@ -19,7 +19,7 @@
 
         <article class="doc-content">
 
-            <p class="eyebrow">FLX Documentation</p>
+            <p class="eyebrow">Documentación FLX</p>
             <h1>Introducción</h1>
 
             <section class="hero">
@@ -30,23 +30,45 @@
                 <div class="hero-text">
                     <h2>Un pequeño motor 2D basado en datos</h2>
                     <p>
-                        Crea escenas con JSON, define comportamientos con JavaScript
-                        y deja que el núcleo en C++ haga el resto.
+                        Define estructuras mediante JSON, comportamientos mediante JavaScript
+                        y deja que el runtime haga el resto.
                     </p>
                 </div>
             </section>
 
-            <h2>La filosofía FLX: obtener resultados rápidamente</h2>
+            <h2>La filosofía FLX: datos, funciones y runtime</h2>
 
             <p>
-                En FLX, la escena, los objetos y los actores se definen mediante datos
-                estructurados y ordenados en JSON.
+                FLX está construido alrededor de una idea muy sencilla:
             </p>
 
             <div class="code-card">
-                <div class="code-header">scene.json</div>
+                <div class="code-header">Mental model</div>
+<pre><code>Objetos -> Datos
+
+Scripts -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <p>
+                Los objetos definen qué existe.
+            </p>
+
+            <p>
+                Los scripts definen qué ocurre.
+            </p>
+
+            <p>
+                El runtime conecta ambos durante la ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
 <pre><code>{
     "$schema": "../../../tools/schemas/drawable.schema.json",
+
     "name": "Ship",
 
     "shape": {
@@ -69,38 +91,63 @@
             </div>
 
             <p>
-                Qué es. Dónde está. Cómo se construye.
-            </p>
-
-            <p>
-                La lógica del juego se maneja mediante scripts sencillos en JavaScript.
+                Los datos definen la existencia.
             </p>
 
             <div class="code-card">
-                <div class="code-header">player.js</div>
+                <div class="code-header">ship.js</div>
 <pre><code>/// &lt;reference path="../../../../tools/scripts/flx.d.ts" /&gt;
 
-function action(self) {
-    if (Key.up()) {
-        accelerate(self);
+function action(ship) {
+    if (Key.down(KEY_UP)) {
+        accelerate(ship);
     }
 }
 
-function motion(self) {
-    advance(self);
+function motion(ship) {
+    advance(ship);
 }
 </code></pre>
             </div>
 
             <p>
-                Qué hace. Hacia dónde se mueve. Cómo responde.
+                Las funciones definen el comportamiento.
             </p>
 
-            <p class="placeholder">
-                ¿Quieres saber más? Empieza por los
-                <a class="link" href="getting-started.html">primeros pasos</a>.
+            <p>
+                FLX no intenta simplificar C++.
             </p>
 
+            <p>
+                Intenta que el comportamiento del runtime pueda escribirse como script.
+            </p>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li class="current">↓ Introducción ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="mental-model.html">Cómo piensa FLX</a> → Recomendado</li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
     </main>
 

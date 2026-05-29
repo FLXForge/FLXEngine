@@ -75,11 +75,23 @@
             </p>
 
             <p>
+                Asteroids represents the first stage where FLX begins to define its internal model.
+            </p>
+
+            <p>
+                Beyond movement and shooting mechanics,
+                this example is helping establish how objects are born,
+                live,
+                interact
+                and disappear inside the runtime.
+            </p>
+
+            <p>
                 Currently used to validate:
             </p>
 
             <ul>
-                <li><code>shape</code> system.</li>
+                <li>Shape system (<code>shape</code>).</li>
 
                 <li>JSON-based <code>motion</code> system.</li>
 
@@ -87,13 +99,13 @@
 
                 <li>New API functions and runtime scripting evolution.</li>
 
-                <li>Screen wrapping and <code>bounds</code> behavior system.</li>
+                <li>Screen wrapping and <code>bounds</code> behavior.</li>
 
                 <li>Living HTML documentation synchronized with real development.</li>
 
-                <li>Real color support directly from JSON.</li>
+                <li>Real color support from JSON.</li>
 
-                <li>New <code>shape.type = line</code> support.</li>
+                <li>New <code>shape.type = line</code> shape.</li>
 
                 <li>
                     Scalable input system:
@@ -119,21 +131,70 @@
 
                 <li>Dynamic object creation from prefabs.</li>
 
-                <li>Rotated local offsets based on object angle.</li>
+                <li>Safe spawn queue through <code>pendingObjects</code> and <code>flushSpawnQueue()</code>.</li>
+
+                <li>Decoupled world entry: <code>spawn()</code>, queue, <code>born()</code> and runtime integration.</li>
+
+                <li>Local offsets rotated according to object angle.</li>
 
                 <li>Prefab script loading and caching through <code>ScriptEngine</code>.</li>
 
-                <li>Functional ship shooting system.</li>
+                <li>Fully functional ship firing system.</li>
+
+                <li>
+                    Complete lifecycle:
+                    <code>start()</code>,
+                    <code>born()</code>,
+                    <code>action()</code>,
+                    <code>motion()</code>,
+                    <code>collision()</code>,
+                    <code>kill()</code>,
+                    <code>dead()</code>
+                    and <code>cleanup()</code>.
+                </li>
+
+                <li>Deferred destruction through <code>kill(object)</code>.</li>
+
+                <li><code>alive</code> state used to exclude dead objects from runtime phases.</li>
+
+                <li><code>dead()</code> phase executed only once before cleanup.</li>
+
+                <li>Per-instance initialization through <code>born()</code>.</li>
+
+                <li>Persistent per-object state through <code>object.local</code>.</li>
+
+                <li>Real frame timing through <code>delta()</code>.</li>
+
+                <li>
+                    Scope model:
+                    function scope,
+                    script scope,
+                    <code>object.local</code>
+                    and future global scope.
+                </li>
             </ul>
 
-            <h3>Currently in development</h3>
+            <h3>Currently in Development</h3>
 
             <ul>
-                <li>Object spawning (lasers / asteroids)</li>
-                <li>UI and text</li>
-                <li>More robust lifecycle</li>
-                <li><code>game</code> / <code>level</code> context</li>
-                <li>Signals and object communication</li>
+                <li>Complex object spawning, especially asteroids.</li>
+
+                <li>UI and text systems.</li>
+
+                <li><code>game</code> / <code>level</code> context.</li>
+
+                <li>Signals and object-to-object communication.</li>
+
+                <li>
+                    Runtime object relationships:
+                    parent,
+                    children
+                    and group access.
+                </li>
+
+                <li>Configurable death propagation between related objects.</li>
+
+                <li>Extending <code>object.local</code> beyond numeric values.</li>
             </ul>
 
             <hr />
@@ -182,58 +243,51 @@
 
             <hr />
 
-            <h2>Technical debt and pending improvements</h2>
+            <h2>Technical Debt and Pending Improvements</h2>
 
             <ul>
 
                 <li>Normalize Pong to the new <code>shape</code>/<code>motion</code> schema.</li>
 
-                <li>Review whether <code>program</code> should remain the final name.</li>
+                <li>Review whether <code>program</code> remains the final name.</li>
 
-                <li>Centralize JavaScript wrapper functions to avoid modifying multiple locations for each new lifecycle.</li>
+                <li>Centralize JavaScript wrapper functions to avoid modifying multiple locations whenever a new lifecycle is introduced.</li>
 
-                <li>Refactor the JS wrapper using a centralized function registry system.</li>
+                <li>Refactor the JS wrapper using a centralized function registry.</li>
 
-                <li>Normalize JSON paths the same way scripts are handled.</li>
+                <li>Normalize JSON paths in the same way as script paths.</li>
 
                 <li>
                     Improve warnings:
-                    optional missing lifecycle functions should not generate warnings.
+                    optional lifecycle functions should not generate warnings when absent.
                 </li>
 
                 <li>
-                    Missing optional lifecycle functions should remain silent.
+                    Extend <code>object.local</code>.
+                    It currently supports only numeric values;
+                    types such as <code>bool</code>,
+                    <code>string</code>
+                    and possibly more complex structures remain pending.
                 </li>
 
                 <li>
-                    Define a more robust lifecycle:
-                    <code>gameStart</code>,
-                    <code>start</code>,
-                    <code>action</code>,
-                    <code>motion</code>,
-                    <code>collision</code>,
-                    <code>draw</code>,
-                    <code>end</code>/<code>dead</code>.
+                    Define a persistent global scope,
+                    suitable for scores, shared state and runtime-wide data.
+                </li>
+
+                <li>Define <code>game</code>/<code>level</code> context and persistence between levels.</li>
+
+                <li>
+                    Define runtime object relationships:
+                    <code>parent</code>,
+                    <code>children</code>
+                    and access through <code>group</code>.
                 </li>
 
                 <li>
-                    Define runtime destruction:
-                    <code>kill()</code>,
-                    <code>dead</code>/<code>end</code> lifecycle.
-                </li>
-
-                <li>
-                    Properly define
-                    <code>lifetime</code>,
-                    timers
-                    and <code>delta</code> management.
-                </li>
-
-                <li>Define a complete spawn / prefabs / templates system.</li>
-
-                <li>
-                    Implement a safe spawn queue:
-                    avoid direct <code>push_back</code> during object iteration.
+                    Define configurable death propagation,
+                    for example deciding whether <code>kill(parent)</code>
+                    should also affect its children.
                 </li>
 
                 <li>
@@ -241,12 +295,10 @@
                     <code>motion.inherit = live</code>.
                 </li>
 
-                <li>Define <code>game</code>/<code>level</code> context and persistent state between levels.</li>
-
                 <li>
                     Explore a semantic input layer
                     (<code>Control.*</code>)
-                    above <code>Key</code>.
+                    on top of <code>Key</code>.
                 </li>
 
                 <li>
@@ -262,11 +314,36 @@
 
                 <li>
                     Future:
-                    wrap-aware collisions using radius and offsets.
+                    wrap-aware collisions using radii and positional offsets.
                 </li>
 
             </ul>
 
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li class="current">↓ Roadmap ← Estás aquí</li>
+            </ul>
         </article>
     </main>
 

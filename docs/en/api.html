@@ -180,6 +180,26 @@
 
             <hr />
 
+            <h2>delta()</h2>
+
+            <p>
+                Returns the elapsed time, in seconds, since the previous frame.
+            </p>
+
+            <p>
+                It allows creating frame-rate independent movement,
+                timers and behaviors.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">delta</div>
+<pre><code>function motion(object) {
+    object.x += 120 * delta();
+}</code></pre>
+            </div>
+
+            <hr />
+
             <h2>follow_y(object, targetName)</h2>
 
             <p>
@@ -239,6 +259,27 @@ if (Key.down(KEY_LEFT)) {
 
             <hr />
 
+            <h2>kill(object)</h2>
+
+            <p>
+                Marks an object for destruction.
+            </p>
+
+            <p>
+                The object is not removed immediately,
+                but at the end of the current frame.
+                This avoids modifying the object list while the runtime is processing it.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">kill</div>
+<pre><code>function collision(object, other) {
+    kill(object);
+}</code></pre>
+            </div>
+
+            <hr />
+
             <h2>move_x(object, direction)</h2>
 
             <p>
@@ -291,11 +332,11 @@ move_y(tofu, DOWN);</code></pre>
             <div class="code-card">
                 <div class="code-header">probability</div>
 <pre><code>if (probability(5)) {
-    spawn(self, "enemy");
+    spawn(object, "enemy");
 }
 
 if (probability(1, 1000)) {
-    spawn(self, "rare_enemy");
+    spawn(object, "rare_enemy");
 }
 </code></pre>
             </div>
@@ -358,6 +399,31 @@ rotate(ship, RIGHT);</code></pre>
 <pre><code>to_origin(ball);</code></pre>
             </div>
 
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li class="current">↓ FLX API ← You are here</li>
+                <li class="recommended"><a class="link" href="examples.html">Examples</a> → Recommended</li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
     </main>
 

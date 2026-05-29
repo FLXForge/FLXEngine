@@ -19,28 +19,114 @@
 
         <article class="doc-content">
 
-            <p class="eyebrow">FLX Documentation</p>
+            <p class="eyebrow">Documentación FLX</p>
             <h1>Filosofía</h1>
 
             <p>
                 FLX nace de una idea sencilla:
-                obtener resultados rápidamente sin luchar contra el motor.
+                obtener resultados sin luchar contra las herramientas.
             </p>
 
             <p>
-                Muchas veces una idea simple termina atrapada entre configuraciones,
-                herramientas complejas o arquitecturas difíciles de entender.
+                Con demasiada frecuencia,
+                las ideas simples terminan enterradas bajo configuraciones complejas,
+                arquitecturas difíciles de comprender
+                o flujos de trabajo que exigen aprender la herramienta
+                antes de poder desarrollar el proyecto.
             </p>
 
             <p>
-                FLX busca reducir esa fricción.
+                FLX intenta reducir esa fricción.
+            </p>
+
+            <hr />
+
+            <h2>Por qué existe FLX</h2>
+
+            <p>
+                FLX está pensado para quienes quieren construir algo rápidamente,
+                comprender cómo funciona
+                y conservar el control sobre lo que están creando.
             </p>
 
             <p>
-                El objetivo es poder construir una escena, un prototipo o un juego
-                utilizando herramientas conocidas, estructuras claras y una curva de
-                aprendizaje sencilla.
+                Ya sea un prototipo,
+                una game jam,
+                un juego completo
+                o una herramienta interactiva,
+                la intención es la misma:
             </p>
+
+            <blockquote>
+                Construir sin luchar contra el motor.
+            </blockquote>
+
+            <hr />
+
+            <h2>Simplicidad mediante comprensión</h2>
+
+            <p>
+                FLX no intenta ocultar cómo funciona internamente.
+            </p>
+
+            <p>
+                Tampoco intenta reemplazar C++,
+                ni abstraer todos los detalles del runtime.
+            </p>
+
+            <p>
+                La idea es diferente:
+            </p>
+
+            <p>
+                utilizar estructuras sencillas y predecibles para que el comportamiento
+                pueda comprenderse, modificarse y ampliarse con facilidad.
+            </p>
+
+            <p>
+                La simplicidad no proviene de esconder complejidad.
+            </p>
+
+            <p>
+                Proviene de organizarla de forma clara.
+            </p>
+
+            <hr />
+
+            <h2>Datos, funciones y runtime</h2>
+
+            <p>
+                FLX está construido alrededor de tres conceptos fundamentales:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objetos -> Datos
+
+Scripts -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <p>
+                Los objetos describen qué existe.
+            </p>
+
+            <p>
+                Los scripts describen qué ocurre.
+            </p>
+
+            <p>
+                El runtime coordina la interacción entre ambos.
+            </p>
+
+            <p>
+                Este modelo permite construir comportamiento complejo
+                utilizando estructuras relativamente simples.
+            </p>
+
+            <hr />
 
             <h2>Basado en estándares</h2>
 
@@ -49,59 +135,116 @@
             </p>
 
             <p>
-                Los proyectos utilizan tecnologías comunes y accesibles:
+                Los proyectos utilizan tecnologías ampliamente conocidas:
             </p>
 
             <ul>
-                <li>JSON para escenas y datos</li>
+                <li>JSON para datos estructurados</li>
                 <li>JavaScript para scripting</li>
                 <li>Formatos estándar para recursos</li>
-                <li>Estructuras simples y legibles</li>
+                <li>Archivos de texto legibles y editables</li>
             </ul>
 
             <p>
-                La intención no es ocultar cómo funciona el motor,
-                sino permitir que el desarrollador comprenda y controle
-                lo que ocurre.
+                El objetivo es que los desarrolladores puedan utilizar
+                las herramientas con las que ya están familiarizados.
             </p>
+
+            <hr />
 
             <h2>Alto y bajo nivel</h2>
 
             <p>
-                FLX proporciona herramientas de alto nivel para resolver
-                comportamientos comunes rápidamente.
+                FLX proporciona funciones de alto nivel para resolver rápidamente
+                comportamientos comunes.
             </p>
 
             <p>
-                Pero también permite acceder a niveles más bajos del sistema
-                cuando el proyecto necesita un comportamiento específico.
+                Pero también permite trabajar directamente sobre los datos
+                cuando se necesita un comportamiento más específico.
             </p>
 
             <p>
-                Existen pautas y estructuras recomendadas,
+                Existen convenciones recomendadas,
                 pero no caminos cerrados.
             </p>
+
+            <hr />
 
             <h2>Pequeño, claro y directo</h2>
 
             <p>
-                FLX está especialmente pensado para:
+                FLX está especialmente orientado a:
             </p>
 
             <ul>
                 <li>Prototipos</li>
-                <li>Jams</li>
+                <li>Game jams</li>
                 <li>Juegos arcade</li>
-                <li>Pequeños proyectos 2D</li>
+                <li>Proyectos 2D pequeños y medianos</li>
                 <li>Ideas experimentales</li>
             </ul>
 
-            <p class="placeholder">
-                FLX continúa evolucionando durante las versiones 0.x.
-                Algunas estructuras y sistemas pueden cambiar con el tiempo.
+            <p>
+                No intenta ser la solución para todos los problemas.
             </p>
 
+            <p>
+                Intenta ser una herramienta clara para resolver bien algunos de ellos.
+            </p>
+
+            <hr />
+
+            <h2>Lo que FLX no pretende ser</h2>
+
+            <p>
+                FLX no intenta competir con motores generalistas de gran escala.
+            </p>
+
+            <p>
+                No intenta ocultar el funcionamiento del runtime
+                detrás de capas de abstracción cada vez más complejas.
+            </p>
+
+            <p>
+                Y no intenta sustituir el conocimiento técnico
+                por automatización.
+            </p>
+
+            <p>
+                FLX busca que el desarrollador entienda qué ocurre,
+                por qué ocurre
+                y cómo modificarlo.
+            </p>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li class="current">↓ Filosofía ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="concepts.html">Conceptos básicos</a> → Recomendado</li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
+
     </main>
 
     <div id="footer"></div>

@@ -21,6 +21,8 @@ public:
         Color color
     );
 
+    std::unordered_map<std::string, double> local;
+
     std::unordered_map<std::string, SpawnDefinition> spawns;
 
     void draw(
@@ -37,6 +39,8 @@ public:
     std::string group;
 
     bool visible;
+    bool alive;
+    bool deadCalled;
 
     Vector2 origin;
     Vector2 position;

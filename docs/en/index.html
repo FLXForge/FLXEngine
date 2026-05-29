@@ -30,23 +30,45 @@
                 <div class="hero-text">
                     <h2>A small data-driven 2D engine</h2>
                     <p>
-                        Build scenes with JSON, define behaviors with JavaScript
-                        and let the C++ core handle the rest.
+                        Define structures with JSON, behaviors with JavaScript
+                        and let the runtime handle the rest.
                     </p>
                 </div>
             </section>
 
-            <h2>The FLX philosophy: getting results quickly</h2>
+            <h2>The FLX philosophy: data, functions and runtime</h2>
 
             <p>
-                In FLX, scenes, objects and actors are defined through
-                structured and organized JSON data.
+                FLX is built around a simple idea:
             </p>
 
             <div class="code-card">
-                <div class="code-header">scene.json</div>
+                <div class="code-header">Mental model</div>
+<pre><code>Objects -> Data
+
+Scripts -> Functions
+
+Runtime -> Connects both
+</code></pre>
+            </div>
+
+            <p>
+                Objects define what exists.
+            </p>
+
+            <p>
+                Scripts define what happens.
+            </p>
+
+            <p>
+                The runtime connects both during execution.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
 <pre><code>{
     "$schema": "../../../tools/schemas/drawable.schema.json",
+
     "name": "Ship",
 
     "shape": {
@@ -69,38 +91,62 @@
             </div>
 
             <p>
-                What it is. Where it exists. How it is built.
-            </p>
-
-            <p>
-                Game logic is handled through simple JavaScript scripts.
+                Data defines existence.
             </p>
 
             <div class="code-card">
-                <div class="code-header">player.js</div>
+                <div class="code-header">ship.js</div>
 <pre><code>/// &lt;reference path="../../../../tools/scripts/flx.d.ts" /&gt;
 
-function action(self) {
-    if (Key.up()) {
-        accelerate(self);
+function action(ship) {
+    if (Key.down(KEY_UP)) {
+        accelerate(ship);
     }
 }
 
-function motion(self) {
-    advance(self);
+function motion(ship) {
+    advance(ship);
 }
 </code></pre>
             </div>
 
             <p>
-                What it does. Where it moves. How it reacts.
+                Functions define behavior.
             </p>
 
-            <p class="placeholder">
-                Want to know more? Start with the
-                <a class="link" href="getting-started.html">getting started guide</a>.
+            <p>
+                FLX does not try to simplify C++.
             </p>
 
+            <p>
+                It tries to make runtime behavior scriptable.
+            </p>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li class="current">↓ Introduction ← You are here</li>
+                <li class="recommended"><a class="link" href="mental-model.html">How FLX Thinks</a> → Recommended</li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
     </main>
 

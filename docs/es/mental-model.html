@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo piensa FLX | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="mental-model">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Cómo piensa FLX</h1>
+
+            <p>
+                Antes de aprender JSON, APIs o ciclos de vida,
+                merece la pena comprender la idea central sobre la que está construido FLX.
+            </p>
+
+            <p>
+                FLX no intenta simplificar C++.
+            </p>
+
+            <p>
+                Intenta que el comportamiento del runtime pueda escribirse como script.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objetos -> Datos
+
+Scripts -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <h2>Los objetos contienen datos</h2>
+
+            <p>
+                Un objeto describe algo que existe dentro del runtime.
+            </p>
+
+            <p>
+                Puede tener posición, tamaño, velocidad,
+                apariencia visual o cualquier otra propiedad.
+            </p>
+
+            <p>
+                Los objetos no contienen comportamiento.
+            </p>
+
+            <p>
+                Contienen estado.
+            </p>
+
+            <h2>Los scripts contienen funciones</h2>
+
+            <p>
+                Un script es un conjunto de funciones JavaScript.
+            </p>
+
+            <p>
+                Esas funciones describen qué ocurre con los objetos
+                a lo largo de su vida.
+            </p>
+
+            <p>
+                Los scripts no pertenecen a los objetos.
+            </p>
+
+            <p>
+                Son recursos compartidos que pueden ser utilizados
+                por muchos objetos simultáneamente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>function action(ship) {
+    accelerate(ship);
+}
+</code></pre>
+            </div>
+
+            <h2>El runtime conecta ambos</h2>
+
+            <p>
+                Durante la ejecución,
+                el runtime invoca funciones y les proporciona los objetos
+                sobre los que deben trabajar.
+            </p>
+
+            <p>
+                Los scripts describen comportamiento.
+            </p>
+
+            <p>
+                Los objetos almacenan estado.
+            </p>
+
+            <p>
+                El runtime coordina la interacción entre ambos.
+            </p>
+
+            <h2>Estado compartido y estado individual</h2>
+
+            <p>
+                Un mismo script puede utilizarse desde cientos de objetos.
+            </p>
+
+            <p>
+                Esto significa que existen distintos ámbitos de información.
+            </p>
+
+            <ul>
+                <li>Ámbito de función</li>
+                <li>Ámbito de script</li>
+                <li>Ámbito de objeto</li>
+                <li>Ámbito global (futuro)</li>
+            </ul>
+
+            <p>
+                Comprender esta diferencia es una de las claves para comprender FLX.
+            </p>
+
+            <h2>Objetos vivos</h2>
+
+            <p>
+                FLX entiende los objetos como entidades que nacen,
+                existen y desaparecen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Lifecycle</div>
+<pre><code>born()
+
+action()
+motion()
+collision()
+
+kill()
+
+dead()
+
+cleanup()
+</code></pre>
+            </div>
+
+            <p>
+                Esta terminología no es accidental.
+            </p>
+
+            <p>
+                El ciclo de vida forma parte del modelo mental del runtime.
+            </p>
+
+            <h2>La idea principal</h2>
+
+            <p>
+                Si recuerdas una sola cosa sobre FLX,
+                que sea esta:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">FLX</div>
+<pre><code>Datos
+
+Funciones
+
+Runtime
+</code></pre>
+            </div>
+
+            <p class="placeholder">
+                El resto de la documentación explica cómo se implementa esta idea.
+            </p>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li class="current">↓ Cómo piensa FLX ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="philosophy.html">Filosofía</a> → Recomendado</li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

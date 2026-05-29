@@ -40,21 +40,28 @@ FLX is especially suited for:
 
 ```json
 {
-  "scene": "pong",
-  "entities": [
-    {
-      "type": "sprite",
-      "id": "player",
-      "x": 32,
-      "y": 120
+  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "name": "Ship",
+
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+
+  "shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+      "width": 18,
+      "height": 24
     }
-  ]
+  }
 }
 ```
 
 ```js
-function update(entity, deltaTime) {
-  entity.y += entity.speed * deltaTime;
+function motion(ship) {
+    advance(ship);
 }
 ```
 

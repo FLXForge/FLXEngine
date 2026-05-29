@@ -44,6 +44,8 @@ RuntimeObject::RuntimeObject(
     this->originSpeed = speed;
     this->group = "";
     this->visible = true;
+    this->alive = true;
+    this->deadCalled = false;
     this->shapeType = "block";
     this->rotationSpeed = 0.0f;
     this->acceleration = 0.0f;

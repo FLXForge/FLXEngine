@@ -74,6 +74,18 @@
             </p>
 
             <p>
+                Asteroids representa la primera fase donde FLX empieza a definir su modelo interno.
+            </p>
+
+            <p>
+                Más allá del movimiento y los disparos,
+                este ejemplo está ayudando a establecer cómo nacen,
+                viven,
+                interactúan
+                y desaparecen los objetos dentro del runtime.
+            </p>
+
+            <p>
                 Actualmente utilizado para validar:
             </p>
 
@@ -118,21 +130,65 @@
 
                 <li>Creación dinámica de objetos desde prefabs.</li>
 
+                <li>Spawn queue segura mediante <code>pendingObjects</code> y <code>flushSpawnQueue()</code>.</li>
+
+                <li>Entrada al mundo desacoplada: <code>spawn()</code>, cola, <code>born()</code> y runtime.</li>
+
                 <li>Offsets locales rotados según el ángulo del objeto.</li>
 
                 <li>Carga y caché de scripts de prefab mediante <code>ScriptEngine</code>.</li>
 
                 <li>Sistema de disparo funcional desde la nave.</li>
+
+                <li>
+                    Lifecycle completo:
+                    <code>start()</code>,
+                    <code>born()</code>,
+                    <code>action()</code>,
+                    <code>motion()</code>,
+                    <code>collision()</code>,
+                    <code>kill()</code>,
+                    <code>dead()</code>
+                    y <code>cleanup()</code>.
+                </li>
+
+                <li>Destrucción diferida mediante <code>kill(object)</code>.</li>
+
+                <li>Estado <code>alive</code> para excluir objetos muertos de nuevas fases runtime.</li>
+
+                <li>Fase <code>dead()</code> ejecutada una sola vez antes del cleanup.</li>
+
+                <li>Inicialización por instancia mediante <code>born()</code>.</li>
+
+                <li>Estado local persistente por objeto mediante <code>object.local</code>.</li>
+
+                <li>Tiempo real de frame mediante <code>delta()</code>.</li>
+
+                <li>
+                    Modelo de ámbitos:
+                    función, script, <code>object.local</code> y futuro ámbito global.
+                </li>
             </ul>
 
             <h3>Actualmente en desarrollo</h3>
 
             <ul>
-                <li>Spawn de objetos (asteroides)</li>
-                <li>UI y texto</li>
-                <li>Lifecycle más sólido</li>
-                <li>Contexto <code>game</code> / <code>level</code></li>
-                <li>Señales y comunicación entre objetos</li>
+                <li>Spawn de objetos complejos, especialmente asteroides.</li>
+
+                <li>UI y texto.</li>
+
+                <li>Contexto <code>game</code> / <code>level</code>.</li>
+
+                <li>Señales y comunicación entre objetos.</li>
+
+                <li>
+                    Relaciones runtime entre objetos:
+                    padre, hijos y acceso por grupo.
+                </li>
+
+                <li>Propagación configurable de muerte entre objetos relacionados.</li>
+
+                <li>Ampliación de <code>object.local</code> más allá de valores numéricos.</li>
             </ul>
 
             <hr />
@@ -201,46 +257,36 @@
                 </li>
 
                 <li>
-                    Los lifecycle opcionales ausentes deberían permanecer silenciosos.
+                    Ampliar <code>object.local</code>.
+                    Actualmente solo soporta valores numéricos;
+                    quedan pendientes tipos como <code>bool</code>,
+                    <code>string</code> y posibles estructuras más complejas.
                 </li>
 
                 <li>
-                    Definir lifecycle más sólido:
-                    <code>gameStart</code>,
-                    <code>start</code>,
-                    <code>action</code>,
-                    <code>motion</code>,
-                    <code>collision</code>,
-                    <code>draw</code>,
-                    <code>end</code>/<code>dead</code>.
+                    Definir un ámbito global persistente,
+                    por ejemplo para puntuación, estado general o datos compartidos.
+                </li>
+
+                <li>Definir contexto <code>game</code>/<code>level</code> y persistencia entre niveles.</li>
+
+                <li>
+                    Definir relaciones runtime entre objetos:
+                    <code>father</code>,
+                    <code>children</code>
+                    y acceso por <code>group</code>.
                 </li>
 
                 <li>
-                    Definir destrucción runtime:
-                    <code>kill()</code>,
-                    lifecycle <code>dead</code>/<code>end</code>.
-                </li>
-
-                <li>
-                    Definir correctamente
-                    <code>lifetime</code>,
-                    temporizadores
-                    y gestión de <code>delta</code>.
-                </li>
-
-                <li>Definir sistema completo de spawn / prefabs / templates.</li>
-
-                <li>
-                    Implementar spawn queue segura:
-                    evitar <code>push_back</code> directo durante iteración de objetos.
+                    Definir propagación configurable de muerte:
+                    por ejemplo, decidir si <code>kill(parent)</code>
+                    debe afectar también a sus hijos.
                 </li>
 
                 <li>
                     Implementar correctamente
                     <code>motion.inherit = live</code>.
                 </li>
-
-                <li>Definir contexto <code>game</code>/<code>level</code> y persistencia entre niveles.</li>
 
                 <li>
                     Explorar una capa de input semántico
@@ -266,6 +312,32 @@
 
             </ul>
 
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li class="current">↓ Roadmap ← You are here</li>
+            </ul>
         </article>
     </main>
 

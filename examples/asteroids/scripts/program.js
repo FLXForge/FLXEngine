@@ -4,8 +4,9 @@
 	Define the lives when game start
 */
 
-const initLives = 3;
+// CONSTANTS
+const INIT_LIVES = 3;
 
-function gameStart() {
-	console.log("The ship have " + initLives + " lives");
+function start() {
+	console.log("The ship have " + INIT_LIVES + " lives");
 }

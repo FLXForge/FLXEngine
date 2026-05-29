@@ -18,85 +18,99 @@
         <div id="sidebar"></div>
 
         <article class="doc-content">
-
             <p class="eyebrow">FLX Documentation</p>
             <h1>Core Concepts</h1>
 
             <p>
-                FLX organizes projects through data structures,
-                objects, scripts and clearly defined lifecycles.
+                FLX organizes projects through simple data structures,
+                objects, transformations and clearly defined execution rules.
             </p>
+
+            <p>
+                This section describes the fundamental concepts present
+                in every FLX project.
+            </p>
+
+            <hr />
 
             <h2>Project</h2>
 
             <p>
-                Every FLX project starts from a main file with the <code>.flx</code> extension.
+                Every FLX project starts with a main file
+                using the <code>.flx</code> extension.
             </p>
 
             <p>
-                This file defines the general project structure:
+                This file acts as the project entry point.
             </p>
 
-            <ul>
-                <li>Main</li>
-                <li>Scripts</li>
-                <li>Configuration</li>
-                <li>Resources</li>
-            </ul>
-
             <div class="code-card">
-                <div class="code-header">project.flx</div>
+                <div class="code-header">Asteroids.flx</div>
 <pre><code>name:Asteroids
 version:1.0
-flxEngineVersion:0.0.1
+flxEngineVersion:0.1.0
 main:game.json
 </code></pre>
             </div>
 
+            <p>
+                From this file,
+                the runtime loads the main structure,
+                resources and required configuration.
+            </p>
+
+            <hr />
+
             <h2>Main</h2>
 
             <p>
-                The main structure is the runtime entry point.
+                The main structure is the root of the runtime.
             </p>
 
             <p>
-                Objects, scripts and runtime logic are organized from it.
+                It organizes objects, resources and execution logic.
             </p>
 
             <p>
-                The main structure can represent:
+                Depending on the project,
+                it may represent:
             </p>
 
             <ul>
                 <li>A level</li>
                 <li>A menu</li>
                 <li>A loading screen</li>
-                <li>A specific project state</li>
                 <li>A presentation</li>
-                <li>A narrative</li>
-                <li>Anything the developer can imagine...</li>
+                <li>A narrative sequence</li>
+                <li>A specific application state</li>
             </ul>
 
-            <h2>Object</h2>
+            <p>
+                FLX does not impose a specific interpretation.
+            </p>
+
+            <hr />
+
+            <h2>Objects</h2>
 
             <p>
-                Objects represent active elements inside the runtime.
+                Objects represent elements that exist inside the runtime.
             </p>
 
             <p>
-                An object can:
+                An object may:
             </p>
 
             <ul>
                 <li>Be rendered</li>
                 <li>Move</li>
                 <li>Collide</li>
-                <li>Execute scripts</li>
-                <li>Contain data</li>
+                <li>Store data</li>
+                <li>Execute behavior through scripts</li>
             </ul>
 
             <p>
-                Object structure is usually defined through JSON.
+                Objects are typically described using JSON.
             </p>
 
             <div class="code-card">
@@ -115,24 +129,43 @@ main:game.json
 </code></pre>
             </div>
 
+            <hr />
+
             <h2>Shape Types</h2>
 
             <p>
-                FLX provides several basic visual representation types.
+                FLX provides several basic visual representations.
             </p>
 
-            <ul>
-                <li><code>block</code>: uses <code>origin</code> as top-left corner.</li>
-
-                <li><code>rectangle</code>: uses <code>origin</code> as center.</li>
-
-                <li><code>triangle</code>: uses <code>origin</code> as center.</li>
-
-                <li><code>line</code>: uses <code>origin</code> as center.</li>
-            </ul>
+            <table>
+                <tr>
+                    <th>Type</th>
+                    <th>Origin</th>
+                </tr>
+                <tr>
+                    <td><code>block</code></td>
+                    <td>Top-left corner</td>
+                </tr>
+                <tr>
+                    <td><code>rectangle</code></td>
+                    <td>Center</td>
+                </tr>
+                <tr>
+                    <td><code>triangle</code></td>
+                    <td>Center</td>
+                </tr>
+                <tr>
+                    <td><code>line</code></td>
+                    <td>Center</td>
+                </tr>
+                <tr>
+                    <td><code>text</code></td>
+                    <td>Text rendering</td>
+                </tr>
+            </table>
 
             <p>
-                Objects can use colors declared directly from JSON.
+                Colors can be declared directly from JSON.
             </p>
 
             <div class="code-card">
@@ -144,114 +177,13 @@ main:game.json
 </code></pre>
             </div>
 
-            <h2>Scripts</h2>
+            <hr />
+
+            <h2>Coordinate System</h2>
 
             <p>
-                FLX uses JavaScript to define behaviors.
-            </p>
-
-            <p>
-                Scripts have access to the runtime context and can react
-                to different lifecycle stages.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">player.js</div>
-<pre><code>function action(self) {
-    if (Key.down(KEY_UP)) {
-        accelerate(self);
-    }
-}
-</code></pre>
-            </div>
-
-            <h2>Movement and Runtime</h2>
-
-            <p>
-                FLX combines a classic <code>speed</code>-based system
-                with an advanced acceleration and inertia-based system.
-            </p>
-
-            <p>
-                Movement functions automatically use
-                the FLX angular convention.
-            </p>
-
-            <ul>
-                <li><code>advance()</code>: moves the object using its current direction.</li>
-
-                <li><code>rotate()</code>: modifies <code>angle</code> using <code>rotationSpeed</code>.</li>
-
-                <li><code>bounce_x()</code>: reverses horizontal direction.</li>
-
-                <li><code>bounce_y()</code>: reverses vertical direction.</li>
-            </ul>
-
-            <p>
-                <code>velocityX</code> and <code>velocityY</code>
-                represent internal runtime motion values.
-            </p>
-
-            <p>
-                These values are affected by:
-            </p>
-
-            <ul>
-                <li><code>acceleration</code></li>
-                <li><code>inertia</code></li>
-                <li><code>advance()</code></li>
-            </ul>
-
-            <p>
-                Scripts are loaded only once and cached
-                using normalized paths.
-            </p>
-
-            <p>
-                Spawned instances reuse already loaded scripts.
-            </p>
-
-            <h2>Lifecycle</h2>
-
-            <p>
-                During execution, FLX processes a series of stages
-                on every main loop iteration.
-            </p>
-
-            <ol>
-                <li>Data initialization</li>
-                <li>Runtime start</li>
-                <li>Input reading</li>
-                <li>Logic execution</li>
-                <li>Movement processing</li>
-                <li>Collision management</li>
-                <li>Rendering</li>
-            </ol>
-
-            <p>
-                Scripts can react to these stages through specific functions.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">lifecycle.js</div>
-<pre><code>function start(self) {}
-function action(self) {}
-function motion(self) {}
-function collision(self, other) {}
-function draw(self) {}
-function end(self) {}
-</code></pre>
-            </div>
-
-            <p class="placeholder">
-                The following sections explore each of these systems in more depth.
-            </p>
-
-            <h2>Coordinate and Angle System</h2>
-
-            <p>
-                FLX uses a 2D coordinate system with the origin
-                located at the top-left corner of the screen.
+                FLX uses a 2D coordinate system with its origin
+                in the top-left corner of the screen.
             </p>
 
             <ul>
@@ -261,15 +193,19 @@ function end(self) {}
                 <li>Moving down increases <code>y</code>.</li>
             </ul>
 
+            <hr />
+
+            <h2>Angle System</h2>
+
             <p>
-                Angles follow the FLX convention:
+                FLX uses its own angular convention.
             </p>
 
             <ul>
-                <li><code>0°</code>: up.</li>
-                <li><code>90°</code>: right.</li>
-                <li><code>180°</code>: down.</li>
-                <li><code>270°</code>: left.</li>
+                <li><code>0°</code> points up.</li>
+                <li><code>90°</code> points right.</li>
+                <li><code>180°</code> points down.</li>
+                <li><code>270°</code> points left.</li>
                 <li>Positive angles rotate clockwise.</li>
             </ul>
 
@@ -280,6 +216,58 @@ advance(ship);
 </code></pre>
             </div>
 
+            <hr />
+
+            <h2>Motion</h2>
+
+            <p>
+                FLX combines a traditional speed-based system
+                with acceleration and inertia.
+            </p>
+
+            <p>
+                Common motion-related properties include:
+            </p>
+
+            <ul>
+                <li><code>speed</code></li>
+                <li><code>velocityX</code></li>
+                <li><code>velocityY</code></li>
+                <li><code>acceleration</code></li>
+                <li><code>inertia</code></li>
+                <li><code>rotationSpeed</code></li>
+            </ul>
+
+            <p>
+                Movement functions automatically use
+                the FLX angular convention.
+            </p>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li class="current">↓ Core Concepts ← You are here</li>
+                <li class="recommended"><a class="link" href="getting-started.html">Getting Started</a> → Recommended</li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
         </article>
     </main>
 

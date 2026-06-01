@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../tools/schemas/drawable.schema.json",
+  "name": "AsteroidC",
+
+  "shape": {
+    "type": "polygon",
+    "color": "ORANGE",
+
+    "points": [
+      { "x": 0, "y": -20 },
+      { "x": 8, "y": -16 },
+      { "x": 20, "y": -2 },
+      { "x": 12, "y": 18 },
+      { "x": -4, "y": 16 },
+      { "x": -18, "y": 6 },
+      { "x": -16, "y": -10 }
+    ]
+  },
+
+  "bounds": {
+    "mode": "wrap",
+    "overflow": true
+  },
+
+  "group": "asteroid",
+
+  "behavior": {
+    "scripts": [
+      "scripts/asteroid"
+    ]
+  }
+}

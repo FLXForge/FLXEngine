@@ -101,7 +101,7 @@ interface RuntimeObject {
     /** Current horizontal velocity. Used by motion-based movement. */
     velocityX: number;
 
-    /** Current vertical  velocity. Used by motion-based movement. */
+    /** Current vertical velocity. Used by motion-based movement. */
     velocityY: number;
 
     /** Initial X position. */
@@ -215,6 +215,14 @@ declare function to_origin(object: RuntimeObject): void;
 declare function probability(chance: number, base?: number): boolean;
 
 /**
+ * Returns a random number between min and max.
+ *
+ * @example
+ * asteroid.angle = random(0, 360);
+ */
+declare function random(min: number, max: number): number;
+
+/**
  * Marks an object for destruction.
  * The object will be removed at the end of the frame.
  */
@@ -238,7 +246,7 @@ declare function spawn(
 ): void;
 
 /**
- * Called once when the proyect starts.
+ * Called once when the project starts.
  */
 declare function start(): void;
 

@@ -5,7 +5,7 @@
   "type": "object",
   "additionalProperties": false,
 
-  "required": [ "name", "origin", "shape" ],
+  "required": [ "name" ],
 
   "properties": {
     "$schema": {
@@ -14,6 +14,14 @@
 
     "name": {
       "type": "string"
+    },
+
+    "like": {
+      "type": "string"
+    },
+
+    "visible": {
+      "type": "boolean"
     },
 
     "origin": {

@@ -267,7 +267,7 @@ void Engine::loadPrefabs()
 
             const std::string prefabPath =
                 resolveJsonPath(
-                    projectBasePath,
+                    spawnDefinition.basePath,
                     spawnDefinition.prefab
                 );
 

@@ -100,7 +100,6 @@
             <hr />
 
             <section class="example-card">
-
                 <div class="example-header">
                     <div>
                         <p class="example-status progress">En desarrollo</p>
@@ -111,40 +110,52 @@
                 </div>
 
                 <p class="example-tagline">
-                    Inercia, rotación y caos espacial.
+                    Inercia, composición y supervivencia en el vacío.
                 </p>
 
                 <div class="example-gallery">
-                    <img class="example-cover" src="../assets/examples/asteroids-cover.png" alt="Asteroids cover" alt="Pong cover">
+                    <img class="example-cover"
+                            src="../assets/examples/asteroids-cover.png"
+                            alt="Asteroids cover">
 
                     <div class="example-screenshots">
-                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
-                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
+                        <img class="example-screenshot"
+                                src="../assets/working.png"
+                                alt="Asteroids gameplay">
+
+                        <img class="example-screenshot"
+                                src="../assets/working.png"
+                                alt="Asteroids gameplay">
                     </div>
                 </div>
 
                 <p>
-                    Asteroids representa la segunda gran fase de evolución del runtime.
+                    Asteroids representa la segunda gran fase de evolución de FLX.
                 </p>
 
                 <p>
-                    Este ejemplo introduce movimiento avanzado,
-                    aceleración,
-                    inercia,
-                    rotación,
-                    wrapping,
-                    spawns dinámicos
-                    y prefabs reutilizables.
+                    Mientras que Pong permitió validar la arquitectura básica,
+                    Asteroids está ayudando a definir cómo se construyen,
+                    nacen, interactúan y desaparecen los objetos dentro del runtime.
                 </p>
 
                 <p>
-                    También está sirviendo para consolidar
-                    la documentación,
-                    las APIs
-                    y las convenciones internas del engine.
+                    Este ejemplo ha impulsado la creación del lifecycle completo,
+                    los prefabs,
+                    los spawns dinámicos,
+                    la composición JSON mediante <code>like</code>,
+                    los estados locales por objeto
+                    y las primeras formas poligonales del engine.
+                </p>
+
+                <p>
+                    Más que un simple clon arcade,
+                    Asteroids se ha convertido en el principal entorno de validación
+                    para la arquitectura actual de FLX.
                 </p>
 
                 <section class="example-card">
+
                     <div class="example-header">
                         <h3>Qué se puede aprender</h3>
                     </div>
@@ -152,11 +163,15 @@
                     <div>
                         <ul>
                             <li>Sistema motion avanzado</li>
+                            <li>Aceleración e inercia</li>
                             <li>Rotación y convención angular FLX</li>
-                            <li>Spawn y prefabs</li>
-                            <li>Wrap screen</li>
-                            <li>Movimiento basado en aceleración</li>
-                            <li>Arquitectura runtime más compleja</li>
+                            <li>Lifecycle completo del runtime</li>
+                            <li>Estados locales mediante <code>object.local</code></li>
+                            <li>Spawn y prefabs reutilizables</li>
+                            <li>Composición JSON mediante <code>like</code></li>
+                            <li>Polígonos definidos por puntos</li>
+                            <li>Spawners reutilizables</li>
+                            <li>Wrap screen y gestión de límites</li>
                         </ul>
                     </div>
 
@@ -165,6 +180,7 @@
                             Ver repositorio del ejemplo
                         </a>
                     </p>
+
                 </section>
             </section>
 

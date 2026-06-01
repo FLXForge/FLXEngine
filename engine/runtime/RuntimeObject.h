@@ -8,6 +8,7 @@
 struct SpawnDefinition
 {
     std::string prefab;
+    std::string basePath;
     Vector2 offset;
 };
 
@@ -36,6 +37,8 @@ public:
 
 public:
     std::string name;
+    std::string runtimeId;
+    std::string sourcePath;
     std::string group;
 
     bool visible;
@@ -60,6 +63,7 @@ public:
     float inertia;
 
     std::string shapeType;
+    std::vector<Vector2> points;
 
     std::string boundsMode;
     bool boundsOverflow;

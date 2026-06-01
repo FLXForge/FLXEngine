@@ -18,6 +18,8 @@
         <div id="sidebar"></div>
 
         <article class="doc-content">
+
+             
             <p class="eyebrow">FLX Documentation</p>
             <h1>Core Concepts</h1>
 
@@ -27,8 +29,8 @@
             </p>
 
             <p>
-                This section describes the fundamental concepts present
-                in every FLX project.
+                This section describes the fundamental concepts
+                that are part of every FLX project.
             </p>
 
             <hr />
@@ -36,21 +38,25 @@
             <h2>Project</h2>
 
             <p>
-                Every FLX project starts with a main file
+                Every FLX project begins with a main file
                 using the <code>.flx</code> extension.
             </p>
 
             <p>
-                This file acts as the project entry point.
+                This file acts as the project's entry point.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Asteroids.flx</div>
+                 
+
 <pre><code>name:Asteroids
 version:1.0
 flxEngineVersion:0.1.0
 main:game.json
 </code></pre>
+
+                 
             </div>
 
             <p>
@@ -94,7 +100,7 @@ main:game.json
             <h2>Objects</h2>
 
             <p>
-                Objects represent elements that exist inside the runtime.
+                Objects represent elements that exist within the runtime.
             </p>
 
             <p>
@@ -113,8 +119,16 @@ main:game.json
                 Objects are typically described using JSON.
             </p>
 
+            <p>
+                A definition may be written entirely
+                or built by reusing another definition through
+                <code>like</code>.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">ship.json</div>
+                 
+
 <pre><code>{
     "name": "Ship",
 
@@ -127,14 +141,87 @@ main:game.json
     }
 }
 </code></pre>
+
+                 
             </div>
+
+            <hr />
+
+            <h2>Reuse and Composition</h2>
+
+            <p>
+                FLX allows new definitions to be built
+                from existing ones.
+            </p>
+
+            <p>
+                This capability is based on the
+                <code>like</code> system,
+                which allows configurations to be reused
+                while overriding only the required fields.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">DeepSpaceLeft</div>
+                 
+
+<pre><code>{
+    "name": "DeepSpaceLeft",
+
+    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
+}
+</code></pre>
+
+                 
+            </div>
+
+            <p>
+                This feature makes it possible to build entire families
+                of objects from a single base definition.
+            </p>
+
+            <p>
+                Full details are described in
+                JSON Reference.
+            </p>
+
+            <hr />
+
+            <h2>Children and Spawns</h2>
+
+            <p>
+                FLX distinguishes between objects that exist when the runtime starts
+                and objects that may appear later.
+            </p>
+
+            <ul>
+                <li>
+                    <code>children</code>:
+                    objects that enter the world when the scene is loaded.
+                </li>
+
+                <li>
+                    <code>spawns</code>:
+                    reusable definitions used to create new instances during execution.
+                </li>
+            </ul>
+
+            <p>
+                This separation helps maintain a clear structure
+                between initial content and dynamic content.
+            </p>
 
             <hr />
 
             <h2>Shape Types</h2>
 
             <p>
-                FLX provides several basic visual representations.
+                FLX provides several basic visual representation types.
             </p>
 
             <table>
@@ -142,25 +229,35 @@ main:game.json
                     <th>Type</th>
                     <th>Origin</th>
                 </tr>
+
                 <tr>
                     <td><code>block</code></td>
                     <td>Top-left corner</td>
                 </tr>
+
                 <tr>
                     <td><code>rectangle</code></td>
                     <td>Center</td>
                 </tr>
+
                 <tr>
                     <td><code>triangle</code></td>
                     <td>Center</td>
                 </tr>
+
                 <tr>
                     <td><code>line</code></td>
                     <td>Center</td>
                 </tr>
+
+                <tr>
+                    <td><code>polygon</code></td>
+                    <td>Center</td>
+                </tr>
+
                 <tr>
                     <td><code>text</code></td>
-                    <td>Text rendering</td>
+                    <td>Text</td>
                 </tr>
             </table>
 
@@ -170,11 +267,39 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">shape.json</div>
+                 
+
 <pre><code>"shape": {
     "type": "triangle",
     "color": "WHITE"
 }
 </code></pre>
+
+                 
+            </div>
+
+            <p>
+                Polygons allow irregular shapes
+                to be defined through lists of points.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+                 
+
+<pre><code>"shape": {
+    "type": "polygon",
+
+    "points": [
+        { "x": 0, "y": -16 },
+        { "x": 12, "y": -8 },
+        { "x": 16, "y": 8 },
+        { "x": -8, "y": 14 }
+    ]
+}
+</code></pre>
+
+                 
             </div>
 
             <hr />
@@ -195,38 +320,42 @@ main:game.json
 
             <hr />
 
-            <h2>Angle System</h2>
+            <h2>Angular System</h2>
 
             <p>
                 FLX uses its own angular convention.
             </p>
 
             <ul>
-                <li><code>0°</code> points up.</li>
+                <li><code>0°</code> points upward.</li>
                 <li><code>90°</code> points right.</li>
-                <li><code>180°</code> points down.</li>
+                <li><code>180°</code> points downward.</li>
                 <li><code>270°</code> points left.</li>
                 <li>Positive angles rotate clockwise.</li>
             </ul>
 
             <div class="code-card">
                 <div class="code-header">rotation</div>
+                 
+
 <pre><code>rotate(ship, RIGHT);
 advance(ship);
 </code></pre>
+
+                 
             </div>
 
             <hr />
 
-            <h2>Motion</h2>
+            <h2>Movement</h2>
 
             <p>
-                FLX combines a traditional speed-based system
-                with acceleration and inertia.
+                FLX combines a classic speed-based system
+                with an acceleration and inertia-based system.
             </p>
 
             <p>
-                Common motion-related properties include:
+                Common movement-related properties include:
             </p>
 
             <ul>
@@ -239,7 +368,7 @@ advance(ship);
             </ul>
 
             <p>
-                Movement functions automatically use
+                Movement functions automatically follow
                 the FLX angular convention.
             </p>
 
@@ -269,6 +398,7 @@ advance(ship);
                 <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
         </article>
+
     </main>
 
     <div id="footer"></div>

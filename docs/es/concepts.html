@@ -114,6 +114,12 @@ main:game.json
                 Normalmente los objetos se describen mediante JSON.
             </p>
 
+            <p>
+                Una definición puede escribirse completamente
+                o construirse reutilizando otra definición mediante
+                <code>like</code>.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">ship.json</div>
 <pre><code>{
@@ -132,6 +138,73 @@ main:game.json
 
             <hr />
 
+            <h2>Reutilización y composición</h2>
+
+            <p>
+                FLX permite construir nuevas definiciones
+                a partir de otras ya existentes.
+            </p>
+
+            <p>
+                Esta capacidad se basa en el sistema
+                <code>like</code>,
+                que permite reutilizar configuraciones
+                y sobrescribir únicamente los campos necesarios.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">DeepSpaceLeft</div>
+<pre><code>{
+    "name": "DeepSpaceLeft",
+
+    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta característica permite construir familias completas
+                de objetos reutilizando una única definición base.
+            </p>
+
+            <p>
+                Los detalles completos se describen en
+                JSON Reference.
+            </p>
+
+            <hr />
+
+            <h2>Children y Spawns</h2>
+
+            <p>
+                FLX distingue entre objetos que existen al iniciar el runtime
+                y objetos que pueden aparecer posteriormente.
+            </p>
+
+            <ul>
+                <li>
+                    <code>children</code>:
+                    objetos que entran al mundo al cargarse la escena.
+                </li>
+
+                <li>
+                    <code>spawns</code>:
+                    definiciones reutilizables utilizadas para crear nuevas instancias durante la ejecución.
+                </li>
+            </ul>
+
+            <p>
+                Esta separación permite mantener una estructura clara
+                entre el contenido inicial y el contenido dinámico.
+            </p>
+
+            <hr />
+
             <h2>Tipos de shape</h2>
 
             <p>
@@ -143,22 +216,32 @@ main:game.json
                     <th>Tipo</th>
                     <th>Origen</th>
                 </tr>
+
                 <tr>
                     <td><code>block</code></td>
                     <td>Esquina superior izquierda</td>
                 </tr>
+
                 <tr>
                     <td><code>rectangle</code></td>
                     <td>Centro</td>
                 </tr>
+
                 <tr>
                     <td><code>triangle</code></td>
                     <td>Centro</td>
                 </tr>
+
                 <tr>
                     <td><code>line</code></td>
                     <td>Centro</td>
                 </tr>
+
+                <tr>
+                    <td><code>polygon</code></td>
+                    <td>Centro</td>
+                </tr>
+
                 <tr>
                     <td><code>text</code></td>
                     <td>Texto</td>
@@ -174,6 +257,26 @@ main:game.json
 <pre><code>"shape": {
     "type": "triangle",
     "color": "WHITE"
+}
+</code></pre>
+            </div>
+
+            <p>
+                Los polígonos permiten definir formas irregulares
+                mediante listas de puntos.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+<pre><code>"shape": {
+    "type": "polygon",
+
+    "points": [
+        { "x": 0, "y": -16 },
+        { "x": 12, "y": -8 },
+        { "x": 16, "y": 8 },
+        { "x": -8, "y": 14 }
+    ]
 }
 </code></pre>
             </div>
@@ -271,6 +374,7 @@ advance(ship);
                 <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
         </article>
+
     </main>
 
     <div id="footer"></div>

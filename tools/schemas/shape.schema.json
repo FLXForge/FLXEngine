@@ -10,12 +10,25 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": [ "block", "rectangle", "triangle", "line", "text" ],
+      "enum": [ "block", "rectangle", "triangle", "polygon", "line", "text" ],
       "default": "block"
     },
 
     "color": {
       "type": "string"
+    },
+
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "number" },
+          "y": { "type": "number" }
+        },
+        "required": [ "x", "y" ],
+        "additionalProperties": false
+      }
     },
 
     "size": {

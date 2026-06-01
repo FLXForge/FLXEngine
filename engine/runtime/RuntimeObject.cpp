@@ -16,6 +16,7 @@ static Vector2 rotatePoint(
     const float rotatedX =
         translatedX * cosf(radians) -
         translatedY * sinf(radians);
+        translatedY * sinf(radians);
 
     const float rotatedY =
         translatedX * sinf(radians) +
@@ -35,6 +36,8 @@ RuntimeObject::RuntimeObject(
 )
 {
     this->name = name;
+    this->runtimeId = name;
+    this->sourcePath = "";
     this->origin = origin;
     this->position = origin;
     this->size = size;
@@ -220,6 +223,55 @@ void RuntimeObject::drawAt(Vector2 drawPosition, int scale) const
             angle,
             color
         );
+    }
+    else if (shapeType == "polygon")
+    {
+        if (points.size() < 2)
+        {
+            return;
+        }
+
+        const Vector2 center = {
+            drawPosition.x * scale,
+            drawPosition.y * scale
+        };
+
+        for (size_t i = 0; i < points.size(); ++i)
+        {
+            const Vector2 currentLocal = points[i];
+            const Vector2 nextLocal = points[(i + 1) % points.size()];
+
+            Vector2 current = {
+                center.x + currentLocal.x * scale,
+                center.y + currentLocal.y * scale
+            };
+
+            Vector2 next = {
+                center.x + nextLocal.x * scale,
+                center.y + nextLocal.y * scale
+            };
+
+            current =
+                rotatePoint(
+                    current,
+                    center,
+                    angle
+                );
+
+            next =
+                rotatePoint(
+                    next,
+                    center,
+                    angle
+                );
+
+            DrawLineEx(
+                current,
+                next,
+                1.0f * scale,
+                color
+            );
+        }
     }
     else if (shapeType == "line")
     {

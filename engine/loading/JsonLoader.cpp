@@ -55,6 +55,11 @@ namespace
             return WHITE;
         }
 
+        if (colorName == "BROWN")
+        {
+            return BROWN;
+        }
+
         Logger::warning(
             "json",
             "Unknown color '" + colorName + "', using WHITE"
@@ -97,14 +102,156 @@ namespace
             return false;
         }
 
-        file >> data;
+        try
+        {
+            file >> data;
+        }
+        catch (const nlohmann::json::parse_error& error)
+        {
+            Logger::error(
+                "json",
+                "Invalid JSON in " +
+                path.string() +
+                ": " +
+                error.what()
+            );
+
+            return false;
+        }
         return true;
     }
 
-    RuntimeObject parseDrawable(const nlohmann::json& object)
+    void mergeJson(
+        nlohmann::json& base,
+        const nlohmann::json& override
+    )
+    {
+        for (auto it = override.begin(); it != override.end(); ++it)
+        {
+            const std::string key =
+                it.key();
+
+            if (
+                base.contains(key) &&
+                base[key].is_object() &&
+                it.value().is_object()
+            )
+            {
+                mergeJson(
+                    base[key],
+                    it.value()
+                );
+            }
+            else
+            {
+                base[key] =
+                    it.value();
+            }
+        }
+    }
+
+    bool resolveLike(
+        const std::filesystem::path& currentFile,
+        const nlohmann::json& object,
+        nlohmann::json& resolved
+    )
+    {
+        if (!object.is_object() || !object.contains("like"))
+        {
+            resolved = object;
+            resolved["__sourceFile"] =
+                currentFile.generic_string();
+            return true;
+        }
+
+        const std::string likePath =
+            object["like"].get<std::string>();
+
+        const auto basePath =
+            resolveChildPath(
+                currentFile,
+                likePath
+            );
+
+        nlohmann::json base;
+
+        if (!loadJson(basePath, base))
+        {
+            Logger::error(
+                "json",
+                "Like target could not be loaded: " + basePath.string()
+            );
+
+            return false;
+        }
+
+        base["__sourceFile"] =
+            basePath.generic_string();
+
+        nlohmann::json override =
+            object;
+
+        override.erase("like");
+
+        mergeJson(base, override);
+
+        resolved = base;
+
+        return true;
+    }
+
+    nlohmann::json resolveLike(
+        const std::filesystem::path& currentFile,
+        const nlohmann::json& object
+    )
+    {
+        if (!object.is_object() || !object.contains("like"))
+        {
+            return object;
+        }
+
+        const std::string likePath =
+            object["like"].get<std::string>();
+
+        const auto basePath =
+            resolveChildPath(
+                currentFile,
+                likePath
+            );
+
+        nlohmann::json base;
+
+        if (!loadJson(basePath, base))
+        {
+            return object;
+        }
+
+        nlohmann::json override =
+            object;
+
+        override.erase("like");
+
+        mergeJson(base, override);
+
+        return base;
+    }
+
+    RuntimeObject parseRuntimeObject(
+        const nlohmann::json& object,
+        const std::filesystem::path& currentFile
+    )
     {
         const std::string name =
             object.value("name", "Unnamed");
+
+        std::filesystem::path sourceFile =
+            currentFile;
+
+        if (object.contains("__sourceFile"))
+        {
+            sourceFile =
+                object["__sourceFile"].get<std::string>();
+        }
 
         float x = 0.0f;
         float y = 0.0f;
@@ -119,25 +266,34 @@ namespace
         float width = 0.0f;
         float height = 0.0f;
 
-        if (object.contains("shape"))
+        const bool hasShape =
+            object.contains("shape");
+
+        const bool hasSize =
+            object.contains("size");
+
+        if (hasShape)
         {
             const auto& shape = object["shape"];
 
             shapeType = shape.value("type", "block");
 
-            width =
-                shape["size"]["width"].get<float>();
+            if (shape.contains("size"))
+            {
+                width =
+                    shape["size"].value("width", 0.0f);
 
-            height =
-                shape["size"]["height"].get<float>();
+                height =
+                    shape["size"].value("height", 0.0f);
+            }
         }
-        else
+        else if (hasSize)
         {
             width =
-                object["size"]["width"].get<float>();
+                object["size"].value("width", 0.0f);
 
             height =
-                object["size"]["height"].get<float>();
+                object["size"].value("height", 0.0f);
         }
 
         Color color = WHITE;
@@ -162,6 +318,27 @@ namespace
         );
 
         runtimeObject.shapeType = shapeType;
+
+        if (!hasShape && !hasSize)
+        {
+            runtimeObject.visible = false;
+        }
+
+        if (hasShape && object["shape"].contains("points"))
+        {
+            const auto& points =
+                object["shape"]["points"];
+
+            for (const auto& point : points)
+            {
+                runtimeObject.points.push_back(
+                    Vector2{
+                        point.value("x", 0.0f),
+                        point.value("y", 0.0f)
+                    }
+                );
+            }
+        }
 
         if (object.contains("speed"))
         {
@@ -264,6 +441,9 @@ namespace
                 spawn.prefab =
                     spawnData["prefab"].get<std::string>();
 
+                spawn.basePath =
+                    sourceFile.parent_path().generic_string();
+
                 spawn.offset = Vector2{ 0.0f, 0.0f };
 
                 if (spawnData.contains("offset"))
@@ -296,7 +476,7 @@ namespace
 
         if (data.contains("shape"))
         {
-            objects.push_back(parseDrawable(data));
+            objects.push_back(parseRuntimeObject(data, path));
             return;
         }
 
@@ -319,17 +499,21 @@ namespace
             }
             else if (child.is_object())
             {
-                if (child.contains("origin"))
-                {
-                    objects.push_back(parseDrawable(child));
-                }
-                else
+                nlohmann::json resolvedChild;
+
+                if (!resolveLike(path, child, resolvedChild))
                 {
                     Logger::warning(
                         "json",
-                        "Inline child without origin is not supported yet"
+                        "Skipping child because like could not be resolved"
                     );
+
+                    continue;
                 }
+
+                objects.push_back(
+                    parseRuntimeObject(resolvedChild, path)
+                );
             }
         }
     }

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../../tools/schemas/node.schema.json",
+  "name": "DeepSpace",
+
+  "origin": {
+    "x": 5,
+    "y": 5
+  },
+
+  "spawns": {
+    "Asteroid_a": {
+      "prefab": "asteroid_a"
+    },
+    "Asteroid_b": {
+      "prefab": "asteroid_b"
+    },
+    "Asteroid_c": {
+      "prefab": "asteroid_c"
+    }
+  },
+
+  "behavior": {
+    "scripts": [ "scripts/space" ]
+  }
+}

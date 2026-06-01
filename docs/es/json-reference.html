@@ -70,8 +70,8 @@
 
     "spawns": { ... },
 
-    "program": {
-        "scripts": [ "scripts/program" ]
+    "behavior": {
+        "scripts": [ "scripts/game" ]
     }
 }
 </code></pre>
@@ -87,7 +87,7 @@
                 <li><code>scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: lista de estructuras cargados por el principal. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#program">program</a>: scripts asociados al programa. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#behavior">behavior</a>: scripts asociados al comportamiento general. <i>[ Opcional ]</i></li>
             </ul>
 
             <h2 id="screen">Screen</h2>
@@ -135,25 +135,62 @@
                 Puede referirse como un fichero externo (no es necesario añadir la extensión JSON) o declararse en línea.
             </p>
 
-            <h2 id="program">Program</h2>
+            <h2 id="like">Composición JSON (like)</h2>
 
             <p>
-                El campo <code>program</code> permite declarar scripts con lógica asociada al programa.
+                FLX permite reutilizar definiciones JSON mediante el campo
+                <code>like</code>.
+            </p>
+
+            <p>
+                Esta característica permite construir nuevas configuraciones
+                a partir de otras existentes, sobrescribiendo únicamente
+                los campos necesarios.
             </p>
 
             <div class="code-card">
-                <div class="code-header">children</div>
-<pre><code>"program": {
-    "scripts": [ "scripts/program" ]
+                <div class="code-header">like</div>
+<pre><code>{
+    "name": "DeepSpaceLeft",
+
+    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
 }
 </code></pre>
             </div>
 
+            <p>
+                El runtime carga primero la definición indicada en
+                <code>like</code> y posteriormente sobrescribe
+                los campos declarados en el JSON actual.
+            </p>
+
+            <p>
+                La composición se realiza de forma recursiva,
+                permitiendo modificar únicamente las partes necesarias.
+            </p>
+
             <h3>Campos</h3>
 
             <ul>
-                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensión) cargados para el objeto.</li>
+                <li>
+                    <code>like</code>:
+                    ruta a la definición base utilizada para composición.
+                </li>
             </ul>
+
+            <p>
+                <strong>Importante:</strong>
+                <code>like</code> no implementa herencia.
+            </p>
+
+            <p>
+                Su objetivo es reutilizar y componer datos.
+            </p>
 
             <hr />
 
@@ -193,6 +230,16 @@
 
             <p>
                 Un archivo <code>drawable</code> define un objeto que puede representarse visualmente.
+            </p>
+
+            <p>
+                Un <code>drawable</code> también puede utilizarse como nodo lógico.
+            </p>
+
+            <p>
+                Si no define información visual,
+                el objeto seguirá existiendo dentro del runtime
+                pero no será representado en pantalla.
             </p>
 
             <div class="code-card">
@@ -310,6 +357,7 @@
                         <li><code>block</code>: bloque sólido por defecto. No aplica mecánicas de rotación.</li>
                         <li><code>rectangle</code>: rectángulo con soporte para rotación y movimiento orientado.</li>
                         <li><code>triangle</code>: triángulo sin relleno.</li>
+                        <li><code>polygon</code>: polígono definido mediante una lista de puntos.</li>
                         <li><code>line</code>: línea definida entre dos puntos.</li>
                         <li><code>text</code>: texto renderizable.</li>
                     </ul>
@@ -339,6 +387,34 @@
                 <li><code>width</code>: anchura del objeto en pixels.</li>
                 <li><code>height</code>: altura del objeto en pixels.</li>
             </ul>
+
+            <h2 id="polygon">Polygon</h2>
+
+            <p>
+                Los polígonos permiten definir formas irregulares
+                mediante una lista de puntos locales.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+<pre><code>"shape": {
+    "type": "polygon",
+    "color": "WHITE",
+
+    "points": [
+        { "x": 0, "y": -16 },
+        { "x": 12, "y": -8 },
+        { "x": 16, "y": 8 },
+        { "x": -8, "y": 14 }
+    ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                Cada punto se define en coordenadas locales
+                relativas al origen del objeto.
+            </p>
 
             <h2 id="motion">Motion</h2>
 
@@ -434,6 +510,16 @@
                 Las definiciones de spawn utilizan prefabs previamente cargados por el runtime.
             </p>
 
+            <p>
+                Las rutas de prefab se resuelven de forma relativa
+                al JSON que declara el spawn.
+            </p>
+
+            <p>
+                Esto permite construir estructuras reutilizables
+                sin depender de una ubicación fija dentro del proyecto.
+            </p>
+
             <h3>Campos</h3>
 
             <ul>
@@ -453,6 +539,20 @@
             <p>
                 El offset utiliza la rotación actual del objeto como referencia.
             </p>
+
+            <h3>Children y Spawns</h3>
+
+            <ul>
+                <li>
+                    <code>children</code>:
+                    objetos que entran en el mundo al cargarse el runtime.
+                </li>
+
+                <li>
+                    <code>spawns</code>:
+                    objetos que pueden instanciarse posteriormente.
+                </li>
+            </ul>
 
             <h2 id="behavior">Behavior</h2>
 

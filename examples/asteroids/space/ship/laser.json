@@ -21,6 +21,8 @@
     "overflow": false
   },
 
+  "group": "laser",
+
   "behavior": {
     "scripts": [ "scripts/laser" ]
   }

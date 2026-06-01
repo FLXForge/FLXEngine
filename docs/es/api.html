@@ -194,10 +194,17 @@
             </p>
 
             <div class="code-card">
-                <div class="code-header">delta</div>
-<pre><code>function motion(object) {
-    object.x += 120 * delta();
-}</code></pre>
+                <div class="code-header">timer</div>
+<pre><code>function motion(spawner) {
+
+    spawner.local["timer"] += delta();
+
+    if (spawner.local["timer"] > 3) {
+        spawn(spawner, "asteroid");
+        spawner.local["timer"] = 0;
+    }
+}
+</code></pre>
             </div>
 
             <h2>follow_y(object, targetName)</h2>
@@ -271,6 +278,12 @@ if (Key.down(KEY_LEFT)) {
                 Esto evita modificar la lista de objetos mientras el runtime la está procesando.
             </p>
 
+            <p>
+                Antes de la eliminación definitiva,
+                el runtime ejecutará la fase
+                <code>dead(object)</code>.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">kill</div>
 <pre><code>function collision(object, other) {
@@ -341,6 +354,35 @@ if (probability(1, 1000)) {
 
             <hr />
 
+            <h2>random(min, max)</h2>
+
+            <p>
+                Retorna un valor aleatorio comprendido entre
+                <code>min</code> y <code>max</code>.
+            </p>
+
+            <p>
+                Resulta útil para variaciones de movimiento,
+                generación procedural y comportamiento dinámico.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">random</div>
+<pre><code>asteroid.angle = random(0, 360);
+
+asteroid.speed = random(20, 80);
+</code></pre>
+            </div>
+
+            <h3>Parámetros</h3>
+
+            <ul>
+                <li><code>min</code>: valor mínimo.</li>
+                <li><code>max</code>: valor máximo.</li>
+            </ul>
+
+            <hr />
+
             <h2>rotate(object, direction)</h2>
 
             <p>
@@ -366,6 +408,16 @@ rotate(ship, RIGHT);</code></pre>
                 El parámetro <code>spawnName</code> identifica qué definición de spawn debe utilizarse.
             </p>
 
+            <p>
+                Las definiciones de spawn utilizan prefabs declarados
+                mediante JSON y pueden incluir offsets locales.
+            </p>
+
+            <p>
+                El objeto generado hereda la posición y orientación
+                necesarias para aplicar correctamente dicho offset.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">spawn</div>
 <pre><code>if (Key.pressed(KEY_SPACE)) {
@@ -380,6 +432,16 @@ rotate(ship, RIGHT);</code></pre>
                 <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
                 <li><code>spawnName</code>: nombre de la definición de spawn declarada en el JSON.</li>
             </ul>
+
+            <p>
+                Internamente, los objetos generados no se insertan
+                inmediatamente en el mundo.
+            </p>
+
+            <p>
+                FLX utiliza una cola de spawn para evitar modificar
+                la colección de objetos mientras el runtime la está recorriendo.
+            </p>
 
             <hr />
 

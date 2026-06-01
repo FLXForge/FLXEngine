@@ -125,6 +125,33 @@ static JSValue jsProbability(
     );
 }
 
+static JSValue jsRandom(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    if (argc < 2)
+    {
+        return JS_NewFloat64(context, 0.0);
+    }
+
+    double min = 0.0;
+    double max = 0.0;
+
+    JS_ToFloat64(context, &min, argv[0]);
+    JS_ToFloat64(context, &max, argv[1]);
+
+    const double randomValue =
+        min + static_cast<double>(GetRandomValue(0, 1000000)) / 1000000.0 * (max - min);
+
+    return JS_NewFloat64(
+        context,
+        randomValue
+    );
+}
+
 static JSValue jsMoveX(
     JSContext* context,
     JSValueConst thisValue,
@@ -829,6 +856,13 @@ void ScriptBindings::registerAll(
         global,
         "delta",
         JS_NewCFunction(context, jsDelta, "delta", 0)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "random",
+        JS_NewCFunction(context, jsRandom, "random", 2)
     );
 
     JS_SetPropertyStr(

@@ -38,6 +38,36 @@
 
             <hr />
 
+            <h2>Principio actual de desarrollo</h2>
+
+            <p>
+                Durante las primeras fases del proyecto,
+                los ejemplos se utilizaban para definir nuevas capacidades del runtime.
+            </p>
+
+            <p>
+                El enfoque actual es diferente.
+            </p>
+
+            <p>
+                Antes de añadir nuevas funcionalidades,
+                se intenta construir cada ejemplo utilizando únicamente
+                las capacidades ya existentes.
+            </p>
+
+            <p>
+                Cuando una limitación impide continuar de forma razonable,
+                esa limitación se convierte en candidata a evolución del runtime.
+            </p>
+
+            <p>
+                Este enfoque permite que las nuevas funcionalidades
+                nazcan de necesidades reales detectadas durante el desarrollo,
+                en lugar de aparecer como características diseñadas de forma aislada.
+            </p>
+
+            <hr />
+
             <h2>Desarrollado</h2>
 
             <h3>Ejemplo Pong</h3>
@@ -86,6 +116,11 @@
             </p>
 
             <p>
+                Pong validó el runtime base.
+                Asteroids está validando el lenguaje con el que se construyen los mundos.
+            </p>
+
+            <p>
                 Actualmente utilizado para validar:
             </p>
 
@@ -125,7 +160,7 @@
 
                 <li>
                     Instanciación runtime mediante
-                    <code>spawn(self, "laser")</code>.
+                    <code>spawn(object, "laser")</code>.
                 </li>
 
                 <li>Creación dinámica de objetos desde prefabs.</li>
@@ -168,14 +203,73 @@
                     Modelo de ámbitos:
                     función, script, <code>object.local</code> y futuro ámbito global.
                 </li>
+
+                <li>
+                    Composición de JSON mediante <code>like</code>
+                    con sobrescritura recursiva de propiedades.
+                </li>
+
+                <li>
+                    Reutilización de configuraciones mediante
+                    prefabs y definiciones derivadas.
+                </li>
+
+                <li>
+                    Resolución de rutas relativas desde el JSON que las declara.
+                </li>
+
+                <li>
+                    Children inline definidos directamente dentro de estructuras JSON.
+                </li>
+
+                <li>
+                    Nodos lógicos sin representación visual.
+                </li>
+
+                <li>
+                    Nuevo tipo <code>shape.type = polygon</code>.
+                </li>
+
+                <li>
+                    Formas poligonales definidas mediante listas de puntos.
+                </li>
+
+                <li>
+                    Generación aleatoria mediante
+                    <code>random(min, max)</code>.
+                </li>
+
+                <li>
+                    Spawners reutilizables construidos mediante
+                    <code>like</code>.
+                </li>
+
+                <li>
+                    Spawn periódico basado en temporizadores mediante
+                    <code>object.local</code>.
+                </li>
+
+                <li>
+                    Limitación local de entidades por spawner.
+                </li>
+
+                <li>
+                    Validación práctica completa del flujo Asteroids:
+                    nave, láseres, spawners, asteroides y colisiones básicas.
+                </li>
             </ul>
 
             <h3>Actualmente en desarrollo</h3>
 
             <ul>
-                <li>Spawn de objetos complejos, especialmente asteroides.</li>
+                <li>
+                    Refinamiento del sistema de asteroides:
+                    fragmentación, comportamiento y variantes.
+                </li>
 
                 <li>UI y texto.</li>
+
+                <li>Sistema de puntuación y estado global del juego.</li>
 
                 <li>Contexto <code>game</code> / <code>level</code>.</li>
 
@@ -239,22 +333,10 @@
 
             <h2>Deuda técnica y mejoras pendientes</h2>
 
+            <h3>Runtime</h3>
+
             <ul>
-
                 <li>Normalizar Pong al nuevo schema <code>shape</code>/<code>motion</code>.</li>
-
-                <li>Revisar si <code>program</code> sigue siendo el nombre definitivo.</li>
-
-                <li>Centralizar funciones del wrapper JavaScript para evitar modificar múltiples puntos por cada nuevo lifecycle.</li>
-
-                <li>Refactorizar el wrapper JS mediante un sistema de registro centralizado de funciones.</li>
-
-                <li>Normalizar rutas JSON igual que scripts.</li>
-
-                <li>
-                    Mejorar warnings:
-                    no avisar cuando un lifecycle opcional no exista.
-                </li>
 
                 <li>
                     Ampliar <code>object.local</code>.
@@ -264,8 +346,9 @@
                 </li>
 
                 <li>
-                    Definir un ámbito global persistente,
-                    por ejemplo para puntuación, estado general o datos compartidos.
+                    Implementar un ámbito global persistente
+                    para puntuación, vidas, estado general
+                    y datos compartidos del runtime.
                 </li>
 
                 <li>Definir contexto <code>game</code>/<code>level</code> y persistencia entre niveles.</li>
@@ -289,18 +372,72 @@
                 </li>
 
                 <li>
+                    Añadir advertencias para nombres duplicados
+                    en objetos y prefabs.
+                </li>
+
+                <li>
+                    Definir una identidad única runtime
+                    (<code>runtimeId</code>)
+                    para cada instancia.
+                </li>
+            </ul>
+
+            <h3>Motor y arquitectura</h3>
+
+            <ul>
+                <li>
+                    Centralizar funciones del wrapper JavaScript
+                    para evitar modificar múltiples puntos por cada nuevo lifecycle.
+                </li>
+
+                <li>
+                    Refactorizar el wrapper JS mediante un sistema
+                    de registro centralizado de funciones.
+                </li>
+
+                <li>
+                    Centralizar completamente la normalización de rutas
+                    para evitar lógica duplicada entre recursos,
+                    prefabs y scripts.
+                </li>
+
+                <li>
+                    Mejorar warnings:
+                    no avisar cuando un lifecycle opcional no exista.
+                </li>
+
+                <li>
                     Explorar una capa de input semántico
                     (<code>Control.*</code>)
                     por encima de <code>Key</code>.
                 </li>
+            </ul>
 
+            <h3>Datos y composición JSON</h3>
+
+            <ul>
                 <li>
-                    Separar y documentar correctamente
-                    <code>block</code>,
-                    <code>rectangle</code>
-                    y <code>triangle</code>.
+                    Implementar correctamente <code>shape.like</code>
+                    y definir su comportamiento dentro del sistema de composición.
                 </li>
 
+                <li>
+                    Reflejar correctamente el sistema
+                    <code>like</code>
+                    en JSON Schemas y documentación.
+                </li>
+
+                <li>
+                    Documentar formalmente la composición JSON mediante
+                    <code>like</code>,
+                    incluyendo reglas de merge y sobrescritura.
+                </li>
+            </ul>
+
+            <h3>Colisiones y física</h3>
+
+            <ul>
                 <li>
                     Mejorar colisiones overflow-aware.
                 </li>
@@ -310,6 +447,29 @@
                     colisiones wrap-aware utilizando radios y offsets.
                 </li>
 
+                <li>
+                    Mejorar colisiones para formas poligonales.
+                </li>
+            </ul>
+
+            <h3>Herramientas futuras</h3>
+
+            <ul>
+                <li>
+                    Evaluar la incorporación futura de
+                    <code>spawnRandom()</code>
+                    como helper de alto nivel.
+                </li>
+
+                <li>
+                    Explorar una herramienta visual
+                    para creación y edición de shapes poligonales.
+                </li>
+
+                <li>
+                    Explorar una herramienta visual
+                    para composición JSON y prefabs.
+                </li>
             </ul>
 
             <hr />
@@ -336,7 +496,7 @@
                 <li>↓ <a class="link" href="api.html">FLX API</a></li>
                 <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
                 <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
-                <li class="current">↓ Roadmap ← You are here</li>
+                <li class="current">↓ Roadmap ← Estás aquí</li>
             </ul>
         </article>
     </main>

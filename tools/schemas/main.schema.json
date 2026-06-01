@@ -41,18 +41,8 @@
       "type": "integer"
     },
 
-    "program": {
-      "type": "object",
-      "properties": {
-        "scripts": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [ "scripts" ],
-      "additionalProperties": false
+    "behavior": {
+      "$ref": "behavior.schema.json"
     },
 
     "children": {

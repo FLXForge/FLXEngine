@@ -12,7 +12,7 @@
 
   "children": ["space/level"],
 
-  "program": {
-    "scripts": [ "scripts/program" ]
+  "behavior": {
+    "scripts": [ "scripts/game" ]
   }
 }

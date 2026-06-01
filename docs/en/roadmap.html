@@ -23,7 +23,7 @@
             <h1>Roadmap</h1>
 
             <p>
-                FLX is developed incrementally and through practical experimentation.
+                FLX is developed incrementally and practically.
             </p>
 
             <p>
@@ -33,30 +33,58 @@
             </p>
 
             <p class="placeholder">
-                This section acts as both a development diary
-                and a general direction overview for the project.
+                This section works as both a development journal and a general direction map for the project.
             </p>
 
             <hr />
 
-            <h2>Completed</h2>
+            <h2>Current Development Principle</h2>
+
+            <p>
+                During the earliest stages of the project,
+                examples were used to define new runtime capabilities.
+            </p>
+
+            <p>
+                The current approach is different.
+            </p>
+
+            <p>
+                Before adding new functionality,
+                each example is built using only the capabilities already available.
+            </p>
+
+            <p>
+                When a limitation prevents reasonable progress,
+                that limitation becomes a candidate for runtime evolution.
+            </p>
+
+            <p>
+                This approach allows new features to emerge
+                from real needs discovered during development,
+                instead of appearing as isolated design decisions.
+            </p>
+
+            <hr />
+
+            <h2>Developed</h2>
 
             <h3>Pong Example</h3>
 
             <p>
                 First functional example used to build and validate
-                the base engine structure.
+                the engine's base structure.
             </p>
 
-            <h3>Implemented systems</h3>
+            <h3>Implemented Systems</h3>
 
             <ul>
                 <li>Base engine structure</li>
                 <li>Initial lifecycle</li>
                 <li>Movement API</li>
                 <li>Basic collisions</li>
-                <li>Horizontal and vertical bounce</li>
-                <li>Basic AI enemy</li>
+                <li>Horizontal and vertical bouncing</li>
+                <li>Basic AI opponent</li>
                 <li>Respawn system (<code>to_origin()</code>)</li>
                 <li>Log console</li>
                 <li>JSON and JavaScript support</li>
@@ -75,15 +103,20 @@
             </p>
 
             <p>
-                Asteroids represents the first stage where FLX begins to define its internal model.
+                Asteroids represents the first phase where FLX begins to define its internal model.
             </p>
 
             <p>
-                Beyond movement and shooting mechanics,
+                Beyond movement and shooting,
                 this example is helping establish how objects are born,
                 live,
                 interact
                 and disappear inside the runtime.
+            </p>
+
+            <p>
+                Pong validated the base runtime.
+                Asteroids is validating the language used to build worlds.
             </p>
 
             <p>
@@ -126,7 +159,7 @@
 
                 <li>
                     Runtime instantiation through
-                    <code>spawn(self, "laser")</code>.
+                    <code>spawn(object, "laser")</code>.
                 </li>
 
                 <li>Dynamic object creation from prefabs.</li>
@@ -155,7 +188,7 @@
 
                 <li>Deferred destruction through <code>kill(object)</code>.</li>
 
-                <li><code>alive</code> state used to exclude dead objects from runtime phases.</li>
+                <li><code>alive</code> state used to exclude dead objects from later runtime phases.</li>
 
                 <li><code>dead()</code> phase executed only once before cleanup.</li>
 
@@ -172,14 +205,73 @@
                     <code>object.local</code>
                     and future global scope.
                 </li>
+
+                <li>
+                    JSON composition through <code>like</code>
+                    with recursive property overriding.
+                </li>
+
+                <li>
+                    Configuration reuse through
+                    prefabs and derived definitions.
+                </li>
+
+                <li>
+                    Relative path resolution from the JSON file that declares the reference.
+                </li>
+
+                <li>
+                    Inline children declared directly inside JSON structures.
+                </li>
+
+                <li>
+                    Logical nodes without visual representation.
+                </li>
+
+                <li>
+                    New <code>shape.type = polygon</code> shape.
+                </li>
+
+                <li>
+                    Polygonal shapes defined through lists of points.
+                </li>
+
+                <li>
+                    Random generation through
+                    <code>random(min, max)</code>.
+                </li>
+
+                <li>
+                    Reusable spawners built through
+                    <code>like</code>.
+                </li>
+
+                <li>
+                    Periodic spawning based on timers through
+                    <code>object.local</code>.
+                </li>
+
+                <li>
+                    Local entity limits per spawner.
+                </li>
+
+                <li>
+                    Full practical validation of the Asteroids flow:
+                    ship, lasers, spawners, asteroids and basic collisions.
+                </li>
             </ul>
 
             <h3>Currently in Development</h3>
 
             <ul>
-                <li>Complex object spawning, especially asteroids.</li>
+                <li>
+                    Refinement of the asteroid system:
+                    fragmentation, behavior and variants.
+                </li>
 
                 <li>UI and text systems.</li>
+
+                <li>Score system and global game state.</li>
 
                 <li><code>game</code> / <code>level</code> context.</li>
 
@@ -187,9 +279,7 @@
 
                 <li>
                     Runtime object relationships:
-                    parent,
-                    children
-                    and group access.
+                    parent, children and group access.
                 </li>
 
                 <li>Configurable death propagation between related objects.</li>
@@ -222,15 +312,15 @@
 
             <hr />
 
-            <h2>Next Phase</h2>
+            <h2>Later Phase</h2>
 
             <p>
                 After completing the three main examples,
-                FLX will enter a normalization and refinement phase.
+                FLX will enter a normalization and general improvement phase.
             </p>
 
             <p>
-                The objective will be:
+                The goal will be:
             </p>
 
             <ul>
@@ -238,29 +328,17 @@
                 <li>Refine APIs</li>
                 <li>Reduce duplication</li>
                 <li>Improve runtime consistency</li>
-                <li>Make the examples more complete and polished</li>
+                <li>Make examples more complete and attractive</li>
             </ul>
 
             <hr />
 
             <h2>Technical Debt and Pending Improvements</h2>
 
+            <h3>Runtime</h3>
+
             <ul>
-
                 <li>Normalize Pong to the new <code>shape</code>/<code>motion</code> schema.</li>
-
-                <li>Review whether <code>program</code> remains the final name.</li>
-
-                <li>Centralize JavaScript wrapper functions to avoid modifying multiple locations whenever a new lifecycle is introduced.</li>
-
-                <li>Refactor the JS wrapper using a centralized function registry.</li>
-
-                <li>Normalize JSON paths in the same way as script paths.</li>
-
-                <li>
-                    Improve warnings:
-                    optional lifecycle functions should not generate warnings when absent.
-                </li>
 
                 <li>
                     Extend <code>object.local</code>.
@@ -271,8 +349,9 @@
                 </li>
 
                 <li>
-                    Define a persistent global scope,
-                    suitable for scores, shared state and runtime-wide data.
+                    Implement a persistent global scope
+                    for score, lives, general state
+                    and shared runtime data.
                 </li>
 
                 <li>Define <code>game</code>/<code>level</code> context and persistence between levels.</li>
@@ -286,7 +365,8 @@
 
                 <li>
                     Define configurable death propagation,
-                    for example deciding whether <code>kill(parent)</code>
+                    for example deciding whether
+                    <code>kill(parent)</code>
                     should also affect its children.
                 </li>
 
@@ -296,27 +376,103 @@
                 </li>
 
                 <li>
+                    Add warnings for duplicated names
+                    in objects and prefabs.
+                </li>
+
+                <li>
+                    Define a unique runtime identity
+                    (<code>runtimeId</code>)
+                    for each instance.
+                </li>
+            </ul>
+
+            <h3>Engine and Architecture</h3>
+
+            <ul>
+                <li>
+                    Centralize JavaScript wrapper functions
+                    to avoid modifying multiple locations whenever a new lifecycle is introduced.
+                </li>
+
+                <li>
+                    Refactor the JS wrapper using a centralized function registry.
+                </li>
+
+                <li>
+                    Fully centralize path normalization
+                    to avoid duplicated logic between resources,
+                    prefabs and scripts.
+                </li>
+
+                <li>
+                    Improve warnings:
+                    optional lifecycle functions should not generate warnings when absent.
+                </li>
+
+                <li>
                     Explore a semantic input layer
                     (<code>Control.*</code>)
                     on top of <code>Key</code>.
                 </li>
+            </ul>
 
+            <h3>Data and JSON Composition</h3>
+
+            <ul>
                 <li>
-                    Properly separate and document
-                    <code>block</code>,
-                    <code>rectangle</code>
-                    and <code>triangle</code>.
+                    Properly implement <code>shape.like</code>
+                    and define its behavior within the composition system.
                 </li>
 
+                <li>
+                    Correctly reflect the
+                    <code>like</code>
+                    system in JSON Schemas and documentation.
+                </li>
+
+                <li>
+                    Formally document JSON composition through
+                    <code>like</code>,
+                    including merge and override rules.
+                </li>
+            </ul>
+
+            <h3>Collisions and Physics</h3>
+
+            <ul>
                 <li>
                     Improve overflow-aware collisions.
                 </li>
 
                 <li>
                     Future:
-                    wrap-aware collisions using radii and positional offsets.
+                    wrap-aware collisions using radii and offsets.
                 </li>
 
+                <li>
+                    Improve collisions for polygonal shapes.
+                </li>
+            </ul>
+
+            <h3>Future Tools</h3>
+
+            <ul>
+                <li>
+                    Evaluate the future addition of
+                    <code>spawnRandom()</code>
+                    as a high-level helper.
+                </li>
+
+                <li>
+                    Explore a visual tool
+                    for creating and editing polygonal shapes.
+                </li>
+
+                <li>
+                    Explore a visual tool
+                    for JSON composition and prefabs.
+                </li>
             </ul>
 
             <hr />
@@ -342,9 +498,11 @@
                 <li>↓ <a class="link" href="api.html">FLX API</a></li>
                 <li>↓ <a class="link" href="examples.html">Examples</a></li>
                 <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
-                <li class="current">↓ Roadmap ← Estás aquí</li>
+                <li class="current">↓ Roadmap ← You are here</li>
             </ul>
+
         </article>
+
     </main>
 
     <div id="footer"></div>

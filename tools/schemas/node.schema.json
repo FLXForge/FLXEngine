@@ -9,6 +9,10 @@
       "type": "string"
     },
 
+    "like": {
+      "type": "string"
+    },
+
     "description": {
       "type": "string"
     },
@@ -66,7 +70,10 @@
     "children": {
       "type": "array",
       "items": {
-        "type": "string"
+        "oneOf": [
+          { "type": "string" },
+          { "type": "object" }
+        ]
       }
     },
 

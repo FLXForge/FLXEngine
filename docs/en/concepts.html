@@ -19,7 +19,7 @@
 
         <article class="doc-content">
 
-             
+
             <p class="eyebrow">FLX Documentation</p>
             <h1>Core Concepts</h1>
 
@@ -48,7 +48,7 @@
 
             <div class="code-card">
                 <div class="code-header">Asteroids.flx</div>
-                 
+
 
 <pre><code>name:Asteroids
 version:1.0
@@ -56,7 +56,7 @@ flxEngineVersion:0.1.0
 main:game.json
 </code></pre>
 
-                 
+
             </div>
 
             <p>
@@ -127,7 +127,7 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">ship.json</div>
-                 
+
 
 <pre><code>{
     "name": "Ship",
@@ -142,7 +142,7 @@ main:game.json
 }
 </code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -163,7 +163,7 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">DeepSpaceLeft</div>
-                 
+
 
 <pre><code>{
     "name": "DeepSpaceLeft",
@@ -177,7 +177,7 @@ main:game.json
 }
 </code></pre>
 
-                 
+
             </div>
 
             <p>
@@ -267,7 +267,7 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">shape.json</div>
-                 
+
 
 <pre><code>"shape": {
     "type": "triangle",
@@ -275,7 +275,7 @@ main:game.json
 }
 </code></pre>
 
-                 
+
             </div>
 
             <p>
@@ -285,7 +285,7 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">polygon</div>
-                 
+
 
 <pre><code>"shape": {
     "type": "polygon",
@@ -299,8 +299,47 @@ main:game.json
 }
 </code></pre>
 
-                 
+
             </div>
+
+            <hr />
+
+            <h2>Shape and Collision</h2>
+
+            <p>
+                In FLX, visual representation and collision are independent systems.
+            </p>
+
+            <p>
+                The <code>shape</code> block defines how an object is rendered,
+                while the <code>collision</code> block defines how it interacts
+                with other objects in the runtime.
+            </p>
+
+            <p>
+                In many cases both definitions may be similar,
+                but they are not required to match.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape + collision</div>
+<pre><code>{
+    "shape": {
+        "type": "polygon"
+    },
+
+    "collision": {
+        "type": "circle",
+        "radius": 12
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                This separation allows collision to remain simple and efficient
+                while visual representation can be as detailed as necessary.
+            </p>
 
             <hr />
 
@@ -336,13 +375,13 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">rotation</div>
-                 
+
 
 <pre><code>rotate(ship, RIGHT);
 advance(ship);
 </code></pre>
 
-                 
+
             </div>
 
             <hr />

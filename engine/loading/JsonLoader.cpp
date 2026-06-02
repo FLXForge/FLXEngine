@@ -1,6 +1,7 @@
 #include "JsonLoader.h"
 #include "../debug/Logger.h"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include <nlohmann/json.hpp>
@@ -426,6 +427,36 @@ namespace
                     );
                 }
             }
+        }
+
+        if (object.contains("collision"))
+        {
+            const auto& collision =
+                object["collision"];
+
+            if (collision.contains("type"))
+            {
+                runtimeObject.collisionType =
+                    collision["type"].get<std::string>();
+            }
+
+            if (collision.contains("radius"))
+            {
+                runtimeObject.collisionRadius =
+                    collision["radius"].get<float>();
+            }
+        }
+
+        if (
+            runtimeObject.collisionType == "circle" &&
+            runtimeObject.collisionRadius <= 0.0f
+            )
+        {
+            runtimeObject.collisionRadius =
+                std::max(
+                    runtimeObject.size.x,
+                    runtimeObject.size.y
+                ) / 2.0f;
         }
 
         if (object.contains("spawns"))

@@ -25,6 +25,11 @@
 
   "group": "asteroid",
 
+  "collision": {
+    "type": "circle",
+    "radius": 16
+  },
+
   "behavior": {
     "scripts": [
       "scripts/asteroid"

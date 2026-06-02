@@ -207,6 +207,10 @@
     "name": "Level",
     "description" : "This is a description.",
 
+    "collision": {
+      "type": "box"
+    },
+
     "children": [...],
 
     "spawns": {...}
@@ -218,8 +222,9 @@
 
             <ul>
                 <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
-                <li><code>name</code>: nombre lógico del principal. <i>[ Obligatorio ]</i></li>
+                <li><code>name</code>: nombre lógico del nodo. <i>[ Obligatorio ]</i></li>
                 <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: configuración de colisión asociada al nodo <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: lista de objetos cargados por el principal. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
             </ul>
@@ -286,6 +291,11 @@
 
     "group": "paddle",
 
+    "collision": {
+        "type": "circle",
+        "radius": 16
+    },
+
     "behavior": {
         "scripts": [ "tofu" ]
     }
@@ -304,6 +314,7 @@
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los límites de la pantalla. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lógico asociado al objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: configuración de colisión asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -553,6 +564,39 @@
                     objetos que pueden instanciarse posteriormente.
                 </li>
             </ul>
+
+            <hr />
+
+            <h2 id="collision">Collision</h2>
+
+            <p>
+                Define la colisión asociada al objeto o al nodo,
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code>"collision": {
+    "type": "circle",
+    "radius": 16
+},
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>type</code>: tipo de colisión. [ Opcional ]
+                    <ul>
+                        <li><code>none</code>: sin colisión. [ por defecto ]</li>
+                        <li><code>box</code>: cuadrada.</li>
+                        <li><code>circle</code>: circular.</li>
+                    </ul>
+                </li>
+                <li><code>radius</code>: En caso de que el tipo sea <code>circle</code> selecciona el radio de la circunferencia. [ Opcional ]</li>
+            </ul>
+
+            <hr />
 
             <h2 id="behavior">Behavior</h2>
 

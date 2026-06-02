@@ -32,6 +32,7 @@ public:
         float screenHeight
     ) const;
     void drawAt(Vector2 drawPosition, int scale) const;
+    void drawCollision(float scale) const;
 
     void applyBounds(float screenWidth, float screenHeight);
 
@@ -67,6 +68,9 @@ public:
 
     std::string boundsMode;
     bool boundsOverflow;
+
+    std::string collisionType;
+    float collisionRadius;
 
     std::vector<std::string> scripts;
     std::vector<std::string> resolvedScriptPaths;

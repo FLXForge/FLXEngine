@@ -259,6 +259,18 @@
                     Full practical validation of the Asteroids flow:
                     ship, lasers, spawners, asteroids and basic collisions.
                 </li>
+
+                <li>
+                    Refinement of the asteroid system:
+                    behavior and variants.
+                </li>
+
+                <li>Collision system improvements.</li>
+
+                <li>
+                    Added collision visualization and collision types
+                    (<code>circle</code> and <code>box</code>).
+                </li>
             </ul>
 
             <h3>Currently in Development</h3>
@@ -266,7 +278,12 @@
             <ul>
                 <li>
                     Refinement of the asteroid system:
-                    fragmentation, behavior and variants.
+                    fragmentation.
+                </li>
+
+                <li>
+                    Visual improvements to increase game feel:
+                    trails, particles on destruction and related effects.
                 </li>
 
                 <li>UI and text systems.</li>
@@ -415,6 +432,11 @@
                     (<code>Control.*</code>)
                     on top of <code>Key</code>.
                 </li>
+
+                <li>
+                    Add debug options through JSON or the <code>.flx</code> file.
+                    They are currently engine-level flags.
+                </li>
             </ul>
 
             <h3>Data and JSON Composition</h3>
@@ -451,7 +473,17 @@
                 </li>
 
                 <li>
-                    Improve collisions for polygonal shapes.
+                    Allow multiple colliders per element.
+                </li>
+
+                <li>
+                    Add collision filters:
+                    groups, masks, priority and related rules.
+                </li>
+
+                <li>
+                    Box collision is currently axis-aligned and does not rotate.
+                    Circle collision is rotation-independent.
                 </li>
             </ul>
 

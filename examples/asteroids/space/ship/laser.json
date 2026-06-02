@@ -23,6 +23,11 @@
 
   "group": "laser",
 
+  "collision": {
+    "type": "circle",
+    "radius": 2
+  },
+
   "behavior": {
     "scripts": [ "scripts/laser" ]
   }

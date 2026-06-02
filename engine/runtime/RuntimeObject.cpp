@@ -57,6 +57,8 @@ RuntimeObject::RuntimeObject(
     this->velocity = Vector2{ 0.0f, 0.0f };
     this->boundsMode = "none";
     this->boundsOverflow = false;
+    this->collisionType = "none";
+    this->collisionRadius = 0.0f;
 }
 
 void RuntimeObject::draw(
@@ -314,6 +316,57 @@ void RuntimeObject::drawAt(Vector2 drawPosition, int scale) const
             color
         );
     } 
+}
+
+void RuntimeObject::drawCollision(float scale) const
+{
+    if (collisionType == "none")
+    {
+        return;
+    }
+
+    if (collisionType == "circle")
+    {
+        Vector2 center =
+            position;
+
+        if (shapeType == "block")
+        {
+            center = Vector2{
+                position.x + size.x / 2.0f,
+                position.y + size.y / 2.0f
+            };
+        }
+
+        float radius =
+            collisionRadius;
+
+        if (radius <= 0.0f)
+        {
+            radius =
+                std::max(size.x, size.y) / 2.0f;
+        }
+
+        DrawCircleLines(
+            static_cast<int>(center.x * scale),
+            static_cast<int>(center.y * scale),
+            radius * scale,
+            GREEN
+        );
+
+        return;
+    }
+
+    if (collisionType == "box")
+    {
+        DrawRectangleLines(
+            static_cast<int>(position.x * scale),
+            static_cast<int>(position.y * scale),
+            static_cast<int>(size.x * scale),
+            static_cast<int>(size.y * scale),
+            GREEN
+        );
+    }
 }
 
 void RuntimeObject::applyBounds(

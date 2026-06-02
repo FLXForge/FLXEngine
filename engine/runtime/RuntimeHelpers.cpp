@@ -1,8 +1,129 @@
 #include "RuntimeHelpers.h"
 #include "RuntimeConstants.h"
 
+#include <algorithm>
 #include <cmath>
 #include <raylib.h>
+
+namespace
+{
+    Rectangle getBox(
+        const RuntimeObject& object
+    )
+    {
+        return Rectangle{
+            object.position.x,
+            object.position.y,
+            object.size.x,
+            object.size.y
+        };
+    }
+
+    Vector2 getCenter(
+        const RuntimeObject& object
+    )
+    {
+        if (object.shapeType == "block")
+        {
+            return Vector2{
+                object.position.x + object.size.x / 2.0f,
+                object.position.y + object.size.y / 2.0f
+            };
+        }
+
+        return object.position;
+    }
+
+    float getRadius(
+        const RuntimeObject& object
+    )
+    {
+        if (object.collisionRadius > 0.0f)
+        {
+            return object.collisionRadius;
+        }
+
+        return std::max(
+            object.size.x,
+            object.size.y
+        ) / 2.0f;
+    }
+
+    bool boxIntersects(
+        const RuntimeObject& a,
+        const RuntimeObject& b
+    )
+    {
+        const Rectangle aBox =
+            getBox(a);
+
+        const Rectangle bBox =
+            getBox(b);
+
+        return CheckCollisionRecs(
+            aBox,
+            bBox
+        );
+    }
+
+    bool circleIntersects(
+        const RuntimeObject& a,
+        const RuntimeObject& b
+    )
+    {
+        const Vector2 aCenter =
+            getCenter(a);
+
+        const Vector2 bCenter =
+            getCenter(b);
+
+        const float dx =
+            aCenter.x - bCenter.x;
+
+        const float dy =
+            aCenter.y - bCenter.y;
+
+        const float radius =
+            getRadius(a) + getRadius(b);
+
+        return dx * dx + dy * dy <= radius * radius;
+    }
+
+    bool circleBoxIntersects(
+        const RuntimeObject& circle,
+        const RuntimeObject& box
+    )
+    {
+        const Vector2 center =
+            getCenter(circle);
+
+        const Rectangle rect =
+            getBox(box);
+
+        const float closestX =
+            std::max(
+                rect.x,
+                std::min(center.x, rect.x + rect.width)
+            );
+
+        const float closestY =
+            std::max(
+                rect.y,
+                std::min(center.y, rect.y + rect.height)
+            );
+
+        const float dx =
+            center.x - closestX;
+
+        const float dy =
+            center.y - closestY;
+
+        const float radius =
+            getRadius(circle);
+
+        return dx * dx + dy * dy <= radius * radius;
+    }
+}
 
 void RuntimeHelpers::moveY(
     RuntimeObject& object,
@@ -50,11 +171,51 @@ bool RuntimeHelpers::intersects(
     const RuntimeObject& b
 )
 {
-    return
-        a.position.x < b.position.x + b.size.x &&
-        a.position.x + a.size.x > b.position.x &&
-        a.position.y < b.position.y + b.size.y &&
-        a.position.y + a.size.y > b.position.y;
+    if (
+        a.collisionType == "none" ||
+        b.collisionType == "none"
+        )
+    {
+        return false;
+    }
+
+    if (
+        a.collisionType == "circle" &&
+        b.collisionType == "circle"
+        )
+    {
+        return circleIntersects(
+            a,
+            b
+        );
+    }
+
+    if (
+        a.collisionType == "circle" &&
+        b.collisionType == "box"
+        )
+    {
+        return circleBoxIntersects(
+            a,
+            b
+        );
+    }
+
+    if (
+        a.collisionType == "box" &&
+        b.collisionType == "circle"
+        )
+    {
+        return circleBoxIntersects(
+            b,
+            a
+        );
+    }
+
+    return boxIntersects(
+        a,
+        b
+    );
 }
 
 void RuntimeHelpers::followY(

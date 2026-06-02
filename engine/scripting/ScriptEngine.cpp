@@ -253,6 +253,7 @@ void ScriptEngine::callScriptFunction(
     }
 
     applyJsObject(object, self);
+    applyJsObject(other, otherObject);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);

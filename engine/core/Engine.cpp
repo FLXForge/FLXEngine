@@ -11,6 +11,11 @@
 #include <raylib.h>
 #include <filesystem>
 
+namespace
+{
+    constexpr bool debugCollisions = true;
+}
+
 Engine::Engine()
 {
     screenWidth = 320;
@@ -116,7 +121,6 @@ void Engine::initWindow()
 
 void Engine::bornObject(RuntimeObject& object)
 {
-    Logger::debug("Llamadas a born");
     for (const auto& scriptPath : object.resolvedScriptPaths)
     {
         scriptEngine.callScriptFunction(
@@ -489,6 +493,13 @@ void Engine::draw()
             static_cast<float>(gameConfig.screenWidth),
             static_cast<float>(gameConfig.screenHeight)
         );
+
+        if (debugCollisions)
+        {
+            object.drawCollision(
+                gameConfig.scale
+            );
+        }
     }
 
     EndDrawing();

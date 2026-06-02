@@ -50,6 +50,10 @@
       "type": "string"
     },
 
+    "collision": {
+      "$ref": "collision.schema.json"
+    },
+
     "behavior": {
       "$ref": "behavior.schema.json"
     },

@@ -21,6 +21,10 @@
       "type": "string"
     },
 
+    "collision": {
+      "$ref": "collision.schema.json"
+    },
+
     "visible": {
       "type": "boolean"
     },

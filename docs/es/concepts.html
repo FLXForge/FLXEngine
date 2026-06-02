@@ -283,6 +283,45 @@ main:game.json
 
             <hr />
 
+            <h2>Shape and Collision</h2>
+
+            <p>
+                En FLX, la representación visual y la colisión son sistemas independientes.
+            </p>
+
+            <p>
+                Con <code>shape</code> block defines como se verá el objeto,
+                mientras que con <code>collision</code> block defines como interactuará
+                con otros objetos en el runtime.
+            </p>
+
+            <p>
+                En algunos casos ambas definiciones pueden ser similares,
+                pero no es una condición obligatoria.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape + collision</div>
+<pre><code>{
+    "shape": {
+        "type": "polygon"
+    },
+
+    "collision": {
+        "type": "circle",
+        "radius": 12
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta separación permite que la detección de colisiones siga siendo sencilla y eficiente, 
+                mientras que la representación visual puede ser tan detallada como sea necesario.
+            </p>
+
+            <hr />
+
             <h2>Sistema de coordenadas</h2>
 
             <p>

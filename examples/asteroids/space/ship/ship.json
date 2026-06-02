@@ -30,6 +30,11 @@
 
   "group": "ship",
 
+  "collision": {
+    "type": "circle",
+    "radius": 10
+  },
+
   "behavior": {
     "scripts": [ "scripts/ship" ]
   },

@@ -257,6 +257,15 @@
                     Validación práctica completa del flujo Asteroids:
                     nave, láseres, spawners, asteroides y colisiones básicas.
                 </li>
+
+                <li>
+                    Refinamiento del sistema de asteroides:
+                    comportamiento y variantes.
+                </li>
+
+                <li>Mejoras en el sistema de colisiones.</li>
+
+                <li>Añadido sistema de visualización de colisiones y tipos de colisiones (circle y box)</li>
             </ul>
 
             <h3>Actualmente en desarrollo</h3>
@@ -264,8 +273,10 @@
             <ul>
                 <li>
                     Refinamiento del sistema de asteroides:
-                    fragmentación, comportamiento y variantes.
+                    fragmentación.
                 </li>
+
+                <li>Mejoras graficas para mejorar el "juice": estelas, particulas al romperse...</li>
 
                 <li>UI y texto.</li>
 
@@ -412,6 +423,10 @@
                     (<code>Control.*</code>)
                     por encima de <code>Key</code>.
                 </li>
+
+                <li>
+                    Añadir opciones debug en json o en fichero flx (ahora mismo están como flags en el motor).
+                </li>
             </ul>
 
             <h3>Datos y composición JSON</h3>
@@ -448,7 +463,16 @@
                 </li>
 
                 <li>
-                    Mejorar colisiones para formas poligonales.
+                    Permitir multiples colliders por elemento.
+                </li>
+
+                <li>
+                    Añadir filtros por grupos, máscaras, prioridad...
+                </li>
+
+                <li>
+                    La colisión de cajas está alineada con los ejes y no rota.
+                    La colisión de círculos es independiente de la rotación.
                 </li>
             </ul>
 

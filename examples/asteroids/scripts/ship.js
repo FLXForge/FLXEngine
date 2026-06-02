@@ -11,6 +11,10 @@ function action(ship) {
 
     if (Key.down(KEY_UP)) {
         accelerate(ship);
+
+        if (probability(20)) {
+            spawn(ship, "tail");
+        }
     }
 
     if (Key.down(KEY_LEFT)) {
@@ -28,4 +32,10 @@ function action(ship) {
 
 function motion(ship) {
     advance(ship);
+}
+
+function dead(ship) {
+    spawn(ship, "fragment");
+    spawn(ship, "fragment");
+    spawn(ship, "fragment");
 }

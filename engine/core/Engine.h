@@ -42,6 +42,9 @@ private:
     void loadScripts();
     void flushSpawnQueue();
     void loadPrefabs();
+    void loadPrefabRecursive(
+        const SpawnDefinition& spawnDefinition
+    );
 
     std::string resolveJsonPath(
         const std::string& basePath,
@@ -53,9 +56,19 @@ private:
         const std::string& file
     ) const;
 
+    std::string createRuntimeId(
+        const std::string& name
+    );
+
+    RuntimeObject* findByRuntimeId(
+        const std::string& id
+    );
+
     std::vector<RuntimeObject> pendingObjects;
     std::unordered_map<std::string, RuntimeObject> prefabs;
 private:
+
+    int nextRuntimeId;
 
     int screenWidth;
     int screenHeight;

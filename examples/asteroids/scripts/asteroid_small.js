@@ -1,15 +1,9 @@
 /// <reference path="../../../../tools/scripts/flx.d.ts" />
 
-/*
-    When an asteroid is born, it receives random angle, speed and rotation.
-    Every frame it advances and rotates.
-    On collision with a laser or the ship, both objects die.
-*/
-
 function born(asteroid) {
     asteroid.angle = random(0, 360);
-    asteroid.speed = random(20, 70);
-    asteroid.rotationSpeed = random(-90, 90);
+    asteroid.speed = random(40, 100);
+    asteroid.rotationSpeed = random(-180, 180);
     asteroid.local["destroyed_by_laser"] = 0;
 }
 
@@ -46,6 +40,10 @@ function dead(asteroid) {
         return;
     }
 
-    spawn(asteroid, "small");
-    spawn(asteroid, "small");
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
+
+    if (probability(50)) {
+        spawn(asteroid, "fragment");
+    }
 }

@@ -21,6 +21,7 @@ Engine::Engine()
     screenWidth = 320;
     screenHeight = 180;
     screenScale = 3;
+    nextRuntimeId = 1;
 }
 
 void Engine::run(const std::string& flxPath)
@@ -98,6 +99,12 @@ void Engine::loadProject(const std::string& flxPath)
         );
     }
 
+    for (auto& object : objects)
+    {
+        object.runtimeId =
+            createRuntimeId(object.name);
+    }
+
     loadPrefabs();
 
     screenWidth = gameConfig.screenWidth;
@@ -173,6 +180,13 @@ void Engine::configureScriptEngine()
         }
     );
 
+    scriptEngine.setFindObjectByIdFunction(
+        [this](const std::string& id)
+        {
+            return findByRuntimeId(id);
+        }
+    );
+
     scriptEngine.setSpawnObjectFunction(
         [this](
             RuntimeObject& source,
@@ -181,6 +195,13 @@ void Engine::configureScriptEngine()
             )
         {
             RuntimeObject instance = prefab;
+
+            instance.runtimeId =
+                createRuntimeId(instance.name);
+            instance.alive = true;
+            instance.deadCalled = false;
+            instance.local.clear();
+            instance.resolvedScriptPaths.clear();
 
             const float radians =
                 source.angle * DEG2RAD;
@@ -197,6 +218,9 @@ void Engine::configureScriptEngine()
                 source.position.x + rotatedX,
                 source.position.y + rotatedY
             };
+
+            instance.origin = instance.position;
+            instance.angle = source.angle;
 
             instance.origin =
                 instance.position;
@@ -223,6 +247,21 @@ void Engine::configureScriptEngine()
             );
         }
     );
+}
+
+RuntimeObject* Engine::findByRuntimeId(
+    const std::string& id
+)
+{
+    for (auto& object : objects)
+    {
+        if (object.runtimeId == id)
+        {
+            return &object;
+        }
+    }
+
+    return nullptr;
 }
 
 void Engine::loadScripts()
@@ -258,48 +297,64 @@ void Engine::loadPrefabs()
     {
         for (const auto& pair : object.spawns)
         {
-            const std::string& spawnName =
-                pair.first;
-
-            const SpawnDefinition& spawnDefinition =
-                pair.second;
-
-            if (prefabs.contains(spawnDefinition.prefab))
-            {
-                continue;
-            }
-
-            const std::string prefabPath =
-                resolveJsonPath(
-                    spawnDefinition.basePath,
-                    spawnDefinition.prefab
-                );
-
-            std::vector<RuntimeObject> prefabObjects =
-                JsonLoader::loadObjects(prefabPath);
-
-            if (prefabObjects.empty())
-            {
-                Logger::warning(
-                    "project",
-                    "Prefab could not be loaded: " +
-                    spawnDefinition.prefab
-                );
-
-                continue;
-            }
-
-            prefabs.emplace(
-                spawnDefinition.prefab,
-                prefabObjects.front()
-            );
-
-            Logger::info(
-                "project",
-                "Loaded prefab: " + spawnDefinition.prefab
-            );
+            loadPrefabRecursive(pair.second);
         }
     }
+}
+
+void Engine::loadPrefabRecursive(
+    const SpawnDefinition& spawnDefinition
+)
+{
+    if (prefabs.contains(spawnDefinition.prefab))
+    {
+        return;
+    }
+
+    const std::string prefabPath =
+        resolveJsonPath(
+            spawnDefinition.basePath,
+            spawnDefinition.prefab
+        );
+
+    std::vector<RuntimeObject> prefabObjects =
+        JsonLoader::loadObjects(prefabPath);
+
+    if (prefabObjects.empty())
+    {
+        Logger::warning(
+            "project",
+            "Prefab could not be loaded: " +
+            spawnDefinition.prefab
+        );
+
+        return;
+    }
+
+    RuntimeObject prefab =
+        prefabObjects.front();
+
+    prefabs.emplace(
+        spawnDefinition.prefab,
+        prefab
+    );
+
+    Logger::info(
+        "project",
+        "Loaded prefab: " + spawnDefinition.prefab
+    );
+
+    for (const auto& pair : prefab.spawns)
+    {
+        loadPrefabRecursive(pair.second);
+    }
+}
+
+std::string Engine::createRuntimeId(
+    const std::string& name
+)
+{
+    return name + "_" + std::to_string(nextRuntimeId++);
 }
 
 std::string Engine::resolveJsonPath(

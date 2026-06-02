@@ -33,5 +33,14 @@
     "scripts": [
       "scripts/asteroid"
     ]
+  },
+
+  "spawns": {
+    "small": {
+      "prefab": "asteroid_small"
+    },
+    "fragment": {
+      "prefab": "asteroid_fragment"
+    }
   }
 }

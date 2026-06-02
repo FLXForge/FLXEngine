@@ -721,32 +721,32 @@ static JSValue jsSpawn(
         return JS_UNDEFINED;
     }
 
-    JSValue nameValue =
-        JS_GetPropertyStr(context, self, "name");
+    JSValue idValue =
+        JS_GetPropertyStr(context, self, "id");
 
-    const char* objectName =
-        JS_ToCString(context, nameValue);
+    const char* objectId =
+        JS_ToCString(context, idValue);
 
-    if (objectName == nullptr)
+    if (objectId == nullptr)
     {
         JS_FreeCString(context, spawnName);
-        JS_FreeValue(context, nameValue);
+        JS_FreeValue(context, idValue);
         return JS_UNDEFINED;
     }
 
     RuntimeObject* source =
-        activeScriptEngine->findObjectByName(objectName);
+        activeScriptEngine->findObjectByRuntimeId(objectId);
 
     if (source == nullptr)
     {
         Logger::warning(
             "spawn",
-            "Spawner object not found: " + std::string(objectName)
+            "Spawner object not found: " + std::string(objectId)
         );
 
         JS_FreeCString(context, spawnName);
-        JS_FreeCString(context, objectName);
-        JS_FreeValue(context, nameValue);
+        JS_FreeCString(context, objectId);
+        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }
@@ -759,12 +759,12 @@ static JSValue jsSpawn(
         Logger::warning(
             "spawn",
             "Spawn not found: " + std::string(spawnName) +
-            " in " + std::string(objectName)
+            " in " + std::string(objectId)
         );
 
         JS_FreeCString(context, spawnName);
-        JS_FreeCString(context, objectName);
-        JS_FreeValue(context, nameValue);
+        JS_FreeCString(context, objectId);
+        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }
@@ -783,8 +783,8 @@ static JSValue jsSpawn(
         );
 
         JS_FreeCString(context, spawnName);
-        JS_FreeCString(context, objectName);
-        JS_FreeValue(context, nameValue);
+        JS_FreeCString(context, objectId);
+        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }
@@ -801,8 +801,8 @@ static JSValue jsSpawn(
     );
 
     JS_FreeCString(context, spawnName);
-    JS_FreeCString(context, objectName);
-    JS_FreeValue(context, nameValue);
+    JS_FreeCString(context, objectId);
+    JS_FreeValue(context, idValue);
 
     return JS_UNDEFINED;
 }

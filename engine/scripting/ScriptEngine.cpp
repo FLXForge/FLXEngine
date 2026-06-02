@@ -439,6 +439,25 @@ void ScriptEngine::setFindObjectFunction(
     findObject = function;
 }
 
+void ScriptEngine::setFindObjectByIdFunction(
+    FindObjectByIdFunction function
+)
+{
+    findObjectById = function;
+}
+
+RuntimeObject* ScriptEngine::findObjectByRuntimeId(
+    const std::string& id
+)
+{
+    if (!findObjectById)
+    {
+        return nullptr;
+    }
+
+    return findObjectById(id);
+}
+
 RuntimeObject* ScriptEngine::findObjectByName(
     const std::string& name
 )
@@ -524,6 +543,12 @@ void ScriptEngine::applyJsObject(
     JSValue localValue =
         JS_GetPropertyStr(context, jsObject, "local");
 
+    JSValue widthValue =
+        JS_GetPropertyStr(context, jsObject, "width");
+
+    JSValue heightValue =
+        JS_GetPropertyStr(context, jsObject, "height");
+
     if (JS_IsObject(localValue))
     {
         source.local.clear();
@@ -558,7 +583,10 @@ void ScriptEngine::applyJsObject(
                 }
 
                 JS_FreeValue(context, value);
-                JS_FreeCString(context, key);
+                if (key != nullptr)
+                {
+                    JS_FreeCString(context, key);
+                }
                 JS_FreeAtom(context, atom);
             }
 
@@ -573,6 +601,8 @@ void ScriptEngine::applyJsObject(
     double angle = source.angle;
     double velocityX = source.velocity.x;
     double velocityY = source.velocity.y;
+    double width = source.size.x;
+    double height = source.size.y;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
@@ -580,6 +610,18 @@ void ScriptEngine::applyJsObject(
     JS_ToFloat64(context, &angle, angleValue);
     JS_ToFloat64(context, &velocityX, velocityXValue);
     JS_ToFloat64(context, &velocityY, velocityYValue);
+
+    if (JS_ToFloat64(context, &width, widthValue) == 0)
+    {
+        source.size.x =
+            static_cast<float>(width);
+    }
+
+    if (JS_ToFloat64(context, &height, heightValue) == 0)
+    {
+        source.size.y =
+            static_cast<float>(height);
+    }
 
     source.alive = alive;
     source.position.x = static_cast<float>(x);
@@ -597,6 +639,8 @@ void ScriptEngine::applyJsObject(
     JS_FreeValue(context, angleValue);
     JS_FreeValue(context, velocityXValue);
     JS_FreeValue(context, velocityYValue);
+    JS_FreeValue(context, widthValue);
+    JS_FreeValue(context, heightValue);
 }
 
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
@@ -629,6 +673,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
         self,
         "name",
         JS_NewString(context, object.name.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "id",
+        JS_NewString(context, object.runtimeId.c_str())
     );
 
     JS_SetPropertyStr(

@@ -42,6 +42,9 @@ public:
     using FindObjectFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
+    using FindObjectByIdFunction =
+        std::function<RuntimeObject* (const std::string&)>;
+
     using SpawnObjectFunction =
         std::function<void(
             RuntimeObject& source,
@@ -69,6 +72,14 @@ public:
         const RuntimeObject& prefab
     );
 
+    void setFindObjectByIdFunction(
+        FindObjectByIdFunction function
+    );
+
+    RuntimeObject* findObjectByRuntimeId(
+        const std::string& id
+    );
+
 private:
     JSValue createJsObject(RuntimeObject& object);
     void applyJsObject(RuntimeObject& source, JSValue jsObject);
@@ -87,4 +98,5 @@ private:
     > scriptModules;
     SpawnObjectFunction spawnObjectFunction;
     FindObjectFunction findObject;
+    FindObjectByIdFunction findObjectById;
 };

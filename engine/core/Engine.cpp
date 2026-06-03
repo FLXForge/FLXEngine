@@ -13,7 +13,7 @@
 
 namespace
 {
-    constexpr bool debugCollisions = true;
+    constexpr bool debugCollisions = false;
 }
 
 Engine::Engine()
@@ -94,7 +94,7 @@ void Engine::loadProject(const std::string& flxPath)
 
         objects.insert(
             objects.end(),
-            childObjects.begin(),
+            childObjects.begin(), 
             childObjects.end()
         );
     }
@@ -110,6 +110,7 @@ void Engine::loadProject(const std::string& flxPath)
     screenWidth = gameConfig.screenWidth;
     screenHeight = gameConfig.screenHeight;
     screenScale = gameConfig.scale;
+    scriptEngine.setScreenScale(gameConfig.scale);
 }
 
 void Engine::initWindow()
@@ -214,12 +215,36 @@ void Engine::configureScriptEngine()
                 spawnDefinition.offset.x * std::sin(radians) +
                 spawnDefinition.offset.y * std::cos(radians);
 
-            instance.position = Vector2{
-                source.position.x + rotatedX,
-                source.position.y + rotatedY
-            };
+            if (spawnDefinition.hasOffset)
+            {
+                const float radians =
+                    source.angle * DEG2RAD;
 
-            instance.origin = instance.position;
+                const float rotatedX =
+                    spawnDefinition.offset.x * std::cos(radians) -
+                    spawnDefinition.offset.y * std::sin(radians);
+
+                const float rotatedY =
+                    spawnDefinition.offset.x * std::sin(radians) +
+                    spawnDefinition.offset.y * std::cos(radians);
+
+                instance.position = Vector2{
+                    source.position.x + rotatedX,
+                    source.position.y + rotatedY
+                };
+
+                instance.origin = instance.position;
+            }
+            else if (instance.hasOrigin)
+            {
+                instance.position = instance.origin;
+            }
+            else
+            {
+                instance.position = source.position;
+                instance.origin = instance.position;
+            }
+
             instance.angle = source.angle;
 
             instance.origin =
@@ -498,6 +523,26 @@ void Engine::collisionPhase()
     }
 }
 
+void Engine::drawPhase()
+{
+    for (auto& object : objects)
+    {
+        if (!object.alive)
+        {
+            continue;
+        }
+
+        for (const auto& scriptPath : object.resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "draw",
+                object
+            );
+        }
+    }
+}
+
 void Engine::deadPhase()
 {
     for (auto& object : objects)
@@ -556,6 +601,8 @@ void Engine::draw()
             );
         }
     }
+
+    drawPhase();
 
     EndDrawing();
 }

@@ -315,19 +315,48 @@ function born(laser) {
             </p>
 
             <ul>
-                <li>Shared state belongs to the script.</li>
+                <li>Temporary state belongs to the function.</li>
+                <li>State shared by objects using the same script belongs to the script.</li>
                 <li>Individual state belongs to the object.</li>
+                <li>State shared by the whole runtime belongs to <code>global</code>.</li>
             </ul>
 
-            <h3>Global Scope (Future)</h3>
+            <h3>Global Scope</h3>
 
             <p>
-                FLX plans to introduce a global scope
-                shared by the entire runtime.
+                FLX provides a shared global scope through
+                <code>global</code>.
             </p>
 
             <p>
-                This functionality is currently under design.
+                Values stored in
+                <code>global</code>
+                are available to all scripts
+                during runtime execution.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Global scope</div>
+<pre><code>function start() {
+    global["score"] = 0;
+    global["lives"] = 3;
+}
+
+function collision(player, asteroid) {
+    global["lives"] -= 1;
+}
+</code></pre>
+            </div>
+
+            <p>
+                This scope is useful for data shared by the whole game,
+                such as score, lives, level state or general counters.
+            </p>
+
+            <p>
+                Unlike <code>object.local</code>,
+                which belongs to a specific instance,
+                <code>global</code> belongs to the runtime.
             </p>
 
             <hr />
@@ -377,6 +406,8 @@ function born(laser) {
                 <li>Use <code>delta()</code> for timers and time-based movement.</li>
 
                 <li>Use <code>kill()</code> for safe object destruction.</li>
+
+                <li>Use <code>global</code> for shared runtime state.</li>
             </ul>
 
             <hr />

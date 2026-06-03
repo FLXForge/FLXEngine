@@ -95,8 +95,6 @@
 
             <hr />
 
-            <h2>En desarrollo</h2>
-
             <h3>Ejemplo Asteroids</h3>
 
             <p>
@@ -266,11 +264,7 @@
                 <li>Mejoras en el sistema de colisiones.</li>
 
                 <li>Añadido sistema de visualización de colisiones y tipos de colisiones (circle y box)</li>
-            </ul>
 
-            <h3>Actualmente en desarrollo</h3>
-
-            <ul>
                 <li>
                     Refinamiento del sistema de asteroides:
                     fragmentación.
@@ -285,26 +279,19 @@
                 <li>Contexto <code>game</code> / <code>level</code>.</li>
 
                 <li>Señales y comunicación entre objetos.</li>
-
-                <li>
-                    Relaciones runtime entre objetos:
-                    padre, hijos y acceso por grupo.
-                </li>
-
-                <li>Propagación configurable de muerte entre objetos relacionados.</li>
-
-                <li>Ampliación de <code>object.local</code> más allá de valores numéricos.</li>
             </ul>
 
             <hr />
 
-            <h2>En planificación</h2>
+            <h2>En desarrollo</h2>
 
             <h3>Ejemplo Arkanoid</h3>
 
             <p>
                 Tercer ejemplo principal del runtime.
             </p>
+
+            <h3>Actualmente en desarrollo</h3>
 
             <p>
                 Permitirá validar:
@@ -320,6 +307,8 @@
             </ul>
 
             <hr />
+
+            <h2>En planificación</h2>
 
             <h2>Fase posterior</h2>
 
@@ -342,38 +331,45 @@
 
             <hr />
 
+            <hr />
+
             <h2>Deuda técnica y mejoras pendientes</h2>
 
             <h3>Runtime</h3>
 
             <ul>
-                <li>Normalizar Pong al nuevo schema <code>shape</code>/<code>motion</code>.</li>
+                <li>Normalizar Pong al nuevo esquema <code>shape</code>/<code>motion</code>.</li>
 
                 <li>
-                    Ampliar <code>object.local</code>.
+                    Extender <code>object.local</code>.
                     Actualmente solo soporta valores numéricos;
                     quedan pendientes tipos como <code>bool</code>,
-                    <code>string</code> y posibles estructuras más complejas.
+                    <code>string</code>
+                    y posiblemente estructuras más complejas.
                 </li>
 
                 <li>
                     Implementar un ámbito global persistente
-                    para puntuación, vidas, estado general
+                    para puntuación, vidas, estado de partida
                     y datos compartidos del runtime.
                 </li>
 
-                <li>Definir contexto <code>game</code>/<code>level</code> y persistencia entre niveles.</li>
-
                 <li>
-                    Definir relaciones runtime entre objetos:
-                    <code>father</code>,
-                    <code>children</code>
-                    y acceso por <code>group</code>.
+                    Definir contextos <code>game</code>/<code>level</code>
+                    y persistencia entre niveles.
                 </li>
 
                 <li>
-                    Definir propagación configurable de muerte:
-                    por ejemplo, decidir si <code>kill(parent)</code>
+                    Definir relaciones entre objetos del runtime:
+                    <code>parent</code>,
+                    <code>children</code>
+                    y acceso mediante <code>group</code>.
+                </li>
+
+                <li>
+                    Definir propagación configurable de muerte,
+                    permitiendo decidir si
+                    <code>kill(parent)</code>
                     debe afectar también a sus hijos.
                 </li>
 
@@ -383,30 +379,57 @@
                 </li>
 
                 <li>
-                    Añadir advertencias para nombres duplicados
+                    Añadir avisos por nombres duplicados
                     en objetos y prefabs.
                 </li>
 
                 <li>
-                    Definir una identidad única runtime
+                    Definir una identidad única de runtime
                     (<code>runtimeId</code>)
                     para cada instancia.
                 </li>
 
-                <li>Validar requerimientos de los argumentos en la API JS y generar warning si no cumple el número.</li>
+                <li>
+                    Validar argumentos obligatorios de la API JavaScript
+                    y registrar advertencias cuando sean inválidos.
+                </li>
+
+            </ul>
+
+            <h3>Lifecycle y contextos de script</h3>
+
+            <ul>
+                <li>
+                    Definir callbacks de runtime para scripts de juego.
+                </li>
+
+                <li>
+                    Evaluar y formalizar:
+                    <code>start()</code>,
+                    <code>update()</code>
+                    y
+                    <code>draw()</code>.
+                </li>
+
+                <li>
+                    Ejecutar <code>draw()</code>
+                    para scripts de juego.
+                </li>
+
             </ul>
 
             <h3>Motor y arquitectura</h3>
 
             <ul>
                 <li>
-                    Centralizar funciones del wrapper JavaScript
-                    para evitar modificar múltiples puntos por cada nuevo lifecycle.
+                    Centralizar los wrappers JavaScript
+                    para evitar modificar múltiples ubicaciones
+                    cuando se añadan nuevas fases del lifecycle.
                 </li>
 
                 <li>
-                    Refactorizar el wrapper JS mediante un sistema
-                    de registro centralizado de funciones.
+                    Refactorizar los wrappers JS mediante
+                    un registro centralizado de funciones.
                 </li>
 
                 <li>
@@ -416,19 +439,52 @@
                 </li>
 
                 <li>
-                    Mejorar warnings:
-                    no avisar cuando un lifecycle opcional no exista.
+                    Mejorar las advertencias:
+                    las funciones opcionales del lifecycle
+                    no deberían generar avisos cuando no existan.
                 </li>
 
                 <li>
-                    Explorar una capa de input semántico
+                    Explorar una capa semántica de entrada
                     (<code>Control.*</code>)
-                    por encima de <code>Key</code>.
+                    sobre <code>Key</code>.
                 </li>
 
                 <li>
-                    Añadir opciones debug en json o en fichero flx (ahora mismo están como flags en el motor).
+                    Añadir opciones de depuración mediante JSON
+                    o mediante el fichero <code>.flx</code>.
+                    Actualmente son flags internos del motor.
                 </li>
+
+            </ul>
+
+            <h3>Espacios de coordenadas y sistema de cámara</h3>
+
+            <ul>
+                <li>
+                    Definir y documentar los espacios de coordenadas:
+                    mundo,
+                    pantalla,
+                    local
+                    y cámara/vista.
+                </li>
+
+                <li>
+                    Definir cómo afectan estos espacios a:
+                    <code>origin</code>,
+                    <code>offset</code>,
+                    posiciones de spawn,
+                    <code>draw_text()</code>,
+                    límites,
+                    colisiones,
+                    transformaciones padre/hijo
+                    y renderizado de interfaz.
+                </li>
+
+                <li>
+                    Diseñar e implementar sistemas de cámara y scroll.
+                </li>
+
             </ul>
 
             <h3>Datos y composición JSON</h3>
@@ -442,7 +498,7 @@
                 <li>
                     Reflejar correctamente el sistema
                     <code>like</code>
-                    en JSON Schemas y documentación.
+                    en los esquemas JSON y en la documentación.
                 </li>
 
                 <li>
@@ -450,31 +506,64 @@
                     <code>like</code>,
                     incluyendo reglas de merge y sobrescritura.
                 </li>
+
+                <li>
+                    Implementar un sistema de constantes.
+                </li>
+
+                <li>
+                    Ejemplo:
+                    <code>constants["INIT_LIVES"]</code>
+                </li>
+
             </ul>
 
             <h3>Colisiones y física</h3>
 
             <ul>
                 <li>
-                    Mejorar colisiones overflow-aware.
+                    Mejorar las colisiones con soporte de overflow.
                 </li>
 
                 <li>
                     Futuro:
-                    colisiones wrap-aware utilizando radios y offsets.
+                    colisiones conscientes de wrap
+                    utilizando radios y offsets.
                 </li>
 
                 <li>
-                    Permitir multiples colliders por elemento.
+                    Permitir múltiples colliders por elemento.
                 </li>
 
                 <li>
-                    Añadir filtros por grupos, máscaras, prioridad...
+                    Añadir filtros de colisión:
+                    grupos,
+                    máscaras,
+                    prioridades
+                    y reglas relacionadas.
                 </li>
 
                 <li>
-                    La colisión de cajas está alineada con los ejes y no rota.
-                    La colisión de círculos es independiente de la rotación.
+                    Actualmente la colisión de cajas está alineada con los ejes y no rota.
+                    La colisión circular es independiente de la rotación.
+                </li>
+
+            </ul>
+
+            <h3>Audio</h3>
+
+            <ul>
+                <li>
+                    Diseñar e implementar el sistema de audio.
+                </li>
+            </ul>
+
+            <h3>Transformaciones y jerarquías</h3>
+
+            <ul>
+                <li>
+                    Permitir que los objetos hijos sigan
+                    las transformaciones de sus padres.
                 </li>
             </ul>
 
@@ -489,38 +578,34 @@
 
                 <li>
                     Explorar una herramienta visual
-                    para creación y edición de shapes poligonales.
+                    para crear y editar formas poligonales.
                 </li>
 
                 <li>
                     Explorar una herramienta visual
                     para composición JSON y prefabs.
                 </li>
+
             </ul>
 
-            <h3>API helpers futuros</h3>
+            <h3>Helpers futuros de API</h3>
 
             <ul>
-                <li>
-                    lerp(start, end, factor)
-                </li>
+                <li><code>lerp(start, end, factor)</code></li>
+
+                <li><code>scale()</code></li>
+
+                <li><code>bounce(object, other)</code></li>
 
                 <li>
-                    scale()
+                    Helpers matemáticos:
+                    <code>sin(angle)</code>,
+                    <code>cos(angle)</code>,
+                    <code>atan2(y, x)</code>,
+                    <code>distance(a, b)</code>,
+                    <code>angle_to(a, b)</code>.
                 </li>
 
-                <li>
-                    bounce(object, other)
-                </li>
-
-                <li>
-                    Math helpers for scripts:
-                    - sin(angle)
-                    - cos(angle)
-                    - atan2(y, x)
-                    - distance(a, b)
-                    - angle_to(a, b)
-                </li>
             </ul>
 
             <hr />

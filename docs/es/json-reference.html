@@ -565,6 +565,18 @@
                 </li>
             </ul>
 
+            <h3>Posicionamiento</h3>
+
+            <p>
+                El posicionamiento de elemento spawneado dependerá de tres condiciones.
+            </p>
+
+            <ul>
+                <li>Si tiene <code>offset</code> el posicionamiento será relativo a las coordenadas del padre aplicando el offset.</li>
+                <li>Si no tiene <code>offset</code> pero tiene definido en su estructura <code>origin</code> las coordenadas serán las establecidas en su estructura.</li>
+                <li>Si no tiene <code>offset</code> ni define un <code>origen</code> entonces la posición será la del padre.</li>
+            </ul>
+
             <hr />
 
             <h2 id="collision">Collision</h2>

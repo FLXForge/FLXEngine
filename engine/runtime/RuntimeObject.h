@@ -10,6 +10,7 @@ struct SpawnDefinition
     std::string prefab;
     std::string basePath;
     Vector2 offset;
+    bool hasOffset = false;
 };
 
 class RuntimeObject
@@ -49,6 +50,8 @@ public:
     Vector2 origin;
     Vector2 position;
     Vector2 size;
+
+    bool hasOrigin = false;
 
     Color color;
 

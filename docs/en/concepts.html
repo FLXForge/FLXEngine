@@ -163,8 +163,6 @@ main:game.json
 
             <div class="code-card">
                 <div class="code-header">DeepSpaceLeft</div>
-
-
 <pre><code>{
     "name": "DeepSpaceLeft",
 
@@ -176,13 +174,26 @@ main:game.json
     }
 }
 </code></pre>
-
-
             </div>
 
             <p>
                 This feature makes it possible to build entire families
                 of objects from a single base definition.
+            </p>
+
+            <p>
+                An object does not require a visual representation to exist within the runtime.
+            </p>
+
+            <p>
+                If it defines <code>behavior</code>, <code>spawns</code> or <code>collision</code>,
+                it can act as a logical node, level manager, HUD, spawner, trigger
+                or game controller.
+            </p>
+
+            <p>
+                Additionally, <code>name</code> identifies an object logically or conceptually,
+                while <code>id</code> identifies a specific runtime instance.
             </p>
 
             <p>
@@ -214,6 +225,12 @@ main:game.json
             <p>
                 This separation helps maintain a clear structure
                 between initial content and dynamic content.
+            </p>
+
+            <p>
+                Together with <code>like</code>,
+                these mechanisms form the foundation of how FLX builds,
+                reuses and instantiates runtime objects.
             </p>
 
             <hr />
@@ -356,6 +373,23 @@ main:game.json
                 <li>Moving up decreases <code>y</code>.</li>
                 <li>Moving down increases <code>y</code>.</li>
             </ul>
+
+            <p>
+                At the moment, FLX uses logical screen coordinates
+                in a fixed world without cameras or scrolling.
+            </p>
+
+            <p>
+                Objects use these coordinates for their position within the runtime.
+                Text rendering functions such as <code>draw_text()</code>
+                also use logical screen coordinates.
+            </p>
+
+            <p>
+                Camera systems, scrolling and the formal separation between world,
+                screen, view and local coordinate spaces
+                remain planned for future versions.
+            </p>
 
             <hr />
 

@@ -94,7 +94,80 @@
 
             <hr />
 
-            <h2>In Development</h2>
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Roadmap</h1>
+
+            <p>
+                FLX is developed incrementally and practically.
+            </p>
+
+            <p>
+                Each example adds new runtime capabilities,
+                helps validate real architecture
+                and reveals necessary improvements before moving forward.
+            </p>
+
+            <p class="placeholder">
+                This section works as both a development journal and a general direction map for the project.
+            </p>
+
+            <hr />
+
+            <h2>Current Development Principle</h2>
+
+            <p>
+                During the earliest stages of the project,
+                examples were used to define new runtime capabilities.
+            </p>
+
+            <p>
+                The current approach is different.
+            </p>
+
+            <p>
+                Before adding new functionality,
+                each example is built using only the capabilities already available.
+            </p>
+
+            <p>
+                When a limitation prevents reasonable progress,
+                that limitation becomes a candidate for runtime evolution.
+            </p>
+
+            <p>
+                This approach allows new features to emerge
+                from real needs discovered during development,
+                instead of appearing as isolated design decisions.
+            </p>
+
+            <hr />
+
+            <h2>Developed</h2>
+
+            <h3>Pong Example</h3>
+
+            <p>
+                First functional example used to build and validate
+                the engine's base structure.
+            </p>
+
+            <h3>Implemented Systems</h3>
+
+            <ul>
+                <li>Base engine structure</li>
+                <li>Initial lifecycle</li>
+                <li>Movement API</li>
+                <li>Basic collisions</li>
+                <li>Horizontal and vertical bouncing</li>
+                <li>Basic AI opponent</li>
+                <li>Respawn system (<code>to_origin()</code>)</li>
+                <li>Log console</li>
+                <li>JSON and JavaScript support</li>
+                <li>JSON Schemas</li>
+                <li>TypeScript definitions (<code>.d.ts</code>)</li>
+            </ul>
+
+            <hr />
 
             <h3>Asteroids Example</h3>
 
@@ -108,27 +181,27 @@
 
             <p>
                 Beyond movement and shooting,
-                this example is helping establish how objects are born,
+                this example helped establish how objects are born,
                 live,
                 interact
-                and disappear inside the runtime.
+                and disappear within the runtime.
             </p>
 
             <p>
-                Pong validated the base runtime.
-                Asteroids is validating the language used to build worlds.
+                Pong validated the core runtime.
+                Asteroids validated the language used to build worlds.
             </p>
 
             <p>
-                Currently used to validate:
+                Systems validated through Asteroids:
             </p>
 
             <ul>
                 <li>Shape system (<code>shape</code>).</li>
 
-                <li>JSON-based <code>motion</code> system.</li>
+                <li>JSON-driven <code>motion</code> system.</li>
 
-                <li>Rotation and unified FLX angular convention, also applied to Pong.</li>
+                <li>Rotation and the unified FLX angular convention, also applied to Pong.</li>
 
                 <li>New API functions and runtime scripting evolution.</li>
 
@@ -172,7 +245,7 @@
 
                 <li>Prefab script loading and caching through <code>ScriptEngine</code>.</li>
 
-                <li>Fully functional ship firing system.</li>
+                <li>Functional ship firing system.</li>
 
                 <li>
                     Complete lifecycle:
@@ -188,9 +261,9 @@
 
                 <li>Deferred destruction through <code>kill(object)</code>.</li>
 
-                <li><code>alive</code> state used to exclude dead objects from later runtime phases.</li>
+                <li>State flag <code>alive</code> used to exclude dead objects from subsequent runtime phases.</li>
 
-                <li><code>dead()</code> phase executed only once before cleanup.</li>
+                <li><code>dead()</code> phase executed exactly once before cleanup.</li>
 
                 <li>Per-instance initialization through <code>born()</code>.</li>
 
@@ -221,7 +294,7 @@
                 </li>
 
                 <li>
-                    Inline children declared directly inside JSON structures.
+                    Inline children defined directly inside JSON structures.
                 </li>
 
                 <li>
@@ -233,7 +306,7 @@
                 </li>
 
                 <li>
-                    Polygonal shapes defined through lists of points.
+                    Polygonal shapes defined through point lists.
                 </li>
 
                 <li>
@@ -247,7 +320,7 @@
                 </li>
 
                 <li>
-                    Periodic spawning based on timers through
+                    Periodic spawning driven by timers through
                     <code>object.local</code>.
                 </li>
 
@@ -256,34 +329,33 @@
                 </li>
 
                 <li>
-                    Full practical validation of the Asteroids flow:
+                    Full practical validation of the Asteroids gameplay loop:
                     ship, lasers, spawners, asteroids and basic collisions.
                 </li>
 
                 <li>
-                    Refinement of the asteroid system:
-                    behavior and variants.
+                    Asteroid system refinement:
+                    behaviors and variants.
                 </li>
 
                 <li>Collision system improvements.</li>
 
                 <li>
-                    Added collision visualization and collision types
-                    (<code>circle</code> and <code>box</code>).
+                    Collision visualization and support for
+                    <code>circle</code>
+                    and
+                    <code>box</code>
+                    colliders.
                 </li>
-            </ul>
 
-            <h3>Currently in Development</h3>
-
-            <ul>
                 <li>
-                    Refinement of the asteroid system:
+                    Asteroid system refinement:
                     fragmentation.
                 </li>
 
                 <li>
                     Visual improvements to increase game feel:
-                    trails, particles on destruction and related effects.
+                    trails, destruction particles and related effects.
                 </li>
 
                 <li>UI and text systems.</li>
@@ -294,25 +366,19 @@
 
                 <li>Signals and object-to-object communication.</li>
 
-                <li>
-                    Runtime object relationships:
-                    parent, children and group access.
-                </li>
-
-                <li>Configurable death propagation between related objects.</li>
-
-                <li>Extending <code>object.local</code> beyond numeric values.</li>
             </ul>
 
             <hr />
 
-            <h2>Planned</h2>
+            <h2>In Development</h2>
 
             <h3>Arkanoid Example</h3>
 
             <p>
                 Third main runtime example.
             </p>
+
+            <h3>Currently in Development</h3>
 
             <p>
                 It will help validate:
@@ -328,6 +394,8 @@
             </ul>
 
             <hr />
+
+            <h2>Planned</h2>
 
             <h2>Later Phase</h2>
 
@@ -350,6 +418,8 @@
 
             <hr />
 
+            <hr />
+
             <h2>Technical Debt and Pending Improvements</h2>
 
             <h3>Runtime</h3>
@@ -367,11 +437,14 @@
 
                 <li>
                     Implement a persistent global scope
-                    for score, lives, general state
+                    for score, lives, game state
                     and shared runtime data.
                 </li>
 
-                <li>Define <code>game</code>/<code>level</code> context and persistence between levels.</li>
+                <li>
+                    Define <code>game</code>/<code>level</code> contexts
+                    and persistence between levels.
+                </li>
 
                 <li>
                     Define runtime object relationships:
@@ -382,7 +455,7 @@
 
                 <li>
                     Define configurable death propagation,
-                    for example deciding whether
+                    allowing decisions such as whether
                     <code>kill(parent)</code>
                     should also affect its children.
                 </li>
@@ -403,7 +476,31 @@
                     for each instance.
                 </li>
 
-                <li>Validate required JS API arguments and log warnings.</li>
+                <li>
+                    Validate required JavaScript API arguments
+                    and log warnings when invalid.
+                </li>
+            </ul>
+
+            <h3>Lifecycle and Script Contexts</h3>
+
+            <ul>
+                <li>
+                    Define runtime callbacks for game-level scripts.
+                </li>
+
+                <li>
+                    Evaluate and formalize:
+                    <code>start()</code>,
+                    <code>update()</code>
+                    and
+                    <code>draw()</code>.
+                </li>
+
+                <li>
+                    Execute <code>draw()</code>
+                    for game-level scripts.
+                </li>
             </ul>
 
             <h3>Engine and Architecture</h3>
@@ -441,6 +538,34 @@
                 </li>
             </ul>
 
+            <h3>Coordinate Spaces and Camera System</h3>
+
+            <ul>
+                <li>
+                    Define and document coordinate spaces:
+                    world,
+                    screen,
+                    local
+                    and camera/view coordinates.
+                </li>
+
+                <li>
+                    Define how coordinate spaces affect:
+                    <code>origin</code>,
+                    <code>offset</code>,
+                    spawn positions,
+                    <code>draw_text()</code>,
+                    bounds,
+                    collisions,
+                    parent/child transforms
+                    and UI rendering.
+                </li>
+
+                <li>
+                    Design and implement camera and scrolling systems.
+                </li>
+            </ul>
+
             <h3>Data and JSON Composition</h3>
 
             <ul>
@@ -459,6 +584,15 @@
                     Formally document JSON composition through
                     <code>like</code>,
                     including merge and override rules.
+                </li>
+
+                <li>
+                    Implement a constants system.
+                </li>
+
+                <li>
+                    Example:
+                    <code>constants["INIT_LIVES"]</code>
                 </li>
             </ul>
 
@@ -480,12 +614,31 @@
 
                 <li>
                     Add collision filters:
-                    groups, masks, priority and related rules.
+                    groups,
+                    masks,
+                    priority
+                    and related rules.
                 </li>
 
                 <li>
                     Box collision is currently axis-aligned and does not rotate.
                     Circle collision is rotation-independent.
+                </li>
+            </ul>
+
+            <h3>Audio</h3>
+
+            <ul>
+                <li>
+                    Design and implement the audio system.
+                </li>
+            </ul>
+
+            <h3>Transforms and Hierarchies</h3>
+
+            <ul>
+                <li>
+                    Child objects following parent transforms.
                 </li>
             </ul>
 
@@ -509,28 +662,22 @@
                 </li>
             </ul>
 
-            <h3>Future API helpers</h3>
+            <h3>Future API Helpers</h3>
 
             <ul>
-                <li>
-                    lerp(start, end, factor)
-                </li>
+                <li><code>lerp(start, end, factor)</code></li>
+
+                <li><code>scale()</code></li>
+
+                <li><code>bounce(object, other)</code></li>
 
                 <li>
-                    scale()
-                </li>
-
-                <li>
-                    bounce(object, other)
-                </li>
-
-                <li>
-                    Math helpers for scripts:
-                    - sin(angle)
-                    - cos(angle)
-                    - atan2(y, x)
-                    - distance(a, b)
-                    - angle_to(a, b)
+                    Math helpers:
+                    <code>sin(angle)</code>,
+                    <code>cos(angle)</code>,
+                    <code>atan2(y, x)</code>,
+                    <code>distance(a, b)</code>,
+                    <code>angle_to(a, b)</code>.
                 </li>
             </ul>
 

@@ -19,7 +19,7 @@
 
         <article class="doc-content">
 
-             
+
             <p class="eyebrow">FLX Documentation</p>
             <h1>FLX API</h1>
 
@@ -62,7 +62,115 @@
 
             <hr />
 
-            <h2>RuntimeObject Conventions</h2>
+            <h2>RuntimeObject</h2>
+
+            <p>
+                Objects received by scripting functions
+                are instances of <code>RuntimeObject</code>.
+            </p>
+
+            <p>
+                A RuntimeObject represents a living entity inside the runtime
+                and contains both JSON-defined data
+                and runtime-generated state.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">RuntimeObject</div>
+<pre><code>function motion(ship) {
+
+    ship.x += 10;
+
+    console.log(ship.id);
+}
+</code></pre>
+            </div>
+
+            <h3>id</h3>
+
+            <p>
+                Unique identifier assigned to the runtime instance.
+            </p>
+
+            <p>
+                Unlike <code>name</code>,
+                every spawned object receives a unique identifier.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">id</div>
+<pre><code>console.log(ship.id);</code></pre>
+            </div>
+
+            <h3>name</h3>
+
+            <p>
+                Logical object name.
+            </p>
+
+            <p>
+                It usually comes from the JSON definition.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">name</div>
+<pre><code>console.log(ship.name);</code></pre>
+            </div>
+
+            <h3>local</h3>
+
+            <p>
+                Persistent state associated with a specific object instance.
+            </p>
+
+            <p>
+                Values stored inside
+                <code>object.local</code>
+                remain available while the object exists.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">local</div>
+<pre><code>ship.local["timer"] += delta();
+</code></pre>
+            </div>
+
+            <h3>group</h3>
+
+            <p>
+                Logical group assigned to the object.
+            </p>
+
+            <p>
+                It can be used to classify entities
+                and may be used by future filtering systems.
+            </p>
+
+            <h3>Position and Size</h3>
+
+            <ul>
+                <li><code>x</code>: horizontal position.</li>
+                <li><code>y</code>: vertical position.</li>
+                <li><code>width</code>: width.</li>
+                <li><code>height</code>: height.</li>
+            </ul>
+
+            <h3>Movement</h3>
+
+            <ul>
+                <li><code>speed</code>: current speed.</li>
+                <li><code>originSpeed</code>: initial speed.</li>
+                <li><code>velocityX</code>: horizontal velocity.</li>
+                <li><code>velocityY</code>: vertical velocity.</li>
+                <li><code>motion</code>: motion configuration defined in JSON.</li>
+            </ul>
+
+            <h3>Origin</h3>
+
+            <ul>
+                <li><code>originX</code>: initial X position.</li>
+                <li><code>originY</code>: initial Y position.</li>
+            </ul>
 
             <h3>angle</h3>
 
@@ -98,11 +206,11 @@
 
             <div class="code-card">
                 <div class="code-header">accelerate</div>
-                 
+
 
 <pre><code>accelerate(ship);</code></pre>
 
-                 
+
             </div>
 
             <h3>Configuration Used</h3>
@@ -125,11 +233,11 @@
 
             <div class="code-card">
                 <div class="code-header">accelerate amount</div>
-                 
+
 
 <pre><code>accelerate(ball, 20);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -155,13 +263,13 @@
 
             <div class="code-card">
                 <div class="code-header">advance</div>
-                 
+
 
 <pre><code>function motion(ship) {
     advance(ship);
 }</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -174,11 +282,11 @@
 
             <div class="code-card">
                 <div class="code-header">bounce_x</div>
-                 
+
 
 <pre><code>bounce_x(ball);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -191,11 +299,11 @@
 
             <div class="code-card">
                 <div class="code-header">bounce_y</div>
-                 
+
 
 <pre><code>bounce_y(ball);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -208,11 +316,11 @@
 
             <div class="code-card">
                 <div class="code-header">console.log</div>
-                 
+
 
 <pre><code>console.log("Ship position:", ship.x, ship.y);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -231,7 +339,7 @@
 
             <div class="code-card">
                 <div class="code-header">timer</div>
-                 
+
 
 <pre><code>function motion(spawner) {
 
@@ -244,8 +352,32 @@
 }
 </code></pre>
 
-                 
+
             </div>
+
+            <hr />
+
+            <h2>Draw_text(x, y, text, size)</h2>
+
+            <p>
+                Draws text on screen using logical screen coordinates.
+            </p>
+
+            <p>
+                Coordinates are expressed in FLX logical resolution.
+                The engine applies the configured screen scale internally.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>draw_text( 10, 10, "HELLO ");
+draw_text( 40, 10, "WORLD!", 15);
+</code></pre>
+            </div>
+
+            <p>
+                *<code>size</code> is optional, by dafault is 10.
+            </p>
 
             <hr />
 
@@ -259,11 +391,11 @@
 
             <div class="code-card">
                 <div class="code-header">follow_y</div>
-                 
+
 
 <pre><code>follow_y(enemy, "Ball");</code></pre>
 
-                 
+
             </div>
 
             <h3>Configuration Used</h3>
@@ -284,7 +416,7 @@
 
             <div class="code-card">
                 <div class="code-header">Key.down</div>
-                 
+
 
 <pre><code>if (Key.down(KEY_UP)) {
     move_y(player, UP);
@@ -295,7 +427,7 @@ if (Key.down(KEY_LEFT)) {
 }
 </code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -309,14 +441,14 @@ if (Key.down(KEY_LEFT)) {
 
             <div class="code-card">
                 <div class="code-header">Key.pressed</div>
-                 
+
 
 <pre><code>if (Key.pressed(KEY_SPACE)) {
     spawn(ship, "laser");
 }
 </code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -342,13 +474,13 @@ if (Key.down(KEY_LEFT)) {
 
             <div class="code-card">
                 <div class="code-header">kill</div>
-                 
+
 
 <pre><code>function collision(object, other) {
     kill(object);
 }</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -363,12 +495,12 @@ if (Key.down(KEY_LEFT)) {
 
             <div class="code-card">
                 <div class="code-header">move_x</div>
-                 
+
 
 <pre><code>move_x(player, LEFT);
 move_x(player, RIGHT);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -383,12 +515,12 @@ move_x(player, RIGHT);</code></pre>
 
             <div class="code-card">
                 <div class="code-header">move_y</div>
-                 
+
 
 <pre><code>move_y(player, UP);
 move_y(player, DOWN);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -416,7 +548,7 @@ move_y(player, DOWN);</code></pre>
 
             <div class="code-card">
                 <div class="code-header">probability</div>
-                 
+
 
 <pre><code>if (probability(5)) {
     spawn(object, "enemy");
@@ -427,7 +559,7 @@ if (probability(1, 1000)) {
 }
 </code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -448,14 +580,14 @@ if (probability(1, 1000)) {
 
             <div class="code-card">
                 <div class="code-header">random</div>
-                 
+
 
 <pre><code>asteroid.angle = random(0, 360);
 
 asteroid.speed = random(20, 80);
 </code></pre>
 
-                 
+
             </div>
 
             <h3>Parameters</h3>
@@ -477,12 +609,12 @@ asteroid.speed = random(20, 80);
 
             <div class="code-card">
                 <div class="code-header">rotate</div>
-                 
+
 
 <pre><code>rotate(ship, LEFT);
 rotate(ship, RIGHT);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -511,14 +643,14 @@ rotate(ship, RIGHT);</code></pre>
 
             <div class="code-card">
                 <div class="code-header">spawn</div>
-                 
+
 
 <pre><code>if (Key.pressed(KEY_SPACE)) {
     spawn(ship, "laser");
 }
 </code></pre>
 
-                 
+
             </div>
 
             <h3>Configuration Used</h3>
@@ -556,11 +688,11 @@ rotate(ship, RIGHT);</code></pre>
 
             <div class="code-card">
                 <div class="code-header">to_origin</div>
-                 
+
 
 <pre><code>to_origin(ball);</code></pre>
 
-                 
+
             </div>
 
             <hr />
@@ -588,7 +720,7 @@ rotate(ship, RIGHT);</code></pre>
                 <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
                 <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
-             
+
 
         </article>
 

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "FLX Node",
   "type": "object",
+  "additionalProperties": false,
 
   "properties": {
 
@@ -31,6 +32,8 @@
 
     "origin": {
       "type": "object",
+      "additionalProperties": false,
+      "required": [ "x", "y" ],
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" }
@@ -39,6 +42,8 @@
 
     "size": {
       "type": "object",
+      "additionalProperties": false,
+      "required": [ "width", "height" ],
       "properties": {
         "width": { "type": "number" },
         "height": { "type": "number" }
@@ -59,6 +64,7 @@
 
     "behavior": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
 
         "scripts": {

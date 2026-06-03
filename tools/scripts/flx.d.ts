@@ -57,6 +57,9 @@ interface MotionConfig {
  * Runtime representation of an object created by FLX.
  */
 interface RuntimeObject {
+    /** Unique runtime instance identifier. */
+    id: string;
+    
     /** Object name, usually defined in JSON. */
     name: string;
 
@@ -113,6 +116,17 @@ interface RuntimeObject {
     /** Motion configuration defined in JSON. */
     motion: MotionConfig;
 }
+
+/**
+ * Shared numeric game state available to all scripts.
+ *
+ * Unlike object.local, global is shared across the whole game.
+ *
+ * @example
+ * global["score"] = 0;
+ * global["lives"] = 3;
+ */
+declare const global: Record<string, number>;
 
 /**
  * Keyboard input helper.
@@ -243,6 +257,25 @@ declare function delta(): number;
 declare function spawn(
     object: RuntimeObject,
     spawnName: string
+): void;
+
+/**
+ * Draws text on screen using logical screen coordinates.
+ *
+ * Coordinates are expressed in FLX logical resolution.
+ * The engine applies the configured screen scale internally.
+ *
+ * @example
+ * draw_text(10, 10, "SCORE: " + global["score"]);
+ *
+ * @example
+ * draw_text(10, 25, "LIVES: " + global["lives"], 8);
+ */
+declare function draw_text(
+    x: number,
+    y: number,
+    text: string,
+    size?: number
 ): void;
 
 /**

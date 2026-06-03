@@ -39,6 +39,7 @@ RuntimeObject::RuntimeObject(
     this->runtimeId = name;
     this->sourcePath = "";
     this->origin = origin;
+    this->hasOrigin = false;
     this->position = origin;
     this->size = size;
     this->color = color;

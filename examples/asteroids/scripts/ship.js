@@ -35,6 +35,13 @@ function motion(ship) {
 }
 
 function dead(ship) {
+    if (global["lives"] >= 2) {
+        global["shipDead"] = 1;
+        global["lives"]--;
+    } else {
+        global["inGame"] = 0;
+        global["lives"] = 0;
+    }
     spawn(ship, "fragment");
     spawn(ship, "fragment");
     spawn(ship, "fragment");

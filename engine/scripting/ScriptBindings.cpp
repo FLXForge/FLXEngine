@@ -152,6 +152,50 @@ static JSValue jsRandom(
     );
 }
 
+static JSValue jsDrawText(
+    JSContext* context,
+    JSValueConst thisValue,
+    int argc,
+    JSValueConst* argv
+)
+{
+    int fontSize = 10;
+
+    if (argc >= 4)
+    {
+        JS_ToInt32(context, &fontSize, argv[3]);
+    }
+
+    const int scale =
+        activeScriptEngine->getScreenScale();
+    
+    double x = 0.0;
+    double y = 0.0;
+
+    JS_ToFloat64(context, &x, argv[0]);
+    JS_ToFloat64(context, &y, argv[1]);
+
+    const char* text =
+        JS_ToCString(context, argv[2]);
+
+    if (text == nullptr)
+    {
+        return JS_UNDEFINED;
+    }
+
+    DrawText(
+        text,
+        static_cast<int>(x * scale),
+        static_cast<int>(y * scale),
+        fontSize * scale,
+        WHITE
+    );
+
+    JS_FreeCString(context, text);
+
+    return JS_UNDEFINED;
+}
+
 static JSValue jsMoveX(
     JSContext* context,
     JSValueConst thisValue,
@@ -870,6 +914,18 @@ void ScriptBindings::registerAll(
         global,
         "probability",
         JS_NewCFunction(context, jsProbability, "probability", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "draw_text",
+        JS_NewCFunction(
+            context,
+            jsDrawText,
+            "draw_text",
+            3
+        )
     );
 
     JS_SetPropertyStr(

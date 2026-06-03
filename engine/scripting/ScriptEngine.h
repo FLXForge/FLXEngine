@@ -80,17 +80,25 @@ public:
         const std::string& id
     );
 
+    void setScreenScale(int scale);
+    int getScreenScale() const;
+
 private:
     JSValue createJsObject(RuntimeObject& object);
     void applyJsObject(RuntimeObject& source, JSValue jsObject);
+    JSValue createGlobalObject();
+    void applyGlobalObject(JSValue globalObject);
+    void exposeGlobalObject(JSValue globalObject);
     void cacheScriptModule(const std::string& path);
     JSValue getCachedFunction(
         const std::string& script,
         const std::string& function
     );
 private:
+    int screenScale = 1;
     JSRuntime* runtime;
     JSContext* context;
+    std::unordered_map<std::string, double> globalState;
     std::unordered_set<std::string> loadedScripts;
     std::unordered_map<
         std::string,

@@ -14,6 +14,10 @@ function born(asteroid) {
 }
 
 function motion(asteroid) {
+    if (global["inGame"] == 0){
+        kill(asteroid);
+        return;
+    }
     advance(asteroid);
     rotate(asteroid);
 }
@@ -31,20 +35,31 @@ function collision(asteroid, other) {
 
     if (other.group === "laser") {
         asteroid.local["destroyed_by_laser"] = 1;
+        global["score"] += 100;
         kill(asteroid);
         kill(other);
     }
 
     if (other.group === "ship") {
+        global["asteroids"]-=2;
         kill(asteroid);
         kill(other);
     }
 }
 
 function dead(asteroid) {
+
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
+    
     if (asteroid.local["destroyed_by_laser"] !== 1) {
         return;
     }
+
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
 
     spawn(asteroid, "small");
     spawn(asteroid, "small");

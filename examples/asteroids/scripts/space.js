@@ -11,10 +11,13 @@ const ASTEROID_LIMIT = 10;
 
 function born(space) {
     space.local["timer"] = 0;
-    space.local["limit"] = 0;
 }
 
 function motion(space) {
+    if (global["inGame"] == 0) {
+        return;
+    }
+
     space.local["timer"] += delta();
 
     if (space.local["timer"] < SPAWN_INTERVAL) {
@@ -23,7 +26,7 @@ function motion(space) {
 
     space.local["timer"] = 0;
 
-    if (space.local["limit"] >= ASTEROID_LIMIT) {
+    if (global["asteroids"] >= ASTEROID_LIMIT) {
         return;
     }
 
@@ -35,5 +38,6 @@ function motion(space) {
         spawn(space, "Asteroid_a");
     }
 
-    space.local["limit"]++;
+    global["asteroids"] += 2;
+    space.local["timer"] = 0;
 }

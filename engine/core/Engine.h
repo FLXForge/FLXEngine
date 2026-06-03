@@ -27,6 +27,7 @@ private:
     void actionPhase();
     void motionPhase();
     void collisionPhase();
+    void drawPhase();
     void deadPhase();
     void cleanupDeadObjects();
 

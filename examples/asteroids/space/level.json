@@ -3,7 +3,6 @@
   "name": "Level",
 
   "children": [
-    "ship/ship",
     {
       "name": "DeepSpaceLeft",
       "like": "asteroid/deep_space",
@@ -20,5 +19,15 @@
         "y": 20
       }
     }
-  ]
+  ],
+
+  "spawns": {
+    "ship": {
+      "prefab": "ship/ship"
+    }
+  },
+
+  "behavior": {
+    "scripts": [ "scripts/ui" ]
+  }
 }

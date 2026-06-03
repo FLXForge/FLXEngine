@@ -19,6 +19,11 @@ function motion(laser) {
 
     laser.local["life_time"] += delta();
 
+    const factor = 1 - laser.local["life_time"] / (MAX_TIME_LIFE * 2);
+
+    laser.width = 1 * factor;
+    laser.height = 10 * factor;
+
     if (laser.local["life_time"] >= MAX_TIME_LIFE) {
         kill(laser);
     }

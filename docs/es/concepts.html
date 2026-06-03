@@ -173,6 +173,22 @@ main:game.json
             </p>
 
             <p>
+                Un objeto no necesita tener representación visual para existir dentro del runtime.
+            </p>
+
+            <p>
+                Si define <code>behavior</code>, <code>spawns</code> o <code>collision</code>,
+                puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
+                o controlador de juego.
+            </p>
+
+            <p>
+                Además, <code>name</code> identifica el objeto de forma lógica o humana,
+                mientras que <code>id</code> identifica una instancia concreta dentro del runtime.
+            </p>
+
+
+            <p>
                 Los detalles completos se describen en
                 JSON Reference.
             </p>
@@ -201,6 +217,12 @@ main:game.json
             <p>
                 Esta separación permite mantener una estructura clara
                 entre el contenido inicial y el contenido dinámico.
+            </p>
+
+            <p>
+                Junto con <code>like</code>,
+                estos mecanismos constituyen la base de cómo FLX construye,
+                reutiliza e instancia objetos en tiempo de ejecución.
             </p>
 
             <hr />
@@ -283,21 +305,21 @@ main:game.json
 
             <hr />
 
-            <h2>Shape and Collision</h2>
+            <h2>Shape y Collision</h2>
 
             <p>
                 En FLX, la representación visual y la colisión son sistemas independientes.
             </p>
 
             <p>
-                Con <code>shape</code> block defines como se verá el objeto,
-                mientras que con <code>collision</code> block defines como interactuará
-                con otros objetos en el runtime.
+                El bloque <code>shape</code> define cómo se dibuja un objeto,
+                mientras que el bloque <code>collision</code> define cómo interactúa
+                con otros objetos dentro del runtime.
             </p>
 
             <p>
                 En algunos casos ambas definiciones pueden ser similares,
-                pero no es una condición obligatoria.
+                pero no tienen por qué coincidir.
             </p>
 
             <div class="code-card">
@@ -307,17 +329,18 @@ main:game.json
         "type": "polygon"
     },
 
-    "collision": {
-        "type": "circle",
-        "radius": 12
-    }
+"collision": {
+    "type": "circle",
+    "radius": 12
 }
-</code></pre>
+
+} </code></pre>
+
             </div>
 
             <p>
-                Esta separación permite que la detección de colisiones siga siendo sencilla y eficiente, 
-                mientras que la representación visual puede ser tan detallada como sea necesario.
+                Esta separación permite que la detección de colisiones sea sencilla y eficiente,
+                mientras la representación visual puede ser tan detallada como sea necesario.
             </p>
 
             <hr />
@@ -335,6 +358,23 @@ main:game.json
                 <li>Subir implica reducir <code>y</code>.</li>
                 <li>Bajar implica aumentar <code>y</code>.</li>
             </ul>
+
+            <p>
+                Actualmente FLX trabaja con coordenadas lógicas de pantalla
+                en un mundo fijo sin cámara ni scroll.
+            </p>
+
+            <p>
+                Los objetos utilizan estas coordenadas para su posición dentro del runtime.
+                Las funciones de dibujo de texto, como <code>draw_text()</code>,
+                también utilizan coordenadas lógicas de pantalla.
+            </p>
+
+            <p>
+                El sistema de cámara, scroll y la separación formal entre coordenadas de mundo,
+                pantalla, vista y coordenadas locales queda pendiente para futuras versiones.
+            </p>
+
 
             <hr />
 

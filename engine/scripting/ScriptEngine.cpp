@@ -82,6 +82,11 @@ void ScriptEngine::callScriptFunction(
     JSValue global =
         JS_GetGlobalObject(context);
 
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
+
     JSValue result =
         JS_Call(
             context,
@@ -118,7 +123,10 @@ void ScriptEngine::callScriptFunction(
         JS_FreeValue(context, stack);
     }
 
+    applyGlobalObject(globalObject);
+
     JS_FreeValue(context, result);
+    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -141,6 +149,11 @@ void ScriptEngine::callScriptFunction(
 
     JSValue self =
         createJsObject(object);
+
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
 
     JSValue args[1] = { self };
 
@@ -181,9 +194,11 @@ void ScriptEngine::callScriptFunction(
     }
 
     applyJsObject(object, self);
+    applyGlobalObject(globalObject);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
+    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -210,6 +225,11 @@ void ScriptEngine::callScriptFunction(
 
     JSValue otherObject =
         createJsObject(other);
+
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
 
     JSValue args[2] = {
         self,
@@ -254,10 +274,12 @@ void ScriptEngine::callScriptFunction(
 
     applyJsObject(object, self);
     applyJsObject(other, otherObject);
+    applyGlobalObject(globalObject);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
     JS_FreeValue(context, otherObject);
+    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -643,6 +665,99 @@ void ScriptEngine::applyJsObject(
     JS_FreeValue(context, heightValue);
 }
 
+void ScriptEngine::applyGlobalObject(JSValue globalObject)
+{
+    if (!JS_IsObject(globalObject))
+    {
+        return;
+    }
+
+    globalState.clear();
+
+    JSPropertyEnum* properties = nullptr;
+    uint32_t propertyCount = 0;
+
+    if (JS_GetOwnPropertyNames(
+        context,
+        &properties,
+        &propertyCount,
+        globalObject,
+        JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
+    ) < 0)
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < propertyCount; ++i)
+    {
+        JSAtom atom =
+            properties[i].atom;
+
+        const char* key =
+            JS_AtomToCString(context, atom);
+
+        JSValue value =
+            JS_GetProperty(context, globalObject, atom);
+
+        double number = 0.0;
+
+        if (
+            key != nullptr &&
+            JS_ToFloat64(context, &number, value) == 0
+            )
+        {
+            globalState[key] = number;
+        }
+
+        JS_FreeValue(context, value);
+
+        if (key != nullptr)
+        {
+            JS_FreeCString(context, key);
+        }
+
+        JS_FreeAtom(context, atom);
+    }
+
+    js_free(context, properties);
+}
+
+void ScriptEngine::exposeGlobalObject(JSValue globalObject)
+{
+    JSValue jsGlobal =
+        JS_GetGlobalObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        jsGlobal,
+        "global",
+        JS_DupValue(context, globalObject)
+    );
+
+    JS_FreeValue(context, jsGlobal);
+}
+
+JSValue ScriptEngine::createGlobalObject()
+{
+    JSValue globalObject =
+        JS_NewObject(context);
+
+    for (const auto& entry : globalState)
+    {
+        JS_SetPropertyStr(
+            context,
+            globalObject,
+            entry.first.c_str(),
+            JS_NewFloat64(
+                context,
+                entry.second
+            )
+        );
+    }
+
+    return globalObject;
+}
+
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
 {
     JSValue self =
@@ -812,4 +927,14 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     );
 
     return self;
+}
+
+void ScriptEngine::setScreenScale(int scale)
+{
+    screenScale = scale;
+}
+
+int ScriptEngine::getScreenScale() const
+{
+    return screenScale;
 }

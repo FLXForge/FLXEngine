@@ -61,13 +61,135 @@
 
             <hr />
 
-            <h2>Convenciones RuntimeObject</h2>
+            <h2>RuntimeObject</h2>
+
+            <p>
+                Los objetos recibidos por las funciones de scripting
+                son instancias de <code>RuntimeObject</code>.
+            </p>
+
+            <p>
+                Un RuntimeObject representa una entidad viva dentro del runtime
+                y contiene tanto datos definidos mediante JSON
+                como estado generado durante la ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">RuntimeObject</div>
+<pre><code>function motion(ship) {
+
+    ship.x += 10;
+
+    console.log(ship.id);
+}
+</code></pre>
+            </div>
+
+            <h3>id</h3>
+
+            <p>
+                Identificador único de la instancia dentro del runtime.
+            </p>
+
+            <p>
+                A diferencia de <code>name</code>,
+                cada objeto generado recibe un identificador exclusivo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">id</div>
+<pre><code>console.log(ship.id);</code></pre>
+            </div>
+
+            <h3>name</h3>
+
+            <p>
+                Nombre lógico del objeto.
+            </p>
+
+            <p>
+                Habitualmente proviene de la definición JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">name</div>
+<pre><code>console.log(ship.name);</code></pre>
+            </div>
+
+            <h3>local</h3>
+
+            <p>
+                Estado persistente asociado a una instancia concreta.
+            </p>
+
+            <p>
+                Los valores almacenados en
+                <code>object.local</code>
+                permanecen mientras el objeto exista.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">local</div>
+<pre><code>ship.local["timer"] += delta();
+</code></pre>
+            </div>
+
+            <h3>group</h3>
+
+            <p>
+                Grupo lógico asociado al objeto.
+            </p>
+
+            <p>
+                Puede utilizarse para clasificar entidades
+                o para futuros sistemas de filtrado.
+            </p>
+
+            <h3>Posición y tamaño</h3>
+
+            <ul>
+                <li><code>x</code>: posición horizontal.</li>
+                <li><code>y</code>: posición vertical.</li>
+                <li><code>width</code>: ancho.</li>
+                <li><code>height</code>: alto.</li>
+            </ul>
+
+            <h3>Movimiento</h3>
+
+            <ul>
+                <li><code>speed</code>: velocidad actual.</li>
+                <li><code>originSpeed</code>: velocidad inicial.</li>
+                <li><code>velocityX</code>: velocidad horizontal.</li>
+                <li><code>velocityY</code>: velocidad vertical.</li>
+                <li><code>motion</code>: configuración de movimiento declarada en JSON.</li>
+            </ul>
+
+            <h3>Origen</h3>
+
+            <ul>
+                <li><code>originX</code>: posición inicial X.</li>
+                <li><code>originY</code>: posición inicial Y.</li>
+            </ul>
 
             <h3>angle</h3>
 
             <p>
-                La propiedad <code>angle</code> representa la rotación actual del objeto en grados.
+                La propiedad <code>angle</code>
+                representa la rotación actual del objeto en grados.
             </p>
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
 
             <p>
                 FLX utiliza la siguiente convención:
@@ -206,6 +328,28 @@
 }
 </code></pre>
             </div>
+
+            <h2>Draw_text(x, y, text, size)</h2>
+
+            <p>
+                Dibuja texto en pantalla usando las coodenadas definidas en screen.
+            </p>
+
+            <p>
+                Las coordenadas son expresadas en FLX como coordenadas de resolución.
+                El motor aplica la configuración de escalada de forma automática.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>draw_text( 10, 10, "HELLO ");
+draw_text( 40, 10, "WORLD!", 15);
+</code></pre>
+            </div>
+
+            <p>
+                *<code>size</code> es opcional, por defecto es 10.
+            </p>
 
             <h2>follow_y(object, targetName)</h2>
 

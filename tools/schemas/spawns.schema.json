@@ -3,9 +3,11 @@
   "$id": "spawns.schema.json",
   "title": "FLX Spawns",
   "type": "object",
+
   "additionalProperties": {
     "type": "object",
     "required": [ "prefab" ],
+
     "properties": {
       "prefab": {
         "type": "string"

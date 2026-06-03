@@ -257,7 +257,10 @@ namespace
         float x = 0.0f;
         float y = 0.0f;
 
-        if (object.contains("origin"))
+        const bool hasOrigin =
+            object.contains("origin");
+
+        if (hasOrigin)
         {
             x =object["origin"]["x"].get<float>();
             y =object["origin"]["y"].get<float>();
@@ -317,6 +320,8 @@ namespace
             Vector2{ width, height },
             color
         );
+
+        runtimeObject.hasOrigin = hasOrigin;
 
         runtimeObject.shapeType = shapeType;
 
@@ -476,9 +481,12 @@ namespace
                     sourceFile.parent_path().generic_string();
 
                 spawn.offset = Vector2{ 0.0f, 0.0f };
+                spawn.hasOffset = false;
 
                 if (spawnData.contains("offset"))
                 {
+                    spawn.hasOffset = true;
+
                     spawn.offset.x =
                         spawnData["offset"].value("x", 0.0f);
 
@@ -505,10 +513,17 @@ namespace
             return;
         }
 
-        if (data.contains("shape"))
+        const bool isRuntimeObject =
+            data.contains("shape") ||
+            data.contains("behavior") ||
+            data.contains("spawns") ||
+            data.contains("collision");
+
+        if (isRuntimeObject)
         {
-            objects.push_back(parseRuntimeObject(data, path));
-            return;
+            objects.push_back(
+                parseRuntimeObject(data, path)
+            );
         }
 
         if (!data.contains("children"))
@@ -610,13 +625,13 @@ GameConfig JsonLoader::loadGameConfig(const std::string& path)
         config.scale = data["scale"].get<int>();
     }
 
-    if (data.contains("program"))
+    if (data.contains("behavior"))
     {
-        const auto& program = data["program"];
+        const auto& behavior = data["behavior"];
 
-        if (program.contains("scripts"))
+        if (behavior.contains("scripts"))
         {
-            for (const auto& script : program["scripts"])
+            for (const auto& script : behavior["scripts"])
             {
                 config.programScripts.push_back(
                     script.get<std::string>()

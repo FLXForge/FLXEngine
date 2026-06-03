@@ -8,6 +8,10 @@ function born(asteroid) {
 }
 
 function motion(asteroid) {
+    if (global["inGame"] == 0){
+        kill(asteroid);
+        return;
+    }
     advance(asteroid);
     rotate(asteroid);
 }
@@ -36,14 +40,22 @@ function collision(asteroid, other) {
 }
 
 function dead(asteroid) {
+    global["asteroids"]--;
+    
+    spawn(asteroid, "fragment");
+    spawn(asteroid, "fragment");
+
     if (asteroid.local["destroyed_by_laser"] !== 1) {
         return;
     }
+
+    global["score"] += 300;
 
     spawn(asteroid, "fragment");
     spawn(asteroid, "fragment");
 
     if (probability(50)) {
+        spawn(asteroid, "fragment");
         spawn(asteroid, "fragment");
     }
 }

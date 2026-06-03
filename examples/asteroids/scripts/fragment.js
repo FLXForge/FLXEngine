@@ -23,6 +23,11 @@ function motion(fragment) {
 
     fragment.local["timer"] += delta();
 
+    const factor = 1 - fragment.local["timer"] / TIME_TO_DIE;
+
+    fragment.width = 1 * factor;
+    fragment.height = 10 * factor;
+
     if (fragment.local["timer"] < TIME_TO_DIE) {
         return;
     }

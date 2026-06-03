@@ -314,19 +314,48 @@ function born(laser) {
             </p>
 
             <ul>
-                <li>El estado compartido pertenece al script.</li>
+                <li>El estado temporal pertenece a la función.</li>
+                <li>El estado compartido entre objetos del mismo script pertenece al script.</li>
                 <li>El estado individual pertenece al objeto.</li>
+                <li>El estado compartido por todo el runtime pertenece a <code>global</code>.</li>
             </ul>
 
-            <h3>Ámbito global (futuro)</h3>
+            <h3>Ámbito global</h3>
 
             <p>
-                FLX contempla la incorporación de un ámbito global compartido
-                por todo el runtime.
+                FLX proporciona un ámbito global compartido mediante
+                <code>global</code>.
             </p>
 
             <p>
-                Esta funcionalidad se encuentra actualmente en diseño.
+                Los valores almacenados en
+                <code>global</code>
+                están disponibles para todos los scripts
+                durante la ejecución del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Global scope</div>
+<pre><code>function start() {
+    global["score"] = 0;
+    global["lives"] = 3;
+}
+
+function collision(player, asteroid) {
+    global["lives"] -= 1;
+}
+</code></pre>
+            </div>
+
+            <p>
+                Este ámbito resulta útil para datos compartidos por todo el juego,
+                como puntuación, vidas, estado de nivel o contadores generales.
+            </p>
+
+            <p>
+                A diferencia de <code>object.local</code>,
+                que pertenece a una instancia concreta,
+                <code>global</code> pertenece al runtime.
             </p>
 
             <hr />
@@ -376,6 +405,8 @@ function born(laser) {
                 <li>Utiliza <code>delta()</code> para temporizadores y movimiento dependiente del tiempo.</li>
 
                 <li>Utiliza <code>kill()</code> para destruir objetos de forma segura.</li>
+
+                <li>Utiliza <code>global</code> para estado compartido del runtime.</li>
             </ul>
 
             <hr />

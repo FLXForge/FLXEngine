@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="examples">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Examples</h1>
+
+            <p>
+                FLX examples are not only visual demonstrations.
+            </p>
+
+            <p>
+                Each project exists to validate specific runtime systems,
+                discover real-world problems
+                and help define the engine architecture through practical use cases.
+            </p>
+
+            <p class="placeholder">
+                Each example represents a different stage in the evolution of FLX.
+            </p>
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Complete</p>
+                    </div>
+                    <div><h2 class="example-title">PONG</h2></div>
+                </div>
+
+                <p class="example-tagline">
+                    Two paddles. One ball. The beginning of everything.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/examples/pong-cover.png" alt="Pong cover">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-01.png" alt="Pong gameplay">
+                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-02.png" alt="Pong gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Pong was the first example used to build the foundation of the runtime.
+                </p>
+
+                <p>
+                    Although visually simple,
+                    it helped validate the lifecycle,
+                    basic movement,
+                    collisions,
+                    bouncing,
+                    scripting
+                    and the initial engine architecture.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>What can be learned</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Basic FLX project structure</li>
+                            <li>Classic speed-based movement</li>
+                            <li>Simple collisions</li>
+                            <li>Input and scripting</li>
+                            <li>Basic AI</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/pong">
+                            View example repository
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Complete</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">Asteroids</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Inertia, composition and survival in the void.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/examples/asteroids-cover.png"
+                         alt="Asteroids cover">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot"
+                             src="../assets/examples/asteroids-gameplay-01.png"
+                             alt="Asteroids gameplay">
+
+                        <img class="example-screenshot"
+                             src="../assets/examples/asteroids-gameplay-02.png"
+                             alt="Asteroids gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Asteroids represents the second major evolution phase of FLX.
+                </p>
+
+                <p>
+                    While Pong helped validate the core architecture,
+                    Asteroids is helping define how objects are built,
+                    born, interact and disappear within the runtime.
+                </p>
+
+                <p>
+                    This example has driven the creation of the complete lifecycle,
+                    prefabs,
+                    dynamic spawns,
+                    JSON composition through <code>like</code>,
+                    per-object local state
+                    and the engine's first polygonal shapes.
+                </p>
+
+                <p>
+                    It is also helping validate the separation between
+                    visual representation and collision,
+                    allowing different collider types to coexist
+                    independently from the rendered shape.
+                </p>
+
+                <p>
+                    More than a simple arcade clone,
+                    Asteroids has become the primary validation environment
+                    for FLX's current architecture.
+                </p>
+
+                <section class="example-card">
+
+                    <div class="example-header">
+                        <h3>What You Can Learn</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Advanced motion system</li>
+                            <li>Acceleration and inertia</li>
+                            <li>FLX rotation and angular convention</li>
+                            <li>Complete runtime lifecycle</li>
+                            <li>Local state through <code>object.local</code></li>
+                            <li>Reusable spawns and prefabs</li>
+                            <li>JSON composition through <code>like</code></li>
+                            <li>Point-defined polygons</li>
+                            <li>Reusable spawners</li>
+                            <li>Screen wrapping and boundary management</li>
+                            <li>Separation between visual shape and collider</li>
+                            <li>Collision visualization for debugging</li>
+                            <li><code>circle</code> and <code>box</code> colliders</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/asteroids">
+                            View Example Repository
+                        </a>
+                    </p>
+
+                </section>
+
+            </section>
+
+
+            <hr />
+
+            <section class="example-card">
+
+                <div class="example-header">
+                    <div>
+                        <p class="example-status progress">In Development</p>
+                        <!--<p class="example-status planned">Planned</p>-->
+                    </div>
+                    <div>
+                        <h2 class="example-title">ARKANOID</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Bounces, power ups and emergent rules.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/examples/arkanoid-cover.png" alt="Arkanoid">
+
+                    <div class="example-screenshots">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Arkanoid gameplay">
+                        <img class="example-screenshot" src="../assets/working.png" alt="Arkanoid gameplay">
+                    </div>
+                </div>
+
+                <p>
+                    Arkanoid will be used to validate
+                    more complex systems related to state,
+                    levels
+                    and runtime control.
+                </p>
+
+                <p>
+                    This example will help develop:
+                    timers,
+                    power ups,
+                    sound systems,
+                    spawn rules
+                    and dynamic state transitions.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>What can be learned</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>State systems</li>
+                            <li>Levels and progression</li>
+                            <li>Power ups</li>
+                            <li>Timers</li>
+                            <li>Rule-based spawning</li>
+                            <li>Sound management</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/arkanoid">
+                            View example repository
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li class="current">↓ Examples ← You are here</li>
+                <li class="recommended"><a class="link" href="howdo.html">How Do I...?</a> → Recommended</li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

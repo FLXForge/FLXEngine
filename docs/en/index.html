@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="home">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Introduction</h1>
+
+            <section class="hero">
+                <div class="logo-block">
+                    <img src="../assets/FLX_engine_logo_w.svg" width="400" alt="FLX Engine logo">
+                </div>
+
+                <div class="hero-text">
+                    <h2>A small data-driven 2D engine</h2>
+                    <p>
+                        Define structures with JSON, behaviors with JavaScript
+                        and let the runtime handle the rest.
+                    </p>
+                </div>
+            </section>
+
+            <h2>The FLX philosophy: data, functions and runtime</h2>
+
+            <p>
+                FLX is built around a simple idea:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objects -> Data
+
+Scripts -> Functions
+
+Runtime -> Connects both
+</code></pre>
+            </div>
+
+            <p>
+                Objects define what exists.
+            </p>
+
+            <p>
+                Scripts define what happens.
+            </p>
+
+            <p>
+                The runtime connects both during execution.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+    "$schema": "../../../tools/schemas/drawable.schema.json",
+
+    "name": "Ship",
+
+    "shape": {
+        "type": "triangle",
+        "color": "WHITE",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "motion": {
+        "rotationSpeed": 180,
+        "acceleration": 120,
+        "inertia": 0.99,
+        "maxSpeed": 180
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Data defines existence.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>/// &lt;reference path="../../../../tools/scripts/flx.d.ts" /&gt;
+
+function action(ship) {
+    if (Key.down(KEY_UP)) {
+        accelerate(ship);
+    }
+}
+
+function motion(ship) {
+    advance(ship);
+}
+</code></pre>
+            </div>
+
+            <p>
+                Functions define behavior.
+            </p>
+
+            <p>
+                FLX does not try to simplify C++.
+            </p>
+
+            <p>
+                It tries to make runtime behavior scriptable.
+            </p>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li class="current">↓ Introduction ← You are here</li>
+                <li class="recommended"><a class="link" href="mental-model.html">How FLX Thinks</a> → Recommended</li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
-  "title": "FLX Game",
+  "title": "FLX Main",
 
   "type": "object",
 
@@ -41,6 +41,10 @@
       "type": "integer"
     },
 
+    "behavior": {
+      "$ref": "behavior.schema.json"
+    },
+
     "children": {
 
       "type": "array",
@@ -54,6 +58,10 @@
 
       }
 
+    },
+
+    "spawns": {
+      "$ref": "spawns.schema.json"
     }
 
   },

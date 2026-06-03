@@ -1,0 +1,60 @@
+{
+  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "name": "Ship",
+
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+
+  "shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+      "width": 18,
+      "height": 24
+    }
+  },
+
+  "motion": {
+    "rotationSpeed": 180,
+    "acceleration": 120,
+    "inertia": 0.99,
+    "maxSpeed": 180
+  },
+
+  "bounds": {
+    "mode": "wrap",
+    "overflow": true
+  },
+
+  "group": "ship",
+
+  "collision": {
+    "type": "circle",
+    "radius": 10
+  },
+
+  "behavior": {
+    "scripts": [ "scripts/ship" ]
+  },
+
+  "spawns": {
+    "laser": {
+      "prefab": "laser",
+      "offset": {
+        "x": 0,
+        "y": -14
+      }
+    },
+    "fragment": {
+      "prefab": "ship_fragment"
+    },
+    "tail": {
+      "prefab": "tail",
+      "offset": {
+        "y": 14
+      }
+    }
+  }
+}

@@ -6,14 +6,22 @@
 #include "../scripting/ScriptEngine.h"
 #include "../debug/Logger.h"
 
+#include <algorithm>
 #include <iostream>
 #include <raylib.h>
+#include <filesystem>
+
+namespace
+{
+    constexpr bool debugCollisions = false;
+}
 
 Engine::Engine()
 {
     screenWidth = 320;
     screenHeight = 180;
     screenScale = 3;
+    nextRuntimeId = 1;
 }
 
 void Engine::run(const std::string& flxPath)
@@ -66,7 +74,7 @@ void Engine::loadProject(const std::string& flxPath)
 
     Logger::info(
         "project",
-        "Loaded game: " + gameConfig.name
+        "Loaded main: " + gameConfig.name
     );
 
     objects.clear();
@@ -76,19 +84,33 @@ void Engine::loadProject(const std::string& flxPath)
         const std::string childPath =
             resolveJsonPath(projectBasePath, child);
 
+        Logger::info(
+            "project",
+            "Loaded child: " + childPath
+        );
+
         std::vector<RuntimeObject> childObjects =
             JsonLoader::loadObjects(childPath);
 
         objects.insert(
             objects.end(),
-            childObjects.begin(),
+            childObjects.begin(), 
             childObjects.end()
         );
     }
 
+    for (auto& object : objects)
+    {
+        object.runtimeId =
+            createRuntimeId(object.name);
+    }
+
+    loadPrefabs();
+
     screenWidth = gameConfig.screenWidth;
     screenHeight = gameConfig.screenHeight;
     screenScale = gameConfig.scale;
+    scriptEngine.setScreenScale(gameConfig.scale);
 }
 
 void Engine::initWindow()
@@ -105,6 +127,37 @@ void Engine::initWindow()
     );
 }
 
+void Engine::bornObject(RuntimeObject& object)
+{
+    for (const auto& scriptPath : object.resolvedScriptPaths)
+    {
+        scriptEngine.callScriptFunction(
+            scriptPath,
+            "born",
+            object
+        );
+    }
+}
+
+void Engine::flushSpawnQueue()
+{
+    for (auto& object : pendingObjects)
+    {
+        bornObject(object);
+
+        objects.push_back(
+            std::move(object)
+        );
+
+        Logger::info(
+            "spawn",
+            "Spawned instance"
+        );
+    }
+
+    pendingObjects.clear();
+}
+
 void Engine::configureScriptEngine()
 {
     scriptEngine.setFindObjectFunction(
@@ -113,10 +166,140 @@ void Engine::configureScriptEngine()
             return find(name);
         }
     );
+
+    scriptEngine.setFindPrefabFunction(
+        [this](const std::string& name) -> RuntimeObject*
+        {
+            auto it = prefabs.find(name);
+
+            if (it == prefabs.end())
+            {
+                return nullptr;
+            }
+
+            return &it->second;
+        }
+    );
+
+    scriptEngine.setFindObjectByIdFunction(
+        [this](const std::string& id)
+        {
+            return findByRuntimeId(id);
+        }
+    );
+
+    scriptEngine.setSpawnObjectFunction(
+        [this](
+            RuntimeObject& source,
+            const SpawnDefinition& spawnDefinition,
+            const RuntimeObject& prefab
+            )
+        {
+            RuntimeObject instance = prefab;
+
+            instance.runtimeId =
+                createRuntimeId(instance.name);
+            instance.alive = true;
+            instance.deadCalled = false;
+            instance.local.clear();
+            instance.resolvedScriptPaths.clear();
+
+            const float radians =
+                source.angle * DEG2RAD;
+
+            const float rotatedX =
+                spawnDefinition.offset.x * std::cos(radians) -
+                spawnDefinition.offset.y * std::sin(radians);
+
+            const float rotatedY =
+                spawnDefinition.offset.x * std::sin(radians) +
+                spawnDefinition.offset.y * std::cos(radians);
+
+            if (spawnDefinition.hasOffset)
+            {
+                const float radians =
+                    source.angle * DEG2RAD;
+
+                const float rotatedX =
+                    spawnDefinition.offset.x * std::cos(radians) -
+                    spawnDefinition.offset.y * std::sin(radians);
+
+                const float rotatedY =
+                    spawnDefinition.offset.x * std::sin(radians) +
+                    spawnDefinition.offset.y * std::cos(radians);
+
+                instance.position = Vector2{
+                    source.position.x + rotatedX,
+                    source.position.y + rotatedY
+                };
+
+                instance.origin = instance.position;
+            }
+            else if (instance.hasOrigin)
+            {
+                instance.position = instance.origin;
+            }
+            else
+            {
+                instance.position = source.position;
+                instance.origin = instance.position;
+            }
+
+            instance.angle = source.angle;
+
+            instance.origin =
+                instance.position;
+
+            instance.angle =
+                source.angle;
+
+            for (const auto& script : instance.scripts)
+            {
+                const std::string scriptPath =
+                    resolveScriptPath(projectBasePath, script);
+
+                instance.resolvedScriptPaths.push_back(scriptPath);
+
+                scriptEngine.loadScript(scriptPath);
+
+            }
+
+            pendingObjects.push_back(instance);
+
+            Logger::info(
+                "spawn",
+                "Queued instance: " + instance.name
+            );
+        }
+    );
+}
+
+RuntimeObject* Engine::findByRuntimeId(
+    const std::string& id
+)
+{
+    for (auto& object : objects)
+    {
+        if (object.runtimeId == id)
+        {
+            return &object;
+        }
+    }
+
+    return nullptr;
 }
 
 void Engine::loadScripts()
 {
+    for (const auto& programScript : gameConfig.programScripts) {
+        const std::string programScriptPath =
+            resolveScriptPath(projectBasePath, programScript);
+
+        scriptEngine.loadScript(programScriptPath);
+
+        scriptEngine.callScriptFunction(programScriptPath, "start");
+    }
+
     for (auto& object : objects)
     {
         for (const auto& script : object.scripts)
@@ -128,7 +311,75 @@ void Engine::loadScripts()
 
             scriptEngine.loadScript(scriptPath);
         }
+
+        bornObject(object);
     }
+}
+
+void Engine::loadPrefabs()
+{
+    for (const auto& object : objects)
+    {
+        for (const auto& pair : object.spawns)
+        {
+            loadPrefabRecursive(pair.second);
+        }
+    }
+}
+
+void Engine::loadPrefabRecursive(
+    const SpawnDefinition& spawnDefinition
+)
+{
+    if (prefabs.contains(spawnDefinition.prefab))
+    {
+        return;
+    }
+
+    const std::string prefabPath =
+        resolveJsonPath(
+            spawnDefinition.basePath,
+            spawnDefinition.prefab
+        );
+
+    std::vector<RuntimeObject> prefabObjects =
+        JsonLoader::loadObjects(prefabPath);
+
+    if (prefabObjects.empty())
+    {
+        Logger::warning(
+            "project",
+            "Prefab could not be loaded: " +
+            spawnDefinition.prefab
+        );
+
+        return;
+    }
+
+    RuntimeObject prefab =
+        prefabObjects.front();
+
+    prefabs.emplace(
+        spawnDefinition.prefab,
+        prefab
+    );
+
+    Logger::info(
+        "project",
+        "Loaded prefab: " + spawnDefinition.prefab
+    );
+
+    for (const auto& pair : prefab.spawns)
+    {
+        loadPrefabRecursive(pair.second);
+    }
+}
+
+std::string Engine::createRuntimeId(
+    const std::string& name
+)
+{
+    return name + "_" + std::to_string(nextRuntimeId++);
 }
 
 std::string Engine::resolveJsonPath(
@@ -143,7 +394,7 @@ std::string Engine::resolveJsonPath(
         resolved += ".json";
     }
 
-    return basePath + "/" + resolved;
+    return std::filesystem::path(basePath + "/" + resolved).generic_string();
 }
 
 std::string Engine::resolveScriptPath(
@@ -158,20 +409,33 @@ std::string Engine::resolveScriptPath(
         resolved += ".js";
     }
 
-    return basePath + "/" + resolved;
+    return std::filesystem::path(basePath + "/" + resolved).generic_string();
 }
 
 void Engine::update()
 {
     actionPhase();
+    flushSpawnQueue();
+
     motionPhase();
+    flushSpawnQueue();
+
     collisionPhase();
+    flushSpawnQueue();
+
+    deadPhase();
+    cleanupDeadObjects();
 }
 
 void Engine::actionPhase()
 {
     for (auto& object : objects)
     {
+        if (!object.alive)
+        {
+            continue;
+        }
+
         if (!object.scripts.empty())
         {
             for (const auto& scriptPath : object.resolvedScriptPaths)
@@ -190,6 +454,11 @@ void Engine::motionPhase()
 {
     for (auto& object : objects)
     {
+        if (!object.alive)
+        {
+            continue;
+        }
+
         if (!object.scripts.empty())
         {
             for (const auto& scriptPath : object.resolvedScriptPaths)
@@ -201,6 +470,10 @@ void Engine::motionPhase()
                 );
             }
         }
+        object.applyBounds(
+            static_cast<float>(gameConfig.screenWidth),
+            static_cast<float>(gameConfig.screenHeight)
+        );
     }
 }
 
@@ -212,6 +485,11 @@ void Engine::collisionPhase()
         {
             RuntimeObject& a = objects[i];
             RuntimeObject& b = objects[j];
+
+            if (!a.alive || !b.alive)
+            {
+                continue;
+            }
 
             if (RuntimeHelpers::intersects(a, b))
             {
@@ -245,6 +523,63 @@ void Engine::collisionPhase()
     }
 }
 
+void Engine::drawPhase()
+{
+    for (auto& object : objects)
+    {
+        if (!object.alive)
+        {
+            continue;
+        }
+
+        for (const auto& scriptPath : object.resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "draw",
+                object
+            );
+        }
+    }
+}
+
+void Engine::deadPhase()
+{
+    for (auto& object : objects)
+    {
+        if (object.alive || object.deadCalled)
+        {
+            continue;
+        }
+
+        for (const auto& scriptPath : object.resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "dead",
+                object
+            );
+        }
+
+        object.deadCalled = true;
+    }
+}
+
+void Engine::cleanupDeadObjects()
+{
+    objects.erase(
+        std::remove_if(
+            objects.begin(),
+            objects.end(),
+            [](const RuntimeObject& object)
+            {
+                return !object.alive;
+            }
+        ),
+        objects.end()
+    );
+}
+
 void Engine::draw()
 {
     BeginDrawing();
@@ -253,8 +588,21 @@ void Engine::draw()
 
     for (const auto& object : objects)
     {
-        object.draw(screenScale);
+        object.draw(
+            gameConfig.scale,
+            static_cast<float>(gameConfig.screenWidth),
+            static_cast<float>(gameConfig.screenHeight)
+        );
+
+        if (debugCollisions)
+        {
+            object.drawCollision(
+                gameConfig.scale
+            );
+        }
     }
+
+    drawPhase();
 
     EndDrawing();
 }

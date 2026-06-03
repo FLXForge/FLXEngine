@@ -21,15 +21,53 @@ declare const RIGHT: number;
 /** Neutral movement constant. */
 declare const STOP: number;
 
+/** Keyboard key constant. */
+declare const KEY_UP: number;
+
+/** Keyboard key constant. */
+declare const KEY_DOWN: number;
+
+/** Keyboard key constant. */
+declare const KEY_LEFT: number;
+
+/** Keyboard key constant. */
+declare const KEY_RIGHT: number;
+
+/** Keyboard key constant. */
+declare const KEY_SPACE: number;
+
+/**
+ * Motion configuration exposed from JSON.
+ */
+interface MotionConfig {
+    /** Rotation speed in degrees per second. */
+    rotationSpeed: number;
+
+    /** Acceleration applied when accelerate(object) is called. */
+    acceleration: number;
+
+    /** Velocity multiplier applied by advance(object). */
+    inertia: number;
+
+    /** Maximum vector speed. A value of 0 means no limit. */
+    maxSpeed: number;
+}
+
 /**
  * Runtime representation of an object created by FLX.
  */
 interface RuntimeObject {
+    /** Unique runtime instance identifier. */
+    id: string;
+    
     /** Object name, usually defined in JSON. */
     name: string;
 
-    /** Behavior identifier, usually defined in JSON. */
-    behavior: string;
+    /**
+     * Runtime local state for this object.
+     * Values persist while the object exists.
+     */
+    local: Record<string, number>;
 
     /** Collision group identifier. */
     group: string;
@@ -46,113 +84,233 @@ interface RuntimeObject {
     /** Runtime object height. */
     height: number;
 
-    /** Current movement speed. */
+    /** Current movement speed. Used by classic speed + angle movement. */
     speed: number;
 
     /** Initial movement speed. */
     originSpeed: number;
 
-    /** Current movement angle, in degrees. */
+    /**
+     * Current object rotation in degrees.
+     *
+     * FLX convention:
+     * 0 = up
+     * 90 = right
+     * 180 = down
+     * 270 = left
+     */
     angle: number;
+
+    /** Current horizontal velocity. Used by motion-based movement. */
+    velocityX: number;
+
+    /** Current vertical velocity. Used by motion-based movement. */
+    velocityY: number;
 
     /** Initial X position. */
     originX: number;
 
     /** Initial Y position. */
     originY: number;
+
+    /** Motion configuration defined in JSON. */
+    motion: MotionConfig;
 }
+
+/**
+ * Shared numeric game state available to all scripts.
+ *
+ * Unlike object.local, global is shared across the whole game.
+ *
+ * @example
+ * global["score"] = 0;
+ * global["lives"] = 3;
+ */
+declare const global: Record<string, number>;
 
 /**
  * Keyboard input helper.
  */
 declare const Key: {
-    /** Returns true while the up key is pressed. */
-    up(): boolean;
+    /**
+     * Returns true while the given key is pressed.
+     *
+     * @example
+     * Key.down(KEY_UP)
+     */
+    down(key: number): boolean;
 
-    /** Returns true while the down key is pressed. */
-    down(): boolean;
+    /**
+     * Returns true only on the frame the given key is pressed.
+     *
+     * @example
+     * Key.pressed(KEY_SPACE)
+     */
+    pressed(key: number): boolean;
 };
 
 /**
  * Moves an object on the X axis.
- *
- * @example
- * move_x(self, RIGHT);
- * move_x(self, LEFT * inertia);
  */
-declare function move_x(self: RuntimeObject, direction: number): void;
+declare function move_x(object: RuntimeObject, direction: number): void;
 
 /**
  * Moves an object on the Y axis.
- *
- * @example
- * move_y(self, UP);
- * move_y(self, DOWN * inertia);
  */
-declare function move_y(self: RuntimeObject, direction: number): void;
+declare function move_y(object: RuntimeObject, direction: number): void;
 
 /**
- * Moves an object using its angle and speed.
+ * Moves an object.
+ *
+ * If motion.acceleration is defined, advance uses velocityX and velocityY.
+ * Otherwise, it uses classic speed + angle movement.
+ */
+declare function advance(object: RuntimeObject): void;
+
+/**
+ * Rotates an object using motion.rotationSpeed.
  *
  * @example
- * function motion(self) {
- *     advance(self);
- * }
+ * rotate(object, LEFT);
+ * rotate(object, RIGHT);
  */
-declare function advance(self: RuntimeObject): void;
+declare function rotate(object: RuntimeObject, direction: number): void;
 
 /**
  * Makes an object follow another object on the Y axis.
- *
- * @example
- * follow_y(self, "ball");
  */
-declare function follow_y(self: RuntimeObject, targetName: string): void;
+declare function follow_y(object: RuntimeObject, targetName: string): void;
 
 /**
  * Applies a horizontal bounce by modifying the object's angle.
  */
-declare function bounce_x(self: RuntimeObject): void;
+declare function bounce_x(object: RuntimeObject): void;
 
 /**
  * Applies a vertical bounce by modifying the object's angle.
  */
-declare function bounce_y(self: RuntimeObject): void;
+declare function bounce_y(object: RuntimeObject): void;
 
 /**
  * Increases the object's speed by the given amount.
  *
- * @example
- * accelerate(self, 5);
+ * Classic mode.
  */
-declare function accelerate(self: RuntimeObject, amount: number): void;
+declare function accelerate(object: RuntimeObject, amount: number): void;
+
+/**
+ * Accelerates the object using motion.acceleration, motion.maxSpeed
+ * and the current angle.
+ *
+ * Motion-based mode.
+ */
+declare function accelerate(object: RuntimeObject): void;
 
 /**
  * Sends the object back to its origin and restores its initial speed.
  */
-declare function to_origin(self: RuntimeObject): void;
+declare function to_origin(object: RuntimeObject): void;
 
 /**
- * Optional lifecycle function.
+ * Returns true according to a probability chance.
+ *
+ * By default, base is 100, so probability(40) means 40%.
+ *
+ * @example
+ * if (probability(40)) {
+ *     console.log("Triggered");
+ * }
+ *
+ * @example
+ * if (probability(1, 6)) {
+ *     console.log("One chance in six");
+ * }
  */
-declare function start(self: RuntimeObject): void;
+declare function probability(chance: number, base?: number): boolean;
+
+/**
+ * Returns a random number between min and max.
+ *
+ * @example
+ * asteroid.angle = random(0, 360);
+ */
+declare function random(min: number, max: number): number;
+
+/**
+ * Marks an object for destruction.
+ * The object will be removed at the end of the frame.
+ */
+declare function kill(object: RuntimeObject): void;
+
+/**
+ * Returns elapsed time in seconds since previous frame.
+ */
+declare function delta(): number;
+
+/**
+ * Spawns a prefab instance using the spawn definition
+ * declared in the object JSON.
+ *
+ * @example
+ * spawn(object, "laser");
+ */
+declare function spawn(
+    object: RuntimeObject,
+    spawnName: string
+): void;
+
+/**
+ * Draws text on screen using logical screen coordinates.
+ *
+ * Coordinates are expressed in FLX logical resolution.
+ * The engine applies the configured screen scale internally.
+ *
+ * @example
+ * draw_text(10, 10, "SCORE: " + global["score"]);
+ *
+ * @example
+ * draw_text(10, 25, "LIVES: " + global["lives"], 8);
+ */
+declare function draw_text(
+    x: number,
+    y: number,
+    text: string,
+    size?: number
+): void;
+
+/**
+ * Called once when the project starts.
+ */
+declare function start(): void;
+
+/**
+ * Called when an object enters the world.
+ * Executed for initial objects and spawned prefabs.
+ */
+declare function born(object: RuntimeObject): void;
 
 /**
  * Optional action phase function.
  */
-declare function action(self: RuntimeObject): void;
+declare function action(object: RuntimeObject): void;
 
 /**
  * Optional motion phase function.
  */
-declare function motion(self: RuntimeObject): void;
+declare function motion(object: RuntimeObject): void;
 
 /**
  * Optional collision phase function.
  */
-declare function collision(self: RuntimeObject, other: RuntimeObject): void;
+declare function collision(object: RuntimeObject, other: RuntimeObject): void;
 
 /**
  * Optional draw phase function.
  */
-declare function draw(self: RuntimeObject): void;
+declare function draw(object: RuntimeObject): void;
+
+/**
+ * Called once before an object is removed.
+ * Executed after kill() and before cleanup.
+ */
+declare function dead(object: RuntimeObject): void;

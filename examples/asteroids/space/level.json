@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../tools/schemas/node.schema.json",
+  "name": "Level",
+
+  "children": [
+    {
+      "name": "DeepSpaceLeft",
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 20,
+        "y": 20
+      }
+    },
+    {
+      "name": "DeepSpaceRight",
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 620,
+        "y": 20
+      }
+    }
+  ],
+
+  "spawns": {
+    "ship": {
+      "prefab": "ship/ship"
+    }
+  },
+
+  "behavior": {
+    "scripts": [ "scripts/ui" ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+	"$schema": "../../../tools/schemas/drawable.schema.json",
+	"name": "Laser",
+
+	"shape": {
+		"type": "line",
+		"color": "WHITE",
+		"size": {
+			"width": 1,
+			"height": 20
+		}
+	},
+
+	"motion": {
+		"inherit": "creation",
+		"rotationSpeed": 30
+	},
+
+	"bounds": {
+		"mode": "wrap",
+		"overflow": false
+	},
+
+	"behavior": {
+		"scripts": [ "scripts/fragment" ]
+	}
+}

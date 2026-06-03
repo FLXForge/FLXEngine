@@ -1,0 +1,45 @@
+{
+	"$schema": "../../../../tools/schemas/drawable.schema.json",
+	"name": "Asteroid_A",
+
+	"shape": {
+		"type": "polygon",
+		"color": "BROWN",
+
+		"points": [
+			{ "x": 0, "y": -16 },
+			{ "x": 11, "y": -12 },
+			{ "x": 16, "y": -2 },
+			{ "x": 10, "y": 9 },
+			{ "x": 3, "y": 16 },
+			{ "x": -9, "y": 13 },
+			{ "x": -16, "y": 4 },
+			{ "x": -12, "y": -9 }
+		]
+	},
+
+	"bounds": {
+		"mode": "wrap",
+		"overflow": true
+	},
+
+	"group": "asteroid",
+
+	"collision": {
+		"type": "circle",
+		"radius": 16
+	},
+
+	"behavior": {
+		"scripts": [ "scripts/asteroid" ]
+	},
+
+	"spawns": {
+		"small": {
+			"prefab": "asteroid_small"
+		},
+		"fragment": {
+			"prefab": "asteroid_fragment"
+		}
+	}
+}

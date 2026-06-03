@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadmap | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="roadmap">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Roadmap</h1>
+
+            <p>
+                FLX se desarrolla de forma incremental y práctica.
+            </p>
+
+            <p>
+                Cada ejemplo añade nuevas capacidades al runtime,
+                ayuda a validar arquitectura real
+                y permite detectar mejoras necesarias antes de avanzar.
+            </p>
+
+            <p class="placeholder">
+                Esta sección funciona como diario de desarrollo y hoja de dirección general del proyecto.
+            </p>
+
+            <hr />
+
+            <h2>Principio actual de desarrollo</h2>
+
+            <p>
+                Durante las primeras fases del proyecto,
+                los ejemplos se utilizaban para definir nuevas capacidades del runtime.
+            </p>
+
+            <p>
+                El enfoque actual es diferente.
+            </p>
+
+            <p>
+                Antes de añadir nuevas funcionalidades,
+                se intenta construir cada ejemplo utilizando únicamente
+                las capacidades ya existentes.
+            </p>
+
+            <p>
+                Cuando una limitación impide continuar de forma razonable,
+                esa limitación se convierte en candidata a evolución del runtime.
+            </p>
+
+            <p>
+                Este enfoque permite que las nuevas funcionalidades
+                nazcan de necesidades reales detectadas durante el desarrollo,
+                en lugar de aparecer como características diseñadas de forma aislada.
+            </p>
+
+            <hr />
+
+            <h2>Desarrollado</h2>
+
+            <h3>Ejemplo Pong</h3>
+
+            <p>
+                Primer ejemplo funcional utilizado para construir y validar
+                la estructura base del engine.
+            </p>
+
+            <h3>Sistemas implementados</h3>
+
+            <ul>
+                <li>Estructura base del engine</li>
+                <li>Ciclo de vida inicial</li>
+                <li>API de movimiento</li>
+                <li>Colisiones básicas</li>
+                <li>Rebote horizontal y vertical</li>
+                <li>Enemigo IA base</li>
+                <li>Sistema de reaparición (<code>to_origin()</code>)</li>
+                <li>Consola de logs</li>
+                <li>Soporte JSON y JavaScript</li>
+                <li>JSON Schemas</li>
+                <li>Definiciones TypeScript (<code>.d.ts</code>)</li>
+            </ul>
+
+            <hr />
+
+            <h3>Ejemplo Asteroids</h3>
+
+            <p>
+                Segundo ejemplo del runtime.
+            </p>
+
+            <p>
+                Asteroids representa la primera fase donde FLX empieza a definir su modelo interno.
+            </p>
+
+            <p>
+                Más allá del movimiento y los disparos,
+                este ejemplo está ayudando a establecer cómo nacen,
+                viven,
+                interactúan
+                y desaparecen los objetos dentro del runtime.
+            </p>
+
+            <p>
+                Pong validó el runtime base.
+                Asteroids está validando el lenguaje con el que se construyen los mundos.
+            </p>
+
+            <p>
+                Actualmente utilizado para validar:
+            </p>
+
+            <ul>
+                <li>Sistema de formas (<code>shape</code>).</li>
+
+                <li>Sistema <code>motion</code> basado en JSON.</li>
+
+                <li>Rotación y convención angular FLX unificada también en Pong.</li>
+
+                <li>Nuevas funciones de API y evolución del runtime scripting.</li>
+
+                <li>Sistema de wrap screen y comportamiento <code>bounds</code>.</li>
+
+                <li>Documentación HTML viva y sincronizada con el desarrollo real.</li>
+
+                <li>Soporte de color real desde JSON.</li>
+
+                <li>Nuevo tipo <code>shape.type = line</code>.</li>
+
+                <li>
+                    Sistema de input escalable:
+                    <code>Key.down(KEY_*)</code> y
+                    <code>Key.pressed(KEY_*)</code>.
+                </li>
+
+                <li>Constantes <code>KEY_*</code> expuestas a JavaScript.</li>
+
+                <li>
+                    Sistema probabilístico:
+                    <code>probability(chance, base)</code>.
+                </li>
+
+                <li>Spawns declarativos definidos directamente en JSON.</li>
+
+                <li>Prefabs cargados y cacheados sin instanciación inmediata.</li>
+
+                <li>
+                    Instanciación runtime mediante
+                    <code>spawn(object, "laser")</code>.
+                </li>
+
+                <li>Creación dinámica de objetos desde prefabs.</li>
+
+                <li>Spawn queue segura mediante <code>pendingObjects</code> y <code>flushSpawnQueue()</code>.</li>
+
+                <li>Entrada al mundo desacoplada: <code>spawn()</code>, cola, <code>born()</code> y runtime.</li>
+
+                <li>Offsets locales rotados según el ángulo del objeto.</li>
+
+                <li>Carga y caché de scripts de prefab mediante <code>ScriptEngine</code>.</li>
+
+                <li>Sistema de disparo funcional desde la nave.</li>
+
+                <li>
+                    Lifecycle completo:
+                    <code>start()</code>,
+                    <code>born()</code>,
+                    <code>action()</code>,
+                    <code>motion()</code>,
+                    <code>collision()</code>,
+                    <code>kill()</code>,
+                    <code>dead()</code>
+                    y <code>cleanup()</code>.
+                </li>
+
+                <li>Destrucción diferida mediante <code>kill(object)</code>.</li>
+
+                <li>Estado <code>alive</code> para excluir objetos muertos de nuevas fases runtime.</li>
+
+                <li>Fase <code>dead()</code> ejecutada una sola vez antes del cleanup.</li>
+
+                <li>Inicialización por instancia mediante <code>born()</code>.</li>
+
+                <li>Estado local persistente por objeto mediante <code>object.local</code>.</li>
+
+                <li>Tiempo real de frame mediante <code>delta()</code>.</li>
+
+                <li>
+                    Modelo de ámbitos:
+                    función, script, <code>object.local</code> y futuro ámbito global.
+                </li>
+
+                <li>
+                    Composición de JSON mediante <code>like</code>
+                    con sobrescritura recursiva de propiedades.
+                </li>
+
+                <li>
+                    Reutilización de configuraciones mediante
+                    prefabs y definiciones derivadas.
+                </li>
+
+                <li>
+                    Resolución de rutas relativas desde el JSON que las declara.
+                </li>
+
+                <li>
+                    Children inline definidos directamente dentro de estructuras JSON.
+                </li>
+
+                <li>
+                    Nodos lógicos sin representación visual.
+                </li>
+
+                <li>
+                    Nuevo tipo <code>shape.type = polygon</code>.
+                </li>
+
+                <li>
+                    Formas poligonales definidas mediante listas de puntos.
+                </li>
+
+                <li>
+                    Generación aleatoria mediante
+                    <code>random(min, max)</code>.
+                </li>
+
+                <li>
+                    Spawners reutilizables construidos mediante
+                    <code>like</code>.
+                </li>
+
+                <li>
+                    Spawn periódico basado en temporizadores mediante
+                    <code>object.local</code>.
+                </li>
+
+                <li>
+                    Limitación local de entidades por spawner.
+                </li>
+
+                <li>
+                    Validación práctica completa del flujo Asteroids:
+                    nave, láseres, spawners, asteroides y colisiones básicas.
+                </li>
+
+                <li>
+                    Refinamiento del sistema de asteroides:
+                    comportamiento y variantes.
+                </li>
+
+                <li>Mejoras en el sistema de colisiones.</li>
+
+                <li>Añadido sistema de visualización de colisiones y tipos de colisiones (circle y box)</li>
+
+                <li>
+                    Refinamiento del sistema de asteroides:
+                    fragmentación.
+                </li>
+
+                <li>Mejoras graficas para mejorar el "juice": estelas, particulas al romperse...</li>
+
+                <li>UI y texto.</li>
+
+                <li>Sistema de puntuación y estado global del juego.</li>
+
+                <li>Contexto <code>game</code> / <code>level</code>.</li>
+
+                <li>Señales y comunicación entre objetos.</li>
+            </ul>
+
+            <hr />
+
+            <h2>En desarrollo</h2>
+
+            <h3>Ejemplo Arkanoid</h3>
+
+            <p>
+                Tercer ejemplo principal del runtime.
+            </p>
+
+            <h3>Actualmente en desarrollo</h3>
+
+            <p>
+                Permitirá validar:
+            </p>
+
+            <ul>
+                <li>Spawn de objetos con reglas</li>
+                <li>Sistema básico de sonido</li>
+                <li>Niveles</li>
+                <li>Power ups</li>
+                <li>Cambios de estado</li>
+                <li>Temporizadores</li>
+            </ul>
+
+            <hr />
+
+            <h2>En planificación</h2>
+
+            <h2>Fase posterior</h2>
+
+            <p>
+                Tras completar los tres ejemplos principales,
+                FLX entrará en una fase de normalización y mejora general.
+            </p>
+
+            <p>
+                El objetivo será:
+            </p>
+
+            <ul>
+                <li>Unificar arquitectura y nomenclatura</li>
+                <li>Refinar APIs</li>
+                <li>Reducir duplicidades</li>
+                <li>Mejorar consistencia de runtime</li>
+                <li>Hacer los ejemplos más completos y atractivos</li>
+            </ul>
+
+            <hr />
+
+            <hr />
+
+            <h2>Deuda técnica y mejoras pendientes</h2>
+
+            <h3>Runtime</h3>
+
+            <ul>
+                <li>Normalizar Pong al nuevo esquema <code>shape</code>/<code>motion</code>.</li>
+
+                <li>
+                    Extender <code>object.local</code>.
+                    Actualmente solo soporta valores numéricos;
+                    quedan pendientes tipos como <code>bool</code>,
+                    <code>string</code>
+                    y posiblemente estructuras más complejas.
+                </li>
+
+                <li>
+                    Implementar un ámbito global persistente
+                    para puntuación, vidas, estado de partida
+                    y datos compartidos del runtime.
+                </li>
+
+                <li>
+                    Definir contextos <code>game</code>/<code>level</code>
+                    y persistencia entre niveles.
+                </li>
+
+                <li>
+                    Definir relaciones entre objetos del runtime:
+                    <code>parent</code>,
+                    <code>children</code>
+                    y acceso mediante <code>group</code>.
+                </li>
+
+                <li>
+                    Definir propagación configurable de muerte,
+                    permitiendo decidir si
+                    <code>kill(parent)</code>
+                    debe afectar también a sus hijos.
+                </li>
+
+                <li>
+                    Implementar correctamente
+                    <code>motion.inherit = live</code>.
+                </li>
+
+                <li>
+                    Añadir avisos por nombres duplicados
+                    en objetos y prefabs.
+                </li>
+
+                <li>
+                    Definir una identidad única de runtime
+                    (<code>runtimeId</code>)
+                    para cada instancia.
+                </li>
+
+                <li>
+                    Validar argumentos obligatorios de la API JavaScript
+                    y registrar advertencias cuando sean inválidos.
+                </li>
+
+            </ul>
+
+            <h3>Lifecycle y contextos de script</h3>
+
+            <ul>
+                <li>
+                    Definir callbacks de runtime para scripts de juego.
+                </li>
+
+                <li>
+                    Evaluar y formalizar:
+                    <code>start()</code>,
+                    <code>update()</code>
+                    y
+                    <code>draw()</code>.
+                </li>
+
+                <li>
+                    Ejecutar <code>draw()</code>
+                    para scripts de juego.
+                </li>
+
+            </ul>
+
+            <h3>Motor y arquitectura</h3>
+
+            <ul>
+                <li>
+                    Centralizar los wrappers JavaScript
+                    para evitar modificar múltiples ubicaciones
+                    cuando se añadan nuevas fases del lifecycle.
+                </li>
+
+                <li>
+                    Refactorizar los wrappers JS mediante
+                    un registro centralizado de funciones.
+                </li>
+
+                <li>
+                    Centralizar completamente la normalización de rutas
+                    para evitar lógica duplicada entre recursos,
+                    prefabs y scripts.
+                </li>
+
+                <li>
+                    Mejorar las advertencias:
+                    las funciones opcionales del lifecycle
+                    no deberían generar avisos cuando no existan.
+                </li>
+
+                <li>
+                    Explorar una capa semántica de entrada
+                    (<code>Control.*</code>)
+                    sobre <code>Key</code>.
+                </li>
+
+                <li>
+                    Añadir opciones de depuración mediante JSON
+                    o mediante el fichero <code>.flx</code>.
+                    Actualmente son flags internos del motor.
+                </li>
+
+            </ul>
+
+            <h3>Espacios de coordenadas y sistema de cámara</h3>
+
+            <ul>
+                <li>
+                    Definir y documentar los espacios de coordenadas:
+                    mundo,
+                    pantalla,
+                    local
+                    y cámara/vista.
+                </li>
+
+                <li>
+                    Definir cómo afectan estos espacios a:
+                    <code>origin</code>,
+                    <code>offset</code>,
+                    posiciones de spawn,
+                    <code>draw_text()</code>,
+                    límites,
+                    colisiones,
+                    transformaciones padre/hijo
+                    y renderizado de interfaz.
+                </li>
+
+                <li>
+                    Diseñar e implementar sistemas de cámara y scroll.
+                </li>
+
+            </ul>
+
+            <h3>Datos y composición JSON</h3>
+
+            <ul>
+                <li>
+                    Implementar correctamente <code>shape.like</code>
+                    y definir su comportamiento dentro del sistema de composición.
+                </li>
+
+                <li>
+                    Reflejar correctamente el sistema
+                    <code>like</code>
+                    en los esquemas JSON y en la documentación.
+                </li>
+
+                <li>
+                    Documentar formalmente la composición JSON mediante
+                    <code>like</code>,
+                    incluyendo reglas de merge y sobrescritura.
+                </li>
+
+                <li>
+                    Implementar un sistema de constantes.
+                </li>
+
+                <li>
+                    Ejemplo:
+                    <code>constants["INIT_LIVES"]</code>
+                </li>
+
+            </ul>
+
+            <h3>Colisiones y física</h3>
+
+            <ul>
+                <li>
+                    Mejorar las colisiones con soporte de overflow.
+                </li>
+
+                <li>
+                    Futuro:
+                    colisiones conscientes de wrap
+                    utilizando radios y offsets.
+                </li>
+
+                <li>
+                    Permitir múltiples colliders por elemento.
+                </li>
+
+                <li>
+                    Añadir filtros de colisión:
+                    grupos,
+                    máscaras,
+                    prioridades
+                    y reglas relacionadas.
+                </li>
+
+                <li>
+                    Actualmente la colisión de cajas está alineada con los ejes y no rota.
+                    La colisión circular es independiente de la rotación.
+                </li>
+
+            </ul>
+
+            <h3>Audio</h3>
+
+            <ul>
+                <li>
+                    Diseñar e implementar el sistema de audio.
+                </li>
+            </ul>
+
+            <h3>Transformaciones y jerarquías</h3>
+
+            <ul>
+                <li>
+                    Permitir que los objetos hijos sigan
+                    las transformaciones de sus padres.
+                </li>
+            </ul>
+
+            <h3>Herramientas futuras</h3>
+
+            <ul>
+                <li>
+                    Evaluar la incorporación futura de
+                    <code>spawnRandom()</code>
+                    como helper de alto nivel.
+                </li>
+
+                <li>
+                    Explorar una herramienta visual
+                    para crear y editar formas poligonales.
+                </li>
+
+                <li>
+                    Explorar una herramienta visual
+                    para composición JSON y prefabs.
+                </li>
+
+            </ul>
+
+            <h3>Helpers futuros de API</h3>
+
+            <ul>
+                <li><code>lerp(start, end, factor)</code></li>
+
+                <li><code>scale()</code></li>
+
+                <li><code>bounce(object, other)</code></li>
+
+                <li>
+                    Helpers matemáticos:
+                    <code>sin(angle)</code>,
+                    <code>cos(angle)</code>,
+                    <code>atan2(y, x)</code>,
+                    <code>distance(a, b)</code>,
+                    <code>angle_to(a, b)</code>.
+                </li>
+
+            </ul>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li class="current">↓ Roadmap ← Estás aquí</li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

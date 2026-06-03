@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API FLX | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="api">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>FLX API</h1>
+
+            <p>
+                Esta sección documenta las funciones JavaScript expuestas por FLX al runtime.
+            </p>
+
+            <p class="placeholder">
+                FLX está en desarrollo activo. Algunas funciones pueden cambiar durante las versiones 0.x.
+            </p>
+
+            <hr />
+
+            <h2>Constantes</h2>
+
+            <p>
+                FLX expone constantes globales para trabajar con direcciones
+                y teclas de forma legible.
+            </p>
+
+            <h3>Dirección</h3>
+
+            <ul>
+                <li><code>UP</code>: dirección hacia arriba.</li>
+                <li><code>DOWN</code>: dirección hacia abajo.</li>
+                <li><code>LEFT</code>: dirección hacia la izquierda.</li>
+                <li><code>RIGHT</code>: dirección hacia la derecha.</li>
+                <li><code>STOP</code>: movimiento neutro o detenido.</li>
+            </ul>
+
+            <h3>Teclado</h3>
+
+            <ul>
+                <li><code>KEY_UP</code>: flecha superior.</li>
+                <li><code>KEY_DOWN</code>: flecha inferior.</li>
+                <li><code>KEY_LEFT</code>: flecha izquierda.</li>
+                <li><code>KEY_RIGHT</code>: flecha derecha.</li>
+                <li><code>KEY_SPACE</code>: barra espaciadora.</li>
+            </ul>
+
+            <hr />
+
+            <h2>RuntimeObject</h2>
+
+            <p>
+                Los objetos recibidos por las funciones de scripting
+                son instancias de <code>RuntimeObject</code>.
+            </p>
+
+            <p>
+                Un RuntimeObject representa una entidad viva dentro del runtime
+                y contiene tanto datos definidos mediante JSON
+                como estado generado durante la ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">RuntimeObject</div>
+<pre><code>function motion(ship) {
+
+    ship.x += 10;
+
+    console.log(ship.id);
+}
+</code></pre>
+            </div>
+
+            <h3>id</h3>
+
+            <p>
+                Identificador único de la instancia dentro del runtime.
+            </p>
+
+            <p>
+                A diferencia de <code>name</code>,
+                cada objeto generado recibe un identificador exclusivo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">id</div>
+<pre><code>console.log(ship.id);</code></pre>
+            </div>
+
+            <h3>name</h3>
+
+            <p>
+                Nombre lógico del objeto.
+            </p>
+
+            <p>
+                Habitualmente proviene de la definición JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">name</div>
+<pre><code>console.log(ship.name);</code></pre>
+            </div>
+
+            <h3>local</h3>
+
+            <p>
+                Estado persistente asociado a una instancia concreta.
+            </p>
+
+            <p>
+                Los valores almacenados en
+                <code>object.local</code>
+                permanecen mientras el objeto exista.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">local</div>
+<pre><code>ship.local["timer"] += delta();
+</code></pre>
+            </div>
+
+            <h3>group</h3>
+
+            <p>
+                Grupo lógico asociado al objeto.
+            </p>
+
+            <p>
+                Puede utilizarse para clasificar entidades
+                o para futuros sistemas de filtrado.
+            </p>
+
+            <h3>Posición y tamaño</h3>
+
+            <ul>
+                <li><code>x</code>: posición horizontal.</li>
+                <li><code>y</code>: posición vertical.</li>
+                <li><code>width</code>: ancho.</li>
+                <li><code>height</code>: alto.</li>
+            </ul>
+
+            <h3>Movimiento</h3>
+
+            <ul>
+                <li><code>speed</code>: velocidad actual.</li>
+                <li><code>originSpeed</code>: velocidad inicial.</li>
+                <li><code>velocityX</code>: velocidad horizontal.</li>
+                <li><code>velocityY</code>: velocidad vertical.</li>
+                <li><code>motion</code>: configuración de movimiento declarada en JSON.</li>
+            </ul>
+
+            <h3>Origen</h3>
+
+            <ul>
+                <li><code>originX</code>: posición inicial X.</li>
+                <li><code>originY</code>: posición inicial Y.</li>
+            </ul>
+
+            <h3>angle</h3>
+
+            <p>
+                La propiedad <code>angle</code>
+                representa la rotación actual del objeto en grados.
+            </p>
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
+
+            <h2>accelerate(object)</h2>
+
+            <p>
+                Aplica aceleración al objeto usando su configuración de <code>motion</code>.
+                Tiene en cuenta <code>acceleration</code>, <code>maxSpeed</code>, <code>angle</code>,
+                <code>velocityX</code> y <code>velocityY</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">accelerate</div>
+<pre><code>accelerate(ship);</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>motion.acceleration</code>: fuerza de aceleración.</li>
+                <li><code>motion.maxSpeed</code>: velocidad máxima permitida.</li>
+                <li><code>angle</code>: dirección actual del objeto.</li>
+                <li><code>velocityX</code> y <code>velocityY</code>: velocidad acumulada.</li>
+            </ul>
+
+            <hr />
+
+            <h2>accelerate(object, amount)</h2>
+
+            <p>
+                Variante directa que suma una cantidad concreta a <code>speed</code>.
+                No utiliza la configuración avanzada de <code>motion</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">accelerate amount</div>
+<pre><code>accelerate(ball, 20);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>advance(object)</h2>
+
+            <p>
+                Avanza el objeto según su configuración actual.
+            </p>
+
+            <p>
+                Si el objeto tiene <code>motion.acceleration</code> mayor que cero,
+                utiliza <code>velocityX</code>, <code>velocityY</code> e <code>inertia</code>.
+                Si no, avanza usando <code>angle</code> y <code>speed</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">advance</div>
+<pre><code>function motion(ship) {
+    advance(ship);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>bounce_x(object)</h2>
+
+            <p>
+                Invierte el movimiento horizontal modificando el ángulo del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">bounce_x</div>
+<pre><code>bounce_x(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>bounce_y(object)</h2>
+
+            <p>
+                Invierte el movimiento vertical modificando el ángulo del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">bounce_y</div>
+<pre><code>bounce_y(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>console.log(...values)</h2>
+
+            <p>
+                Envía mensajes al logger interno de FLX.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">console.log</div>
+<pre><code>console.log("Ship position:", ship.x, ship.y);</code></pre>
+            </div>
+
+            <hr />
+
+            <hr />
+
+            <h2>delta()</h2>
+
+            <p>
+                Retorna el tiempo transcurrido, en segundos, desde el frame anterior.
+            </p>
+
+            <p>
+                Permite crear movimientos, temporizadores y comportamientos independientes
+                de la velocidad de ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>function motion(spawner) {
+
+    spawner.local["timer"] += delta();
+
+    if (spawner.local["timer"] > 3) {
+        spawn(spawner, "asteroid");
+        spawner.local["timer"] = 0;
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Draw_text(x, y, text, size)</h2>
+
+            <p>
+                Dibuja texto en pantalla usando las coodenadas definidas en screen.
+            </p>
+
+            <p>
+                Las coordenadas son expresadas en FLX como coordenadas de resolución.
+                El motor aplica la configuración de escalada de forma automática.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>draw_text( 10, 10, "HELLO ");
+draw_text( 40, 10, "WORLD!", 15);
+</code></pre>
+            </div>
+
+            <p>
+                *<code>size</code> es opcional, por defecto es 10.
+            </p>
+
+            <h2>follow_y(object, targetName)</h2>
+
+            <p>
+                Mueve un objeto verticalmente para seguir a otro objeto por su nombre.
+                Compara el centro vertical de ambos objetos y ajusta la posición en Y.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_y</div>
+<pre><code>follow_y(enemy, "Ball");</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>y</code>: posición vertical del objeto.</li>
+                <li><code>height</code>: altura del objeto.</li>
+                <li><code>speed</code>: velocidad de seguimiento.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Key.down(key)</h2>
+
+            <p>
+                Devuelve <code>true</code> mientras la tecla indicada está pulsada.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.down</div>
+<pre><code>if (Key.down(KEY_UP)) {
+    move_y(tofu, UP);
+}
+
+if (Key.down(KEY_LEFT)) {
+    move_x(tofu, LEFT);
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Key.pressed(key)</h2>
+
+            <p>
+                Devuelve <code>true</code> solo en el frame en el que la tecla indicada empieza a pulsarse.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Key.pressed</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <hr />
+
+            <h2>kill(object)</h2>
+
+            <p>
+                Marca un objeto para ser destruido.
+            </p>
+
+            <p>
+                El objeto no se elimina inmediatamente, sino al final del frame actual.
+                Esto evita modificar la lista de objetos mientras el runtime la está procesando.
+            </p>
+
+            <p>
+                Antes de la eliminación definitiva,
+                el runtime ejecutará la fase
+                <code>dead(object)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">kill</div>
+<pre><code>function collision(object, other) {
+    kill(object);
+}</code></pre>
+            </div>
+
+            <h2>move_x(object, direction)</h2>
+
+            <p>
+                Desplaza el objeto horizontalmente usando <code>speed</code> y el tiempo de frame.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_x</div>
+<pre><code>move_x(tofu, LEFT);
+move_x(tofu, RIGHT);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>move_y(object, direction)</h2>
+
+            <p>
+                Desplaza el objeto verticalmente usando <code>speed</code> y el tiempo de frame.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_y</div>
+<pre><code>move_y(tofu, UP);
+move_y(tofu, DOWN);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>probability(chance, base)</h2>
+
+            <p>
+                Retorna <code>true</code> de forma aleatoria en función
+                de la probabilidad indicada.
+            </p>
+
+            <p>
+                Si no se especifica <code>base</code>,
+                el valor por defecto es <code>100</code>.
+            </p>
+
+            <p>
+                Por ejemplo:
+            </p>
+
+            <ul>
+                <li><code>probability(30)</code> → aproximadamente 30 de cada 100 llamadas.</li>
+                <li><code>probability(20, 1000)</code> → aproximadamente 20 de cada 1000 llamadas.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">probability</div>
+<pre><code>if (probability(5)) {
+    spawn(object, "enemy");
+}
+
+if (probability(1, 1000)) {
+    spawn(object, "rare_enemy");
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>random(min, max)</h2>
+
+            <p>
+                Retorna un valor aleatorio comprendido entre
+                <code>min</code> y <code>max</code>.
+            </p>
+
+            <p>
+                Resulta útil para variaciones de movimiento,
+                generación procedural y comportamiento dinámico.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">random</div>
+<pre><code>asteroid.angle = random(0, 360);
+
+asteroid.speed = random(20, 80);
+</code></pre>
+            </div>
+
+            <h3>Parámetros</h3>
+
+            <ul>
+                <li><code>min</code>: valor mínimo.</li>
+                <li><code>max</code>: valor máximo.</li>
+            </ul>
+
+            <hr />
+
+            <h2>rotate(object, direction)</h2>
+
+            <p>
+                Rota el objeto usando <code>motion.rotationSpeed</code> y el tiempo de frame.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rotate</div>
+<pre><code>rotate(ship, LEFT);
+rotate(ship, RIGHT);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>spawn(object, spawnName)</h2>
+
+            <p>
+                Crea una instancia de un prefab usando una definición de spawn declarada
+                en el JSON del objeto.
+            </p>
+
+            <p>
+                El parámetro <code>spawnName</code> identifica qué definición de spawn debe utilizarse.
+            </p>
+
+            <p>
+                Las definiciones de spawn utilizan prefabs declarados
+                mediante JSON y pueden incluir offsets locales.
+            </p>
+
+            <p>
+                El objeto generado hereda la posición y orientación
+                necesarias para aplicar correctamente dicho offset.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawn</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
+                <li><code>spawnName</code>: nombre de la definición de spawn declarada en el JSON.</li>
+            </ul>
+
+            <p>
+                Internamente, los objetos generados no se insertan
+                inmediatamente en el mundo.
+            </p>
+
+            <p>
+                FLX utiliza una cola de spawn para evitar modificar
+                la colección de objetos mientras el runtime la está recorriendo.
+            </p>
+
+            <hr />
+
+            <h2>to_origin(object)</h2>
+
+            <p>
+                Devuelve el objeto a sus valores de origen.
+                Restaura <code>x</code>, <code>y</code> y <code>speed</code> usando
+                <code>originX</code>, <code>originY</code> y <code>originSpeed</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">to_origin</div>
+<pre><code>to_origin(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li class="current">↓ FLX API ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="examples.html">Ejemplos</a> → Recomendado</li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

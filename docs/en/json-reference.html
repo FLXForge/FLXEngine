@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>JSON Reference</h1>
+
+            <p>
+                This section documents the JSON structures used by FLX
+                to define the main runtime, objects and their properties.
+            </p>
+
+            <p class="placeholder">
+                FLX is under active development. Some fields may change during 0.x versions.
+            </p>
+
+            <h2>JSON Types</h2>
+
+            <p>
+                FLX currently uses different JSON files depending on their role within the runtime.
+            </p>
+
+            <ul>
+                <li><code>main</code>: defines the runtime entry point.</li>
+                <li><code>node</code>: defines a container that may contain other elements.</li>
+                <li><code>drawable</code>: defines objects that can be rendered visually.</li>
+            </ul>
+
+            <hr />
+
+            <h2 class="placeholder">Main JSON</h2>
+
+            <p>
+                The main file organizes the base structure of the runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>{
+    "$schema": "tools/schemas/main.schema.json",
+    "name": "Main",
+    "description": "This is a description.",
+
+ 
+"screen": {
+    "title": "Title in window",
+    "width": 320,
+    "height": 180
+},
+
+"scale": 3,
+
+"children": [ ... ],
+
+"spawns": { ... },
+
+"behavior": {
+    "scripts": [ "scripts/game" ]
+}
+ 
+
+} </code></pre>
+
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
+                <li><code>name</code>: logical name of the main runtime. <i>[ Required ]</i></li>
+                <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#screen">screen</a>: window or runtime surface configuration. <i>[ Required ]</i></li>
+                <li><code>scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#children">children</a>: list of structures loaded by the main runtime. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#behavior">behavior</a>: scripts associated with the overall behavior. <i>[ Optional ]</i></li>
+            </ul>
+
+            <h2 id="screen">Screen</h2>
+
+            <p>
+                The <code>screen</code> block defines the basic window properties.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">screen</div>
+<pre><code>"screen": {
+    "title": "Title in window",
+    "width": 320,
+    "height": 180
+}
+</code></pre>
+            </div>
+
+            <ul>
+                <li><code>title</code>: window title. <i>[ Optional ]</i></li>
+                <li><code>width</code>: internal reference width. <i>[ Required ]</i></li>
+                <li><code>height</code>: internal reference height. <i>[ Required ]</i></li>
+            </ul>
+
+            <h2 id="children">Children</h2>
+
+            <p>
+                The <code>children</code> field declares objects contained by the main runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">children (link)</div>
+<pre><code>"children": [ "objects/tofu" ]</code></pre>
+
+
+                <div class="code-header">children (inline)</div>
+
+
+<pre><code>"children": [ {"name": "Tofu", ... } ]</code></pre>
+
+
+                <div class="code-header">children (mix)</div>
+
+
+<pre><code>"children": [ "objects/tofu", {"name": "Tofu", ... }, ... ]</code></pre>
+
+            </div>
+
+            <p>
+                Each value references an object that the runtime must load.
+            </p>
+
+            <p>
+                Objects may be referenced as external files
+                (the JSON extension is not required)
+                or declared inline.
+            </p>
+
+            <h2 id="like">JSON Composition (like)</h2>
+
+            <p>
+                FLX allows JSON definitions to be reused through the
+                <code>like</code> field.
+            </p>
+
+            <p>
+                This feature makes it possible to build new configurations
+                from existing ones while overriding only the required fields.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">like</div>
+<pre><code>{
+    "name": "DeepSpaceLeft",
+
+ 
+"like": "asteroid/deep_space",
+
+"origin": {
+    "x": 5,
+    "y": 5
+}
+ 
+
+} </code></pre>
+
+            </div>
+
+            <p>
+                The runtime first loads the definition referenced by
+                <code>like</code>
+                and then overrides the fields declared in the current JSON.
+            </p>
+
+            <p>
+                Composition is performed recursively,
+                allowing only the necessary parts to be modified.
+            </p>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>like</code>:
+                    path to the base definition used for composition.
+                </li>
+            </ul>
+
+            <p>
+                <strong>Important:</strong>
+                <code>like</code> does not implement inheritance.
+            </p>
+
+            <p>
+                Its purpose is to reuse and compose data.
+            </p>
+
+            <hr />
+
+            <h2 class="placeholder">Node JSON</h2>
+
+            <p>
+                A <code>node</code> defines a group of objects.
+                It is not rendered visually but may contain logic.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "tools/schemas/node.schema.json",
+    "name": "Level",
+    "description" : "This is a description.",
+
+    "collision": {
+      "type": "box"
+    },
+ 
+    "children": [...],
+
+    "spawns": {...}
+}
+</code></pre>
+
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
+                <li><code>name</code>: logical name of the node. <i>[ Required ]</i></li>
+                <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object or node. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#children">children</a>: list of objects loaded by the runtime. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
+            </ul>
+
+            <hr />
+
+            <h2 id="drawable" class="placeholder">Drawable JSON</h2>
+
+            <p>
+                A <code>drawable</code> file defines an object that can be rendered visually.
+            </p>
+
+            <p>
+                A <code>drawable</code> may also be used as a logical node.
+            </p>
+
+            <p>
+                If no visual information is defined,
+                the object will still exist within the runtime
+                but will not be rendered on screen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "../tools/schemas/drawable.schema.json",
+    "name": "Tofu",
+
+    "origin": {
+        "x": 157,
+        "y": 87
+    },
+
+    "shape": {
+        "type": "triangle",
+        "color": "WHITE",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "motion": {
+      "rotationSpeed": 180,
+      "acceleration": 120,
+      "inertia": 0.99,
+      "maxSpeed": 180
+    },
+
+    "bounds": {
+      "mode": "wrap",
+      "overflow": true
+    },
+
+    "spawns": {
+        "laser": {
+            "prefab": "objects/laser",
+            "offset": {
+                "x": 0,
+                "y": -12
+            }
+        }
+    },
+
+    "group": "paddle",
+
+    "collision": {
+      "type": "circle",
+        "radius": 16
+    },
+
+    "behavior": {
+        "scripts": [ "tofu" ]
+    }
+} 
+</code></pre>
+
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
+                <li><code>name</code>: logical object name. <i>[ Required ]</i></li>
+                <li><a class="link" href="#origin">origin</a>: object's initial position. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#shape">shape</a>: object's visual information. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#motion">motion</a>: movement configuration, if any. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
+                <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object or node. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
+            </ul>
+
+            <h2 id="origin">Origin</h2>
+
+            <p>
+                Defines the object's initial position within the runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">origin</div>
+<pre><code>"origin": {
+    "x": 157,
+    "y": 87
+}
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>x</code>: X coordinate (relative to the coordinate system origin, top-left corner). <i>[ Required ]</i></li>
+                <li><code>y</code>: Y coordinate (relative to the coordinate system origin, top-left corner). <i>[ Required ]</i></li>
+            </ul>
+
+            <h2>Shape</h2>
+
+            <p>
+                Defines the object's basic visual representation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+        "width": 18,
+        "height": 24
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>type</code>: shape type to render. <i>[ Optional ]</i>
+                    <ul>
+                        <li><code>block</code>: default solid block. Rotation mechanics do not apply.</li>
+                        <li><code>rectangle</code>: rectangle with support for rotation and oriented movement.</li>
+                        <li><code>triangle</code>: unfilled triangle.</li>
+                        <li><code>polygon</code>: polygon defined by a list of points.</li>
+                        <li><code>line</code>: line defined between two points.</li>
+                        <li><code>text</code>: renderable text.</li>
+                    </ul>
+                </li>
+                <li><code>color</code>: object color. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i></li>
+            </ul>
+
+            <h2 id="size">Size</h2>
+
+            <p>
+                Defines the object's size.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">size</div>
+<pre><code>"size": {
+    "width": 18,
+    "height": 24
+}
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>width</code>: object width in pixels.</li>
+                <li><code>height</code>: object height in pixels.</li>
+            </ul>
+
+            <h2 id="polygon">Polygon</h2>
+
+            <p>
+                Polygons allow irregular shapes to be defined
+                using a list of local points.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+<pre><code>"shape": {
+    "type": "polygon",
+    "color": "WHITE",
+
+ 
+"points": [
+    { "x": 0, "y": -16 },
+    { "x": 12, "y": -8 },
+    { "x": 16, "y": 8 },
+    { "x": -8, "y": 14 }
+]
+ 
+
+} </code></pre>
+
+            </div>
+
+            <p>
+                Each point is defined in local coordinates
+                relative to the object's origin.
+            </p>
+
+            <h2 id="motion">Motion</h2>
+
+            <p>
+                Defines properties related to object movement.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"motion": {
+    "inherit": "creation",
+    "rotationSpeed": 180,
+    "acceleration": 120,
+    "inertia": 0.99,
+    "maxSpeed": 180
+}
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>inherit</code>: defines how the spawned object inherits movement. <i>[ Optional ]</i>
+
+
+                    <ul>
+                        <li><code>none</code>: does not inherit movement.</li>
+                        <li><code>creation</code>: inherits the initial movement at spawn time.</li>
+                    </ul>
+                </li>
+                <li><code>rotationSpeed</code>: rotation speed.</li>
+                <li><code>acceleration</code>: acceleration applied to the object.</li>
+                <li><code>inertia</code>: movement preservation factor.</li>
+                <li><code>maxSpeed</code>: maximum speed.</li>
+
+
+            </ul>
+
+            <h2 id="bounds">Bounds</h2>
+
+            <p>
+                Defines the object's behavior when reaching screen boundaries.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">bounds</div>
+<pre><code>"bounds": {
+    "mode": "wrap",
+    "overflow": true
+},
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>mode</code>: boundary behavior mode. <i>[ Optional ]</i>
+                    <ul>
+                        <li><code>none</code>: no special behavior.</li>
+                        <li><code>wrap</code>: when reaching a boundary, the object appears on the opposite side while preserving its direction.</li>
+                    </ul>
+                </li>
+
+
+                <li>
+                    <code>overflow</code>: controls how boundary behavior is applied. <i>[ Optional ]</i>
+                    <ul>
+                        <li><code>true</code>: the object begins appearing on the opposite side while progressively disappearing from the current side.</li>
+                        <li><code>false</code>: the object immediately reappears when reaching the boundary.</li>
+                    </ul>
+                </li>
+
+
+            </ul>
+
+            <h2 id="spawns">Spawns</h2>
+
+            <p>
+                Defines objects that can be instantiated dynamically by the runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawns</div>
+<pre><code>"spawns": {
+    "laser": {
+        "prefab": "objects/laser",
+
+ 
+    "offset": {
+        "x": 0,
+        "y": -12
+    }
+}
+ 
+
+} </code></pre>
+
+            </div>
+
+            <p>
+                Spawn definitions use prefabs previously loaded by the runtime.
+            </p>
+
+            <p>
+                Prefab paths are resolved relative
+                to the JSON file that declares the spawn.
+            </p>
+
+            <p>
+                This allows reusable structures to be built
+                without depending on a fixed location within the project.
+            </p>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>prefab</code>:
+                    path to the prefab that should be instantiated.
+                    <i>[ Required ]</i>
+                </li>
+
+
+                <li>
+                    <code>offset</code>:
+                    local offset applied to the spawned object.
+                    <i>[ Optional ]</i>
+                </li>
+
+
+            </ul>
+
+            <p>
+                The offset uses the object's current rotation as reference.
+            </p>
+
+            <h3>Children and Spawns</h3>
+
+            <ul>
+                <li>
+                    <code>children</code>:
+                    objects that enter the world when the runtime is loaded.
+                </li>
+
+
+                <li>
+                    <code>spawns</code>:
+                    objects that may be instantiated later during execution.
+                </li>
+
+            </ul>
+
+            <hr />
+
+            <h2 id="collision">Collision</h2>
+
+            <p>
+                Defines the collision associated with the object or node.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">collision</div>
+<pre><code>"collision": {
+    "type": "circle",
+    "radius": 16
+},
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>type</code>: collision type. <i>[ Optional ]</i>
+
+                    <ul>
+                        <li><code>none</code>: no collision. <i>[ default ]</i></li>
+                        <li><code>box</code>: box collision.</li>
+                        <li><code>circle</code>: circular collision.</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <code>radius</code>:
+                    collision radius when
+                    <code>type</code>
+                    is
+                    <code>circle</code>.
+                    <i>[ Optional ]</i>
+                </li>
+            </ul>
+
+            <hr />
+
+            <h2 id="behavior">Behavior</h2>
+
+            <p>
+                Defines the scripts associated with the object.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code>"behavior": {
+    "scripts": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li>
+                    <code>scripts</code>:
+                    list of JavaScript scripts associated with the object
+                    (file extension is not required).
+                    <i>[ Required ]</i>
+                </li>
+            </ul>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li class="current">↓ JSON Reference ← You are here</li>
+                <li class="recommended"><a class="link" href="api.html">FLX API</a> → Recommended</li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

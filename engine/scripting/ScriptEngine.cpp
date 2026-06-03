@@ -28,10 +28,12 @@ ScriptEngine::~ScriptEngine()
         ScriptModule& module = pair.second;
 
         JS_FreeValue(context, module.start);
+        JS_FreeValue(context, module.born);
         JS_FreeValue(context, module.action);
         JS_FreeValue(context, module.motion);
         JS_FreeValue(context, module.collision);
         JS_FreeValue(context, module.draw);
+        JS_FreeValue(context, module.dead);
     }
 
     scriptModules.clear();
@@ -66,6 +68,70 @@ void ScriptEngine::eval(const std::string& code)
 
 void ScriptEngine::callScriptFunction(
     const std::string& script,
+    const std::string& function
+)
+{
+    JSValue func =
+        getCachedFunction(script, function);
+
+    if (!JS_IsFunction(context, func))
+    {
+        return;
+    }
+
+    JSValue global =
+        JS_GetGlobalObject(context);
+
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
+
+    JSValue result =
+        JS_Call(
+            context,
+            func,
+            global,
+            0,
+            nullptr
+        );
+
+    if (JS_IsException(result))
+    {
+        JSValue exception =
+            JS_GetException(context);
+
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
+        const char* message =
+            JS_ToCString(context, exception);
+
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
+        Logger::error(
+            "script",
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
+        );
+
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
+    }
+
+    applyGlobalObject(globalObject);
+
+    JS_FreeValue(context, result);
+    JS_FreeValue(context, globalObject);
+    JS_FreeValue(context, global);
+}
+
+void ScriptEngine::callScriptFunction(
+    const std::string& script,
     const std::string& function,
     RuntimeObject& object
 )
@@ -84,6 +150,11 @@ void ScriptEngine::callScriptFunction(
     JSValue self =
         createJsObject(object);
 
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
+
     JSValue args[1] = { self };
 
     JSValue result =
@@ -100,22 +171,34 @@ void ScriptEngine::callScriptFunction(
         JSValue exception =
             JS_GetException(context);
 
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
         const char* message =
             JS_ToCString(context, exception);
 
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
         Logger::error(
             "script",
-            message != nullptr ? message : "Unknown JS error"
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
         JS_FreeCString(context, message);
         JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
     }
 
     applyJsObject(object, self);
+    applyGlobalObject(globalObject);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
+    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -143,6 +226,11 @@ void ScriptEngine::callScriptFunction(
     JSValue otherObject =
         createJsObject(other);
 
+    JSValue globalObject =
+        createGlobalObject();
+
+    exposeGlobalObject(globalObject);
+
     JSValue args[2] = {
         self,
         otherObject
@@ -162,23 +250,36 @@ void ScriptEngine::callScriptFunction(
         JSValue exception =
             JS_GetException(context);
 
+        JSValue stack =
+            JS_GetPropertyStr(context, exception, "stack");
+
         const char* message =
             JS_ToCString(context, exception);
 
+        const char* stackMessage =
+            JS_ToCString(context, stack);
+
         Logger::error(
             "script",
-            message != nullptr ? message : "Unknown JS error"
+            "Error calling '" + function + "' in script '" + script + "': " +
+            std::string(message != nullptr ? message : "JS error") +
+            std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
         JS_FreeCString(context, message);
         JS_FreeValue(context, exception);
+        JS_FreeCString(context, stackMessage);
+        JS_FreeValue(context, stack);
     }
 
     applyJsObject(object, self);
+    applyJsObject(other, otherObject);
+    applyGlobalObject(globalObject);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
     JS_FreeValue(context, otherObject);
+    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -209,10 +310,12 @@ void ScriptEngine::loadScript(const std::string& path)
         + code +
         " return {"
         "start: typeof start === 'function' ? start : undefined,"
+        "born: typeof born === 'function' ? born : undefined,"
         "action: typeof action === 'function' ? action : undefined,"
         "motion: typeof motion === 'function' ? motion : undefined,"
         "collision: typeof collision === 'function' ? collision : undefined,"
-        "draw: typeof draw === 'function' ? draw : undefined"
+        "draw: typeof draw === 'function' ? draw : undefined,"
+        "dead: typeof dead === 'function' ? dead : undefined"
         "};"
         "})();";
 
@@ -244,6 +347,9 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
     JSValue start =
         JS_GetPropertyStr(context, module, "start");
 
+    JSValue born =
+        JS_GetPropertyStr(context, module, "born");
+
     JSValue action =
         JS_GetPropertyStr(context, module, "action");
 
@@ -256,8 +362,14 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
     JSValue draw =
         JS_GetPropertyStr(context, module, "draw");
 
+    JSValue dead =
+        JS_GetPropertyStr(context, module, "dead");
+
     scriptModule.start =
         JS_DupValue(context, start);
+
+    scriptModule.born =
+        JS_DupValue(context, born);
 
     scriptModule.action =
         JS_DupValue(context, action);
@@ -271,13 +383,18 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
     scriptModule.draw =
         JS_DupValue(context, draw);
 
+    scriptModule.dead =
+        JS_DupValue(context, dead);
+
     scriptModules[path] = scriptModule;
 
     JS_FreeValue(context, start);
+    JS_FreeValue(context, born);
     JS_FreeValue(context, action);
     JS_FreeValue(context, motion);
     JS_FreeValue(context, collision);
     JS_FreeValue(context, draw);
+    JS_FreeValue(context, dead);
 
     JS_FreeValue(context, module);
     JS_FreeValue(context, scripts);
@@ -304,6 +421,11 @@ JSValue ScriptEngine::getCachedFunction(
         return module.start;
     }
 
+    if (function == "born")
+    {
+        return module.born;
+    }
+
     if (function == "action")
     {
         return module.action;
@@ -324,6 +446,11 @@ JSValue ScriptEngine::getCachedFunction(
         return module.draw;
     }
 
+    if (function == "dead")
+    {
+        return module.dead;
+    }
+
     return JS_UNDEFINED;
 }
 
@@ -332,6 +459,25 @@ void ScriptEngine::setFindObjectFunction(
 )
 {
     findObject = function;
+}
+
+void ScriptEngine::setFindObjectByIdFunction(
+    FindObjectByIdFunction function
+)
+{
+    findObjectById = function;
+}
+
+RuntimeObject* ScriptEngine::findObjectByRuntimeId(
+    const std::string& id
+)
+{
+    if (!findObjectById)
+    {
+        return nullptr;
+    }
+
+    return findObjectById(id);
 }
 
 RuntimeObject* ScriptEngine::findObjectByName(
@@ -346,11 +492,58 @@ RuntimeObject* ScriptEngine::findObjectByName(
     return findObject(name);
 }
 
+void ScriptEngine::setFindPrefabFunction(
+    FindPrefabFunction function
+)
+{
+    findPrefab = function;
+}
+
+RuntimeObject* ScriptEngine::findPrefabByName(
+    const std::string& name
+)
+{
+    if (!findPrefab)
+    {
+        return nullptr;
+    }
+
+    return findPrefab(name);
+}
+
+void ScriptEngine::setSpawnObjectFunction(
+    SpawnObjectFunction function
+)
+{
+    spawnObjectFunction = function;
+}
+
+void ScriptEngine::spawnObject(
+    RuntimeObject& source,
+    const SpawnDefinition& spawnDefinition,
+    const RuntimeObject& prefab
+)
+{
+    if (!spawnObjectFunction)
+    {
+        return;
+    }
+
+    spawnObjectFunction(
+        source,
+        spawnDefinition,
+        prefab
+    );
+}
+
 void ScriptEngine::applyJsObject(
     RuntimeObject& source,
     JSValue jsObject
 )
 {
+    JSValue aliveValue =
+        JS_GetPropertyStr(context, jsObject, "alive");
+
     JSValue xValue =
         JS_GetPropertyStr(context, jsObject, "x");
 
@@ -363,25 +556,206 @@ void ScriptEngine::applyJsObject(
     JSValue angleValue =
         JS_GetPropertyStr(context, jsObject, "angle");
 
+    JSValue velocityXValue =
+        JS_GetPropertyStr(context, jsObject, "velocityX");
+
+    JSValue velocityYValue =
+        JS_GetPropertyStr(context, jsObject, "velocityY");
+
+    JSValue localValue =
+        JS_GetPropertyStr(context, jsObject, "local");
+
+    JSValue widthValue =
+        JS_GetPropertyStr(context, jsObject, "width");
+
+    JSValue heightValue =
+        JS_GetPropertyStr(context, jsObject, "height");
+
+    if (JS_IsObject(localValue))
+    {
+        source.local.clear();
+
+        JSPropertyEnum* properties = nullptr;
+        uint32_t propertyCount = 0;
+
+        if (JS_GetOwnPropertyNames(
+            context,
+            &properties,
+            &propertyCount,
+            localValue,
+            JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
+        ) >= 0)
+        {
+            for (uint32_t i = 0; i < propertyCount; ++i)
+            {
+                JSAtom atom =
+                    properties[i].atom;
+
+                const char* key =
+                    JS_AtomToCString(context, atom);
+
+                JSValue value =
+                    JS_GetProperty(context, localValue, atom);
+
+                double number = 0.0;
+
+                if (key != nullptr && JS_ToFloat64(context, &number, value) == 0)
+                {
+                    source.local[key] = number;
+                }
+
+                JS_FreeValue(context, value);
+                if (key != nullptr)
+                {
+                    JS_FreeCString(context, key);
+                }
+                JS_FreeAtom(context, atom);
+            }
+
+            js_free(context, properties);
+        }
+    }
+
+    bool alive = JS_ToBool(context, aliveValue);
     double x = source.position.x;
     double y = source.position.y;
     double speed = source.speed;
     double angle = source.angle;
+    double velocityX = source.velocity.x;
+    double velocityY = source.velocity.y;
+    double width = source.size.x;
+    double height = source.size.y;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
     JS_ToFloat64(context, &speed, speedValue);
     JS_ToFloat64(context, &angle, angleValue);
+    JS_ToFloat64(context, &velocityX, velocityXValue);
+    JS_ToFloat64(context, &velocityY, velocityYValue);
 
+    if (JS_ToFloat64(context, &width, widthValue) == 0)
+    {
+        source.size.x =
+            static_cast<float>(width);
+    }
+
+    if (JS_ToFloat64(context, &height, heightValue) == 0)
+    {
+        source.size.y =
+            static_cast<float>(height);
+    }
+
+    source.alive = alive;
     source.position.x = static_cast<float>(x);
     source.position.y = static_cast<float>(y);
     source.speed = static_cast<float>(speed);
     source.angle = static_cast<float>(angle);
+    source.velocity.x = static_cast<float>(velocityX);
+    source.velocity.y = static_cast<float>(velocityY);
 
+    JS_FreeValue(context, localValue);
+    JS_FreeValue(context, aliveValue);
     JS_FreeValue(context, xValue);
     JS_FreeValue(context, yValue);
     JS_FreeValue(context, speedValue);
     JS_FreeValue(context, angleValue);
+    JS_FreeValue(context, velocityXValue);
+    JS_FreeValue(context, velocityYValue);
+    JS_FreeValue(context, widthValue);
+    JS_FreeValue(context, heightValue);
+}
+
+void ScriptEngine::applyGlobalObject(JSValue globalObject)
+{
+    if (!JS_IsObject(globalObject))
+    {
+        return;
+    }
+
+    globalState.clear();
+
+    JSPropertyEnum* properties = nullptr;
+    uint32_t propertyCount = 0;
+
+    if (JS_GetOwnPropertyNames(
+        context,
+        &properties,
+        &propertyCount,
+        globalObject,
+        JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
+    ) < 0)
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < propertyCount; ++i)
+    {
+        JSAtom atom =
+            properties[i].atom;
+
+        const char* key =
+            JS_AtomToCString(context, atom);
+
+        JSValue value =
+            JS_GetProperty(context, globalObject, atom);
+
+        double number = 0.0;
+
+        if (
+            key != nullptr &&
+            JS_ToFloat64(context, &number, value) == 0
+            )
+        {
+            globalState[key] = number;
+        }
+
+        JS_FreeValue(context, value);
+
+        if (key != nullptr)
+        {
+            JS_FreeCString(context, key);
+        }
+
+        JS_FreeAtom(context, atom);
+    }
+
+    js_free(context, properties);
+}
+
+void ScriptEngine::exposeGlobalObject(JSValue globalObject)
+{
+    JSValue jsGlobal =
+        JS_GetGlobalObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        jsGlobal,
+        "global",
+        JS_DupValue(context, globalObject)
+    );
+
+    JS_FreeValue(context, jsGlobal);
+}
+
+JSValue ScriptEngine::createGlobalObject()
+{
+    JSValue globalObject =
+        JS_NewObject(context);
+
+    for (const auto& entry : globalState)
+    {
+        JS_SetPropertyStr(
+            context,
+            globalObject,
+            entry.first.c_str(),
+            JS_NewFloat64(
+                context,
+                entry.second
+            )
+        );
+    }
+
+    return globalObject;
 }
 
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
@@ -389,11 +763,45 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JSValue self =
         JS_NewObject(context);
 
+    JSValue local =
+        JS_NewObject(context);
+
+    for (const auto& pair : object.local)
+    {
+        JS_SetPropertyStr(
+            context,
+            local,
+            pair.first.c_str(),
+            JS_NewFloat64(context, pair.second)
+        );
+    }
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "local",
+        local
+    );
+
     JS_SetPropertyStr(
         context,
         self,
         "name",
         JS_NewString(context, object.name.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "id",
+        JS_NewString(context, object.runtimeId.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "alive",
+        JS_NewBool(context, object.alive)
     );
 
     JS_SetPropertyStr(
@@ -466,5 +874,67 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
         JS_NewFloat64(context, object.originSpeed)
     );
 
+    JSValue motion =
+        JS_NewObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "rotationSpeed",
+        JS_NewFloat64(context, object.rotationSpeed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "acceleration",
+        JS_NewFloat64(context, object.acceleration)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "inertia",
+        JS_NewFloat64(context, object.inertia)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "maxSpeed",
+        JS_NewFloat64(context, object.maxSpeed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "motion",
+        motion
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "velocityX",
+        JS_NewFloat64(context, object.velocity.x)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "velocityY",
+        JS_NewFloat64(context, object.velocity.y)
+    );
+
     return self;
+}
+
+void ScriptEngine::setScreenScale(int scale)
+{
+    screenScale = scale;
+}
+
+int ScriptEngine::getScreenScale() const
+{
+    return screenScale;
 }

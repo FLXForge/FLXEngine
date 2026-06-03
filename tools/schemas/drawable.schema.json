@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "drawable.schema.json",
+  "title": "FLX Drawable",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [ "name" ],
+
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+
+    "name": {
+      "type": "string"
+    },
+
+    "like": {
+      "type": "string"
+    },
+
+    "visible": {
+      "type": "boolean"
+    },
+
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "x", "y" ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+
+    "shape": {
+      "$ref": "shape.schema.json"
+    },
+
+    "motion": {
+      "$ref": "motion.schema.json"
+    },
+
+    "bounds": {
+      "$ref": "bounds.schema.json"
+    },
+
+    "group": {
+      "type": "string"
+    },
+
+    "collision": {
+      "$ref": "collision.schema.json"
+    },
+
+    "behavior": {
+      "$ref": "behavior.schema.json"
+    },
+
+    "spawns": {
+      "$ref": "spawns.schema.json"
+    }
+  }
+}

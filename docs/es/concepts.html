@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptos básicos | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="concepts">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">Documentación FLX</p>
+            <h1>Conceptos básicos</h1>
+
+            <p>
+                FLX organiza los proyectos mediante estructuras de datos simples,
+                objetos, transformaciones y reglas de ejecución claramente definidas.
+            </p>
+
+            <p>
+                Esta sección describe los conceptos fundamentales que forman parte
+                de cualquier proyecto FLX.
+            </p>
+
+            <hr />
+
+            <h2>Proyecto</h2>
+
+            <p>
+                Todo proyecto FLX comienza con un archivo principal
+                con extensión <code>.flx</code>.
+            </p>
+
+            <p>
+                Este archivo actúa como punto de entrada del proyecto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Asteroids.flx</div>
+<pre><code>name:Asteroids
+version:1.0
+flxEngineVersion:0.1.0
+main:game.json
+</code></pre>
+            </div>
+
+            <p>
+                A partir de este archivo,
+                el runtime carga la estructura principal,
+                los recursos y la configuración necesaria.
+            </p>
+
+            <hr />
+
+            <h2>Principal (Main)</h2>
+
+            <p>
+                El principal es la estructura raíz del runtime.
+            </p>
+
+            <p>
+                Organiza objetos, recursos y lógica de ejecución.
+            </p>
+
+            <p>
+                Dependiendo del proyecto,
+                puede representar:
+            </p>
+
+            <ul>
+                <li>Un nivel</li>
+                <li>Un menú</li>
+                <li>Una pantalla de carga</li>
+                <li>Una presentación</li>
+                <li>Una secuencia narrativa</li>
+                <li>Un estado concreto de la aplicación</li>
+            </ul>
+
+            <p>
+                FLX no impone una interpretación concreta.
+            </p>
+
+            <hr />
+
+            <h2>Objetos</h2>
+
+            <p>
+                Los objetos representan elementos que existen dentro del runtime.
+            </p>
+
+            <p>
+                Un objeto puede:
+            </p>
+
+            <ul>
+                <li>Dibujarse</li>
+                <li>Moverse</li>
+                <li>Colisionar</li>
+                <li>Almacenar datos</li>
+                <li>Ejecutar comportamiento mediante scripts</li>
+            </ul>
+
+            <p>
+                Normalmente los objetos se describen mediante JSON.
+            </p>
+
+            <p>
+                Una definición puede escribirse completamente
+                o construirse reutilizando otra definición mediante
+                <code>like</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+    "name": "Ship",
+
+    "shape": {
+        "type": "triangle"
+    },
+
+    "motion": {
+        "maxSpeed": 180
+    }
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Reutilización y composición</h2>
+
+            <p>
+                FLX permite construir nuevas definiciones
+                a partir de otras ya existentes.
+            </p>
+
+            <p>
+                Esta capacidad se basa en el sistema
+                <code>like</code>,
+                que permite reutilizar configuraciones
+                y sobrescribir únicamente los campos necesarios.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">DeepSpaceLeft</div>
+<pre><code>{
+    "name": "DeepSpaceLeft",
+
+    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta característica permite construir familias completas
+                de objetos reutilizando una única definición base.
+            </p>
+
+            <p>
+                Un objeto no necesita tener representación visual para existir dentro del runtime.
+            </p>
+
+            <p>
+                Si define <code>behavior</code>, <code>spawns</code> o <code>collision</code>,
+                puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
+                o controlador de juego.
+            </p>
+
+            <p>
+                Además, <code>name</code> identifica el objeto de forma lógica o humana,
+                mientras que <code>id</code> identifica una instancia concreta dentro del runtime.
+            </p>
+
+
+            <p>
+                Los detalles completos se describen en
+                JSON Reference.
+            </p>
+
+            <hr />
+
+            <h2>Children y Spawns</h2>
+
+            <p>
+                FLX distingue entre objetos que existen al iniciar el runtime
+                y objetos que pueden aparecer posteriormente.
+            </p>
+
+            <ul>
+                <li>
+                    <code>children</code>:
+                    objetos que entran al mundo al cargarse la escena.
+                </li>
+
+                <li>
+                    <code>spawns</code>:
+                    definiciones reutilizables utilizadas para crear nuevas instancias durante la ejecución.
+                </li>
+            </ul>
+
+            <p>
+                Esta separación permite mantener una estructura clara
+                entre el contenido inicial y el contenido dinámico.
+            </p>
+
+            <p>
+                Junto con <code>like</code>,
+                estos mecanismos constituyen la base de cómo FLX construye,
+                reutiliza e instancia objetos en tiempo de ejecución.
+            </p>
+
+            <hr />
+
+            <h2>Tipos de shape</h2>
+
+            <p>
+                FLX proporciona varios tipos básicos de representación visual.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Origen</th>
+                </tr>
+
+                <tr>
+                    <td><code>block</code></td>
+                    <td>Esquina superior izquierda</td>
+                </tr>
+
+                <tr>
+                    <td><code>rectangle</code></td>
+                    <td>Centro</td>
+                </tr>
+
+                <tr>
+                    <td><code>triangle</code></td>
+                    <td>Centro</td>
+                </tr>
+
+                <tr>
+                    <td><code>line</code></td>
+                    <td>Centro</td>
+                </tr>
+
+                <tr>
+                    <td><code>polygon</code></td>
+                    <td>Centro</td>
+                </tr>
+
+                <tr>
+                    <td><code>text</code></td>
+                    <td>Texto</td>
+                </tr>
+            </table>
+
+            <p>
+                Los colores pueden declararse directamente desde JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape.json</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "color": "WHITE"
+}
+</code></pre>
+            </div>
+
+            <p>
+                Los polígonos permiten definir formas irregulares
+                mediante listas de puntos.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+<pre><code>"shape": {
+    "type": "polygon",
+
+    "points": [
+        { "x": 0, "y": -16 },
+        { "x": 12, "y": -8 },
+        { "x": 16, "y": 8 },
+        { "x": -8, "y": 14 }
+    ]
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Shape y Collision</h2>
+
+            <p>
+                En FLX, la representación visual y la colisión son sistemas independientes.
+            </p>
+
+            <p>
+                El bloque <code>shape</code> define cómo se dibuja un objeto,
+                mientras que el bloque <code>collision</code> define cómo interactúa
+                con otros objetos dentro del runtime.
+            </p>
+
+            <p>
+                En algunos casos ambas definiciones pueden ser similares,
+                pero no tienen por qué coincidir.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape + collision</div>
+<pre><code>{
+    "shape": {
+        "type": "polygon"
+    },
+
+"collision": {
+    "type": "circle",
+    "radius": 12
+}
+
+} </code></pre>
+
+            </div>
+
+            <p>
+                Esta separación permite que la detección de colisiones sea sencilla y eficiente,
+                mientras la representación visual puede ser tan detallada como sea necesario.
+            </p>
+
+            <hr />
+
+            <h2>Sistema de coordenadas</h2>
+
+            <p>
+                FLX utiliza un sistema de coordenadas 2D con origen
+                en la esquina superior izquierda de la pantalla.
+            </p>
+
+            <ul>
+                <li><code>x</code> crece hacia la derecha.</li>
+                <li><code>y</code> crece hacia abajo.</li>
+                <li>Subir implica reducir <code>y</code>.</li>
+                <li>Bajar implica aumentar <code>y</code>.</li>
+            </ul>
+
+            <p>
+                Actualmente FLX trabaja con coordenadas lógicas de pantalla
+                en un mundo fijo sin cámara ni scroll.
+            </p>
+
+            <p>
+                Los objetos utilizan estas coordenadas para su posición dentro del runtime.
+                Las funciones de dibujo de texto, como <code>draw_text()</code>,
+                también utilizan coordenadas lógicas de pantalla.
+            </p>
+
+            <p>
+                El sistema de cámara, scroll y la separación formal entre coordenadas de mundo,
+                pantalla, vista y coordenadas locales queda pendiente para futuras versiones.
+            </p>
+
+
+            <hr />
+
+            <h2>Sistema angular</h2>
+
+            <p>
+                FLX utiliza una convención angular propia.
+            </p>
+
+            <ul>
+                <li><code>0°</code> apunta hacia arriba.</li>
+                <li><code>90°</code> apunta hacia la derecha.</li>
+                <li><code>180°</code> apunta hacia abajo.</li>
+                <li><code>270°</code> apunta hacia la izquierda.</li>
+                <li>Los ángulos positivos giran en sentido horario.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">rotation</div>
+<pre><code>rotate(ship, RIGHT);
+advance(ship);
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Movimiento</h2>
+
+            <p>
+                FLX combina un sistema clásico basado en velocidad
+                con un sistema basado en aceleración e inercia.
+            </p>
+
+            <p>
+                Entre las propiedades más habituales se encuentran:
+            </p>
+
+            <ul>
+                <li><code>speed</code></li>
+                <li><code>velocityX</code></li>
+                <li><code>velocityY</code></li>
+                <li><code>acceleration</code></li>
+                <li><code>inertia</code></li>
+                <li><code>rotationSpeed</code></li>
+            </ul>
+
+            <p>
+                Las funciones de movimiento utilizan automáticamente
+                la convención angular FLX.
+            </p>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li class="current">↓ Conceptos básicos ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="getting-started.html">Primeros pasos</a> → Recomendado</li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

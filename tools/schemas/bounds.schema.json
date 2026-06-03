@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bounds.schema.json",
+  "title": "FLX Bounds",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [ "none", "wrap" ],
+      "default": "none"
+    },
+
+    "overflow": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

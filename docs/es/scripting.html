@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripting | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="scripting">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">Documentación FLX</p>
+            <h1>Scripting</h1>
+
+            <p>
+                Los scripts definen el comportamiento de los objetos durante la ejecución.
+            </p>
+
+            <p>
+                Sin embargo, para comprender correctamente el scripting en FLX,
+                es importante olvidar algunas ideas comunes presentes en otros motores.
+            </p>
+
+            <hr />
+
+            <h2>La idea detrás del scripting en FLX</h2>
+
+            <p>
+                Muchos motores organizan el comportamiento mediante clases,
+                componentes o sistemas donde cada objeto posee sus propios métodos.
+            </p>
+
+            <p>
+                FLX utiliza una aproximación diferente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objeto  -> Datos
+
+Script  -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <p>
+                Los objetos contienen estado.
+            </p>
+
+            <p>
+                Los scripts contienen funciones.
+            </p>
+
+            <p>
+                El runtime ejecuta funciones y les proporciona los objetos
+                sobre los que deben actuar.
+            </p>
+
+            <p>
+                FLX no intenta convertir JavaScript en C++.
+            </p>
+
+            <p>
+                Intenta que el comportamiento del runtime pueda escribirse como script.
+            </p>
+
+            <hr />
+
+            <h2>Modelo de scripting</h2>
+
+            <p>
+                Un script FLX no es una clase.
+            </p>
+
+            <p>
+                Tampoco es una instancia independiente para cada objeto.
+            </p>
+
+            <p>
+                Es un módulo JavaScript compartido.
+            </p>
+
+            <p>
+                El runtime carga el script una sola vez
+                y reutiliza sus funciones para todos los objetos que lo necesiten.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>function action(ship) {
+    accelerate(ship);
+}
+</code></pre>
+            </div>
+
+            <p>
+                Cuando el runtime llama una función,
+                proporciona el objeto correspondiente como argumento.
+            </p>
+
+            <p>
+                Las funciones actúan sobre los objetos.
+                No pertenecen a ellos.
+            </p>
+
+            <hr />
+
+            <h2>Referencia TypeScript</h2>
+
+            <p>
+                FLX proporciona definiciones TypeScript para facilitar
+                autocompletado y validación en el editor.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">reference</div>
+<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+</code></pre>
+            </div>
+
+            <p>
+                Esto permite utilizar ayudas de desarrollo
+                en editores compatibles como Visual Studio Code.
+            </p>
+
+            <hr />
+
+            <h2>Ciclo de vida</h2>
+
+            <p>
+                Los objetos atraviesan distintas etapas durante su existencia
+                dentro del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Lifecycle</div>
+<pre><code>Runtime Start
+      ↓
+   start()
+
+ Object Born
+      ↓
+   born()
+
+ action()
+ motion()
+ collision()
+
+ kill()
+
+ dead()
+
+ cleanup()
+</code></pre>
+            </div>
+
+            <p>
+                Esta terminología forma parte del modelo mental de FLX.
+            </p>
+
+            <p>
+                Los objetos nacen,
+                existen durante un tiempo
+                y finalmente desaparecen.
+            </p>
+
+            <h3>Funciones principales</h3>
+
+            <ul>
+                <li><code>start()</code>: se ejecuta una vez al iniciar el runtime.</li>
+
+                <li><code>born(object)</code>: se ejecuta cuando un objeto entra en el mundo.</li>
+
+                <li><code>action(object)</code>: lógica principal e interacción.</li>
+
+                <li><code>motion(object)</code>: movimiento y transformaciones.</li>
+
+                <li><code>collision(object, other)</code>: interacción entre objetos.</li>
+
+                <li><code>dead(object)</code>: última oportunidad de actuar antes de la eliminación física.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Destrucción</h2>
+
+            <p>
+                La destrucción de un objeto se solicita mediante
+                <code>kill(object)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">destroy</div>
+<pre><code>kill(laser);
+</code></pre>
+            </div>
+
+            <p>
+                La destrucción no ocurre inmediatamente.
+            </p>
+
+            <p>
+                El runtime marca el objeto como muerto,
+                lo excluye de las fases posteriores
+                y programa su eliminación segura.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Death flow</div>
+<pre><code>kill()
+   ↓
+alive = false
+   ↓
+dead()
+   ↓
+cleanup()
+</code></pre>
+            </div>
+
+            <p>
+                Esto evita problemas durante colisiones,
+                movimiento o ejecución de scripts.
+            </p>
+
+            <hr />
+
+            <h2>Ámbitos</h2>
+
+            <p>
+                Comprender los ámbitos es una de las claves para comprender FLX.
+            </p>
+
+            <h3>Ámbito de función</h3>
+
+            <p>
+                Las variables declaradas dentro de una función
+                existen únicamente durante esa llamada.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Function scope</div>
+<pre><code>function motion(ship) {
+    let thinking = false;
+}
+</code></pre>
+            </div>
+
+            <h3>Ámbito de script</h3>
+
+            <p>
+                Las variables declaradas fuera de las funciones
+                pertenecen al script.
+            </p>
+
+            <p>
+                Como el script es compartido,
+                todos los objetos que lo utilicen compartirán ese estado.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Script scope</div>
+<pre><code>let laserCounter = 0;
+
+function born(laser) {
+    laserCounter++;
+}
+</code></pre>
+            </div>
+
+            <h3>Ámbito de objeto</h3>
+
+            <p>
+                Cada objeto dispone de un espacio propio para almacenar datos:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Object scope</div>
+<pre><code>function born(laser) {
+    laser.local["lifetime"] = 0;
+}
+</code></pre>
+            </div>
+
+            <p>
+                Los datos almacenados en <code>object.local</code>
+                pertenecen exclusivamente a ese objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Object scope</div>
+<pre><code>function motion(laser) {
+    laser.local["lifetime"] += delta();
+
+    if (laser.local["lifetime"] > 2) {
+        kill(laser);
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta diferencia es fundamental:
+            </p>
+
+            <ul>
+                <li>El estado temporal pertenece a la función.</li>
+                <li>El estado compartido entre objetos del mismo script pertenece al script.</li>
+                <li>El estado individual pertenece al objeto.</li>
+                <li>El estado compartido por todo el runtime pertenece a <code>global</code>.</li>
+            </ul>
+
+            <h3>Ámbito global</h3>
+
+            <p>
+                FLX proporciona un ámbito global compartido mediante
+                <code>global</code>.
+            </p>
+
+            <p>
+                Los valores almacenados en
+                <code>global</code>
+                están disponibles para todos los scripts
+                durante la ejecución del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Global scope</div>
+<pre><code>function start() {
+    global["score"] = 0;
+    global["lives"] = 3;
+}
+
+function collision(player, asteroid) {
+    global["lives"] -= 1;
+}
+</code></pre>
+            </div>
+
+            <p>
+                Este ámbito resulta útil para datos compartidos por todo el juego,
+                como puntuación, vidas, estado de nivel o contadores generales.
+            </p>
+
+            <p>
+                A diferencia de <code>object.local</code>,
+                que pertenece a una instancia concreta,
+                <code>global</code> pertenece al runtime.
+            </p>
+
+            <hr />
+
+            <h2>Program Scripts</h2>
+
+            <p>
+                Los Program Scripts permiten ejecutar lógica asociada
+                al runtime completo.
+            </p>
+
+            <p>
+                Mientras que los scripts de objeto reaccionan
+                a la vida de un objeto concreto,
+                los Program Scripts reaccionan
+                a la vida del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">game.json</div>
+<pre><code>"program": {
+    "scripts": [
+        "scripts/program"
+    ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                La forma definitiva de estos contextos
+                todavía continúa evolucionando.
+            </p>
+
+            <hr />
+
+            <h2>Buenas prácticas</h2>
+
+            <ul>
+                <li>Utiliza JSON para definir datos.</li>
+
+                <li>Utiliza scripts para definir comportamiento.</li>
+
+                <li>Utiliza <code>object.local</code> para estado individual.</li>
+
+                <li>Utiliza variables de script únicamente para estado compartido.</li>
+
+                <li>Utiliza <code>delta()</code> para temporizadores y movimiento dependiente del tiempo.</li>
+
+                <li>Utiliza <code>kill()</code> para destruir objetos de forma segura.</li>
+
+                <li>Utiliza <code>global</code> para estado compartido del runtime.</li>
+            </ul>
+
+            <hr />
+
+            <h2>API</h2>
+
+            <p>
+                Las funciones auxiliares proporcionadas por FLX
+                se documentan en la sección API.
+            </p>
+
+            <ul>
+                <li><a class="link" href="api.html">FLX API</a></li>
+            </ul>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li class="current">↓ Scripting ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="json-reference.html">Referencia JSON</a> → Recomendado</li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

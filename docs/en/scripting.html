@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripting | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="scripting">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Scripting</h1>
+
+            <p>
+                Scripts define object behavior during runtime execution.
+            </p>
+
+            <p>
+                However, to properly understand scripting in FLX,
+                it is important to leave behind some assumptions commonly found in other engines.
+            </p>
+
+            <hr />
+
+            <h2>The Idea Behind FLX Scripting</h2>
+
+            <p>
+                Many engines organize behavior through classes,
+                components or systems where each object owns its own methods.
+            </p>
+
+            <p>
+                FLX uses a different approach.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Object  -> Data
+
+Script  -> Functions
+
+Runtime -> Connects both
+</code></pre>
+            </div>
+
+            <p>
+                Objects contain state.
+            </p>
+
+            <p>
+                Scripts contain functions.
+            </p>
+
+            <p>
+                The runtime executes functions and provides the objects
+                they should operate on.
+            </p>
+
+            <p>
+                FLX does not try to turn JavaScript into C++.
+            </p>
+
+            <p>
+                It tries to make runtime behavior scriptable.
+            </p>
+
+            <hr />
+
+            <h2>Scripting Model</h2>
+
+            <p>
+                An FLX script is not a class.
+            </p>
+
+            <p>
+                It is not an independent instance per object either.
+            </p>
+
+            <p>
+                It is a shared JavaScript module.
+            </p>
+
+            <p>
+                The runtime loads the script once
+                and reuses its functions for every object that needs them.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>function action(ship) {
+    accelerate(ship);
+}
+</code></pre>
+            </div>
+
+            <p>
+                When the runtime invokes a function,
+                it provides the corresponding object as an argument.
+            </p>
+
+            <p>
+                Functions operate on objects.
+                They do not belong to them.
+            </p>
+
+            <hr />
+
+            <h2>TypeScript Reference</h2>
+
+            <p>
+                FLX provides TypeScript definitions
+                for autocomplete and editor validation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">reference</div>
+<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+</code></pre>
+            </div>
+
+            <p>
+                This enables development assistance
+                in editors such as Visual Studio Code.
+            </p>
+
+            <hr />
+
+            <h2>Lifecycle</h2>
+
+            <p>
+                Objects move through several stages during their existence
+                inside the runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Lifecycle</div>
+<pre><code>Runtime Start
+      ↓
+   start()
+
+ Object Born
+      ↓
+   born()
+
+ action()
+ motion()
+ collision()
+
+ kill()
+
+ dead()
+
+ cleanup()
+</code></pre>
+            </div>
+
+            <p>
+                This terminology is part of the FLX mental model.
+            </p>
+
+            <p>
+                Objects are born,
+                exist for a period of time,
+                and eventually disappear.
+            </p>
+
+            <h3>Main Functions</h3>
+
+            <ul>
+                <li><code>start()</code>: executed once when the runtime starts.</li>
+
+                <li><code>born(object)</code>: executed when an object enters the world.</li>
+
+                <li><code>action(object)</code>: main logic and interaction.</li>
+
+                <li><code>motion(object)</code>: movement and transformations.</li>
+
+                <li><code>collision(object, other)</code>: interaction between objects.</li>
+
+                <li><code>dead(object)</code>: last opportunity to react before physical removal.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Destruction</h2>
+
+            <p>
+                Object destruction is requested through
+                <code>kill(object)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">destroy</div>
+<pre><code>kill(laser);
+</code></pre>
+            </div>
+
+            <p>
+                Destruction does not happen immediately.
+            </p>
+
+            <p>
+                The runtime marks the object as dead,
+                excludes it from later phases
+                and schedules safe removal.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Death flow</div>
+<pre><code>kill()
+   ↓
+alive = false
+   ↓
+dead()
+   ↓
+cleanup()
+</code></pre>
+            </div>
+
+            <p>
+                This prevents issues during collisions,
+                movement or script execution.
+            </p>
+
+            <hr />
+
+            <h2>Scopes</h2>
+
+            <p>
+                Understanding scopes is one of the keys
+                to understanding FLX.
+            </p>
+
+            <h3>Function Scope</h3>
+
+            <p>
+                Variables declared inside a function
+                only exist during that invocation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Function scope</div>
+<pre><code>function motion(ship) {
+    let thinking = false;
+}
+</code></pre>
+            </div>
+
+            <h3>Script Scope</h3>
+
+            <p>
+                Variables declared outside functions
+                belong to the script.
+            </p>
+
+            <p>
+                Since scripts are shared,
+                all objects using that script share the same state.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Script scope</div>
+<pre><code>let laserCounter = 0;
+
+function born(laser) {
+    laserCounter++;
+}
+</code></pre>
+            </div>
+
+            <h3>Object Scope</h3>
+
+            <p>
+                Every object provides its own storage area:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Object scope</div>
+<pre><code>function born(laser) {
+    laser.local["lifetime"] = 0;
+}
+</code></pre>
+            </div>
+
+            <p>
+                Data stored inside <code>object.local</code>
+                belongs exclusively to that object.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Object scope</div>
+<pre><code>function motion(laser) {
+    laser.local["lifetime"] += delta();
+
+    if (laser.local["lifetime"] > 2) {
+        kill(laser);
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                This distinction is fundamental:
+            </p>
+
+            <ul>
+                <li>Temporary state belongs to the function.</li>
+                <li>State shared by objects using the same script belongs to the script.</li>
+                <li>Individual state belongs to the object.</li>
+                <li>State shared by the whole runtime belongs to <code>global</code>.</li>
+            </ul>
+
+            <h3>Global Scope</h3>
+
+            <p>
+                FLX provides a shared global scope through
+                <code>global</code>.
+            </p>
+
+            <p>
+                Values stored in
+                <code>global</code>
+                are available to all scripts
+                during runtime execution.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Global scope</div>
+<pre><code>function start() {
+    global["score"] = 0;
+    global["lives"] = 3;
+}
+
+function collision(player, asteroid) {
+    global["lives"] -= 1;
+}
+</code></pre>
+            </div>
+
+            <p>
+                This scope is useful for data shared by the whole game,
+                such as score, lives, level state or general counters.
+            </p>
+
+            <p>
+                Unlike <code>object.local</code>,
+                which belongs to a specific instance,
+                <code>global</code> belongs to the runtime.
+            </p>
+
+            <hr />
+
+            <h2>Program Scripts</h2>
+
+            <p>
+                Program Scripts execute logic associated
+                with the runtime as a whole.
+            </p>
+
+            <p>
+                While object scripts react to the lifecycle
+                of a specific object,
+                Program Scripts react to the lifecycle
+                of the runtime itself.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">game.json</div>
+<pre><code>"program": {
+    "scripts": [
+        "scripts/program"
+    ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                The final shape of these contexts
+                is still evolving.
+            </p>
+
+            <hr />
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li>Use JSON to define data.</li>
+
+                <li>Use scripts to define behavior.</li>
+
+                <li>Use <code>object.local</code> for per-object state.</li>
+
+                <li>Use script variables only for shared state.</li>
+
+                <li>Use <code>delta()</code> for timers and time-based movement.</li>
+
+                <li>Use <code>kill()</code> for safe object destruction.</li>
+
+                <li>Use <code>global</code> for shared runtime state.</li>
+            </ul>
+
+            <hr />
+
+            <h2>Recommended Path</h2>
+
+            <p>
+                The documentation is organized to introduce concepts progressively.
+            </p>
+
+            <p>
+                You are free to explore any section, but the recommended path is:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introduction</a></li>
+                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li class="current">↓ Scripting ← You are here</li>
+                <li class="recommended"><a class="link" href="json-reference.html">JSON Reference</a> → Recommended</li>
+                <li>↓ <a class="link" href="api.html">FLX API</a></li>
+                <li>↓ <a class="link" href="examples.html">Examples</a></li>
+                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

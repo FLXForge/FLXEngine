@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../tools/schemas/drawable.schema.json",
+  "name": "AsteroidFragment",
+
+  "shape": {
+    "type": "line",
+    "color": "ORANGE",
+    "size": {
+      "width": 1,
+      "height": 10
+    }
+  },
+
+  "collision": {
+    "type": "none"
+  },
+
+  "bounds": {
+    "mode": "wrap",
+    "overflow": false
+  },
+
+  "behavior": {
+    "scripts": [ "scripts/asteroid_fragment" ]
+  }
+}

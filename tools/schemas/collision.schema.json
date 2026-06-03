@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collision.schema.json",
+  "title": "FLX Collision",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "none",
+        "box",
+        "circle"
+      ]
+    },
+
+    "radius": {
+      "type": "number"
+    }
+  }
+}

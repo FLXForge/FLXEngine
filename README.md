@@ -4,9 +4,9 @@
 
 <img align="left" style="width:260px" src="flxlogo.png" width="260px">
 
-FLX Engine is part of the **FLX Forge** ecosystem, a lightweight development environment focused on building games with minimal friction and clear workflows.
+FLX Engine is a lightweight 2D game engine focused on clear architecture, direct workflows and minimal friction.
 
-The engine is designed for developers who want to create games without depending on oversized editors, proprietary pipelines or unnecessarily complex architectures.
+The project is designed for developers who want to build games without depending on oversized editors, proprietary pipelines or unnecessarily complex architectures.
 
 ---
 
@@ -26,12 +26,46 @@ The goal is simple:
 > Build games without fighting the engine.
 
 FLX is especially suited for:
+
 - 2D games
-- Prototypes
 - Arcade projects
+- Prototypes
 - Visual novels
 - Experimental ideas
 - Small and medium-sized productions
+
+---
+
+## Minimal Example
+
+```json
+{
+  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "name": "Ship",
+
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+
+  "shape": {
+    "type": "triangle",
+    "color": "WHITE",
+    "size": {
+      "width": 18,
+      "height": 24
+    }
+  }
+}
+```
+
+```js
+function motion(ship) {
+    advance(ship);
+}
+```
+
+FLX keeps game structure simple, readable and easy to modify.
 
 ---
 
@@ -63,28 +97,24 @@ This file defines the project structure, scenes, scripts and engine configuratio
 
 ---
 
-## FLX Forge
-
-FLX Engine is part of **FLX Forge**.
-
-Forge represents the creative workshop behind the ecosystem:
-a space focused on building lightweight tools for direct and understandable game development.
-
-Current ecosystem components may include:
-
-- FLX Engine
-- FLX Runtime
-- FLX Builder
-- FLX Docs
-- FLX Tools
-
----
-
 ## Current Status
 
 FLX Engine is currently under active development.
 
-The project is evolving progressively with a focus on maintaining architectural clarity and simplicity from the very beginning.
+The project is evolving progressively with a strong focus on maintaining architectural clarity and simplicity from the very beginning.
+
+Some systems may evolve during the early 0.x versions.
+
+---
+
+## FLX Forge
+
+FLX Engine is part of the broader **FLX Forge** initiative.
+
+The idea behind Forge is simple:
+create lightweight and understandable tools focused on direct game creation.
+
+Additional tooling may appear progressively as the project evolves.
 
 ---
 

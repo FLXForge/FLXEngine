@@ -23,6 +23,11 @@ public:
 
     void callScriptFunction(
         const std::string& script,
+        const std::string& function
+    );
+
+    void callScriptFunction(
+        const std::string& script,
         const std::string& function,
         RuntimeObject& object
     );
@@ -37,25 +42,69 @@ public:
     using FindObjectFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
+    using FindObjectByIdFunction =
+        std::function<RuntimeObject* (const std::string&)>;
+
+    using SpawnObjectFunction =
+        std::function<void(
+            RuntimeObject& source,
+            const SpawnDefinition& spawnDefinition,
+            const RuntimeObject& prefab
+            )>;
+
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
 
+    using FindPrefabFunction =
+        std::function<RuntimeObject* (const std::string&)>;
+
+    void setFindPrefabFunction(FindPrefabFunction function);
+    RuntimeObject* findPrefabByName(const std::string& name);
+
+    FindPrefabFunction findPrefab;
+
+    void setSpawnObjectFunction(SpawnObjectFunction function);
+
+    void spawnObject(
+        RuntimeObject& source,
+        const SpawnDefinition& spawnDefinition,
+        const RuntimeObject& prefab
+    );
+
+    void setFindObjectByIdFunction(
+        FindObjectByIdFunction function
+    );
+
+    RuntimeObject* findObjectByRuntimeId(
+        const std::string& id
+    );
+
+    void setScreenScale(int scale);
+    int getScreenScale() const;
+
 private:
     JSValue createJsObject(RuntimeObject& object);
     void applyJsObject(RuntimeObject& source, JSValue jsObject);
+    JSValue createGlobalObject();
+    void applyGlobalObject(JSValue globalObject);
+    void exposeGlobalObject(JSValue globalObject);
     void cacheScriptModule(const std::string& path);
     JSValue getCachedFunction(
         const std::string& script,
         const std::string& function
     );
 private:
+    int screenScale = 1;
     JSRuntime* runtime;
     JSContext* context;
+    std::unordered_map<std::string, double> globalState;
     std::unordered_set<std::string> loadedScripts;
     std::unordered_map<
         std::string,
         ScriptModule
     > scriptModules;
+    SpawnObjectFunction spawnObjectFunction;
     FindObjectFunction findObject;
+    FindObjectByIdFunction findObjectById;
 };

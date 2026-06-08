@@ -125,7 +125,7 @@ Runtime -> Conecta ambos
 
             <div class="code-card">
                 <div class="code-header">reference</div>
-<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 </code></pre>
             </div>
 
@@ -186,10 +186,44 @@ Runtime -> Conecta ambos
 
                 <li><code>motion(object)</code>: movimiento y transformaciones.</li>
 
-                <li><code>collision(object, other)</code>: interacción entre objetos.</li>
+                <li>
+                    <code>collision(object, other)</code>:
+                    se ejecuta cuando el objeto tiene <code>collision.active = true</code>
+                    y el grupo del otro objeto está incluido en <code>collision.with</code>.
+                </li>
 
                 <li><code>dead(object)</code>: última oportunidad de actuar antes de la eliminación física.</li>
             </ul>
+
+            <hr />
+
+            <h3>Regla de ejecución de colisiones</h3>
+
+            <p>
+                <code>collision.active</code> no significa que un objeto pueda recibir colisiones.
+            </p>
+
+            <p>
+                Significa que ese objeto comprueba colisiones activamente.
+            </p>
+
+            <ul>
+                <li><code>active</code>: pregunta si hay colisiones.</li>
+                <li><code>with</code>: define a qué grupos pregunta.</li>
+                <li><code>collision()</code>: define qué ocurre cuando encuentra una coincidencia.</li>
+            </ul>
+
+            <p>
+                Solo los objetos activos ejecutan
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Los objetos incluidos en <code>collision.with</code>
+                no ejecutan automáticamente su propio manejador de colisión,
+                salvo que también estén activos y detecten de forma independiente
+                una colisión coincidente.
+            </p>
 
             <hr />
 

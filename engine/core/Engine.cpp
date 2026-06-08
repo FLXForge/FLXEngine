@@ -14,6 +14,28 @@
 namespace
 {
     constexpr bool debugCollisions = false;
+
+    bool canCollideWith(
+        const RuntimeObject& object,
+        const RuntimeObject& other
+    )
+    {
+        if (!object.collisionActive)
+        {
+            return false;
+        }
+
+        if (object.collisionWith.empty())
+        {
+            return false;
+        }
+
+        return std::find(
+            object.collisionWith.begin(),
+            object.collisionWith.end(),
+            other.group
+        ) != object.collisionWith.end();
+    }
 }
 
 Engine::Engine()
@@ -481,42 +503,44 @@ void Engine::collisionPhase()
 {
     for (size_t i = 0; i < objects.size(); ++i)
     {
-        for (size_t j = i + 1; j < objects.size(); ++j)
-        {
-            RuntimeObject& a = objects[i];
-            RuntimeObject& b = objects[j];
+        RuntimeObject& a =
+            objects[i];
 
-            if (!a.alive || !b.alive)
+        if (!a.alive || !a.collisionActive)
+        {
+            continue;
+        }
+
+        for (size_t j = 0; j < objects.size(); ++j)
+        {
+            if (i == j)
+            {
+                continue;
+            }
+
+            RuntimeObject& b =
+                objects[j];
+
+            if (!b.alive)
+            {
+                continue;
+            }
+
+            if (!canCollideWith(a, b))
             {
                 continue;
             }
 
             if (RuntimeHelpers::intersects(a, b))
             {
-                if (!a.resolvedScriptPaths.empty())
+                for (const auto& scriptPath : a.resolvedScriptPaths)
                 {
-                    for (const auto& scriptPath : a.resolvedScriptPaths)
-                    {
-                        scriptEngine.callScriptFunction(
-                            scriptPath,
-                            "collision",
-                            a,
-                            b
-                        );
-                    }
-                }
-
-                if (!b.resolvedScriptPaths.empty())
-                {
-                    for (const auto& scriptPath : b.resolvedScriptPaths)
-                    {
-                        scriptEngine.callScriptFunction(
-                            scriptPath,
-                            "collision",
-                            b,
-                            a
-                        );
-                    }
+                    scriptEngine.callScriptFunction(
+                        scriptPath,
+                        "collision",
+                        a,
+                        b
+                    );
                 }
             }
         }

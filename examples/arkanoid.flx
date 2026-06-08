@@ -1,0 +1,6 @@
+name:Arkanoid
+version:1.0
+flxEngineVersion:0.2.0
+path:arkanoid
+main:main.json
+notes:FLX example with grid spawn, levels and power ups

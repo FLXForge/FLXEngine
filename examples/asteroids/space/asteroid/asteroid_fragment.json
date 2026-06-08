@@ -1,10 +1,10 @@
 {
-  "$schema": "../../../../tools/schemas/drawable.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
   "name": "AsteroidFragment",
 
   "shape": {
     "type": "line",
-    "color": "ORANGE",
+    "color": "orange",
     "size": {
       "width": 1,
       "height": 10

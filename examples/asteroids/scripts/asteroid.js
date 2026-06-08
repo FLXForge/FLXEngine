@@ -1,4 +1,4 @@
-/// <reference path="../../../../tools/scripts/flx.d.ts" />
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
     When an asteroid is born, it receives random angle, speed and rotation.

@@ -15,6 +15,17 @@
       ]
     },
 
+    "active": {
+      "type": "boolean"
+    },
+
+    "with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+
     "radius": {
       "type": "number"
     }

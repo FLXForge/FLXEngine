@@ -10,12 +10,39 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": [ "block", "rectangle", "triangle", "polygon", "line", "text" ],
+      "enum": [
+        "block",
+        "rectangle",
+        "triangle",
+        "polygon",
+        "circle",
+        "line"
+      ],
       "default": "block"
     },
 
+    "mode": {
+      "type": "string",
+      "enum": [
+        "fill",
+        "outline"
+      ]
+    },
+
     "color": {
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "red",
+        "green",
+        "blue",
+        "black",
+        "yellow",
+        "orange",
+        "purple",
+        "gray",
+        "white",
+        "brown"
+      ]
     },
 
     "points": {
@@ -39,6 +66,10 @@
         "width": { "type": "number" },
         "height": { "type": "number" }
       }
+    },
+
+    "radius": {
+      "type": "number"
     },
 
     "text": {

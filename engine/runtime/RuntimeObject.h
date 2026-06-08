@@ -54,7 +54,9 @@ public:
     bool hasOrigin = false;
 
     Color color;
+    std::string shapeMode;
 
+    float radius;
     float speed;
     float angle;
     float originSpeed;
@@ -72,6 +74,8 @@ public:
     std::string boundsMode;
     bool boundsOverflow;
 
+    bool collisionActive;
+    std::vector<std::string> collisionWith;
     std::string collisionType;
     float collisionRadius;
 

@@ -1,10 +1,10 @@
 {
-	"$schema": "../../../tools/schemas/drawable.schema.json",
+	"$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
 	"name": "Laser",
 
 	"shape": {
 		"type": "line",
-		"color": "WHITE",
+		"color": "white",
 		"size": {
 			"width": 1,
 			"height": 20

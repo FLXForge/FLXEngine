@@ -1,5 +1,5 @@
 {
-  "$schema": "../../tools/schemas/main.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
   "name": "Pong_Game",
   "description": "Example of one of the first games",
 

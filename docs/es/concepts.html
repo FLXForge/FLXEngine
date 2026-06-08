@@ -278,7 +278,7 @@ main:game.json
                 <div class="code-header">shape.json</div>
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "WHITE"
+    "color": "white"
 }
 </code></pre>
             </div>
@@ -320,6 +320,19 @@ main:game.json
             <p>
                 En algunos casos ambas definiciones pueden ser similares,
                 pero no tienen por qué coincidir.
+            </p>
+
+            <p>
+                Además de definir la forma del collider,
+                <code>collision</code> puede controlar si la colisión está activa
+                y con qué grupos puede interactuar.
+            </p>
+
+            <p>
+                Las comprobaciones de colisión son activas y direccionales:
+                un objeto solo ejecuta <code>collision()</code>
+                cuando su propio <code>collision.active</code> está habilitado
+                y el grupo del otro objeto coincide con su lista <code>collision.with</code>.
             </p>
 
             <div class="code-card">

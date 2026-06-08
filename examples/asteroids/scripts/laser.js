@@ -1,4 +1,4 @@
-/// <reference path="../../../../tools/scripts/flx.d.ts" />
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
     The laser moves in its current direction and dies after 4 seconds.

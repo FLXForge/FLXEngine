@@ -57,7 +57,9 @@
       "angle": 45,
       "group": "ball",
       "collision": {
-        "type": "box"
+        "type": "box",
+        "active": true,
+        "with": [ "wall", "goal", "paddle" ]
       },
       "behavior": {
         "scripts": [ "scripts/ball" ]

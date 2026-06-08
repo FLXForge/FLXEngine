@@ -322,6 +322,19 @@ main:game.json
                 pero no tienen por qué coincidir.
             </p>
 
+            <p>
+                Además de definir la forma del collider,
+                <code>collision</code> puede controlar si la colisión está activa
+                y con qué grupos puede interactuar.
+            </p>
+
+            <p>
+                Las comprobaciones de colisión son activas y direccionales:
+                un objeto solo ejecuta <code>collision()</code>
+                cuando su propio <code>collision.active</code> está habilitado
+                y el grupo del otro objeto coincide con su lista <code>collision.with</code>.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">shape + collision</div>
 <pre><code>{

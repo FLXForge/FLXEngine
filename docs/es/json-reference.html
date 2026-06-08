@@ -594,10 +594,30 @@
                 Define la colisión asociada al objeto o al nodo,
             </p>
 
+            <p>
+                La función <code>collision(object, other)</code>
+                solo se ejecuta cuando <code>collision.active</code> es <code>true</code>
+                y el grupo del otro objeto está incluido en <code>collision.with</code>.
+            </p>
+
+            <p>
+                Solo los objetos activos ejecutan
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Los objetos incluidos en <code>collision.with</code>
+                no ejecutan automáticamente su propio manejador de colisión,
+                salvo que también estén activos y detecten de forma independiente
+                una colisión coincidente.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">behavior</div>
 <pre><code>"collision": {
     "type": "circle",
+    "active": "true",
+    "with": [ "wall" ],
     "radius": 16
 },
 </code></pre>
@@ -613,6 +633,17 @@
                         <li><code>box</code>: cuadrada.</li>
                         <li><code>circle</code>: circular.</li>
                     </ul>
+                </li>
+                <li>
+                    <code>active</code>:
+                    indica si la colisión del objeto está activa.
+                    <i>[ Opcional ]</i>
+                </li>
+
+                <li>
+                    <code>with</code>:
+                    lista de grupos con los que este objeto puede colisionar.
+                    <i>[ Opcional ]</i>
                 </li>
                 <li><code>radius</code>: En caso de que el tipo sea <code>circle</code> selecciona el radio de la circunferencia. [ Opcional ]</li>
             </ul>

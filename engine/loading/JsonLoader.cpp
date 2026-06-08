@@ -358,12 +358,14 @@ namespace
         RuntimeObject& runtimeObject
     )
     {
-        if (!object.contains("collision"))
+        if (!object.contains("collision") ||
+            !object["collision"].is_object())
         {
             return;
         }
 
-        const auto& collision = object["collision"];
+        const auto& collision =
+            object["collision"];
 
         if (collision.contains("type"))
         {
@@ -375,6 +377,25 @@ namespace
         {
             runtimeObject.collisionRadius =
                 collision["radius"].get<float>();
+        }
+
+        if (collision.contains("active"))
+        {
+            runtimeObject.collisionActive =
+                collision["active"].get<bool>();
+        }
+
+        runtimeObject.collisionWith.clear();
+
+        if (collision.contains("with") &&
+            collision["with"].is_array())
+        {
+            for (const auto& group : collision["with"])
+            {
+                runtimeObject.collisionWith.push_back(
+                    group.get<std::string>()
+                );
+            }
         }
 
         if (

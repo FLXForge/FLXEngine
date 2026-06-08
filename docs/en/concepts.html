@@ -338,6 +338,19 @@ main:game.json
                 but they are not required to match.
             </p>
 
+            <p>
+                In addition to defining the collider shape,
+                the <code>collision</code> block can control whether collision
+                is active and which groups the object can interact with.
+            </p>
+
+            <p>
+                Collision checks are active and directional:
+                an object only executes <code>collision()</code>
+                when its own <code>collision.active</code> is enabled
+                and the other object's group matches its <code>collision.with</code> list.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">shape + collision</div>
 <pre><code>{

@@ -620,10 +620,30 @@
                 Defines the collision associated with the object or node.
             </p>
 
+            <p>
+                The <code>collision(object, other)</code> function
+                is only executed when <code>collision.active</code> is set to
+                <code>true</code> and the other object's group is included in
+                <code>collision.with</code>.
+            </p>
+
+            <p>
+                Only active objects execute
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Objects listed in <code>collision.with</code>
+                do not automatically execute their own collision handler
+                unless they are also active and independently detect a matching collision.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">collision</div>
 <pre><code>"collision": {
     "type": "circle",
+    "active": "true",
+    "with": [ "wall" ],
     "radius": 16
 },
 </code></pre>
@@ -640,6 +660,18 @@
                         <li><code>box</code>: box collision.</li>
                         <li><code>circle</code>: circular collision.</li>
                     </ul>
+                </li>
+
+                <li>
+                    <code>active</code>:
+                    enables or disables collision processing for this object.
+                    <i>[ Optional ]</i>
+                </li>
+
+                <li>
+                    <code>with</code>:
+                    list of groups this object can collide with.
+                    <i>[ Optional ]</i>
                 </li>
 
                 <li>

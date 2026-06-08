@@ -179,6 +179,7 @@ RuntimeObject::RuntimeObject(
     this->boundsMode = "none";
     this->boundsOverflow = false;
     this->collisionType = "none";
+    this->collisionActive = false;
     this->collisionRadius = 0.0f;
 }
 

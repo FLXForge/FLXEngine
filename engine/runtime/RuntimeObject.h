@@ -74,6 +74,8 @@ public:
     std::string boundsMode;
     bool boundsOverflow;
 
+    bool collisionActive;
+    std::vector<std::string> collisionWith;
     std::string collisionType;
     float collisionRadius;
 

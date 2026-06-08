@@ -186,10 +186,45 @@ Runtime -> Connects both
 
                 <li><code>motion(object)</code>: movement and transformations.</li>
 
-                <li><code>collision(object, other)</code>: interaction between objects.</li>
+                <li>
+                    <code>collision(object, other)</code>:
+                    executed when the object has
+                    <code>collision.active = true</code>
+                    and the other object's group is included in
+                    <code>collision.with</code>.
+                </li>
 
                 <li><code>dead(object)</code>: last opportunity to react before physical removal.</li>
             </ul>
+
+            <hr />
+
+            <h3>Collision execution rule</h3>
+
+            <p>
+                <code>collision.active</code> does not mean that an object can be collided with.
+            </p>
+
+            <p>
+                It means that the object actively checks collisions.
+            </p>
+
+            <ul>
+                <li><code>active</code>: asks for collisions.</li>
+                <li><code>with</code>: defines which groups it asks about.</li>
+                <li><code>collision()</code>: defines what happens when a match is found.</li>
+            </ul>
+
+            <p>
+                Only active objects execute
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Objects listed in <code>collision.with</code>
+                do not automatically execute their own collision handler
+                unless they are also active and independently detect a matching collision.
+            </p>
 
             <hr />
 

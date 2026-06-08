@@ -27,6 +27,8 @@
 
   "collision": {
     "type": "circle",
+    "active": true,
+    "with": [ "ship", "asteroid", "laser" ],
     "radius": 16
   },
 

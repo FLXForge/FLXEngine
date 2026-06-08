@@ -300,9 +300,13 @@ declare function action(object: RuntimeObject): void;
 declare function motion(object: RuntimeObject): void;
 
 /**
- * Optional collision phase function.
+ * Called only when this object has collision.active = true
+ * and the other object's group is listed in collision.with.
  */
-declare function collision(object: RuntimeObject, other: RuntimeObject): void;
+declare function collision(
+    object: RuntimeObject,
+    other: RuntimeObject
+): void;
 
 /**
  * Optional draw phase function.

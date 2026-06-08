@@ -40,7 +40,7 @@ FLX is especially suited for:
 
 ```json
 {
-  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
   "name": "Ship",
 
   "origin": {
@@ -60,6 +60,8 @@ FLX is especially suited for:
 ```
 
 ```js
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
+
 function motion(ship) {
     advance(ship);
 }

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../tools/schemas/node.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
   "name": "Level",
 
   "children": [

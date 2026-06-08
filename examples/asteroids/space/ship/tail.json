@@ -1,10 +1,10 @@
 {
-  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
   "name": "tail",
 
   "shape": {
     "type": "triangle",
-    "color": "BLUE",
+    "color": "blue",
     "size": {
       "width": 6,
       "height": 8

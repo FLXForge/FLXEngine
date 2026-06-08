@@ -11,59 +11,20 @@ namespace
 {
     Color parseColor(const std::string& colorName)
     {
-        if (colorName == "RED")
-        {
-            return RED;
-        }
-
-        if (colorName == "GREEN")
-        {
-            return GREEN;
-        }
-
-        if (colorName == "BLUE")
-        {
-            return BLUE;
-        }
-
-        if (colorName == "BLACK")
-        {
-            return BLACK;
-        }
-
-        if (colorName == "YELLOW")
-        {
-            return YELLOW;
-        }
-
-        if (colorName == "ORANGE")
-        {
-            return ORANGE;
-        }
-
-        if (colorName == "PURPLE")
-        {
-            return PURPLE;
-        }
-
-        if (colorName == "GRAY")
-        {
-            return GRAY;
-        }
-
-        if (colorName == "WHITE")
-        {
-            return WHITE;
-        }
-
-        if (colorName == "BROWN")
-        {
-            return BROWN;
-        }
+        if (colorName == "red") return RED;
+        if (colorName == "green") return GREEN;
+        if (colorName == "blue") return BLUE;
+        if (colorName == "black") return BLACK;
+        if (colorName == "yellow") return YELLOW;
+        if (colorName == "orange") return ORANGE;
+        if (colorName == "purple") return PURPLE;
+        if (colorName == "gray") return GRAY;
+        if (colorName == "white") return WHITE;
+        if (colorName == "brown") return BROWN;
 
         Logger::warning(
             "json",
-            "Unknown color '" + colorName + "', using WHITE"
+            "Unknown color '" + colorName + "', using white"
         );
 
         return WHITE;
@@ -100,6 +61,7 @@ namespace
                 "json",
                 "The file could not be opened " + path.string()
             );
+
             return false;
         }
 
@@ -119,34 +81,30 @@ namespace
 
             return false;
         }
+
         return true;
     }
 
     void mergeJson(
         nlohmann::json& base,
-        const nlohmann::json& override
+        const nlohmann::json & override
     )
     {
         for (auto it = override.begin(); it != override.end(); ++it)
         {
-            const std::string key =
-                it.key();
+            const std::string key = it.key();
 
             if (
                 base.contains(key) &&
                 base[key].is_object() &&
                 it.value().is_object()
-            )
+                )
             {
-                mergeJson(
-                    base[key],
-                    it.value()
-                );
+                mergeJson(base[key], it.value());
             }
             else
             {
-                base[key] =
-                    it.value();
+                base[key] = it.value();
             }
         }
     }
@@ -160,8 +118,7 @@ namespace
         if (!object.is_object() || !object.contains("like"))
         {
             resolved = object;
-            resolved["__sourceFile"] =
-                currentFile.generic_string();
+            resolved["__sourceFile"] = currentFile.generic_string();
             return true;
         }
 
@@ -169,10 +126,7 @@ namespace
             object["like"].get<std::string>();
 
         const auto basePath =
-            resolveChildPath(
-                currentFile,
-                likePath
-            );
+            resolveChildPath(currentFile, likePath);
 
         nlohmann::json base;
 
@@ -201,40 +155,302 @@ namespace
         return true;
     }
 
-    nlohmann::json resolveLike(
-        const std::filesystem::path& currentFile,
-        const nlohmann::json& object
+    bool hasShape(const nlohmann::json& object)
+    {
+        return object.contains("shape") &&
+            object["shape"].is_object();
+    }
+
+    bool hasRootSize(const nlohmann::json& object)
+    {
+        return object.contains("size") &&
+            object["size"].is_object();
+    }
+
+    Vector2 parseOrigin(const nlohmann::json& object)
+    {
+        if (!object.contains("origin"))
+        {
+            return Vector2{ 0.0f, 0.0f };
+        }
+
+        const auto& origin = object["origin"];
+
+        return Vector2{
+            origin.value("x", 0.0f),
+            origin.value("y", 0.0f)
+        };
+    }
+
+    Vector2 parseSize(const nlohmann::json& object)
+    {
+        if (hasShape(object))
+        {
+            const auto& shape = object["shape"];
+
+            if (shape.contains("size") && shape["size"].is_object())
+            {
+                const auto& size = shape["size"];
+
+                return Vector2{
+                    size.value("width", 0.0f),
+                    size.value("height", 0.0f)
+                };
+            }
+        }
+
+        if (hasRootSize(object))
+        {
+            const auto& size = object["size"];
+
+            return Vector2{
+                size.value("width", 0.0f),
+                size.value("height", 0.0f)
+            };
+        }
+
+        return Vector2{ 0.0f, 0.0f };
+    }
+
+    void parseShape(
+        const nlohmann::json& object,
+        RuntimeObject& runtimeObject
     )
     {
-        if (!object.is_object() || !object.contains("like"))
+        if (!hasShape(object))
         {
-            return object;
+            return;
         }
 
-        const std::string likePath =
-            object["like"].get<std::string>();
+        const auto& shape = object["shape"];
 
-        const auto basePath =
-            resolveChildPath(
-                currentFile,
-                likePath
+        runtimeObject.shapeType =
+            shape.value("type", "block");
+
+        runtimeObject.shapeMode =
+            shape.value("mode", "fill");
+
+        if (shape.contains("color"))
+        {
+            runtimeObject.color =
+                parseColor(shape["color"].get<std::string>());
+        }
+
+        if (shape.contains("radius"))
+        {
+            runtimeObject.radius =
+                shape["radius"].get<float>();
+        }
+        else
+        {
+            runtimeObject.radius =
+                std::max(
+                    runtimeObject.size.x,
+                    runtimeObject.size.y
+                ) / 2.0f;
+        }
+
+        runtimeObject.points.clear();
+
+        if (shape.contains("points") && shape["points"].is_array())
+        {
+            for (const auto& point : shape["points"])
+            {
+                runtimeObject.points.push_back(
+                    Vector2{
+                        point.value("x", 0.0f),
+                        point.value("y", 0.0f)
+                    }
+                );
+            }
+        }
+    }
+
+    void parseMotion(
+        const nlohmann::json& object,
+        RuntimeObject& runtimeObject
+    )
+    {
+        if (!object.contains("motion"))
+        {
+            return;
+        }
+
+        const auto& motion = object["motion"];
+
+        if (motion.contains("rotationSpeed"))
+        {
+            runtimeObject.rotationSpeed =
+                motion["rotationSpeed"].get<float>();
+        }
+
+        if (motion.contains("acceleration"))
+        {
+            runtimeObject.acceleration =
+                motion["acceleration"].get<float>();
+        }
+
+        if (motion.contains("inertia"))
+        {
+            runtimeObject.inertia =
+                motion["inertia"].get<float>();
+        }
+
+        if (motion.contains("maxSpeed"))
+        {
+            runtimeObject.maxSpeed =
+                motion["maxSpeed"].get<float>();
+        }
+    }
+
+    void parseBounds(
+        const nlohmann::json& object,
+        RuntimeObject& runtimeObject
+    )
+    {
+        if (!object.contains("bounds"))
+        {
+            return;
+        }
+
+        const auto& bounds = object["bounds"];
+
+        if (bounds.contains("mode"))
+        {
+            runtimeObject.boundsMode =
+                bounds["mode"].get<std::string>();
+        }
+
+        if (bounds.contains("overflow"))
+        {
+            runtimeObject.boundsOverflow =
+                bounds["overflow"].get<bool>();
+        }
+    }
+
+    void parseBehavior(
+        const nlohmann::json& object,
+        RuntimeObject& runtimeObject
+    )
+    {
+        if (!object.contains("behavior"))
+        {
+            return;
+        }
+
+        const auto& behavior = object["behavior"];
+
+        if (!behavior.contains("scripts"))
+        {
+            return;
+        }
+
+        for (const auto& script : behavior["scripts"])
+        {
+            runtimeObject.scripts.push_back(
+                script.get<std::string>()
             );
+        }
+    }
 
-        nlohmann::json base;
-
-        if (!loadJson(basePath, base))
+    void parseCollision(
+        const nlohmann::json& object,
+        RuntimeObject& runtimeObject
+    )
+    {
+        if (!object.contains("collision"))
         {
-            return object;
+            return;
         }
 
-        nlohmann::json override =
-            object;
+        const auto& collision = object["collision"];
 
-        override.erase("like");
+        if (collision.contains("type"))
+        {
+            runtimeObject.collisionType =
+                collision["type"].get<std::string>();
+        }
 
-        mergeJson(base, override);
+        if (collision.contains("radius"))
+        {
+            runtimeObject.collisionRadius =
+                collision["radius"].get<float>();
+        }
 
-        return base;
+        if (
+            runtimeObject.collisionType == "circle" &&
+            runtimeObject.collisionRadius <= 0.0f
+            )
+        {
+            runtimeObject.collisionRadius =
+                std::max(
+                    runtimeObject.size.x,
+                    runtimeObject.size.y
+                ) / 2.0f;
+        }
+    }
+
+    void parseSpawns(
+        const nlohmann::json& object,
+        const std::filesystem::path& sourceFile,
+        RuntimeObject& runtimeObject
+    )
+    {
+        if (!object.contains("spawns") || !object["spawns"].is_object())
+        {
+            return;
+        }
+
+        const auto& spawns = object["spawns"];
+
+        for (auto it = spawns.begin(); it != spawns.end(); ++it)
+        {
+            const auto& spawnData = it.value();
+
+            if (!spawnData.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid spawn '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            if (!spawnData.contains("prefab") || !spawnData["prefab"].is_string())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid spawn '" + it.key() + "': missing prefab"
+                );
+
+                continue;
+            }
+
+            SpawnDefinition spawn;
+
+            spawn.prefab =
+                spawnData["prefab"].get<std::string>();
+
+            spawn.basePath =
+                sourceFile.parent_path().generic_string();
+
+            spawn.offset = Vector2{ 0.0f, 0.0f };
+            spawn.hasOffset = false;
+
+            if (spawnData.contains("offset") && spawnData["offset"].is_object())
+            {
+                spawn.hasOffset = true;
+
+                spawn.offset.x =
+                    spawnData["offset"].value("x", 0.0f);
+
+                spawn.offset.y =
+                    spawnData["offset"].value("y", 0.0f);
+            }
+
+            runtimeObject.spawns[it.key()] = spawn;
+        }
     }
 
     RuntimeObject parseRuntimeObject(
@@ -254,97 +470,37 @@ namespace
                 object["__sourceFile"].get<std::string>();
         }
 
-        float x = 0.0f;
-        float y = 0.0f;
+        const bool objectHasShape =
+            hasShape(object);
 
-        const bool hasOrigin =
+        const bool objectHasSize =
+            hasRootSize(object);
+
+        const bool objectHasOrigin =
             object.contains("origin");
 
-        if (hasOrigin)
-        {
-            x =object["origin"]["x"].get<float>();
-            y =object["origin"]["y"].get<float>();
-        }
+        const Vector2 origin =
+            parseOrigin(object);
 
-        std::string shapeType = "block";
-        float width = 0.0f;
-        float height = 0.0f;
-
-        const bool hasShape =
-            object.contains("shape");
-
-        const bool hasSize =
-            object.contains("size");
-
-        if (hasShape)
-        {
-            const auto& shape = object["shape"];
-
-            shapeType = shape.value("type", "block");
-
-            if (shape.contains("size"))
-            {
-                width =
-                    shape["size"].value("width", 0.0f);
-
-                height =
-                    shape["size"].value("height", 0.0f);
-            }
-        }
-        else if (hasSize)
-        {
-            width =
-                object["size"].value("width", 0.0f);
-
-            height =
-                object["size"].value("height", 0.0f);
-        }
-
-        Color color = WHITE;
-
-        if (object.contains("shape"))
-        {
-            const auto& shape = object["shape"];
-
-            if (shape.contains("color"))
-            {
-                color = parseColor(
-                    shape["color"].get<std::string>()
-                );
-            }
-        }
+        const Vector2 size =
+            parseSize(object);
 
         RuntimeObject runtimeObject(
             name,
-            Vector2{ x, y },
-            Vector2{ width, height },
-            color
+            origin,
+            size,
+            WHITE
         );
 
-        runtimeObject.hasOrigin = hasOrigin;
+        runtimeObject.hasOrigin =
+            objectHasOrigin;
 
-        runtimeObject.shapeType = shapeType;
-
-        if (!hasShape && !hasSize)
+        if (!objectHasShape && !objectHasSize)
         {
             runtimeObject.visible = false;
         }
 
-        if (hasShape && object["shape"].contains("points"))
-        {
-            const auto& points =
-                object["shape"]["points"];
-
-            for (const auto& point : points)
-            {
-                runtimeObject.points.push_back(
-                    Vector2{
-                        point.value("x", 0.0f),
-                        point.value("y", 0.0f)
-                    }
-                );
-            }
-        }
+        parseShape(object, runtimeObject);
 
         if (object.contains("speed"))
         {
@@ -361,52 +517,6 @@ namespace
                 object["angle"].get<float>();
         }
 
-        if (object.contains("motion"))
-        {
-            const auto& motion = object["motion"];
-
-            if (motion.contains("rotationSpeed"))
-            {
-                runtimeObject.rotationSpeed =
-                    motion["rotationSpeed"].get<float>();
-            }
-
-            if (motion.contains("acceleration"))
-            {
-                runtimeObject.acceleration =
-                    motion["acceleration"].get<float>();
-            }
-
-            if (motion.contains("inertia"))
-            {
-                runtimeObject.inertia =
-                    motion["inertia"].get<float>();
-            }
-
-            if (motion.contains("maxSpeed"))
-            {
-                runtimeObject.maxSpeed =
-                    motion["maxSpeed"].get<float>();
-            }
-        }
-
-        if (object.contains("bounds"))
-        {
-            const auto& bounds = object["bounds"];
-
-            if (bounds.contains("mode"))
-            {
-                runtimeObject.boundsMode =
-                    bounds["mode"].get<std::string>();
-            }
-
-            if (bounds.contains("overflow"))
-            {
-                runtimeObject.boundsOverflow =
-                    bounds["overflow"].get<bool>();
-            }
-        }
-
         if (object.contains("group"))
         {
             runtimeObject.group =
@@ -419,84 +529,11 @@ namespace
                 object["visible"].get<bool>();
         }
 
-        if (object.contains("behavior"))
-        {
-            const auto& behavior = object["behavior"];
-
-            if (behavior.contains("scripts"))
-            {
-                for (const auto& script : behavior["scripts"])
-                {
-                    runtimeObject.scripts.push_back(
-                        script.get<std::string>()
-                    );
-                }
-            }
-        }
-
-        if (object.contains("collision"))
-        {
-            const auto& collision =
-                object["collision"];
-
-            if (collision.contains("type"))
-            {
-                runtimeObject.collisionType =
-                    collision["type"].get<std::string>();
-            }
-
-            if (collision.contains("radius"))
-            {
-                runtimeObject.collisionRadius =
-                    collision["radius"].get<float>();
-            }
-        }
-
-        if (
-            runtimeObject.collisionType == "circle" &&
-            runtimeObject.collisionRadius <= 0.0f
-            )
-        {
-            runtimeObject.collisionRadius =
-                std::max(
-                    runtimeObject.size.x,
-                    runtimeObject.size.y
-                ) / 2.0f;
-        }
-
-        if (object.contains("spawns"))
-        {
-            const auto& spawns = object["spawns"];
-
-            for (auto it = spawns.begin(); it != spawns.end(); ++it)
-            {
-                SpawnDefinition spawn;
-
-                const auto& spawnData = it.value();
-
-                spawn.prefab =
-                    spawnData["prefab"].get<std::string>();
-
-                spawn.basePath =
-                    sourceFile.parent_path().generic_string();
-
-                spawn.offset = Vector2{ 0.0f, 0.0f };
-                spawn.hasOffset = false;
-
-                if (spawnData.contains("offset"))
-                {
-                    spawn.hasOffset = true;
-
-                    spawn.offset.x =
-                        spawnData["offset"].value("x", 0.0f);
-
-                    spawn.offset.y =
-                        spawnData["offset"].value("y", 0.0f);
-                }
-
-                runtimeObject.spawns[it.key()] = spawn;
-            }
-        }
+        parseMotion(object, runtimeObject);
+        parseBounds(object, runtimeObject);
+        parseBehavior(object, runtimeObject);
+        parseCollision(object, runtimeObject);
+        parseSpawns(object, sourceFile, runtimeObject);
 
         return runtimeObject;
     }
@@ -514,7 +551,7 @@ namespace
         }
 
         const bool isRuntimeObject =
-            data.contains("shape") ||
+            hasShape(data) ||
             data.contains("behavior") ||
             data.contains("spawns") ||
             data.contains("collision");
@@ -579,7 +616,9 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
     return objects;
 }
 
-GameConfig JsonLoader::loadGameConfig(const std::string& path)
+GameConfig JsonLoader::loadGameConfig(
+    const std::string& path
+)
 {
     GameConfig config;
 
@@ -592,42 +631,50 @@ GameConfig JsonLoader::loadGameConfig(const std::string& path)
 
     if (data.contains("name"))
     {
-        config.name = data["name"].get<std::string>();
+        config.name =
+            data["name"].get<std::string>();
     }
 
     if (data.contains("description"))
     {
-        config.description = data["description"].get<std::string>();
+        config.description =
+            data["description"].get<std::string>();
     }
 
     if (data.contains("screen"))
     {
-        const auto& screen = data["screen"];
+        const auto& screen =
+            data["screen"];
 
         if (screen.contains("title"))
         {
-            config.screenTitle = screen["title"].get<std::string>();
+            config.screenTitle =
+                screen["title"].get<std::string>();
         }
 
         if (screen.contains("width"))
         {
-            config.screenWidth = screen["width"].get<int>();
+            config.screenWidth =
+                screen["width"].get<int>();
         }
 
         if (screen.contains("height"))
         {
-            config.screenHeight = screen["height"].get<int>();
+            config.screenHeight =
+                screen["height"].get<int>();
         }
     }
 
     if (data.contains("scale"))
     {
-        config.scale = data["scale"].get<int>();
+        config.scale =
+            data["scale"].get<int>();
     }
 
     if (data.contains("behavior"))
     {
-        const auto& behavior = data["behavior"];
+        const auto& behavior =
+            data["behavior"];
 
         if (behavior.contains("scripts"))
         {

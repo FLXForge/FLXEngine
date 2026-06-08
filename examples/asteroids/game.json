@@ -1,5 +1,5 @@
 {
-  "$schema": "../../tools/schemas/main.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
   "name": "Asteroids",
   "description": "Example of more famous game",
 
@@ -10,7 +10,7 @@
   },
   "scale": 3,
 
-  "children": ["space/level"],
+  "children": [ "space/level" ],
 
   "behavior": {
     "scripts": [ "scripts/game" ]

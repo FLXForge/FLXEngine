@@ -54,7 +54,9 @@ public:
     bool hasOrigin = false;
 
     Color color;
+    std::string shapeMode;
 
+    float radius;
     float speed;
     float angle;
     float originSpeed;

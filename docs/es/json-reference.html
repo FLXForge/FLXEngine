@@ -54,7 +54,7 @@
             <div class="code-card">
                 <div class="code-header">world.json</div>
 <pre><code>{
-    "$schema": "tools/schemas/main.schema.json",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
     "name": "Main",
     "description": "This is a description.",
 
@@ -203,7 +203,7 @@
             <div class="code-card">
                 <div class="code-header">tofu.json</div>
 <pre><code>{
-    "$schema": "tools/schemas/node.schema.json",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
     "name": "Level",
     "description" : "This is a description.",
 
@@ -250,7 +250,7 @@
             <div class="code-card">
                 <div class="code-header">tofu.json</div>
 <pre><code>{
-    "$schema": "../tools/schemas/drawable.schema.json",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
     "name": "Tofu",
 
     "origin": {
@@ -260,7 +260,7 @@
 
     "shape": {
         "type": "triangle",
-        "color": "WHITE",
+        "color": "white",
         "size": {
             "width": 18,
             "height": 24
@@ -350,7 +350,8 @@
                 <div class="code-header">shape</div>
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "WHITE",
+    "mode": "fill",
+    "color": "white",
     "size": {
         "width": 18,
         "height": 24
@@ -367,10 +368,18 @@
                     <ul>
                         <li><code>block</code>: bloque sólido por defecto. No aplica mecánicas de rotación.</li>
                         <li><code>rectangle</code>: rectángulo con soporte para rotación y movimiento orientado.</li>
-                        <li><code>triangle</code>: triángulo sin relleno.</li>
+                        <li><code>triangle</code>: triángulo con soporte para rotación y movimiento orientado.</li>
+                        <li><code>circle</code>: circulo con soporte para rotación y movimiento orientado.</li>
                         <li><code>polygon</code>: polígono definido mediante una lista de puntos.</li>
                         <li><code>line</code>: línea definida entre dos puntos.</li>
                         <li><code>text</code>: texto renderizable.</li>
+                    </ul>
+                </li>
+                <li>
+                    <code>mode</code>: modo en el que se dibujará la forma. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>fill</code>: se dibuja completa y rellena del color especificado.</li>
+                        <li><code>outline</code>: se dibuja el contorno del color especificado </li>
                     </ul>
                 </li>
                 <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
@@ -410,7 +419,7 @@
                 <div class="code-header">polygon</div>
 <pre><code>"shape": {
     "type": "polygon",
-    "color": "WHITE",
+    "color": "white",
 
     "points": [
         { "x": 0, "y": -16 },

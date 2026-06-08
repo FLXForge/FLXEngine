@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../tools/schemas/drawable.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
   "name": "Ship",
 
   "origin": {
@@ -9,7 +9,8 @@
 
   "shape": {
     "type": "triangle",
-    "color": "WHITE",
+    "mode": "outline",
+    "color": "white",
     "size": {
       "width": 18,
       "height": 24

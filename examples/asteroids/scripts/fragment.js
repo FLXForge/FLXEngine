@@ -1,4 +1,4 @@
-/// <reference path="../../../../tools/scripts/flx.d.ts" />
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 const TIME_TO_DIE = 1.5;
  

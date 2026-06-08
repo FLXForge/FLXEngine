@@ -1,10 +1,11 @@
 {
-  "$schema": "../../../../tools/schemas/drawable.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
   "name": "AsteroidC",
 
   "shape": {
     "type": "polygon",
-    "color": "ORANGE",
+    "mode": "outline",
+    "color": "orange",
 
     "points": [
       { "x": 0, "y": -20 },

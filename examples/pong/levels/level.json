@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../tools/schemas/node.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
   "name": "Level",
   "children": [
     {
@@ -12,7 +12,7 @@
         "width": 5,
         "height": 30
       },
-      "color": "WHITE",
+      "color": "white",
       "speed": 120,
       "group": "paddle",
       "collision": {
@@ -32,7 +32,7 @@
         "width": 5,
         "height": 30
       },
-      "color": "WHITE",
+      "color": "white",
       "speed": 55,
       "group": "paddle",
       "collision": {
@@ -52,7 +52,7 @@
         "width": 5,
         "height": 5
       },
-      "color": "WHITE",
+      "color": "white",
       "speed": 90,
       "angle": 45,
       "group": "ball",
@@ -107,7 +107,7 @@
         "width": 320,
         "height": 10
       },
-      "color": "WHITE",
+      "color": "white",
       "group": "wall",
       "collision": {
         "type": "box"
@@ -124,7 +124,7 @@
         "width": 320,
         "height": 10
       },
-      "color": "WHITE",
+      "color": "white",
       "group": "wall",
       "collision": {
         "type": "box"

@@ -92,11 +92,10 @@ screen.scale=3
             <div class="code-card">
                 <div class="code-header">world.json</div>
 <pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-    "name": "World",
-    "description": "This is the world where Tofu lives.",
-
-    "children": [ "tofu" ]
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "children": {
+        "tofu": "tofu"
+    }
 }
 </code></pre>
             </div>
@@ -122,8 +121,7 @@ screen.scale=3
             <div class="code-card">
                 <div class="code-header">tofu.json</div>
 <pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
-    "name": "Tofu",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
     "origin": {
         "x": 157,

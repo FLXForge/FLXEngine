@@ -1,7 +1,7 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    DeepSpace periodically spawns asteroids.
+    DeepSpace periodically creates asteroids.
     Each spawner keeps its own timer and local asteroid limit.
 */
 

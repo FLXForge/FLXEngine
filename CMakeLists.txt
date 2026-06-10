@@ -49,6 +49,9 @@ add_executable(FlxEngine
 
     engine/runtime/RuntimeObject.h
     engine/runtime/RuntimeObject.cpp 
+    engine/runtime/ObjectDefinition.h
+    engine/runtime/RuntimeObjectBuilder.h
+    engine/runtime/RuntimeObjectBuilder.cpp
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 

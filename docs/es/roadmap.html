@@ -152,16 +152,16 @@
                     <code>probability(chance, base)</code>.
                 </li>
 
-                <li>Spawns declarativos definidos directamente en JSON.</li>
+                <li>Hijos manuales declarados directamente en JSON.</li>
 
-                <li>Prefabs cargados y cacheados sin instanciación inmediata.</li>
+                <li>Definiciones reutilizables cargadas sin instanciación inmediata.</li>
 
                 <li>
                     Instanciación runtime mediante
                     <code>spawn(object, "laser")</code>.
                 </li>
 
-                <li>Creación dinámica de objetos desde prefabs.</li>
+                <li>Creación dinámica de objetos desde hijos manuales.</li>
 
                 <li>Spawn queue segura mediante <code>pendingObjects</code> y <code>flushSpawnQueue()</code>.</li>
 
@@ -169,13 +169,12 @@
 
                 <li>Offsets locales rotados según el ángulo del objeto.</li>
 
-                <li>Carga y caché de scripts de prefab mediante <code>ScriptEngine</code>.</li>
+                <li>Carga y caché de scripts mediante <code>ScriptEngine</code>.</li>
 
                 <li>Sistema de disparo funcional desde la nave.</li>
 
                 <li>
                     Lifecycle completo:
-                    <code>start()</code>,
                     <code>born()</code>,
                     <code>action()</code>,
                     <code>motion()</code>,
@@ -209,7 +208,7 @@
 
                 <li>
                     Reutilización de configuraciones mediante
-                    prefabs y definiciones derivadas.
+                    definiciones reutilizables y derivadas.
                 </li>
 
                 <li>
@@ -400,20 +399,21 @@
 
             <ul>
                 <li>
-                    Definir callbacks de runtime para scripts de juego.
+                    Evaluar un ciclo dedicado para scripts de programa a nivel de juego.
                 </li>
 
                 <li>
                     Evaluar y formalizar:
                     <code>start()</code>,
-                    <code>update()</code>
+                    <code>update()</code>,
+                    <code>end()</code>
                     y
                     <code>draw()</code>.
                 </li>
 
                 <li>
-                    Ejecutar <code>draw()</code>
-                    para scripts de Principal.
+                    Definir si los scripts de programa se declaran en el manifiesto
+                    <code>.flx</code> o mediante un futuro contrato runtime del root.
                 </li>
 
             </ul>
@@ -435,7 +435,7 @@
                 <li>
                     Centralizar completamente la normalización de rutas
                     para evitar lógica duplicada entre recursos,
-                    prefabs y scripts.
+                    definiciones de objeto y scripts.
                 </li>
 
                 <li>
@@ -451,9 +451,13 @@
                 </li>
 
                 <li>
-                    Añadir opciones de depuración mediante JSON
-                    o mediante el fichero <code>.flx</code>.
-                    Actualmente son flags internos del motor.
+                    Evaluar nuevas opciones de manifiesto <code>debug.*</code>:
+                    <code>debug.bounds</code>,
+                    <code>debug.origins</code>,
+                    <code>debug.lifecycle</code>,
+                    <code>debug.scripts</code>,
+                    <code>debug.fps</code>
+                    y <code>debug.metrics</code>.
                 </li>
 
             </ul>
@@ -583,7 +587,7 @@
 
                 <li>
                     Explorar una herramienta visual
-                    para composición JSON y prefabs.
+                    para composición JSON y definiciones reutilizables.
                 </li>
 
             </ul>

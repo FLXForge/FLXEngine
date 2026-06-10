@@ -19,4 +19,5 @@ struct FlxContext
     int screenScale = 3;
 
     bool debugCollisions = false;
+    bool debugLogs = false;
 };

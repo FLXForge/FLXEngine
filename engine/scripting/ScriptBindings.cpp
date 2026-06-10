@@ -22,6 +22,8 @@ static JSValue consoleLog(
     JSValueConst* argv
 )
 {
+    std::string message;
+
     for (int i = 0; i < argc; ++i)
     {
         const char* str =
@@ -29,15 +31,17 @@ static JSValue consoleLog(
 
         if (str)
         {
-            Logger::debug(str);
+            if (!message.empty())
+            {
+                message += " ";
+            }
+
+            message += str;
             JS_FreeCString(context, str);
         }
-
-        if (i < argc - 1)
-        {
-            Logger::debug(" ");
-        }
     }
+
+    Logger::info("script", message);
 
     return JS_UNDEFINED;
 }
@@ -796,13 +800,13 @@ static JSValue jsSpawn(
     }
 
     auto it =
-        source->spawns.find(spawnName);
+        source->children.find(spawnName);
 
-    if (it == source->spawns.end())
+    if (it == source->children.end())
     {
         Logger::warning(
             "spawn",
-            "Spawn not found: " + std::string(spawnName) +
+            "Manual child not found: " + std::string(spawnName) +
             " in " + std::string(objectId)
         );
 
@@ -813,17 +817,14 @@ static JSValue jsSpawn(
         return JS_UNDEFINED;
     }
 
-    const SpawnDefinition& spawnDefinition =
+    const ObjectDefinition& definition =
         it->second;
 
-    RuntimeObject* prefab =
-        activeScriptEngine->findPrefabByName(spawnDefinition.prefab);
-
-    if (prefab == nullptr)
+    if (definition.spawnMode != "manual")
     {
         Logger::warning(
             "spawn",
-            "Prefab not found: " + spawnDefinition.prefab
+            "Child is not manual: " + std::string(spawnName)
         );
 
         JS_FreeCString(context, spawnName);
@@ -833,15 +834,14 @@ static JSValue jsSpawn(
         return JS_UNDEFINED;
     }
 
-    Logger::info(
+    Logger::debug(
         "spawn",
-        "Prefab ready: " + prefab->name
+        "Manual child ready: " + definition.id
     );
 
     activeScriptEngine->spawnObject(
         *source,
-        spawnDefinition,
-        *prefab
+        definition
     );
 
     JS_FreeCString(context, spawnName);

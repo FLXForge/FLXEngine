@@ -1,10 +1,11 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Asteroids",
-
-  "children": [ "space/level" ],
-
-  "behavior": {
-    "scripts": [ "scripts/game" ]
-  }
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "behavior":  {
+                     "scripts":  [
+                                     "scripts/game"
+                                 ]
+                 },
+    "children":  {
+                     "level":  "space/level"
+                 }
 }

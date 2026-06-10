@@ -184,7 +184,7 @@ screen.scale=3
             </p>
 
             <p>
-                Si define <code>behavior</code>, <code>spawns</code> o <code>collision</code>,
+                Si define <code>behavior</code>, <code>children</code> o <code>collision</code>,
                 puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
                 o controlador de juego.
             </p>
@@ -202,34 +202,29 @@ screen.scale=3
 
             <hr />
 
-            <h2>Children y Spawns</h2>
+            <h2>Children y momento de spawn</h2>
 
             <p>
-                FLX distingue entre objetos que existen al iniciar el runtime
-                y objetos que pueden aparecer posteriormente.
+                FLX utiliza <code>children</code> para declarar qué puede existir bajo un objeto.
+                El valor <code>spawn</code> del hijo define cuándo entra en el runtime.
             </p>
 
             <ul>
                 <li>
-                    <code>children</code>:
-                    objetos que entran al mundo al cargarse la escena.
+                    <code>spawn: "auto"</code>:
+                    el hijo se instancia cuando su padre entra en el mundo.
                 </li>
 
                 <li>
-                    <code>spawns</code>:
-                    definiciones reutilizables utilizadas para crear nuevas instancias durante la ejecución.
+                    <code>spawn: "manual"</code>:
+                    el hijo queda registrado y puede crearse después con
+                    <code>spawn(parent, "child")</code>.
                 </li>
             </ul>
 
             <p>
-                Esta separación permite mantener una estructura clara
-                entre el contenido inicial y el contenido dinámico.
-            </p>
-
-            <p>
-                Junto con <code>like</code>,
-                estos mecanismos constituyen la base de cómo FLX construye,
-                reutiliza e instancia objetos en tiempo de ejecución.
+                Junto con <code>like</code>, esto mantiene composición,
+                reutilización y creación dinámica bajo una sola propiedad JSON.
             </p>
 
             <hr />
@@ -278,14 +273,16 @@ screen.scale=3
             </table>
 
             <p>
-                Los colores pueden declararse directamente desde JSON.
+                Los colores pueden declararse directamente desde JSON usando
+                nombres de color de raylib o valores hexadecimales en formato
+                <code>#rgb</code> y <code>#rrggbb</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">shape.json</div>
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "white"
+    "color": "#2f3a44"
 }
 </code></pre>
             </div>

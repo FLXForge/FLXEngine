@@ -1,34 +1,29 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
-  "name": "Laser",
-
-  "shape": {
-    "type": "line",
-    "color": "red",
-    "size": {
-      "width": 1,
-      "height": 12
-    }
-  },
-
-  "motion": {
-    "inherit": "creation",
-    "maxSpeed": 300
-  },
-
-  "bounds": {
-    "mode": "wrap",
-    "overflow": false
-  },
-
-  "group": "laser",
-
-  "collision": {
-    "type": "circle",
-    "radius": 2
-  },
-
-  "behavior": {
-    "scripts": [ "scripts/laser" ]
-  }
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "shape":  {
+                  "type":  "line",
+                  "color":  "red",
+                  "size":  {
+                               "width":  1,
+                               "height":  12
+                           }
+              },
+    "motion":  {
+                   "inherit":  "creation",
+                   "maxSpeed":  300
+               },
+    "bounds":  {
+                   "mode":  "wrap",
+                   "overflow":  false
+               },
+    "group":  "laser",
+    "collision":  {
+                      "type":  "circle",
+                      "radius":  2
+                  },
+    "behavior":  {
+                     "scripts":  [
+                                     "scripts/laser"
+                                 ]
+                 }
 }

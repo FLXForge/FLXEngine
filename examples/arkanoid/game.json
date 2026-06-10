@@ -1,4 +1,3 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Arkanoid"
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json"
 }

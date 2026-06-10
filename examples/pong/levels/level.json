@@ -1,137 +1,139 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Level",
-  "children": [
-    {
-      "name": "player",
-      "origin": {
-        "x": 16,
-        "y": 90
-      },
-      "size": {
-        "width": 5,
-        "height": 30
-      },
-      "color": "white",
-      "speed": 120,
-      "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
-      "behavior": {
-        "scripts": [ "scripts/player" ]
-      }
-    },
-    {
-      "name": "enemy",
-      "origin": {
-        "x": 299,
-        "y": 90
-      },
-      "size": {
-        "width": 5,
-        "height": 30
-      },
-      "color": "white",
-      "speed": 55,
-      "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
-      "behavior": {
-        "scripts": [ "scripts/enemy" ]
-      }
-    },
-    {
-      "name": "ball",
-      "origin": {
-        "x": 157,
-        "y": 87
-      },
-      "size": {
-        "width": 5,
-        "height": 5
-      },
-      "color": "white",
-      "speed": 90,
-      "angle": 45,
-      "group": "ball",
-      "collision": {
-        "type": "box",
-        "active": true,
-        "with": [ "wall", "goal", "paddle" ]
-      },
-      "behavior": {
-        "scripts": [ "scripts/ball" ]
-      }
-    },
-    {
-      "name": "left_goal",
-      "origin": {
-        "x": -10,
-        "y": 0
-      },
-      "size": {
-        "width": 10,
-        "height": 180
-      },
-      "color": "BLACK",
-      "group": "goal",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
-    },
-    {
-      "name": "right_goal",
-      "origin": {
-        "x": 320,
-        "y": 0
-      },
-      "size": {
-        "width": 10,
-        "height": 180
-      },
-      "color": "BLACK",
-      "group": "goal",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
-    },
-    {
-      "name": "top_wall",
-      "origin": {
-        "x": 0,
-        "y": -10
-      },
-      "size": {
-        "width": 320,
-        "height": 10
-      },
-      "color": "white",
-      "group": "wall",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
-    },
-    {
-      "name": "bottom_wall",
-      "origin": {
-        "x": 0,
-        "y": 180
-      },
-      "size": {
-        "width": 320,
-        "height": 10
-      },
-      "color": "white",
-      "group": "wall",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
-    }
-  ]
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "children":  {
+                     "player":  {
+                                    "origin":  {
+                                                   "x":  16,
+                                                   "y":  90
+                                               },
+                                    "size":  {
+                                                 "width":  5,
+                                                 "height":  30
+                                             },
+                                    "color":  "white",
+                                    "speed":  120,
+                                    "group":  "paddle",
+                                    "collision":  {
+                                                      "type":  "box"
+                                                  },
+                                    "behavior":  {
+                                                     "scripts":  [
+                                                                     "scripts/player"
+                                                                 ]
+                                                 }
+                                },
+                     "enemy":  {
+                                   "origin":  {
+                                                  "x":  299,
+                                                  "y":  90
+                                              },
+                                   "size":  {
+                                                "width":  5,
+                                                "height":  30
+                                            },
+                                   "color":  "white",
+                                   "speed":  55,
+                                   "group":  "paddle",
+                                   "collision":  {
+                                                     "type":  "box"
+                                                 },
+                                   "behavior":  {
+                                                    "scripts":  [
+                                                                    "scripts/enemy"
+                                                                ]
+                                                }
+                               },
+                     "ball":  {
+                                  "origin":  {
+                                                 "x":  157,
+                                                 "y":  87
+                                             },
+                                  "size":  {
+                                               "width":  5,
+                                               "height":  5
+                                           },
+                                  "color":  "white",
+                                  "speed":  90,
+                                  "angle":  45,
+                                  "group":  "ball",
+                                  "collision":  {
+                                                    "type":  "box",
+                                                    "active":  true,
+                                                    "with":  [
+                                                                 "wall",
+                                                                 "goal",
+                                                                 "paddle"
+                                                             ]
+                                                },
+                                  "behavior":  {
+                                                   "scripts":  [
+                                                                   "scripts/ball"
+                                                               ]
+                                               }
+                              },
+                     "left_goal":  {
+                                       "origin":  {
+                                                      "x":  -10,
+                                                      "y":  0
+                                                  },
+                                       "size":  {
+                                                    "width":  10,
+                                                    "height":  180
+                                                },
+                                       "color":  "BLACK",
+                                       "group":  "goal",
+                                       "collision":  {
+                                                         "type":  "box"
+                                                     },
+                                       "visible":  false
+                                   },
+                     "right_goal":  {
+                                        "origin":  {
+                                                       "x":  320,
+                                                       "y":  0
+                                                   },
+                                        "size":  {
+                                                     "width":  10,
+                                                     "height":  180
+                                                 },
+                                        "color":  "BLACK",
+                                        "group":  "goal",
+                                        "collision":  {
+                                                          "type":  "box"
+                                                      },
+                                        "visible":  false
+                                    },
+                     "top_wall":  {
+                                      "origin":  {
+                                                     "x":  0,
+                                                     "y":  -10
+                                                 },
+                                      "size":  {
+                                                   "width":  320,
+                                                   "height":  10
+                                               },
+                                      "color":  "white",
+                                      "group":  "wall",
+                                      "collision":  {
+                                                        "type":  "box"
+                                                    },
+                                      "visible":  false
+                                  },
+                     "bottom_wall":  {
+                                         "origin":  {
+                                                        "x":  0,
+                                                        "y":  180
+                                                    },
+                                         "size":  {
+                                                      "width":  320,
+                                                      "height":  10
+                                                  },
+                                         "color":  "white",
+                                         "group":  "wall",
+                                         "collision":  {
+                                                           "type":  "box"
+                                                       },
+                                         "visible":  false
+                                     }
+                 }
 }

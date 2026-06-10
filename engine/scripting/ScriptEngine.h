@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../runtime/RuntimeObject.h"
+#include "../runtime/ObjectDefinition.h"
 #include "ScriptModule.h"
 
 #include <unordered_map>
@@ -48,28 +49,18 @@ public:
     using SpawnObjectFunction =
         std::function<void(
             RuntimeObject& source,
-            const SpawnDefinition& spawnDefinition,
-            const RuntimeObject& prefab
+            const ObjectDefinition& definition
             )>;
 
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
 
-    using FindPrefabFunction =
-        std::function<RuntimeObject* (const std::string&)>;
-
-    void setFindPrefabFunction(FindPrefabFunction function);
-    RuntimeObject* findPrefabByName(const std::string& name);
-
-    FindPrefabFunction findPrefab;
-
     void setSpawnObjectFunction(SpawnObjectFunction function);
 
     void spawnObject(
         RuntimeObject& source,
-        const SpawnDefinition& spawnDefinition,
-        const RuntimeObject& prefab
+        const ObjectDefinition& definition
     );
 
     void setFindObjectByIdFunction(
@@ -95,7 +86,7 @@ private:
         const std::string& function
     );
 private:
-    int screenScale = 1;
+    int screenScale = 0;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, double> globalState;

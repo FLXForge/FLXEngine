@@ -1,26 +1,23 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/drawable.schema.json",
-  "name": "AsteroidFragment",
-
-  "shape": {
-    "type": "line",
-    "color": "orange",
-    "size": {
-      "width": 1,
-      "height": 10
-    }
-  },
-
-  "collision": {
-    "type": "none"
-  },
-
-  "bounds": {
-    "mode": "wrap",
-    "overflow": false
-  },
-
-  "behavior": {
-    "scripts": [ "scripts/asteroid_fragment" ]
-  }
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "shape":  {
+                  "type":  "line",
+                  "color":  "orange",
+                  "size":  {
+                               "width":  1,
+                               "height":  10
+                           }
+              },
+    "collision":  {
+                      "type":  "none"
+                  },
+    "bounds":  {
+                   "mode":  "wrap",
+                   "overflow":  false
+               },
+    "behavior":  {
+                     "scripts":  [
+                                     "scripts/asteroid_fragment"
+                                 ]
+                 }
 }

@@ -1,6 +1,6 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Pong_Game",
-
-  "children": [ "levels/level" ]
+    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "children":  {
+                     "level":  "levels/level"
+                 }
 }

@@ -226,16 +226,16 @@
                     <code>probability(chance, base)</code>.
                 </li>
 
-                <li>Declarative spawns defined directly in JSON.</li>
+                <li>Manual children declared directly in JSON.</li>
 
-                <li>Prefabs loaded and cached without immediate instantiation.</li>
+                <li>Reusable object definitions loaded without immediate instantiation.</li>
 
                 <li>
                     Runtime instantiation through
                     <code>spawn(object, "laser")</code>.
                 </li>
 
-                <li>Dynamic object creation from prefabs.</li>
+                <li>Dynamic object creation from manual children.</li>
 
                 <li>Safe spawn queue through <code>pendingObjects</code> and <code>flushSpawnQueue()</code>.</li>
 
@@ -243,13 +243,12 @@
 
                 <li>Local offsets rotated according to object angle.</li>
 
-                <li>Prefab script loading and caching through <code>ScriptEngine</code>.</li>
+                <li>Script loading and caching through <code>ScriptEngine</code>.</li>
 
                 <li>Functional ship firing system.</li>
 
                 <li>
                     Complete lifecycle:
-                    <code>start()</code>,
                     <code>born()</code>,
                     <code>action()</code>,
                     <code>motion()</code>,
@@ -286,7 +285,7 @@
 
                 <li>
                     Configuration reuse through
-                    prefabs and derived definitions.
+                    reusable and derived definitions.
                 </li>
 
                 <li>
@@ -484,20 +483,21 @@
 
             <ul>
                 <li>
-                    Define runtime callbacks for game-level scripts.
+                    Evaluate a dedicated program script lifecycle for game-level scripts.
                 </li>
 
                 <li>
                     Evaluate and formalize:
                     <code>start()</code>,
-                    <code>update()</code>
+                    <code>update()</code>,
+                    <code>end()</code>
                     and
                     <code>draw()</code>.
                 </li>
 
                 <li>
-                    Execute <code>draw()</code>
-                    for Main scripts.
+                    Define whether program scripts are declared in the <code>.flx</code>
+                    manifest or through a future root-level runtime contract.
                 </li>
             </ul>
 
@@ -515,8 +515,7 @@
 
                 <li>
                     Fully centralize path normalization
-                    to avoid duplicated logic between resources,
-                    prefabs and scripts.
+                    and keep JSON/script resolution outside <code>Engine</code>.
                 </li>
 
                 <li>
@@ -531,8 +530,13 @@
                 </li>
 
                 <li>
-                    Add debug options through JSON or the <code>.flx</code> file.
-                    They are currently engine-level flags.
+                    Evaluate additional <code>debug.*</code> manifest options:
+                    <code>debug.bounds</code>,
+                    <code>debug.origins</code>,
+                    <code>debug.lifecycle</code>,
+                    <code>debug.scripts</code>,
+                    <code>debug.fps</code>
+                    and <code>debug.metrics</code>.
                 </li>
             </ul>
 
@@ -656,7 +660,7 @@
 
                 <li>
                     Explore a visual tool
-                    for JSON composition and prefabs.
+                    for JSON composition and reusable definitions.
                 </li>
             </ul>
 

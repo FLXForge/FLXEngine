@@ -1,6 +1,7 @@
 #include "Engine.h"
 #include "../runtime/RuntimeHelpers.h"
 #include "../runtime/RuntimeConstants.h"
+#include "../runtime/RuntimeObjectBuilder.h"
 #include "../loading/JsonLoader.h"
 #include "../project/FlxContextBuilder.h"
 #include "../scripting/ScriptEngine.h"
@@ -8,9 +9,9 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <raylib.h>
 #include <filesystem>
-#include <unordered_set>
 
 namespace
 {
@@ -72,15 +73,19 @@ void Engine::loadProject(const std::string& flxPath)
     context =
         FlxContextBuilder::build(flxPath);
 
+    Logger::setDebugEnabled(context.debugLogs);
+
     Logger::info(
         "project",
         "Loaded project: " + context.name
     );
 
-    projectBasePath = context.projectPath;
-
     std::string rootPath =
-        resolveJsonPath(projectBasePath, context.root);
+        JsonLoader::resolveProjectPath(
+            context.projectPath,
+            context.root,
+            ".json"
+        );
 
     Logger::info(
         "project",
@@ -89,16 +94,20 @@ void Engine::loadProject(const std::string& flxPath)
 
     objects.clear();
 
-    objects =
-        JsonLoader::loadObjects(rootPath);
+    rootDefinition =
+        JsonLoader::loadObjectDefinition(rootPath);
 
-    for (auto& object : objects)
-    {
-        object.runtimeId =
-            createRuntimeId(object.name);
-    }
+    RuntimeObject root =
+        createRuntimeObject(rootDefinition, "");
 
-    loadPrefabs();
+    objects.push_back(
+        std::move(root)
+    );
+
+    instantiateAutoChildren(
+        objects.front(),
+        objects
+    );
 
     scriptEngine.setScreenScale(context.screenScale);
 }
@@ -139,7 +148,7 @@ void Engine::flushSpawnQueue()
             std::move(object)
         );
 
-        Logger::info(
+        Logger::debug(
             "spawn",
             "Spawned instance"
         );
@@ -157,20 +166,6 @@ void Engine::configureScriptEngine()
         }
     );
 
-    scriptEngine.setFindPrefabFunction(
-        [this](const std::string& name) -> RuntimeObject*
-        {
-            auto it = prefabs.find(name);
-
-            if (it == prefabs.end())
-            {
-                return nullptr;
-            }
-
-            return &it->second;
-        }
-    );
-
     scriptEngine.setFindObjectByIdFunction(
         [this](const std::string& id)
         {
@@ -181,43 +176,28 @@ void Engine::configureScriptEngine()
     scriptEngine.setSpawnObjectFunction(
         [this](
             RuntimeObject& source,
-            const SpawnDefinition& spawnDefinition,
-            const RuntimeObject& prefab
+            const ObjectDefinition& definition
             )
         {
-            RuntimeObject instance = prefab;
-
-            instance.runtimeId =
-                createRuntimeId(instance.name);
-            instance.alive = true;
-            instance.deadCalled = false;
-            instance.local.clear();
-            instance.resolvedScriptPaths.clear();
+            RuntimeObject instance =
+                createRuntimeObject(
+                    definition,
+                    source.runtimeId
+                );
 
             const float radians =
                 source.angle * DEG2RAD;
 
             const float rotatedX =
-                spawnDefinition.offset.x * std::cos(radians) -
-                spawnDefinition.offset.y * std::sin(radians);
+                definition.offset.x * std::cos(radians) -
+                definition.offset.y * std::sin(radians);
 
             const float rotatedY =
-                spawnDefinition.offset.x * std::sin(radians) +
-                spawnDefinition.offset.y * std::cos(radians);
+                definition.offset.x * std::sin(radians) +
+                definition.offset.y * std::cos(radians);
 
-            if (spawnDefinition.hasOffset)
+            if (definition.hasOffset)
             {
-                const float radians =
-                    source.angle * DEG2RAD;
-
-                const float rotatedX =
-                    spawnDefinition.offset.x * std::cos(radians) -
-                    spawnDefinition.offset.y * std::sin(radians);
-
-                const float rotatedY =
-                    spawnDefinition.offset.x * std::sin(radians) +
-                    spawnDefinition.offset.y * std::cos(radians);
-
                 instance.position = Vector2{
                     source.position.x + rotatedX,
                     source.position.y + rotatedY
@@ -235,28 +215,31 @@ void Engine::configureScriptEngine()
                 instance.origin = instance.position;
             }
 
-            instance.angle = source.angle;
-
-            instance.origin =
-                instance.position;
-
             instance.angle =
                 source.angle;
 
-            for (const auto& script : instance.scripts)
-            {
-                const std::string scriptPath =
-                    resolveScriptPath(projectBasePath, script);
+            loadScriptsForObject(instance);
 
-                instance.resolvedScriptPaths.push_back(scriptPath);
-
-                scriptEngine.loadScript(scriptPath);
-
-            }
+            const size_t firstQueuedIndex =
+                pendingObjects.size();
 
             pendingObjects.push_back(instance);
 
-            Logger::info(
+            instantiateAutoChildren(
+                pendingObjects.back(),
+                pendingObjects
+            );
+
+            for (
+                size_t i = firstQueuedIndex + 1;
+                i < pendingObjects.size();
+                ++i
+                )
+            {
+                loadScriptsForObject(pendingObjects[i]);
+            }
+
+            Logger::debug(
                 "spawn",
                 "Queued instance: " + instance.name
             );
@@ -281,85 +264,120 @@ RuntimeObject* Engine::findByRuntimeId(
 
 void Engine::loadScripts()
 {
-    std::unordered_set<std::string> startedScripts;
-
     for (auto& object : objects)
     {
-        for (const auto& script : object.scripts)
-        {
-            const std::string scriptPath =
-                resolveScriptPath(projectBasePath, script);
-
-            object.resolvedScriptPaths.push_back(scriptPath);
-
-            scriptEngine.loadScript(scriptPath);
-
-            if (startedScripts.insert(scriptPath).second)
-            {
-                scriptEngine.callScriptFunction(scriptPath, "start");
-            }
-        }
+        loadScriptsForObject(object);
 
         bornObject(object);
     }
 }
 
-void Engine::loadPrefabs()
+void Engine::loadScriptsForObject(RuntimeObject& object)
 {
-    for (const auto& object : objects)
+    object.resolvedScriptPaths.clear();
+
+    for (const auto& script : object.scripts)
     {
-        for (const auto& pair : object.spawns)
-        {
-            loadPrefabRecursive(pair.second);
-        }
+        const std::string scriptPath =
+            JsonLoader::resolveReferencedPath(
+                object.sourcePath,
+                script,
+                ".js"
+            );
+
+        object.resolvedScriptPaths.push_back(scriptPath);
+
+        scriptEngine.loadScript(scriptPath);
     }
 }
 
-void Engine::loadPrefabRecursive(
-    const SpawnDefinition& spawnDefinition
+RuntimeObject Engine::createRuntimeObject(
+    const ObjectDefinition& definition,
+    const std::string& parentId
 )
 {
-    if (prefabs.contains(spawnDefinition.prefab))
-    {
-        return;
-    }
+    return RuntimeObjectBuilder::build(
+        definition,
+        createRuntimeId(definition.id),
+        parentId
+    );
+}
 
-    const std::string prefabPath =
-        resolveJsonPath(
-            spawnDefinition.basePath,
-            spawnDefinition.prefab
+void Engine::instantiateAutoChildren(
+    const RuntimeObject& parent,
+    std::vector<RuntimeObject>& target
+)
+{
+    const auto children =
+        parent.children;
+
+    const std::string parentRuntimeId =
+        parent.runtimeId;
+
+    const Vector2 parentPosition =
+        parent.position;
+
+    const float parentAngle =
+        parent.angle;
+
+    for (const auto& pair : children)
+    {
+        const ObjectDefinition& definition =
+            pair.second;
+
+        if (definition.spawnMode != "auto")
+        {
+            continue;
+        }
+
+        RuntimeObject child =
+            createRuntimeObject(
+                definition,
+                parentRuntimeId
+            );
+
+        if (definition.hasOffset)
+        {
+            const float radians =
+                parentAngle * DEG2RAD;
+
+            const float rotatedX =
+                definition.offset.x * std::cos(radians) -
+                definition.offset.y * std::sin(radians);
+
+            const float rotatedY =
+                definition.offset.x * std::sin(radians) +
+                definition.offset.y * std::cos(radians);
+
+            child.position = Vector2{
+                parentPosition.x + rotatedX,
+                parentPosition.y + rotatedY
+            };
+
+            child.origin = child.position;
+        }
+        else if (!child.hasOrigin)
+        {
+            child.position = parentPosition;
+            child.origin = child.position;
+        }
+
+        std::vector<RuntimeObject> descendants;
+
+        instantiateAutoChildren(
+            child,
+            descendants
         );
 
-    std::vector<RuntimeObject> prefabObjects =
-        JsonLoader::loadObjects(prefabPath);
-
-    if (prefabObjects.empty())
-    {
-        Logger::warning(
-            "project",
-            "Prefab could not be loaded: " +
-            spawnDefinition.prefab
+        target.push_back(
+            std::move(child)
         );
 
-        return;
-    }
-
-    RuntimeObject prefab =
-        prefabObjects.front();
-
-    prefabs.emplace(
-        spawnDefinition.prefab,
-        prefab
-    );
-
-    Logger::info(
-        "project",
-        "Loaded prefab: " + spawnDefinition.prefab
-    );
-
-    for (const auto& pair : prefab.spawns)
-    {
-        loadPrefabRecursive(pair.second);
+        target.insert(
+            target.end(),
+            std::make_move_iterator(descendants.begin()),
+            std::make_move_iterator(descendants.end())
+        );
     }
 }
 
@@ -368,36 +386,6 @@ std::string Engine::createRuntimeId(
 )
 {
     return name + "_" + std::to_string(nextRuntimeId++);
-}
-
-std::string Engine::resolveJsonPath(
-    const std::string& basePath,
-    const std::string& file
-) const
-{
-    std::string resolved = file;
-
-    if (resolved.find(".json") == std::string::npos)
-    {
-        resolved += ".json";
-    }
-
-    return std::filesystem::path(basePath + "/" + resolved).generic_string();
-}
-
-std::string Engine::resolveScriptPath(
-    const std::string& basePath,
-    const std::string& file
-) const
-{
-    std::string resolved = file;
-
-    if (resolved.find(".js") == std::string::npos)
-    {
-        resolved += ".js";
-    }
-
-    return std::filesystem::path(basePath + "/" + resolved).generic_string();
 }
 
 void Engine::update()

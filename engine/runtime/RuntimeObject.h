@@ -1,17 +1,11 @@
 #pragma once
 
+#include "ObjectDefinition.h"
+
 #include <string>
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
-
-struct SpawnDefinition
-{
-    std::string prefab;
-    std::string basePath;
-    Vector2 offset;
-    bool hasOffset = false;
-};
 
 class RuntimeObject
 {
@@ -25,7 +19,7 @@ public:
 
     std::unordered_map<std::string, double> local;
 
-    std::unordered_map<std::string, SpawnDefinition> spawns;
+    std::unordered_map<std::string, ObjectDefinition> children;
 
     void draw(
         int scale,
@@ -40,6 +34,7 @@ public:
 public:
     std::string name;
     std::string runtimeId;
+    std::string parentId;
     std::string sourcePath;
     std::string group;
 

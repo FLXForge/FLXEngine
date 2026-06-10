@@ -8,4 +8,5 @@ screen.width=320
 screen.height=180
 screen.scale=3
 debug.collisions=false
+debug.logs=false
 notes=First FLX example

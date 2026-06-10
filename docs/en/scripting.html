@@ -147,8 +147,6 @@ Runtime -> Connects both
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
       ↓
-   start()
-
  Object Born
       ↓
    born()
@@ -178,8 +176,6 @@ Runtime -> Connects both
             <h3>Main Functions</h3>
 
             <ul>
-                <li><code>start()</code>: executed once when the runtime starts.</li>
-
                 <li><code>born(object)</code>: executed when an object enters the world.</li>
 
                 <li><code>action(object)</code>: main logic and interaction.</li>
@@ -372,7 +368,7 @@ function born(laser) {
 
             <div class="code-card">
                 <div class="code-header">Global scope</div>
-<pre><code>function start() {
+<pre><code>function born(game) {
     global["score"] = 0;
     global["lives"] = 3;
 }
@@ -399,30 +395,17 @@ function collision(player, asteroid) {
             <h2>Program Scripts</h2>
 
             <p>
-                Program Scripts execute logic associated
-                with the runtime as a whole.
+                Program scripts are not part of the current runtime contract.
             </p>
 
             <p>
-                While object scripts react to the lifecycle
-                of a specific object,
-                Program Scripts react to the lifecycle
-                of the runtime itself.
+                For now, global game state should be initialized from the
+                <code>born(object)</code> function of the root object.
             </p>
 
-            <div class="code-card">
-                <div class="code-header">game.json</div>
-<pre><code>"program": {
-    "scripts": [
-        "scripts/program"
-    ]
-}
-</code></pre>
-            </div>
-
             <p>
-                The final shape of these contexts
-                is still evolving.
+                A dedicated program lifecycle may return later with explicit
+                <code>start</code> and <code>end</code> phases.
             </p>
 
             <hr />

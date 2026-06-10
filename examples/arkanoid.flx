@@ -8,4 +8,5 @@ screen.width=640
 screen.height=320
 screen.scale=3
 debug.collisions=false
+debug.logs=false
 notes=FLX example with grid spawn, levels and power ups

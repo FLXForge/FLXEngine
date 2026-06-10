@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../runtime/RuntimeObject.h"
+#include "../runtime/ObjectDefinition.h"
 #include "../scripting/ScriptEngine.h"
 #include "../project/FlxContext.h"
 
@@ -31,31 +32,22 @@ private:
     void deadPhase();
     void cleanupDeadObjects();
 
-    void loadObjectsFromJson(const std::string& path);
-
-    using BehaviorFunction =
-        std::function<void(RuntimeObject&)>;
-
     void loadProject(const std::string& flxPath);
     void initWindow();
     void bornObject(RuntimeObject& object);
     void configureScriptEngine();
     void loadScripts();
+    void loadScriptsForObject(RuntimeObject& object);
     void flushSpawnQueue();
-    void loadPrefabs();
-    void loadPrefabRecursive(
-        const SpawnDefinition& spawnDefinition
+    void instantiateAutoChildren(
+        const RuntimeObject& parent,
+        std::vector<RuntimeObject>& target
     );
 
-    std::string resolveJsonPath(
-        const std::string& basePath,
-        const std::string& file
-    ) const;
-
-    std::string resolveScriptPath(
-        const std::string& basePath,
-        const std::string& file
-    ) const;
+    RuntimeObject createRuntimeObject(
+        const ObjectDefinition& definition,
+        const std::string& parentId
+    );
 
     std::string createRuntimeId(
         const std::string& name
@@ -66,13 +58,12 @@ private:
     );
 
     std::vector<RuntimeObject> pendingObjects;
-    std::unordered_map<std::string, RuntimeObject> prefabs;
 private:
 
     int nextRuntimeId;
 
     ScriptEngine scriptEngine;
+    ObjectDefinition rootDefinition;
     std::vector<RuntimeObject> objects;
     FlxContext context;
-    std::string projectBasePath;
 };

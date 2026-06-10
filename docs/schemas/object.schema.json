@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "object.schema.json",
+  "title": "FLX Object",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+
+    "like": {
+      "type": "string"
+    },
+
+    "spawn": {
+      "type": "string",
+      "enum": [ "auto", "manual" ],
+      "default": "auto"
+    },
+
+    "offset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "default": 0 },
+        "y": { "type": "number", "default": 0 }
+      }
+    },
+
+    "visible": {
+      "type": "boolean"
+    },
+
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+
+    "color": {
+      "type": "string"
+    },
+
+    "shape": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "shape.schema.json" }
+      ]
+    },
+
+    "motion": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "motion.schema.json" }
+      ]
+    },
+
+    "bounds": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "bounds.schema.json" }
+      ]
+    },
+
+    "speed": {
+      "type": "number"
+    },
+
+    "angle": {
+      "type": "number"
+    },
+
+    "group": {
+      "type": "string"
+    },
+
+    "collision": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "collision.schema.json" }
+      ]
+    },
+
+    "behavior": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "behavior.schema.json" }
+      ]
+    },
+
+    "children": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "object.schema.json" }
+        ]
+      }
+    }
+  }
+}

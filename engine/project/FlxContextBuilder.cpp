@@ -100,6 +100,10 @@ void FlxContextBuilder::assign(
     {
         context.debugCollisions = parseBool(value);
     }
+    else if (key == "debug.logs")
+    {
+        context.debugLogs = parseBool(value);
+    }
     else if (key == "notes")
     {
         context.notes = value;

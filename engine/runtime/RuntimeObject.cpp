@@ -155,6 +155,7 @@ RuntimeObject::RuntimeObject(
 {
     this->name = name;
     this->runtimeId = name;
+    this->parentId = "";
     this->sourcePath = "";
     this->origin = origin;
     this->hasOrigin = false;

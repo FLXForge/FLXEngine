@@ -1,6 +1,11 @@
-name:Pong
-version:1.0
-flxEngineVersion:0.0.1
-path:pong
-main:game.json
-notes:First FLX example
+name=Pong
+version=1.0
+engine=0.2.0
+path=pong
+root=game
+title=FLX Engine - Pong Example
+screen.width=320
+screen.height=180
+screen.scale=3
+debug.collisions=false
+notes=First FLX example

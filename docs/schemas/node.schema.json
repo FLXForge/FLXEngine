@@ -5,6 +5,9 @@
   "additionalProperties": false,
 
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
 
     "name": {
       "type": "string"
@@ -54,6 +57,18 @@
       "type": "string"
     },
 
+    "shape": {
+      "$ref": "shape.schema.json"
+    },
+
+    "motion": {
+      "$ref": "motion.schema.json"
+    },
+
+    "bounds": {
+      "$ref": "bounds.schema.json"
+    },
+
     "speed": {
       "type": "number"
     },
@@ -78,13 +93,26 @@
     },
 
     "children": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          { "type": "string" },
-          { "type": "object" }
-        ]
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "node.schema.json" }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "node.schema.json" }
+            ]
+          }
+        }
+      ]
     },
 
     "spawns": {

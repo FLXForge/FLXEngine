@@ -54,50 +54,47 @@
                 Cada archivo cumple una función concreta dentro del runtime.
             </p>
 
-            <h2>Archivo principal</h2>
+            <h2>Archivo de proyecto</h2>
 
             <p>
                 Todo proyecto comienza con un archivo <code>.flx</code>.
             </p>
 
             <p>
-                Este archivo define la configuración principal del proyecto
-                y el punto de entrada del runtime.
+                Este archivo define los metadatos del proyecto,
+                la configuración del runtime y el objeto raíz.
             </p>
 
             <div class="code-card">
                 <div class="code-header">first.flx</div>
-<pre><code>name:My first FLX
-version:1.0
-flxEngineVersion:0.0.1
-main:world.json
+<pre><code>name=My first FLX
+version=1.0
+engine=0.2.0
+root=world
+title=My first FLX
+screen.width=320
+screen.height=180
+screen.scale=3
 </code></pre>
             </div>
 
-            <h2>Principal</h2>
+            <h2>Objeto raíz</h2>
 
             <p>
-                El principal organiza el resto de objetos y lógica activa del runtime.
+                El objeto raíz organiza el resto de objetos y lógica activa del runtime.
             </p>
 
             <p>
-                En este ejemplo, el principal representa el mundo que contiene un único objeto:
+                En este ejemplo, el objeto raíz representa el mundo que contiene un único objeto:
                 un bloque de tofu.
             </p>
 
             <div class="code-card">
                 <div class="code-header">world.json</div>
 <pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
     "name": "World",
     "description": "This is the world where Tofu lives.",
-
-    "screen": {
-        "title": "My first FLX",
-        "width": 320,
-        "height": 180
-    },
-    "scale": 3,
 
     "children": [ "tofu" ]
 }
@@ -187,7 +184,7 @@ function action(tofu) {
             <h2>Ejecución</h2>
 
             <p>
-                Una vez definidos los archivos principales,
+                Una vez definidos los archivos del proyecto,
                 el runtime puede ejecutarse indicando el archivo
                 <code>.flx</code>.
             </p>
@@ -200,7 +197,7 @@ function action(tofu) {
 
             <p>
                 Si todo está correctamente configurado,
-                el runtime cargará el principal,
+                el runtime cargará el objeto raíz,
                 inicializará los objetos y comenzará
                 el ciclo de ejecución.
             </p>

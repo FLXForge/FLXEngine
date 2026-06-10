@@ -1,6 +1,11 @@
-name:Arkanoid
-version:1.0
-flxEngineVersion:0.2.0
-path:arkanoid
-main:main.json
-notes:FLX example with grid spawn, levels and power ups
+name=Arkanoid
+version=1.0
+engine=0.2.0
+path=arkanoid
+root=game
+title=Arkanoid
+screen.width=640
+screen.height=320
+screen.scale=3
+debug.collisions=false
+notes=FLX example with grid spawn, levels and power ups

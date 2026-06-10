@@ -37,7 +37,7 @@
             <h2>Proyecto</h2>
 
             <p>
-                Todo proyecto FLX comienza con un archivo principal
+                Todo proyecto FLX comienza con un archivo de proyecto
                 con extensión <code>.flx</code>.
             </p>
 
@@ -47,29 +47,36 @@
 
             <div class="code-card">
                 <div class="code-header">Asteroids.flx</div>
-<pre><code>name:Asteroids
-version:1.0
-flxEngineVersion:0.1.0
-main:game.json
+<pre><code>name=Asteroids
+version=1.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
 </code></pre>
             </div>
 
             <p>
                 A partir de este archivo,
-                el runtime carga la estructura principal,
+                el runtime carga el objeto raíz,
                 los recursos y la configuración necesaria.
             </p>
 
             <hr />
 
-            <h2>Principal (Main)</h2>
+            <h2>Objeto raíz</h2>
 
             <p>
-                El principal es la estructura raíz del runtime.
+                El objeto raíz es el objeto seleccionado por el campo
+                <code>root</code> del archivo <code>.flx</code>.
             </p>
 
             <p>
-                Organiza objetos, recursos y lógica de ejecución.
+                Es un objeto JSON normal que organiza objetos,
+                recursos y lógica de ejecución.
             </p>
 
             <p>

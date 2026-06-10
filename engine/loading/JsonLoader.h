@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../project/GameConfig.h"
 #include "../runtime/RuntimeObject.h"
 
 #include <string>
@@ -12,5 +11,4 @@ public:
     static std::vector<RuntimeObject> loadObjects(
         const std::string& path
     );
-    static GameConfig loadGameConfig(const std::string& path);
 };

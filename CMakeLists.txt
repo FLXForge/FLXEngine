@@ -54,10 +54,9 @@ add_executable(FlxEngine
     engine/runtime/RuntimeConstants.h 
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
-    engine/project/FlxManifest.h
-    engine/project/FlxManifestLoader.h
-    engine/project/FlxManifestLoader.cpp
-    engine/project/GameConfig.h
+    engine/project/FlxContext.h
+    engine/project/FlxContextBuilder.h
+    engine/project/FlxContextBuilder.cpp
     engine/scripting/ScriptEngine.h
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h

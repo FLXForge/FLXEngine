@@ -1,6 +1,4 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Pong_Game",
-
-  "children": [ "levels/level" ]
+  "name": "Arkanoid"
 }

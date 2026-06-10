@@ -2,7 +2,7 @@
 #include "../runtime/RuntimeHelpers.h"
 #include "../runtime/RuntimeConstants.h"
 #include "../loading/JsonLoader.h"
-#include "../project/FlxManifestLoader.h"
+#include "../project/FlxContextBuilder.h"
 #include "../scripting/ScriptEngine.h"
 #include "../debug/Logger.h"
 
@@ -10,11 +10,10 @@
 #include <iostream>
 #include <raylib.h>
 #include <filesystem>
+#include <unordered_set>
 
 namespace
 {
-    constexpr bool debugCollisions = false;
-
     bool canCollideWith(
         const RuntimeObject& object,
         const RuntimeObject& other
@@ -40,9 +39,6 @@ namespace
 
 Engine::Engine()
 {
-    screenWidth = 320;
-    screenHeight = 180;
-    screenScale = 3;
     nextRuntimeId = 1;
 }
 
@@ -73,53 +69,28 @@ void Engine::init(const std::string& flxPath)
 
 void Engine::loadProject(const std::string& flxPath)
 {
-    FlxManifest manifest =
-        FlxManifestLoader::load(flxPath);
+    context =
+        FlxContextBuilder::build(flxPath);
 
     Logger::info(
         "project",
-        "Loaded project: " + manifest.name
+        "Loaded project: " + context.name
     );
 
-    projectBasePath = manifest.rootDirectory;
+    projectBasePath = context.projectPath;
 
-    if (!manifest.path.empty() && manifest.path != "./")
-    {
-        projectBasePath += "/" + manifest.path;
-    }
-
-    std::string mainPath =
-        resolveJsonPath(projectBasePath, manifest.main);
-
-    gameConfig =
-        JsonLoader::loadGameConfig(mainPath);
+    std::string rootPath =
+        resolveJsonPath(projectBasePath, context.root);
 
     Logger::info(
         "project",
-        "Loaded main: " + gameConfig.name
+        "Loaded root: " + rootPath
     );
 
     objects.clear();
 
-    for (const auto& child : gameConfig.children)
-    {
-        const std::string childPath =
-            resolveJsonPath(projectBasePath, child);
-
-        Logger::info(
-            "project",
-            "Loaded child: " + childPath
-        );
-
-        std::vector<RuntimeObject> childObjects =
-            JsonLoader::loadObjects(childPath);
-
-        objects.insert(
-            objects.end(),
-            childObjects.begin(), 
-            childObjects.end()
-        );
-    }
+    objects =
+        JsonLoader::loadObjects(rootPath);
 
     for (auto& object : objects)
     {
@@ -129,22 +100,19 @@ void Engine::loadProject(const std::string& flxPath)
 
     loadPrefabs();
 
-    screenWidth = gameConfig.screenWidth;
-    screenHeight = gameConfig.screenHeight;
-    screenScale = gameConfig.scale;
-    scriptEngine.setScreenScale(gameConfig.scale);
+    scriptEngine.setScreenScale(context.screenScale);
 }
 
 void Engine::initWindow()
 {
     const std::string title =
-        gameConfig.screenTitle.empty()
+        context.screenTitle.empty()
         ? "Flx"
-        : gameConfig.screenTitle;
+        : context.screenTitle;
 
     InitWindow(
-        screenWidth * screenScale,
-        screenHeight * screenScale,
+        context.screenWidth * context.screenScale,
+        context.screenHeight * context.screenScale,
         title.c_str()
     );
 }
@@ -313,14 +281,7 @@ RuntimeObject* Engine::findByRuntimeId(
 
 void Engine::loadScripts()
 {
-    for (const auto& programScript : gameConfig.programScripts) {
-        const std::string programScriptPath =
-            resolveScriptPath(projectBasePath, programScript);
-
-        scriptEngine.loadScript(programScriptPath);
-
-        scriptEngine.callScriptFunction(programScriptPath, "start");
-    }
+    std::unordered_set<std::string> startedScripts;
 
     for (auto& object : objects)
     {
@@ -332,6 +293,11 @@ void Engine::loadScripts()
             object.resolvedScriptPaths.push_back(scriptPath);
 
             scriptEngine.loadScript(scriptPath);
+
+            if (startedScripts.insert(scriptPath).second)
+            {
+                scriptEngine.callScriptFunction(scriptPath, "start");
+            }
         }
 
         bornObject(object);
@@ -493,8 +459,8 @@ void Engine::motionPhase()
             }
         }
         object.applyBounds(
-            static_cast<float>(gameConfig.screenWidth),
-            static_cast<float>(gameConfig.screenHeight)
+            static_cast<float>(context.screenWidth),
+            static_cast<float>(context.screenHeight)
         );
     }
 }
@@ -613,15 +579,15 @@ void Engine::draw()
     for (const auto& object : objects)
     {
         object.draw(
-            gameConfig.scale,
-            static_cast<float>(gameConfig.screenWidth),
-            static_cast<float>(gameConfig.screenHeight)
+            context.screenScale,
+            static_cast<float>(context.screenWidth),
+            static_cast<float>(context.screenHeight)
         );
 
-        if (debugCollisions)
+        if (context.debugCollisions)
         {
             object.drawCollision(
-                gameConfig.scale
+                context.screenScale
             );
         }
     }

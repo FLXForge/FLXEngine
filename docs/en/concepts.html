@@ -38,7 +38,7 @@
             <h2>Project</h2>
 
             <p>
-                Every FLX project begins with a main file
+                Every FLX project begins with a project file
                 using the <code>.flx</code> extension.
             </p>
 
@@ -50,10 +50,15 @@
                 <div class="code-header">Asteroids.flx</div>
 
 
-<pre><code>name:Asteroids
-version:1.0
-flxEngineVersion:0.1.0
-main:game.json
+<pre><code>name=Asteroids
+version=1.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
 </code></pre>
 
 
@@ -61,20 +66,22 @@ main:game.json
 
             <p>
                 From this file,
-                the runtime loads the main structure,
+                the runtime loads the root object,
                 resources and required configuration.
             </p>
 
             <hr />
 
-            <h2>Main</h2>
+            <h2>Root Object</h2>
 
             <p>
-                The main structure is the root of the runtime.
+                The root object is the object selected by the <code>root</code>
+                field in the <code>.flx</code> file.
             </p>
 
             <p>
-                It organizes objects, resources and execution logic.
+                It is a normal JSON object that organizes objects,
+                resources and execution logic.
             </p>
 
             <p>

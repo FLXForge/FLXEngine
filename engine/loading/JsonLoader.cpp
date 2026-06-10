@@ -559,6 +559,43 @@ namespace
         return runtimeObject;
     }
 
+    void loadInlineChild(
+        const std::filesystem::path& path,
+        const nlohmann::json& child,
+        const std::string& fallbackName,
+        std::vector<RuntimeObject>& objects
+    )
+    {
+        if (!child.is_object())
+        {
+            return;
+        }
+
+        nlohmann::json childData =
+            child;
+
+        if (!fallbackName.empty() && !childData.contains("name"))
+        {
+            childData["name"] = fallbackName;
+        }
+
+        nlohmann::json resolvedChild;
+
+        if (!resolveLike(path, childData, resolvedChild))
+        {
+            Logger::warning(
+                "json",
+                "Skipping child because like could not be resolved"
+            );
+
+            return;
+        }
+
+        objects.push_back(
+            parseRuntimeObject(resolvedChild, path)
+        );
+    }
+
     void loadNodeRecursive(
         const std::filesystem::path& path,
         std::vector<RuntimeObject>& objects
@@ -589,35 +626,52 @@ namespace
             return;
         }
 
-        for (const auto& child : data["children"])
+        const auto& children =
+            data["children"];
+
+        if (children.is_array())
         {
-            if (child.is_string())
+            for (const auto& child : children)
             {
-                const auto childPath =
-                    resolveChildPath(
-                        path,
-                        child.get<std::string>()
-                    );
-
-                loadNodeRecursive(childPath, objects);
-            }
-            else if (child.is_object())
-            {
-                nlohmann::json resolvedChild;
-
-                if (!resolveLike(path, child, resolvedChild))
+                if (child.is_string())
                 {
-                    Logger::warning(
-                        "json",
-                        "Skipping child because like could not be resolved"
-                    );
+                    const auto childPath =
+                        resolveChildPath(
+                            path,
+                            child.get<std::string>()
+                        );
 
-                    continue;
+                    loadNodeRecursive(childPath, objects);
                 }
+                else if (child.is_object())
+                {
+                    loadInlineChild(path, child, "", objects);
+                }
+            }
+        }
+        else if (children.is_object())
+        {
+            for (auto it = children.begin(); it != children.end(); ++it)
+            {
+                if (it.value().is_string())
+                {
+                    const auto childPath =
+                        resolveChildPath(
+                            path,
+                            it.value().get<std::string>()
+                        );
 
-                objects.push_back(
-                    parseRuntimeObject(resolvedChild, path)
-                );
+                    loadNodeRecursive(childPath, objects);
+                }
+                else if (it.value().is_object())
+                {
+                    loadInlineChild(
+                        path,
+                        it.value(),
+                        it.key(),
+                        objects
+                    );
+                }
             }
         }
     }
@@ -635,88 +689,4 @@ std::vector<RuntimeObject> JsonLoader::loadObjects(
     );
 
     return objects;
-}
-
-GameConfig JsonLoader::loadGameConfig(
-    const std::string& path
-)
-{
-    GameConfig config;
-
-    nlohmann::json data;
-
-    if (!loadJson(path, data))
-    {
-        return config;
-    }
-
-    if (data.contains("name"))
-    {
-        config.name =
-            data["name"].get<std::string>();
-    }
-
-    if (data.contains("description"))
-    {
-        config.description =
-            data["description"].get<std::string>();
-    }
-
-    if (data.contains("screen"))
-    {
-        const auto& screen =
-            data["screen"];
-
-        if (screen.contains("title"))
-        {
-            config.screenTitle =
-                screen["title"].get<std::string>();
-        }
-
-        if (screen.contains("width"))
-        {
-            config.screenWidth =
-                screen["width"].get<int>();
-        }
-
-        if (screen.contains("height"))
-        {
-            config.screenHeight =
-                screen["height"].get<int>();
-        }
-    }
-
-    if (data.contains("scale"))
-    {
-        config.scale =
-            data["scale"].get<int>();
-    }
-
-    if (data.contains("behavior"))
-    {
-        const auto& behavior =
-            data["behavior"];
-
-        if (behavior.contains("scripts"))
-        {
-            for (const auto& script : behavior["scripts"])
-            {
-                config.programScripts.push_back(
-                    script.get<std::string>()
-                );
-            }
-        }
-    }
-
-    if (data.contains("children"))
-    {
-        for (const auto& child : data["children"])
-        {
-            config.children.push_back(
-                child.get<std::string>()
-            );
-        }
-    }
-
-    return config;
 }

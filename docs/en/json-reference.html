@@ -22,102 +22,96 @@
             <h1>JSON Reference</h1>
 
             <p>
-                This section documents the JSON structures used by FLX
-                to define the main runtime, objects and their properties.
+                This section documents the project manifest and JSON structures
+                used by FLX to define runtime objects and their properties.
             </p>
 
             <p class="placeholder">
                 FLX is under active development. Some fields may change during 0.x versions.
             </p>
 
-            <h2>JSON Types</h2>
+            <h2>Project Files</h2>
 
             <p>
-                FLX currently uses different JSON files depending on their role within the runtime.
+                FLX separates project metadata from world data.
             </p>
 
             <ul>
-                <li><code>main</code>: defines the runtime entry point.</li>
-                <li><code>node</code>: defines a container that may contain other elements.</li>
+                <li><code>.flx</code>: defines project metadata and runtime configuration.</li>
+                <li><code>node</code>: defines an object that may contain other elements.</li>
                 <li><code>drawable</code>: defines objects that can be rendered visually.</li>
             </ul>
 
             <hr />
 
-            <h2 class="placeholder">Main JSON</h2>
+            <h2 class="placeholder">FLX Manifest</h2>
 
             <p>
-                The main file organizes the base structure of the runtime.
+                The <code>.flx</code> file is a properties-style manifest.
+                It points to the root object and contains runtime configuration.
             </p>
 
             <div class="code-card">
-                <div class="code-header">world.json</div>
-<pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
-    "name": "Main",
-    "description": "This is a description.",
-
- 
-"screen": {
-    "title": "Title in window",
-    "width": 320,
-    "height": 180
-},
-
-"scale": 3,
-
-"children": [ ... ],
-
-"spawns": { ... },
-
-"behavior": {
-    "scripts": [ "scripts/game" ]
-}
- 
-
-} </code></pre>
+                <div class="code-header">game.flx</div>
+<pre><code>name=Asteroids
+version=1.0.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
+debug.collisions=false
+notes=FLX example with spawn and basic UI
+</code></pre>
 
             </div>
 
             <h3>Fields</h3>
 
             <ul>
-                <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical name of the main runtime. <i>[ Required ]</i></li>
-                <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#screen">screen</a>: window or runtime surface configuration. <i>[ Required ]</i></li>
-                <li><code>scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#children">children</a>: list of structures loaded by the main runtime. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#behavior">behavior</a>: scripts associated with the overall behavior. <i>[ Optional ]</i></li>
+                <li><code>name</code>: project name. <i>[ Optional ]</i></li>
+                <li><code>version</code>: project version. <i>[ Optional ]</i></li>
+                <li><code>engine</code>: target FLX version. <i>[ Optional ]</i></li>
+                <li><code>path</code>: project content directory. <i>[ Optional ]</i></li>
+                <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
+                <li><code>title</code>: window title. <i>[ Optional ]</i></li>
+                <li><code>screen.width</code>: internal reference width. <i>[ Optional ]</i></li>
+                <li><code>screen.height</code>: internal reference height. <i>[ Optional ]</i></li>
+                <li><code>screen.scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
+                <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
+                <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
-            <h2 id="screen">Screen</h2>
+            <h2 id="root">Root Object</h2>
 
             <p>
-                The <code>screen</code> block defines the basic window properties.
+                The root object is special only because the manifest points to it.
+                Its JSON uses the same schema as any other node.
             </p>
 
             <div class="code-card">
-                <div class="code-header">screen</div>
-<pre><code>"screen": {
-    "title": "Title in window",
-    "width": 320,
-    "height": 180
+                <div class="code-header">space.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
+    "name": "Asteroids",
+
+    "behavior": {
+        "scripts": [ "scripts/game" ]
+    },
+
+    "children": {
+        "level": "space/level"
+    }
 }
 </code></pre>
             </div>
 
-            <ul>
-                <li><code>title</code>: window title. <i>[ Optional ]</i></li>
-                <li><code>width</code>: internal reference width. <i>[ Required ]</i></li>
-                <li><code>height</code>: internal reference height. <i>[ Required ]</i></li>
-            </ul>
-
             <h2 id="children">Children</h2>
 
             <p>
-                The <code>children</code> field declares objects contained by the main runtime.
+                The <code>children</code> field declares objects contained by another object.
             </p>
 
             <div class="code-card">
@@ -135,6 +129,15 @@
 
 
 <pre><code>"children": [ "objects/tofu", {"name": "Tofu", ... }, ... ]</code></pre>
+
+                <div class="code-header">children (named)</div>
+
+
+<pre><code>"children": {
+    "ship": {
+        "like": "ship/ship"
+    }
+}</code></pre>
 
             </div>
 
@@ -242,7 +245,7 @@
                 <li><code>name</code>: logical name of the node. <i>[ Required ]</i></li>
                 <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object or node. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#children">children</a>: list of objects loaded by the runtime. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#children">children</a>: child objects loaded with this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
             </ul>
 

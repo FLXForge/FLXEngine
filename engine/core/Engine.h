@@ -2,7 +2,7 @@
 
 #include "../runtime/RuntimeObject.h"
 #include "../scripting/ScriptEngine.h"
-#include "../project/GameConfig.h"
+#include "../project/FlxContext.h"
 
 #include <string>
 #include <functional>
@@ -71,12 +71,8 @@ private:
 
     int nextRuntimeId;
 
-    int screenWidth;
-    int screenHeight;
-    int screenScale;
-
     ScriptEngine scriptEngine;
     std::vector<RuntimeObject> objects;
-    GameConfig gameConfig;
+    FlxContext context;
     std::string projectBasePath;
 };

@@ -23,99 +23,95 @@
             <h1>Referencia JSON</h1>
 
             <p>
-                Esta sección documenta las estructuras JSON utilizadas por FLX
-                para definir el principal, los objetos y sus propiedades.
+                Esta sección documenta el manifiesto de proyecto y las estructuras JSON
+                utilizadas por FLX para definir objetos y sus propiedades.
             </p>
 
             <p class="placeholder">
                 FLX está en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
             </p>
 
-            <h2>Tipos de JSON</h2>
+            <h2>Archivos del proyecto</h2>
 
             <p>
-                Actualmente FLX utiliza distintos archivos JSON según la función que cumplen dentro del runtime.
+                FLX separa los metadatos del proyecto de los datos del mundo.
             </p>
 
             <ul>
-                <li><code>main</code>: define el punto principal del runtime.</li>
-                <li><code>node</code>: define contenedor que puede tener otros elementos.</li>
+                <li><code>.flx</code>: define metadatos del proyecto y configuración del runtime.</li>
+                <li><code>node</code>: define un objeto que puede contener otros elementos.</li>
                 <li><code>drawable</code>: define objetos que pueden representarse visualmente.</li>
             </ul>
 
             <hr />
 
-            <h2 class="placeholder">Main JSON</h2>
+            <h2 class="placeholder">Manifiesto FLX</h2>
 
             <p>
-                El archivo principal organiza la estructura base del runtime.
+                El archivo <code>.flx</code> es un manifiesto de estilo properties.
+                Apunta al objeto raíz y contiene la configuración del runtime.
             </p>
 
             <div class="code-card">
-                <div class="code-header">world.json</div>
-<pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
-    "name": "Main",
-    "description": "This is a description.",
-
-    "screen": {
-        "title": "Title in window",
-        "width": 320,
-        "height": 180
-    },
-
-    "scale": 3,
-
-    "children": [ ... ],
-
-    "spawns": { ... },
-
-    "behavior": {
-        "scripts": [ "scripts/game" ]
-    }
-}
+                <div class="code-header">game.flx</div>
+<pre><code>name=Asteroids
+version=1.0.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
+debug.collisions=false
+notes=FLX example with spawn and basic UI
 </code></pre>
             </div>
 
             <h3>Campos</h3>
 
             <ul>
-                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
-                <li><code>name</code>: nombre lógico del principal. <i>[ Obligatorio ]</i></li>
-                <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#screen">screen</a>: configuración de ventana o superficie de ejecución. <i>[ Obligatorio ]</i></li>
-                <li><code>scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#children">children</a>: lista de estructuras cargados por el principal. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#behavior">behavior</a>: scripts asociados al comportamiento general. <i>[ Opcional ]</i></li>
+                <li><code>name</code>: nombre del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>version</code>: versión del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>engine</code>: versión objetivo de FLX. <i>[ Opcional ]</i></li>
+                <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>root</code>: objeto JSON raíz cargado por el runtime. <i>[ Obligatorio ]</i></li>
+                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
+                <li><code>screen.width</code>: ancho interno de referencia. <i>[ Opcional ]</i></li>
+                <li><code>screen.height</code>: alto interno de referencia. <i>[ Opcional ]</i></li>
+                <li><code>screen.scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
+                <li><code>debug.collisions</code>: activa el dibujo de depuración de colisiones. <i>[ Opcional ]</i></li>
+                <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
 
-            <h2 id="screen">Screen</h2>
+            <h2 id="root">Objeto raíz</h2>
 
             <p>
-                El bloque <code>screen</code> define las propiedades básicas de la ventana.
+                El objeto raíz es especial únicamente porque el manifiesto apunta a él.
+                Su JSON utiliza el mismo schema que cualquier otro nodo.
             </p>
 
             <div class="code-card">
-                <div class="code-header">screen</div>
-<pre><code>"screen": {
-    "title": "Title in window",
-    "width": 320,
-    "height": 180
+                <div class="code-header">space.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
+    "name": "Asteroids",
+
+    "behavior": {
+        "scripts": [ "scripts/game" ]
+    },
+
+    "children": {
+        "level": "space/level"
+    }
 }
 </code></pre>
             </div>
 
-            <ul>
-                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
-                <li><code>width</code>: ancho interno de referencia. <i>[ Obligatorio ]</i></li>
-                <li><code>height</code>: alto interno de referencia. <i>[ Obligatorio ]</i></li>
-            </ul>
-
             <h2 id="children">Children</h2>
 
             <p>
-                El campo <code>children</code> permite declarar objetos contenidos por el principal.
+                El campo <code>children</code> permite declarar objetos contenidos por otro objeto.
             </p>
 
             <div class="code-card">
@@ -125,6 +121,12 @@
 <pre><code>"children": [ {"name": "Tofu", ... } ]</code></pre>
                 <div class="code-header">children (mix)</div>
 <pre><code>"children": [ "objects/tofu" , {"name": "Tofu", ... }, ... ]</code></pre>
+                <div class="code-header">children (named)</div>
+<pre><code>"children": {
+    "ship": {
+        "like": "ship/ship"
+    }
+}</code></pre>
             </div>
 
             <p>
@@ -225,7 +227,7 @@
                 <li><code>name</code>: nombre lógico del nodo. <i>[ Obligatorio ]</i></li>
                 <li><code>description</code>: descripción opcional. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuración de colisión asociada al nodo <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#children">children</a>: lista de objetos cargados por el principal. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#spawns">spawns</a>: definiciones declarativas de spawn asociadas al objeto. <i>[ Opcional ]</i></li>
             </ul>
 

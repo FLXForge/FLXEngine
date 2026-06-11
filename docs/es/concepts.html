@@ -37,7 +37,7 @@
             <h2>Proyecto</h2>
 
             <p>
-                Todo proyecto FLX comienza con un archivo principal
+                Todo proyecto FLX comienza con un archivo de proyecto
                 con extensión <code>.flx</code>.
             </p>
 
@@ -47,29 +47,36 @@
 
             <div class="code-card">
                 <div class="code-header">Asteroids.flx</div>
-<pre><code>name:Asteroids
-version:1.0
-flxEngineVersion:0.1.0
-main:game.json
+<pre><code>name=Asteroids
+version=1.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
 </code></pre>
             </div>
 
             <p>
                 A partir de este archivo,
-                el runtime carga la estructura principal,
+                el runtime carga el objeto raíz,
                 los recursos y la configuración necesaria.
             </p>
 
             <hr />
 
-            <h2>Principal (Main)</h2>
+            <h2>Objeto raíz</h2>
 
             <p>
-                El principal es la estructura raíz del runtime.
+                El objeto raíz es el objeto seleccionado por el campo
+                <code>root</code> del archivo <code>.flx</code>.
             </p>
 
             <p>
-                Organiza objetos, recursos y lógica de ejecución.
+                Es un objeto JSON normal que organiza objetos,
+                recursos y lógica de ejecución.
             </p>
 
             <p>
@@ -177,7 +184,7 @@ main:game.json
             </p>
 
             <p>
-                Si define <code>behavior</code>, <code>spawns</code> o <code>collision</code>,
+                Si define <code>behavior</code>, <code>children</code> o <code>collision</code>,
                 puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
                 o controlador de juego.
             </p>
@@ -195,34 +202,29 @@ main:game.json
 
             <hr />
 
-            <h2>Children y Spawns</h2>
+            <h2>Children y momento de spawn</h2>
 
             <p>
-                FLX distingue entre objetos que existen al iniciar el runtime
-                y objetos que pueden aparecer posteriormente.
+                FLX utiliza <code>children</code> para declarar qué puede existir bajo un objeto.
+                El valor <code>spawn</code> del hijo define cuándo entra en el runtime.
             </p>
 
             <ul>
                 <li>
-                    <code>children</code>:
-                    objetos que entran al mundo al cargarse la escena.
+                    <code>spawn: "auto"</code>:
+                    el hijo se instancia cuando su padre entra en el mundo.
                 </li>
 
                 <li>
-                    <code>spawns</code>:
-                    definiciones reutilizables utilizadas para crear nuevas instancias durante la ejecución.
+                    <code>spawn: "manual"</code>:
+                    el hijo queda registrado y puede crearse después con
+                    <code>spawn(parent, "child")</code>.
                 </li>
             </ul>
 
             <p>
-                Esta separación permite mantener una estructura clara
-                entre el contenido inicial y el contenido dinámico.
-            </p>
-
-            <p>
-                Junto con <code>like</code>,
-                estos mecanismos constituyen la base de cómo FLX construye,
-                reutiliza e instancia objetos en tiempo de ejecución.
+                Junto con <code>like</code>, esto mantiene composición,
+                reutilización y creación dinámica bajo una sola propiedad JSON.
             </p>
 
             <hr />
@@ -271,14 +273,16 @@ main:game.json
             </table>
 
             <p>
-                Los colores pueden declararse directamente desde JSON.
+                Los colores pueden declararse directamente desde JSON usando
+                nombres de color de raylib o valores hexadecimales en formato
+                <code>#rgb</code> y <code>#rrggbb</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">shape.json</div>
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "white"
+    "color": "#2f3a44"
 }
 </code></pre>
             </div>

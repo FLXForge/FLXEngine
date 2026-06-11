@@ -1,25 +1,26 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "DeepSpace",
-
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "origin": {
     "x": 5,
     "y": 5
   },
-
-  "spawns": {
+  "behavior": {
+    "scripts": [
+      "../../scripts/space"
+    ]
+  },
+  "children": {
     "Asteroid_a": {
-      "prefab": "asteroid_a"
+      "like": "asteroid_a",
+      "spawn": "manual"
     },
     "Asteroid_b": {
-      "prefab": "asteroid_b"
+      "like": "asteroid_b",
+      "spawn": "manual"
     },
     "Asteroid_c": {
-      "prefab": "asteroid_c"
+      "like": "asteroid_c",
+      "spawn": "manual"
     }
-  },
-
-  "behavior": {
-    "scripts": [ "scripts/space" ]
   }
 }

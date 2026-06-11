@@ -1,14 +1,6 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/main.schema.json",
-  "name": "Pong_Game",
-  "description": "Example of one of the first games",
-
-  "screen": {
-    "title": "FLX Engine - Pong Example",
-    "width": 320,
-    "height": 180
-  },
-  "scale": 3,
-
-  "children": [ "levels/level" ]
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "level": "levels/level"
+  }
 }

@@ -5,8 +5,6 @@
   "type": "object",
   "additionalProperties": false,
 
-  "required": [ "type", "color", "size" ],
-
   "properties": {
     "type": {
       "type": "string",
@@ -31,18 +29,7 @@
 
     "color": {
       "type": "string",
-      "enum": [
-        "red",
-        "green",
-        "blue",
-        "black",
-        "yellow",
-        "orange",
-        "purple",
-        "gray",
-        "white",
-        "brown"
-      ]
+      "description": "Named raylib color or hexadecimal value in #rgb or #rrggbb format."
     },
 
     "points": {

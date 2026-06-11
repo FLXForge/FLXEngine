@@ -1,9 +1,7 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/node.schema.json",
-  "name": "Level",
-  "children": [
-    {
-      "name": "player",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "player": {
       "origin": {
         "x": 16,
         "y": 90
@@ -19,11 +17,10 @@
         "type": "box"
       },
       "behavior": {
-        "scripts": [ "scripts/player" ]
+        "scripts": [ "../scripts/player" ]
       }
     },
-    {
-      "name": "enemy",
+    "enemy": {
       "origin": {
         "x": 299,
         "y": 90
@@ -39,11 +36,10 @@
         "type": "box"
       },
       "behavior": {
-        "scripts": [ "scripts/enemy" ]
+        "scripts": [ "../scripts/enemy" ]
       }
     },
-    {
-      "name": "ball",
+    "ball": {
       "origin": {
         "x": 157,
         "y": 87
@@ -59,14 +55,17 @@
       "collision": {
         "type": "box",
         "active": true,
-        "with": [ "wall", "goal", "paddle" ]
+        "with": [
+          "wall",
+          "goal",
+          "paddle"
+        ]
       },
       "behavior": {
-        "scripts": [ "scripts/ball" ]
+        "scripts": [ "../scripts/ball" ]
       }
     },
-    {
-      "name": "left_goal",
+    "left_goal": {
       "origin": {
         "x": -10,
         "y": 0
@@ -82,8 +81,7 @@
       },
       "visible": false
     },
-    {
-      "name": "right_goal",
+    "right_goal": {
       "origin": {
         "x": 320,
         "y": 0
@@ -99,8 +97,7 @@
       },
       "visible": false
     },
-    {
-      "name": "top_wall",
+    "top_wall": {
       "origin": {
         "x": 0,
         "y": -10
@@ -116,8 +113,7 @@
       },
       "visible": false
     },
-    {
-      "name": "bottom_wall",
+    "bottom_wall": {
       "origin": {
         "x": 0,
         "y": 180
@@ -133,5 +129,5 @@
       },
       "visible": false
     }
-  ]
+  }
 }

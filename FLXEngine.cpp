@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-inline constexpr const char* FLXENGINE_VERSION = "0.0.1";
+inline constexpr const char* FLXENGINE_VERSION = "0.1.0";
 
 int main(int argc, char* argv[])
 {

@@ -541,20 +541,20 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
-            <h2>spawn(object, spawnName)</h2>
+            <h2>spawn(object, childName)</h2>
 
             <p>
-                Crea una instancia de un prefab usando una definición de spawn declarada
-                en el JSON del objeto.
+                Crea una instancia de un hijo manual declarado en el bloque
+                <code>children</code> del objeto.
             </p>
 
             <p>
-                El parámetro <code>spawnName</code> identifica qué definición de spawn debe utilizarse.
+                El parámetro <code>childName</code> identifica qué definición hija debe instanciarse.
             </p>
 
             <p>
-                Las definiciones de spawn utilizan prefabs declarados
-                mediante JSON y pueden incluir offsets locales.
+                Los hijos manuales usan <code>spawn: "manual"</code>
+                y pueden incluir offsets locales.
             </p>
 
             <p>
@@ -574,7 +574,7 @@ rotate(ship, RIGHT);</code></pre>
 
             <ul>
                 <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
-                <li><code>spawnName</code>: nombre de la definición de spawn declarada en el JSON.</li>
+                <li><code>childName</code>: nombre del hijo manual declarado en el JSON.</li>
             </ul>
 
             <p>

@@ -10,6 +10,43 @@
 #include <cmath>
 #include <raylib.h>
 
+namespace
+{
+    std::string toJsStringLiteral(const std::string& value)
+    {
+        std::string escaped = "'";
+
+        for (const char ch : value)
+        {
+            switch (ch)
+            {
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '\'':
+                escaped += "\\'";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
+            default:
+                escaped += ch;
+                break;
+            }
+        }
+
+        escaped += "'";
+
+        return escaped;
+    }
+}
+
 ScriptEngine::ScriptEngine()
 {
     runtime = JS_NewRuntime();
@@ -27,7 +64,6 @@ ScriptEngine::~ScriptEngine()
     {
         ScriptModule& module = pair.second;
 
-        JS_FreeValue(context, module.start);
         JS_FreeValue(context, module.born);
         JS_FreeValue(context, module.action);
         JS_FreeValue(context, module.motion);
@@ -302,14 +338,15 @@ void ScriptEngine::loadScript(const std::string& path)
     buffer << file.rdbuf();
 
     const std::string code = buffer.str();
+    const std::string scriptKey =
+        toJsStringLiteral(path);
 
     const std::string wrapped =
         "globalThis.Flx = globalThis.Flx || {};"
         "Flx.scripts = Flx.scripts || {};"
-        "Flx.scripts[" + std::string("'") + path + "'] = (function(){"
+        "Flx.scripts[" + scriptKey + "] = (function(){"
         + code +
         " return {"
-        "start: typeof start === 'function' ? start : undefined,"
         "born: typeof born === 'function' ? born : undefined,"
         "action: typeof action === 'function' ? action : undefined,"
         "motion: typeof motion === 'function' ? motion : undefined,"
@@ -325,7 +362,7 @@ void ScriptEngine::loadScript(const std::string& path)
 
     loadedScripts.insert(path);
 
-    Logger::info("script", "Loaded script: " + path);
+    Logger::debug("script", "Loaded script: " + path);
 }
 
 void ScriptEngine::cacheScriptModule(const std::string& path)
@@ -344,9 +381,6 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     ScriptModule scriptModule;
 
-    JSValue start =
-        JS_GetPropertyStr(context, module, "start");
-
     JSValue born =
         JS_GetPropertyStr(context, module, "born");
 
@@ -364,9 +398,6 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     JSValue dead =
         JS_GetPropertyStr(context, module, "dead");
-
-    scriptModule.start =
-        JS_DupValue(context, start);
 
     scriptModule.born =
         JS_DupValue(context, born);
@@ -388,7 +419,6 @@ void ScriptEngine::cacheScriptModule(const std::string& path)
 
     scriptModules[path] = scriptModule;
 
-    JS_FreeValue(context, start);
     JS_FreeValue(context, born);
     JS_FreeValue(context, action);
     JS_FreeValue(context, motion);
@@ -415,11 +445,6 @@ JSValue ScriptEngine::getCachedFunction(
     }
 
     ScriptModule& module = it->second;
-
-    if (function == "start")
-    {
-        return module.start;
-    }
 
     if (function == "born")
     {
@@ -492,25 +517,6 @@ RuntimeObject* ScriptEngine::findObjectByName(
     return findObject(name);
 }
 
-void ScriptEngine::setFindPrefabFunction(
-    FindPrefabFunction function
-)
-{
-    findPrefab = function;
-}
-
-RuntimeObject* ScriptEngine::findPrefabByName(
-    const std::string& name
-)
-{
-    if (!findPrefab)
-    {
-        return nullptr;
-    }
-
-    return findPrefab(name);
-}
-
 void ScriptEngine::setSpawnObjectFunction(
     SpawnObjectFunction function
 )
@@ -520,8 +526,7 @@ void ScriptEngine::setSpawnObjectFunction(
 
 void ScriptEngine::spawnObject(
     RuntimeObject& source,
-    const SpawnDefinition& spawnDefinition,
-    const RuntimeObject& prefab
+    const ObjectDefinition& definition
 )
 {
     if (!spawnObjectFunction)
@@ -531,8 +536,7 @@ void ScriptEngine::spawnObject(
 
     spawnObjectFunction(
         source,
-        spawnDefinition,
-        prefab
+        definition
     );
 }
 

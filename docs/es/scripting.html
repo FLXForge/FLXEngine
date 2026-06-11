@@ -147,8 +147,6 @@ Runtime -> Conecta ambos
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
       ↓
-   start()
-
  Object Born
       ↓
    born()
@@ -178,8 +176,6 @@ Runtime -> Conecta ambos
             <h3>Funciones principales</h3>
 
             <ul>
-                <li><code>start()</code>: se ejecuta una vez al iniciar el runtime.</li>
-
                 <li><code>born(object)</code>: se ejecuta cuando un objeto entra en el mundo.</li>
 
                 <li><code>action(object)</code>: lógica principal e interacción.</li>
@@ -370,7 +366,7 @@ function born(laser) {
 
             <div class="code-card">
                 <div class="code-header">Global scope</div>
-<pre><code>function start() {
+<pre><code>function born(game) {
     global["score"] = 0;
     global["lives"] = 3;
 }
@@ -394,35 +390,21 @@ function collision(player, asteroid) {
 
             <hr />
 
-            <h2>Program Scripts</h2>
+            <h2>Scripts de programa</h2>
 
             <p>
-                Los Program Scripts permiten ejecutar lógica asociada
-                al runtime completo.
+                Los scripts de programa no forman parte del contrato actual del runtime.
             </p>
 
             <p>
-                Mientras que los scripts de objeto reaccionan
-                a la vida de un objeto concreto,
-                los Program Scripts reaccionan
-                a la vida del runtime.
+                De momento, el estado global del juego debe inicializarse desde
+                la función <code>born(object)</code> del objeto root.
             </p>
-
-            <div class="code-card">
-                <div class="code-header">game.json</div>
-<pre><code>"program": {
-    "scripts": [
-        "scripts/program"
-    ]
-}
-</code></pre>
-            </div>
 
             <p>
-                La forma definitiva de estos contextos
-                todavía continúa evolucionando.
+                Más adelante se evaluará un ciclo de programa dedicado con fases
+                explícitas <code>start</code> y <code>end</code>.
             </p>
-
             <hr />
 
             <h2>Buenas prácticas</h2>

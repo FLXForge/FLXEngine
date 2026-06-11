@@ -7,7 +7,7 @@
 // CONSTANTS
 const INIT_LIVES = 3;
 
-function start() {
+function born(game) {
     global["score"] = 0;
     global["lives"] = INIT_LIVES;
     global["asteroids"] = 0;

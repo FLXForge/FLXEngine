@@ -49,19 +49,36 @@ add_executable(FlxEngine
 
     engine/runtime/RuntimeObject.h
     engine/runtime/RuntimeObject.cpp 
+    engine/runtime/ObjectDefinition.h
+    engine/runtime/RuntimeObjectBuilder.h
+    engine/runtime/RuntimeObjectBuilder.cpp
+    engine/runtime/RuntimeWorld.h
+    engine/runtime/RuntimeWorld.cpp
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
+    engine/collision/CollisionSystem.h
+    engine/collision/CollisionSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
-    engine/project/FlxManifest.h
-    engine/project/FlxManifestLoader.h
-    engine/project/FlxManifestLoader.cpp
-    engine/project/GameConfig.h
+    engine/project/FlxContext.h
+    engine/project/FlxContextBuilder.h
+    engine/project/FlxContextBuilder.cpp
     engine/scripting/ScriptEngine.h
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h
     engine/scripting/ScriptBindings.cpp 
+    engine/scripting/bindings/BindingHelpers.h
+    engine/scripting/bindings/CoreBindings.h
+    engine/scripting/bindings/CoreBindings.cpp
+    engine/scripting/bindings/InputBindings.h
+    engine/scripting/bindings/InputBindings.cpp
+    engine/scripting/bindings/DrawBindings.h
+    engine/scripting/bindings/DrawBindings.cpp
+    engine/scripting/bindings/MotionBindings.h
+    engine/scripting/bindings/MotionBindings.cpp
+    engine/scripting/bindings/SpawnBindings.h
+    engine/scripting/bindings/SpawnBindings.cpp
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)

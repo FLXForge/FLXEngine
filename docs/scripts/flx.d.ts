@@ -60,7 +60,7 @@ interface RuntimeObject {
     /** Unique runtime instance identifier. */
     id: string;
     
-    /** Object name, usually defined in JSON. */
+    /** Logical instance name assigned by the parent children map. */
     name: string;
 
     /**
@@ -248,15 +248,14 @@ declare function kill(object: RuntimeObject): void;
 declare function delta(): number;
 
 /**
- * Spawns a prefab instance using the spawn definition
- * declared in the object JSON.
+ * Creates a manual child declared in the object's children map.
  *
  * @example
  * spawn(object, "laser");
  */
 declare function spawn(
     object: RuntimeObject,
-    spawnName: string
+    childName: string
 ): void;
 
 /**
@@ -279,13 +278,8 @@ declare function draw_text(
 ): void;
 
 /**
- * Called once when the project starts.
- */
-declare function start(): void;
-
-/**
  * Called when an object enters the world.
- * Executed for initial objects and spawned prefabs.
+ * Executed for auto children and manually spawned children.
  */
 declare function born(object: RuntimeObject): void;
 

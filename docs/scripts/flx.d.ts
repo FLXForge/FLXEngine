@@ -263,18 +263,93 @@ declare function spawn(
  *
  * Coordinates are expressed in FLX logical resolution.
  * The engine applies the configured screen scale internally.
+ * This is a screen-space helper; use shape.type = "text" for world text.
  *
  * @example
  * draw_text(10, 10, "SCORE: " + global["score"]);
  *
  * @example
  * draw_text(10, 25, "LIVES: " + global["lives"], 8);
+ *
+ * @example
+ * draw_text(10, 40, "READY", 10, "#ffffff");
  */
 declare function draw_text(
     x: number,
     y: number,
     text: string,
-    size?: number
+    size?: number,
+    color?: string
+): void;
+
+/**
+ * Starts a full-screen fade from transparent to opaque.
+ *
+ * Default color is black and duration is currently fixed to one second.
+ *
+ * @example
+ * fade_on();
+ *
+ * @example
+ * fade_on("#000000");
+ */
+declare function fade_on(color?: string): void;
+
+/**
+ * Starts a full-screen fade from opaque to transparent.
+ *
+ * Default color is black and duration is currently fixed to one second.
+ *
+ * @example
+ * fade_off();
+ *
+ * @example
+ * fade_off("black");
+ */
+declare function fade_off(color?: string): void;
+
+/**
+ * Sets the fade overlay alpha immediately.
+ *
+ * Alpha is clamped between 0 and 1.
+ *
+ * @example
+ * fade_set(1);
+ * fade_off();
+ *
+ * @example
+ * fade_set(0, "black");
+ */
+declare function fade_set(
+    alpha: number,
+    color?: string
+): void;
+
+/**
+ * Returns true while a fade transition is running.
+ */
+declare function fade_active(): boolean;
+
+/**
+ * Returns true when there is no fade transition running.
+ */
+declare function fade_done(): boolean;
+
+/**
+ * Returns the current fade alpha.
+ * 0 means fully visible; 1 means fully covered.
+ */
+declare function fade_alpha(): number;
+
+/**
+ * Plays a sound declared in the object's sounds map.
+ *
+ * @example
+ * play_sound(ship, "laser");
+ */
+declare function play_sound(
+    object: RuntimeObject,
+    id: string
 ): void;
 
 /**

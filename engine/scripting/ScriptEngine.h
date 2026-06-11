@@ -10,6 +10,8 @@
 #include <functional>
 #include <quickjs.h>
 
+class FadeSystem;
+class AudioSystem;
 struct JSRuntime;
 struct JSContext;
 
@@ -74,6 +76,23 @@ public:
     void setScreenScale(int scale);
     int getScreenScale() const;
 
+    void setFadeSystem(FadeSystem* fadeSystem);
+    void fadeOn(const std::string& color);
+    void fadeOff(const std::string& color);
+    void fadeSet(
+        float alpha,
+        const std::string& color
+    );
+    bool fadeActive() const;
+    bool fadeDone() const;
+    float fadeAlpha() const;
+
+    void setAudioSystem(AudioSystem* audioSystem);
+    void playSound(
+        RuntimeObject& source,
+        const std::string& id
+    );
+
 private:
     JSValue createJsObject(RuntimeObject& object);
     void applyJsObject(RuntimeObject& source, JSValue jsObject);
@@ -98,4 +117,6 @@ private:
     SpawnObjectFunction spawnObjectFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
+    FadeSystem* fadeSystem = nullptr;
+    AudioSystem* audioSystem = nullptr;
 };

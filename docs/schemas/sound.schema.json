@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sound.schema.json",
+  "title": "FLX Sound",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "like": {
+      "type": "string"
+    },
+
+    "wave": {
+      "type": "string",
+      "enum": [
+        "square",
+        "sine",
+        "triangle",
+        "saw",
+        "noise"
+      ],
+      "default": "square"
+    },
+
+    "frequency": {
+      "type": "number",
+      "default": 440
+    },
+
+    "duration": {
+      "type": "number",
+      "default": 0.1
+    },
+
+    "volume": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1
+    }
+  }
+}

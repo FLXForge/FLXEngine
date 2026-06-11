@@ -26,6 +26,7 @@ RuntimeObject RuntimeObjectBuilder::build(
 
     object.shapeMode = definition.shapeMode;
     object.shapeType = definition.shapeType;
+    object.textContent = definition.textContent;
     object.radius = definition.radius;
     object.points = definition.points;
 
@@ -48,6 +49,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.collisionWith = definition.collisionWith;
 
     object.scripts = definition.scripts;
+    object.sounds = definition.sounds;
     object.children = definition.children;
 
     return object;

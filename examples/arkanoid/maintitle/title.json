@@ -1,0 +1,19 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 140,
+    "y": 70
+  },
+
+  "shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "black",
+    "mode": "fill",
+    "size": {
+      "width": 370,
+      "height": 90
+    }
+  }
+}

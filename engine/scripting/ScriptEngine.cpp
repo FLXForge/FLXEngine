@@ -1,6 +1,8 @@
 #include "ScriptEngine.h"
 #include "../runtime/RuntimeConstants.h"
 #include "../debug/Logger.h"
+#include "../audio/AudioSystem.h"
+#include "../graphics/FadeSystem.h"
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
@@ -941,4 +943,93 @@ void ScriptEngine::setScreenScale(int scale)
 int ScriptEngine::getScreenScale() const
 {
     return screenScale;
+}
+
+void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
+{
+    fadeSystem = nextFadeSystem;
+}
+
+void ScriptEngine::fadeOn(const std::string& color)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->fadeOn(color);
+}
+
+void ScriptEngine::fadeOff(const std::string& color)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->fadeOff(color);
+}
+
+void ScriptEngine::fadeSet(
+    float alpha,
+    const std::string& color
+)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->set(alpha, color);
+}
+
+bool ScriptEngine::fadeActive() const
+{
+    return fadeSystem != nullptr && fadeSystem->isActive();
+}
+
+bool ScriptEngine::fadeDone() const
+{
+    return fadeSystem == nullptr || fadeSystem->isDone();
+}
+
+float ScriptEngine::fadeAlpha() const
+{
+    if (fadeSystem == nullptr)
+    {
+        return 0.0f;
+    }
+
+    return fadeSystem->getAlpha();
+}
+
+void ScriptEngine::setAudioSystem(AudioSystem* nextAudioSystem)
+{
+    audioSystem = nextAudioSystem;
+}
+
+void ScriptEngine::playSound(
+    RuntimeObject& source,
+    const std::string& id
+)
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    const auto it =
+        source.sounds.find(id);
+
+    if (it == source.sounds.end())
+    {
+        Logger::warning(
+            "audio",
+            "Sound not found: " + id + " in " + source.runtimeId
+        );
+
+        return;
+    }
+
+    audioSystem->play(it->second);
 }

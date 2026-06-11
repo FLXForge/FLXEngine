@@ -2,9 +2,12 @@
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
   "children": {
-    "title": "maintitle/titlescreen"
+    "title": "title",
+    "title_ball": "ball",
+    "background": "background"
   },
+
   "behavior": {
-    "scripts": ["game"]
+    "scripts": ["titlescreen"]
   }
 }

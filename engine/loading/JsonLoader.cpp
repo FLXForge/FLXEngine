@@ -1,13 +1,11 @@
 #include "JsonLoader.h"
 #include "../debug/Logger.h"
+#include "../tools/ColorParser.h"
+#include "../tools/TextTools.h"
 
-#include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include <optional>
-#include <unordered_map>
 #include <vector>
 
 namespace
@@ -68,165 +66,6 @@ namespace
         }
 
         return true;
-    }
-
-    std::optional<int> hexValue(char value)
-    {
-        if (value >= '0' && value <= '9')
-        {
-            return value - '0';
-        }
-
-        if (value >= 'a' && value <= 'f')
-        {
-            return 10 + value - 'a';
-        }
-
-        if (value >= 'A' && value <= 'F')
-        {
-            return 10 + value - 'A';
-        }
-
-        return std::nullopt;
-    }
-
-    std::optional<Color> parseHexColor(const std::string& value)
-    {
-        if (value.size() != 4 && value.size() != 7)
-        {
-            return std::nullopt;
-        }
-
-        if (value[0] != '#')
-        {
-            return std::nullopt;
-        }
-
-        auto readDigit = [](char digit) -> std::optional<unsigned char>
-        {
-            const auto parsed = hexValue(digit);
-
-            if (!parsed.has_value())
-            {
-                return std::nullopt;
-            }
-
-            return static_cast<unsigned char>(
-                parsed.value() * 17
-            );
-        };
-
-        auto readByte = [](char high, char low) -> std::optional<unsigned char>
-        {
-            const auto parsedHigh = hexValue(high);
-            const auto parsedLow = hexValue(low);
-
-            if (!parsedHigh.has_value() || !parsedLow.has_value())
-            {
-                return std::nullopt;
-            }
-
-            return static_cast<unsigned char>(
-                parsedHigh.value() * 16 + parsedLow.value()
-            );
-        };
-
-        std::optional<unsigned char> r;
-        std::optional<unsigned char> g;
-        std::optional<unsigned char> b;
-
-        if (value.size() == 4)
-        {
-            r = readDigit(value[1]);
-            g = readDigit(value[2]);
-            b = readDigit(value[3]);
-        }
-        else
-        {
-            r = readByte(value[1], value[2]);
-            g = readByte(value[3], value[4]);
-            b = readByte(value[5], value[6]);
-        }
-
-        if (!r.has_value() || !g.has_value() || !b.has_value())
-        {
-            return std::nullopt;
-        }
-
-        return Color{
-            r.value(),
-            g.value(),
-            b.value(),
-            255
-        };
-    }
-
-    Color parseColor(std::string colorName)
-    {
-        const auto hexColor =
-            parseHexColor(colorName);
-
-        if (hexColor.has_value())
-        {
-            return hexColor.value();
-        }
-
-        std::transform(
-            colorName.begin(),
-            colorName.end(),
-            colorName.begin(),
-            [](unsigned char value)
-            {
-                return static_cast<char>(std::tolower(value));
-            }
-        );
-
-        static const std::unordered_map<std::string, Color> colors = {
-            { "lightgray", LIGHTGRAY },
-            { "lightgrey", LIGHTGRAY },
-            { "gray", GRAY },
-            { "grey", GRAY },
-            { "darkgray", DARKGRAY },
-            { "darkgrey", DARKGRAY },
-            { "yellow", YELLOW },
-            { "gold", GOLD },
-            { "orange", ORANGE },
-            { "pink", PINK },
-            { "red", RED },
-            { "maroon", MAROON },
-            { "green", GREEN },
-            { "lime", LIME },
-            { "darkgreen", DARKGREEN },
-            { "skyblue", SKYBLUE },
-            { "blue", BLUE },
-            { "darkblue", DARKBLUE },
-            { "purple", PURPLE },
-            { "violet", VIOLET },
-            { "darkpurple", DARKPURPLE },
-            { "beige", BEIGE },
-            { "brown", BROWN },
-            { "darkbrown", DARKBROWN },
-            { "white", WHITE },
-            { "black", BLACK },
-            { "blank", BLANK },
-            { "magenta", MAGENTA },
-            { "raywhite", RAYWHITE }
-        };
-
-        const auto it =
-            colors.find(colorName);
-
-        if (it != colors.end())
-        {
-            return it->second;
-        }
-
-        Logger::warning(
-            "json",
-            "Unknown color '" + colorName + "', using white"
-        );
-
-        return WHITE;
     }
 
     void mergeJson(
@@ -453,13 +292,20 @@ namespace
         const auto& shape = object["shape"];
 
         definition.hasVisual = true;
-        definition.shapeType = shape.value("type", "block");
-        definition.shapeMode = shape.value("mode", "fill");
+        definition.shapeType =
+            TextTools::toLower(shape.value("type", "block"));
+        definition.shapeMode =
+            TextTools::toLower(shape.value("mode", "fill"));
+        definition.textContent =
+            shape.value("content", definition.textContent);
 
         if (shape.contains("color"))
         {
             definition.color =
-                parseColor(shape["color"].get<std::string>());
+                ColorParser::parse(
+                    shape["color"].get<std::string>(),
+                    WHITE
+                );
         }
 
         if (shape.contains("radius"))
@@ -530,7 +376,9 @@ namespace
         const auto& bounds = object["bounds"];
 
         definition.boundsMode =
-            bounds.value("mode", definition.boundsMode);
+            TextTools::toLower(
+                bounds.value("mode", definition.boundsMode)
+            );
 
         definition.boundsOverflow =
             bounds.value("overflow", definition.boundsOverflow);
@@ -574,7 +422,9 @@ namespace
         const auto& collision = object["collision"];
 
         definition.collisionType =
-            collision.value("type", definition.collisionType);
+            TextTools::toLower(
+                collision.value("type", definition.collisionType)
+            );
 
         definition.collisionRadius =
             collision.value("radius", definition.collisionRadius);
@@ -604,6 +454,108 @@ namespace
                     definition.size.x,
                     definition.size.y
                 ) / 2.0f;
+        }
+    }
+
+    nlohmann::json normalizeSoundValue(
+        const nlohmann::json& value,
+        const std::filesystem::path& currentFile
+    )
+    {
+        if (value.is_string())
+        {
+            const auto soundPath =
+                resolvePath(
+                    currentFile,
+                    value.get<std::string>()
+                );
+
+            nlohmann::json soundData;
+
+            if (!loadJson(soundPath, soundData))
+            {
+                return nlohmann::json{};
+            }
+
+            nlohmann::json resolvedSound;
+
+            if (!resolveLike(soundPath, soundData, resolvedSound))
+            {
+                return nlohmann::json{};
+            }
+
+            if (resolvedSound.contains("sound"))
+            {
+                return resolvedSound["sound"];
+            }
+
+            return resolvedSound;
+        }
+
+        if (value.is_object() && value.contains("like"))
+        {
+            nlohmann::json resolvedSound;
+
+            if (!resolveLike(currentFile, value, resolvedSound))
+            {
+                return nlohmann::json{};
+            }
+
+            if (resolvedSound.contains("sound"))
+            {
+                return resolvedSound["sound"];
+            }
+
+            return resolvedSound;
+        }
+
+        return value;
+    }
+
+    void parseSounds(
+        const nlohmann::json& object,
+        const std::filesystem::path& currentFile,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("sounds") || !object["sounds"].is_object())
+        {
+            return;
+        }
+
+        const auto& sounds =
+            object["sounds"];
+
+        for (auto it = sounds.begin(); it != sounds.end(); ++it)
+        {
+            const nlohmann::json data =
+                normalizeSoundValue(
+                    it.value(),
+                    currentFile
+                );
+
+            if (!data.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid sound '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            SoundDefinition sound;
+            sound.wave =
+                TextTools::toLower(data.value("wave", sound.wave));
+            sound.frequency =
+                data.value("frequency", sound.frequency);
+            sound.duration =
+                data.value("duration", sound.duration);
+            sound.volume =
+                data.value("volume", sound.volume);
+
+            definition.sounds[it.key()] =
+                sound;
         }
     }
 
@@ -705,7 +657,9 @@ namespace
             sourceFile.generic_string();
 
         definition.spawnMode =
-            object.value("spawn", definition.spawnMode);
+            TextTools::toLower(
+                object.value("spawn", definition.spawnMode)
+            );
 
         definition.hasOffset =
             object.contains("offset") && object["offset"].is_object();
@@ -746,6 +700,7 @@ namespace
         parseBounds(object, definition);
         parseBehavior(object, definition);
         parseCollision(object, definition);
+        parseSounds(object, sourceFile, definition);
         parseChildren(object, sourceFile, definition);
 
         return definition;

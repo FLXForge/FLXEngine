@@ -1,0 +1,101 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "children": {
+    "skyTop": {
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#1b3f8b",
+        "size": {
+          "width": 640,
+          "height": 70
+        }
+      }
+    },
+
+    "skyMid": {
+      "origin": {
+        "x": 0,
+        "y": 70
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#3f6fd8",
+        "size": {
+          "width": 640,
+          "height": 45
+        }
+      }
+    },
+
+    "sunsetYellow": {
+      "origin": {
+        "x": 0,
+        "y": 115
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#f7d84a",
+        "size": {
+          "width": 640,
+          "height": 45
+        }
+      }
+    },
+
+    "sunsetOrange": {
+      "origin": {
+        "x": 0,
+        "y": 160
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#ef7d22",
+        "size": {
+          "width": 640,
+          "height": 45
+        }
+      }
+    },
+
+    "sunsetRed": {
+      "origin": {
+        "x": 0,
+        "y": 205
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#b53128",
+        "size": {
+          "width": 640,
+          "height": 55
+        }
+      }
+    },
+
+    "floor": {
+      "origin": {
+        "x": 0,
+        "y": 260
+      },
+      "shape": {
+        "type": "box",
+        "mode": "fill",
+        "color": "#2d6b2d",
+        "size": {
+          "width": 640,
+          "height": 60
+        }
+      }
+    }
+  }
+}

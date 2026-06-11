@@ -20,6 +20,7 @@ public:
     std::unordered_map<std::string, double> local;
 
     std::unordered_map<std::string, ObjectDefinition> children;
+    std::unordered_map<std::string, SoundDefinition> sounds;
 
     void draw(
         int scale,
@@ -64,6 +65,7 @@ public:
     float inertia;
 
     std::string shapeType;
+    std::string textContent;
     std::vector<Vector2> points;
 
     std::string boundsMode;

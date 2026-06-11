@@ -329,7 +329,7 @@
 </code></pre>
             </div>
 
-            <h2>Draw_text(x, y, text, size)</h2>
+            <h2>Draw_text(x, y, text, size, color)</h2>
 
             <p>
                 Dibuja texto en pantalla usando las coodenadas definidas en screen.
@@ -344,12 +344,135 @@
                 <div class="code-header">timer</div>
 <pre><code>draw_text( 10, 10, "HELLO ");
 draw_text( 40, 10, "WORLD!", 15);
+draw_text( 10, 30, "READY", 10, "#ffffff");
 </code></pre>
             </div>
 
             <p>
                 *<code>size</code> es opcional, por defecto es 10.
+                <code>color</code> es opcional y usa blanco por defecto.
             </p>
+
+            <hr />
+
+            <h2>fade_on(color)</h2>
+
+            <p>
+                Inicia un desvanecimiento de pantalla completa desde transparente
+                hasta opaco. La superposicion se dibuja por encima del mundo y
+                por encima del texto dibujado con <code>draw_text()</code>.
+            </p>
+
+            <p>
+                El parametro <code>color</code> es opcional.
+                Si no se indica, se usa negro.
+                Se admiten colores con nombre y colores hexadecimales como
+                <code>#000</code>
+                y
+                <code>#000000</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_on</div>
+<pre><code>fade_on();
+fade_on("black");
+fade_on("#000000");</code></pre>
+            </div>
+
+            <p>
+                La transicion dura actualmente un segundo y queda completamente
+                cubierta al finalizar.
+            </p>
+
+            <hr />
+
+            <h2>fade_off(color)</h2>
+
+            <p>
+                Inicia un desvanecimiento de pantalla completa desde opaco
+                hasta transparente. Al terminar, la superposicion queda inactiva.
+            </p>
+
+            <p>
+                El parametro <code>color</code> es opcional y sigue las mismas
+                reglas de color que <code>fade_on()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_off</div>
+<pre><code>fade_off();
+fade_off("black");
+fade_off("#000000");</code></pre>
+            </div>
+
+            <p>
+                Los parametros de duracion e intensidad no forman parte de la API
+                todavia. Quedan planteados como ampliaciones futuras.
+            </p>
+
+            <hr />
+
+            <h2>fade_set(alpha, color)</h2>
+
+            <p>
+                Establece inmediatamente el alpha del fundido.
+                <code>0</code> significa pantalla descubierta y <code>1</code>
+                pantalla completamente cubierta. El valor se limita entre
+                <code>0</code> y <code>1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_set</div>
+<pre><code>function born(title) {
+    fade_set(1);
+    fade_off();
+}
+
+fade_set(0, "black");</code></pre>
+            </div>
+
+            <p>
+                El parametro <code>color</code> es opcional y usa negro por defecto.
+            </p>
+
+            <hr />
+
+            <h2>fade_active()</h2>
+
+            <p>
+                Devuelve <code>true</code> mientras hay una transicion de fundido
+                en curso. Devuelve <code>false</code> cuando el overlay esta estable.
+            </p>
+
+            <h2>fade_done()</h2>
+
+            <p>
+                Devuelve <code>true</code> cuando no hay ninguna transicion de
+                fundido en curso. Sirve para continuar una transicion de escena
+                de forma segura.
+            </p>
+
+            <h2>fade_alpha()</h2>
+
+            <p>
+                Devuelve el alpha actual del fundido.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">transicion segura</div>
+<pre><code>function action(title) {
+    if (Key.pressed(KEY_SPACE)) {
+        title.local["leaving"] = 1;
+        fade_on();
+    }
+
+    if (title.local["leaving"] == 1 && fade_done()) {
+        // cargar siguiente escena
+    }
+}</code></pre>
+            </div>
+
+            <hr />
 
             <h2>follow_y(object, targetName)</h2>
 
@@ -495,6 +618,37 @@ if (probability(1, 1000)) {
 }
 </code></pre>
             </div>
+
+            <hr />
+
+            <h2>play_sound(object, id)</h2>
+
+            <p>
+                Reproduce un sonido declarado en el bloque
+                <code>sounds</code>
+                del objeto.
+            </p>
+
+            <p>
+                El parametro <code>id</code> identifica la declaracion de sonido
+                que pertenece a ese objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_sound</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    play_sound(ship, "laser");
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que posee la declaracion de sonido.</li>
+                <li><code>id</code>: nombre del sonido declarado en JSON.</li>
+            </ul>
 
             <hr />
 

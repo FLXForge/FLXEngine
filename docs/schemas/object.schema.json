@@ -102,6 +102,16 @@
       ]
     },
 
+    "sounds": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "sound.schema.json" }
+        ]
+      }
+    },
+
     "children": {
       "type": "object",
       "additionalProperties": {

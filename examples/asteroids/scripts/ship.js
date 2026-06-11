@@ -26,6 +26,7 @@ function action(ship) {
     }
 
     if (Key.pressed(KEY_SPACE)) {
+        play_sound(ship, "laser");
         spawn(ship, "laser");
     }
 }

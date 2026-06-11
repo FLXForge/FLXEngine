@@ -2,6 +2,8 @@
 
 #include <raylib.h>
 
+#include "../audio/SoundDefinition.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -26,6 +28,7 @@ struct ObjectDefinition
     Color color = WHITE;
     std::string shapeMode = "fill";
     std::string shapeType = "block";
+    std::string textContent;
     float radius = 0.0f;
     std::vector<Vector2> points;
 
@@ -47,5 +50,6 @@ struct ObjectDefinition
     std::vector<std::string> collisionWith;
 
     std::vector<std::string> scripts;
+    std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
 };

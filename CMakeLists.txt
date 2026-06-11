@@ -57,8 +57,17 @@ add_executable(FlxEngine
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
+    engine/audio/SoundDefinition.h
+    engine/audio/AudioSystem.h
+    engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/tools/ColorParser.h
+    engine/tools/ColorParser.cpp
+    engine/tools/TextTools.h
+    engine/tools/TextTools.cpp
+    engine/graphics/FadeSystem.h
+    engine/graphics/FadeSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
@@ -69,6 +78,8 @@ add_executable(FlxEngine
     engine/scripting/ScriptBindings.h
     engine/scripting/ScriptBindings.cpp 
     engine/scripting/bindings/BindingHelpers.h
+    engine/scripting/bindings/AudioBindings.h
+    engine/scripting/bindings/AudioBindings.cpp
     engine/scripting/bindings/CoreBindings.h
     engine/scripting/bindings/CoreBindings.cpp
     engine/scripting/bindings/InputBindings.h

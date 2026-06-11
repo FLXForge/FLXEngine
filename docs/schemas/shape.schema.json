@@ -14,7 +14,8 @@
         "triangle",
         "polygon",
         "circle",
-        "line"
+        "line",
+        "text"
       ],
       "default": "block"
     },
@@ -59,12 +60,9 @@
       "type": "number"
     },
 
-    "text": {
-      "type": "string"
-    },
-
-    "fontSize": {
-      "type": "number"
+    "content": {
+      "type": "string",
+      "description": "Visible text for shapes with type text."
     }
   }
 }

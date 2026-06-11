@@ -357,7 +357,7 @@
 
             <hr />
 
-            <h2>Draw_text(x, y, text, size)</h2>
+            <h2>Draw_text(x, y, text, size, color)</h2>
 
             <p>
                 Draws text on screen using logical screen coordinates.
@@ -366,18 +366,140 @@
             <p>
                 Coordinates are expressed in FLX logical resolution.
                 The engine applies the configured screen scale internally.
+                This is a screen-space helper. World text should use
+                <code>shape.type = "text"</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">timer</div>
 <pre><code>draw_text( 10, 10, "HELLO ");
 draw_text( 40, 10, "WORLD!", 15);
+draw_text( 10, 30, "READY", 10, "#ffffff");
 </code></pre>
             </div>
 
             <p>
                 *<code>size</code> is optional, by dafault is 10.
+                <code>color</code> is optional and uses white by default.
             </p>
+
+            <hr />
+
+            <h2>fade_on(color)</h2>
+
+            <p>
+                Starts a full-screen fade from transparent to opaque.
+                The overlay is drawn above the world and above text drawn with
+                <code>draw_text()</code>.
+            </p>
+
+            <p>
+                The <code>color</code> parameter is optional.
+                If omitted, the fade uses black.
+                Named colors and hexadecimal colors such as
+                <code>#000</code>
+                and
+                <code>#000000</code>
+                are supported.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_on</div>
+<pre><code>fade_on();
+fade_on("black");
+fade_on("#000000");</code></pre>
+            </div>
+
+            <p>
+                The transition currently lasts one second and remains fully covered
+                when it finishes.
+            </p>
+
+            <hr />
+
+            <h2>fade_off(color)</h2>
+
+            <p>
+                Starts a full-screen fade from opaque to transparent.
+                When the transition finishes, the overlay becomes inactive.
+            </p>
+
+            <p>
+                The <code>color</code> parameter is optional and follows the same
+                color rules as <code>fade_on()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_off</div>
+<pre><code>fade_off();
+fade_off("black");
+fade_off("#000000");</code></pre>
+            </div>
+
+            <p>
+                Duration and intensity parameters are intentionally not part of
+                the API yet. They are planned as future extensions.
+            </p>
+
+            <hr />
+
+            <h2>fade_set(alpha, color)</h2>
+
+            <p>
+                Sets the fade overlay alpha immediately.
+                <code>0</code> means fully visible and <code>1</code> means fully covered.
+                The value is clamped between <code>0</code> and <code>1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_set</div>
+<pre><code>function born(title) {
+    fade_set(1);
+    fade_off();
+}
+
+fade_set(0, "black");</code></pre>
+            </div>
+
+            <p>
+                The <code>color</code> parameter is optional and uses black by default.
+            </p>
+
+            <hr />
+
+            <h2>fade_active()</h2>
+
+            <p>
+                Returns <code>true</code> while a fade transition is running.
+                It returns <code>false</code> when the overlay is stable.
+            </p>
+
+            <h2>fade_done()</h2>
+
+            <p>
+                Returns <code>true</code> when there is no fade transition running.
+                This is useful before continuing with a scene transition.
+            </p>
+
+            <h2>fade_alpha()</h2>
+
+            <p>
+                Returns the current fade alpha.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">safe transition</div>
+<pre><code>function action(title) {
+    if (Key.pressed(KEY_SPACE)) {
+        title.local["leaving"] = 1;
+        fade_on();
+    }
+
+    if (title.local["leaving"] == 1 && fade_done()) {
+        // load next scene
+    }
+}</code></pre>
+            </div>
 
             <hr />
 
@@ -561,6 +683,37 @@ if (probability(1, 1000)) {
 
 
             </div>
+
+            <hr />
+
+            <h2>play_sound(object, id)</h2>
+
+            <p>
+                Plays a sound declared in the object's
+                <code>sounds</code>
+                block.
+            </p>
+
+            <p>
+                The <code>id</code> parameter identifies the sound declaration
+                owned by that object.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_sound</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    play_sound(ship, "laser");
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that owns the sound declaration.</li>
+                <li><code>id</code>: name of the sound declared in JSON.</li>
+            </ul>
 
             <hr />
 

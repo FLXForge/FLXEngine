@@ -1,5 +1,6 @@
 #include "ScriptBindings.h"
 #include "ScriptEngine.h"
+#include "bindings/AudioBindings.h"
 #include "bindings/CoreBindings.h"
 #include "bindings/DrawBindings.h"
 #include "bindings/InputBindings.h"
@@ -19,5 +20,6 @@ void ScriptBindings::registerAll(
     InputBindings::registerAll(context);
     MotionBindings::registerAll(context);
     DrawBindings::registerAll(context);
+    AudioBindings::registerAll(context);
     SpawnBindings::registerAll(context);
 }

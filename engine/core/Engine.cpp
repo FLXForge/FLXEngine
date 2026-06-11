@@ -25,8 +25,6 @@ void Engine::run(const std::string& flxPath)
 void Engine::init(const std::string& flxPath)
 {
     loadProject(flxPath);
-    initWindow();
-    configureScriptEngine();
 
     SetTargetFPS(60);
 }
@@ -55,12 +53,15 @@ void Engine::loadProject(const std::string& flxPath)
         "Loaded root: " + rootPath
     );
 
+    initWindow();
+    audioSystem.init();
+    scriptEngine.setScreenScale(context.screenScale);
+    configureScriptEngine();
+
     const ObjectDefinition rootDefinition =
         JsonLoader::loadObjectDefinition(rootPath);
 
     world.load(rootDefinition, scriptEngine);
-
-    scriptEngine.setScreenScale(context.screenScale);
 }
 
 void Engine::initWindow()
@@ -79,6 +80,9 @@ void Engine::initWindow()
 
 void Engine::configureScriptEngine()
 {
+    scriptEngine.setFadeSystem(&fadeSystem);
+    scriptEngine.setAudioSystem(&audioSystem);
+
     scriptEngine.setFindObjectFunction(
         [this](const std::string& name)
         {
@@ -115,6 +119,9 @@ void Engine::update()
         static_cast<float>(context.screenWidth),
         static_cast<float>(context.screenHeight)
     );
+
+    fadeSystem.update(GetFrameTime());
+    audioSystem.update();
 }
 
 void Engine::draw()
@@ -131,11 +138,18 @@ void Engine::draw()
         context.debugCollisions
     );
 
+    fadeSystem.draw(
+        context.screenWidth,
+        context.screenHeight,
+        context.screenScale
+    );
+
     EndDrawing();
 }
 
 void Engine::shutdown()
 {
+    audioSystem.shutdown();
     CloseWindow();
 }
 

@@ -3,6 +3,8 @@
 #include "../runtime/RuntimeWorld.h"
 #include "../scripting/ScriptEngine.h"
 #include "../project/FlxContext.h"
+#include "../audio/AudioSystem.h"
+#include "../graphics/FadeSystem.h"
 
 #include <string>
 
@@ -27,5 +29,7 @@ private:
 private:
     ScriptEngine scriptEngine;
     RuntimeWorld world;
+    AudioSystem audioSystem;
+    FadeSystem fadeSystem;
     FlxContext context;
 };

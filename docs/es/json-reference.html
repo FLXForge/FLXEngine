@@ -104,6 +104,17 @@ notes=FLX example with spawn and basic UI
     }
 }
 </code></pre>
+                <div class="code-header">shape text</div>
+<pre><code>"shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "white",
+    "mode": "fill",
+    "size": {
+        "width": 260,
+        "height": 60
+    }
+}</code></pre>
             </div>
 
             <h2 id="children">Children</h2>
@@ -144,6 +155,45 @@ notes=FLX example with spawn and basic UI
             <p>
                 Los hijos usan <code>spawn: "auto"</code> por defecto. Los hijos manuales
                 quedan registrados y pueden crearse despuÃƒÂ©s con <code>spawn(parent, "child")</code>.
+            </p>
+
+            <h2 id="sounds">Sounds</h2>
+
+            <p>
+                El campo <code>sounds</code> declara sonidos que pertenecen a un objeto.
+                Los scripts pueden reproducirlos con <code>play_sound(object, "id")</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">sounds</div>
+<pre><code>"sounds": {
+    "beep": {
+        "wave": "square",
+        "frequency": 880,
+        "duration": 0.08,
+        "volume": 0.7
+    }
+}</code></pre>
+
+                <div class="code-header">sounds (referencia)</div>
+<pre><code>"sounds": {
+    "beep": "audio/beep"
+}</code></pre>
+            </div>
+
+            <p>
+                Las ondas soportadas son
+                <code>square</code>,
+                <code>sine</code>,
+                <code>triangle</code>,
+                <code>saw</code>
+                y
+                <code>noise</code>.
+            </p>
+
+            <p>
+                Las declaraciones de sonido son datos. Pueden estar en linea,
+                referenciadas como JSON o compuestas con <code>like</code>.
             </p>
 
             <h2 id="like">ComposiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n JSON (like)</h2>
@@ -231,9 +281,10 @@ notes=FLX example with spawn and basic UI
 
             <ul>
                 <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
-                                                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
             </ul>
 
             <hr />
@@ -321,6 +372,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#motion">motion</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de movimiento, si existe. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites de la pantalla. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
@@ -390,9 +442,23 @@ notes=FLX example with spawn and basic UI
                         <li><code>outline</code>: se dibuja el contorno del color especificado </li>
                     </ul>
                 </li>
+                <li><code>content</code>: cadena visible cuando <code>type</code> es <code>text</code>. <i>[ Opcional ]</i></li>
                 <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#size">size</a>: tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <p>
+                Una forma de texto es un objeto del mundo. Usa origin, angle,
+                bounds, collision y behavior como cualquier otro objeto. El motor
+                calcula un tamaño de fuente que encaja dentro del cuadro logico
+                definido por <code>size</code>.
+            </p>
+
+            <p>
+                Con <code>mode: "outline"</code>, el texto se dibuja primero con
+                el color seleccionado y luego de nuevo en negro con un tamaño
+                proporcionalmente menor, dejando el color seleccionado como contorno.
+            </p>
 
             <h2 id="size">Size</h2>
 

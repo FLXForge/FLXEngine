@@ -1,0 +1,41 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 320,
+    "y": 260
+  },
+
+  "shape": {
+    "type": "circle",
+    "mode": "fill",
+    "color": "white",
+    "size": {
+      "width": 10,
+      "height": 10
+    }
+  },
+
+  "motion": {
+    "speed": 90,
+    "angle": 45
+  },
+
+  "group": "ball",
+
+  "collision": {
+    "type": "circle",
+    "radius": 10,
+    "active": true,
+    "with": [
+      "wall",
+      "title",
+      "paddle"
+    ]
+  },
+
+  "behavior": {
+    "scripts": [ "ball" ]
+  }
+
+}

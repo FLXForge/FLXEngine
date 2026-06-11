@@ -147,6 +147,45 @@ notes=FLX example with spawn and basic UI
                 are registered and can be created later with <code>spawn(parent, "child")</code>.
             </p>
 
+            <h2 id="sounds">Sounds</h2>
+
+            <p>
+                The <code>sounds</code> field declares sounds owned by an object.
+                Scripts can play them with <code>play_sound(object, "id")</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">sounds</div>
+<pre><code>"sounds": {
+    "beep": {
+        "wave": "square",
+        "frequency": 880,
+        "duration": 0.08,
+        "volume": 0.7
+    }
+}</code></pre>
+
+                <div class="code-header">sounds (reference)</div>
+<pre><code>"sounds": {
+    "beep": "audio/beep"
+}</code></pre>
+            </div>
+
+            <p>
+                Supported waves are
+                <code>square</code>,
+                <code>sine</code>,
+                <code>triangle</code>,
+                <code>saw</code>
+                and
+                <code>noise</code>.
+            </p>
+
+            <p>
+                Sound declarations are data. They can be inline, referenced as a
+                JSON file, or composed with <code>like</code>.
+            </p>
+
             <h2 id="like">JSON Composition (like)</h2>
 
             <p>
@@ -238,6 +277,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#children">children</a>: child objects loaded with this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
             </ul>
 
             <hr />
@@ -322,6 +362,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#motion">motion</a>: movement configuration, if any. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
@@ -366,6 +407,17 @@ notes=FLX example with spawn and basic UI
     }
 }
 </code></pre>
+                <div class="code-header">text shape</div>
+<pre><code>"shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "white",
+    "mode": "fill",
+    "size": {
+        "width": 260,
+        "height": 60
+    }
+}</code></pre>
             </div>
 
             <h3>Fields</h3>
@@ -390,11 +442,26 @@ notes=FLX example with spawn and basic UI
                         <li><code>outline</code>: only the outline is rendered using the specified color.</li>
                     </ul>
                 </li>
+                <li>
+                    <code>content</code>: visible string used when <code>type</code> is <code>text</code>. <i>[ Optional ]</i>
+                </li>
                 <li><code>color</code>: object color. <i>[ Optional ]</i></li>
                 <li>
                     <a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i>
                 </li>
             </ul>
+
+            <p>
+                A text shape is a world object. It uses origin, angle, bounds,
+                collision and behavior like any other object. The engine calculates
+                a font size that fits inside the logical <code>size</code> box.
+            </p>
+
+            <p>
+                With <code>mode: "outline"</code>, text is drawn first in the
+                selected color and then again in black at a smaller proportional
+                size, leaving the selected color as the outline.
+            </p>
 
 
             <h2 id="size">Size</h2>

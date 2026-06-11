@@ -1,26 +1,26 @@
 {
-    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-    "origin":  {
-                   "x":  5,
-                   "y":  5
-               },
-    "behavior":  {
-                     "scripts":  [
-                                     "scripts/space"
-                                 ]
-                 },
-    "children":  {
-                     "Asteroid_a":  {
-                                        "like":  "asteroid_a",
-                                        "spawn":  "manual"
-                                    },
-                     "Asteroid_b":  {
-                                        "like":  "asteroid_b",
-                                        "spawn":  "manual"
-                                    },
-                     "Asteroid_c":  {
-                                        "like":  "asteroid_c",
-                                        "spawn":  "manual"
-                                    }
-                 }
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 5,
+    "y": 5
+  },
+  "behavior": {
+    "scripts": [
+      "../../scripts/space"
+    ]
+  },
+  "children": {
+    "Asteroid_a": {
+      "like": "asteroid_a",
+      "spawn": "manual"
+    },
+    "Asteroid_b": {
+      "like": "asteroid_b",
+      "spawn": "manual"
+    },
+    "Asteroid_c": {
+      "like": "asteroid_c",
+      "spawn": "manual"
+    }
+  }
 }

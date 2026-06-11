@@ -1,72 +1,72 @@
 {
-    "$schema":  "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-    "shape":  {
-                  "type":  "polygon",
-                  "mode":  "outline",
-                  "color":  "brown",
-                  "points":  [
-                                 {
-                                     "x":  0,
-                                     "y":  -18
-                                 },
-                                 {
-                                     "x":  14,
-                                     "y":  -10
-                                 },
-                                 {
-                                     "x":  18,
-                                     "y":  2
-                                 },
-                                 {
-                                     "x":  12,
-                                     "y":  14
-                                 },
-                                 {
-                                     "x":  -2,
-                                     "y":  18
-                                 },
-                                 {
-                                     "x":  -14,
-                                     "y":  10
-                                 },
-                                 {
-                                     "x":  -18,
-                                     "y":  -4
-                                 },
-                                 {
-                                     "x":  -8,
-                                     "y":  -16
-                                 }
-                             ]
-              },
-    "bounds":  {
-                   "mode":  "wrap",
-                   "overflow":  true
-               },
-    "group":  "asteroid",
-    "collision":  {
-                      "type":  "circle",
-                      "active":  true,
-                      "with":  [
-                                   "ship",
-                                   "asteroid",
-                                   "laser"
-                               ],
-                      "radius":  16
-                  },
-    "behavior":  {
-                     "scripts":  [
-                                     "scripts/asteroid"
-                                 ]
-                 },
-    "children":  {
-                     "small":  {
-                                   "like":  "asteroid_small",
-                                   "spawn":  "manual"
-                               },
-                     "fragment":  {
-                                      "like":  "asteroid_fragment",
-                                      "spawn":  "manual"
-                                  }
-                 }
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "shape": {
+    "type": "polygon",
+    "mode": "outline",
+    "color": "brown",
+    "points": [
+      {
+        "x": 0,
+        "y": -18
+      },
+      {
+        "x": 14,
+        "y": -10
+      },
+      {
+        "x": 18,
+        "y": 2
+      },
+      {
+        "x": 12,
+        "y": 14
+      },
+      {
+        "x": -2,
+        "y": 18
+      },
+      {
+        "x": -14,
+        "y": 10
+      },
+      {
+        "x": -18,
+        "y": -4
+      },
+      {
+        "x": -8,
+        "y": -16
+      }
+    ]
+  },
+  "bounds": {
+    "mode": "wrap",
+    "overflow": true
+  },
+  "group": "asteroid",
+  "collision": {
+    "type": "circle",
+    "active": true,
+    "with": [
+      "ship",
+      "asteroid",
+      "laser"
+    ],
+    "radius": 16
+  },
+  "behavior": {
+    "scripts": [
+      "../../scripts/asteroid"
+    ]
+  },
+  "children": {
+    "small": {
+      "like": "asteroid_small",
+      "spawn": "manual"
+    },
+    "fragment": {
+      "like": "asteroid_fragment",
+      "spawn": "manual"
+    }
+  }
 }

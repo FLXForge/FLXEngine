@@ -52,9 +52,13 @@ add_executable(FlxEngine
     engine/runtime/ObjectDefinition.h
     engine/runtime/RuntimeObjectBuilder.h
     engine/runtime/RuntimeObjectBuilder.cpp
+    engine/runtime/RuntimeWorld.h
+    engine/runtime/RuntimeWorld.cpp
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
+    engine/collision/CollisionSystem.h
+    engine/collision/CollisionSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
@@ -64,6 +68,17 @@ add_executable(FlxEngine
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h
     engine/scripting/ScriptBindings.cpp 
+    engine/scripting/bindings/BindingHelpers.h
+    engine/scripting/bindings/CoreBindings.h
+    engine/scripting/bindings/CoreBindings.cpp
+    engine/scripting/bindings/InputBindings.h
+    engine/scripting/bindings/InputBindings.cpp
+    engine/scripting/bindings/DrawBindings.h
+    engine/scripting/bindings/DrawBindings.cpp
+    engine/scripting/bindings/MotionBindings.h
+    engine/scripting/bindings/MotionBindings.cpp
+    engine/scripting/bindings/SpawnBindings.h
+    engine/scripting/bindings/SpawnBindings.cpp
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)

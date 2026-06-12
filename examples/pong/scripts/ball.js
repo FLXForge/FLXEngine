@@ -20,4 +20,5 @@ function collision(ball, other) {
         bounce_x(ball);
         accelerate(ball, 5);
     }
+    play_sound(ball, "beep");
 }

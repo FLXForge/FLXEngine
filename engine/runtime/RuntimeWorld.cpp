@@ -9,6 +9,7 @@
 #include <cmath>
 #include <iterator>
 #include <raylib.h>
+#include <vector>
 
 RuntimeWorld::RuntimeWorld()
 {
@@ -70,9 +71,27 @@ void RuntimeWorld::draw(
     bool debugCollisions
 )
 {
+    std::vector<const RuntimeObject*> drawObjects;
+
+    drawObjects.reserve(objects.size());
+
     for (const auto& object : objects)
     {
-        object.draw(
+        drawObjects.push_back(&object);
+    }
+
+    std::stable_sort(
+        drawObjects.begin(),
+        drawObjects.end(),
+        [](const RuntimeObject* left, const RuntimeObject* right)
+        {
+            return left->layer < right->layer;
+        }
+    );
+
+    for (const RuntimeObject* object : drawObjects)
+    {
+        object->draw(
             screenScale,
             screenWidth,
             screenHeight
@@ -80,7 +99,7 @@ void RuntimeWorld::draw(
 
         if (debugCollisions)
         {
-            object.drawCollision(screenScale);
+            object->drawCollision(screenScale);
         }
     }
 

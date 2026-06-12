@@ -320,6 +320,7 @@ RuntimeObject::RuntimeObject(
     this->visible = true;
     this->alive = true;
     this->deadCalled = false;
+    this->layer = 0;
     this->shapeType = "block";
     this->textContent = "";
     this->rotationSpeed = 0.0f;

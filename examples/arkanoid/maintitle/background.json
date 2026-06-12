@@ -8,7 +8,8 @@
         "y": 0
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#1b3f8b",
         "size": {
@@ -24,7 +25,8 @@
         "y": 70
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#3f6fd8",
         "size": {
@@ -40,7 +42,8 @@
         "y": 115
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#f7d84a",
         "size": {
@@ -56,7 +59,8 @@
         "y": 160
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#ef7d22",
         "size": {
@@ -72,7 +76,8 @@
         "y": 205
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#b53128",
         "size": {
@@ -88,7 +93,8 @@
         "y": 260
       },
       "shape": {
-        "type": "box",
+        "type": "block",
+        "layer": -10,
         "mode": "fill",
         "color": "#2d6b2d",
         "size": {

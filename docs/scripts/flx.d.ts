@@ -40,6 +40,12 @@ declare const KEY_SPACE: number;
  * Motion configuration exposed from JSON.
  */
 interface MotionConfig {
+    /** Initial movement speed. */
+    speed: number;
+
+    /** Initial movement angle in degrees. */
+    angle: number;
+
     /** Rotation speed in degrees per second. */
     rotationSpeed: number;
 
@@ -71,6 +77,9 @@ interface RuntimeObject {
 
     /** Collision group identifier. */
     group: string;
+
+    /** Draw layer. Lower values are drawn first. */
+    layer: number;
 
     /** Current X position. */
     x: number;
@@ -175,6 +184,11 @@ declare function advance(object: RuntimeObject): void;
  * rotate(object, RIGHT);
  */
 declare function rotate(object: RuntimeObject, direction: number): void;
+
+/**
+ * Makes an object follow another object on the X axis.
+ */
+declare function follow_x(object: RuntimeObject, targetName: string): void;
 
 /**
  * Makes an object follow another object on the Y axis.

@@ -3,7 +3,7 @@
 
   "origin": {
     "x": 320,
-    "y": 260
+    "y": 240
   },
 
   "shape": {
@@ -17,18 +17,19 @@
   },
 
   "motion": {
-    "speed": 90,
-    "angle": 45
+    "speed": 200,
+    "angle": 25
   },
 
   "group": "ball",
 
   "collision": {
     "type": "circle",
-    "radius": 10,
+    "radius": 5,
     "active": true,
     "with": [
-      "wall",
+      "wall_side",
+      "wall_top",
       "title",
       "paddle"
     ]
@@ -36,6 +37,15 @@
 
   "behavior": {
     "scripts": [ "ball" ]
+  },
+
+  "sounds": {
+    "paddle": {
+      "wave": "square",
+      "frequency": 440,
+      "duration": 0.08,
+      "volume": 0.8
+    }
   }
 
 }

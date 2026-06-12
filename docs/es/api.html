@@ -474,24 +474,46 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
+            <h2>follow_x(object, targetName)</h2>
+
+            <p>
+                Mueve un objeto horizontalmente hacia otro objeto.
+                El objetivo se resuelve internamente por nombre.
+                Solo modifica la posicion X del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_x</div>
+<pre><code>follow_x(cursor, "ball");</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que se mueve.</li>
+                <li><code>targetName</code>: nombre logico de la instancia seguida.</li>
+            </ul>
+
+            <hr />
+
             <h2>follow_y(object, targetName)</h2>
 
             <p>
-                Mueve un objeto verticalmente para seguir a otro objeto por su nombre.
-                Compara el centro vertical de ambos objetos y ajusta la posición en Y.
+                Mueve un objeto verticalmente hacia otro objeto.
+                El objetivo se resuelve internamente por nombre.
+                Solo modifica la posicion Y del objeto.
             </p>
 
             <div class="code-card">
                 <div class="code-header">follow_y</div>
-<pre><code>follow_y(enemy, "Ball");</code></pre>
+<pre><code>follow_y(enemy, "ball");</code></pre>
             </div>
 
             <h3>Configuración utilizada</h3>
 
             <ul>
-                <li><code>y</code>: posición vertical del objeto.</li>
-                <li><code>height</code>: altura del objeto.</li>
-                <li><code>speed</code>: velocidad de seguimiento.</li>
+                <li><code>object</code>: objeto que se mueve.</li>
+                <li><code>targetName</code>: nombre logico de la instancia seguida.</li>
             </ul>
 
             <hr />

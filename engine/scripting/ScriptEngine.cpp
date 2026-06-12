@@ -577,6 +577,9 @@ void ScriptEngine::applyJsObject(
     JSValue heightValue =
         JS_GetPropertyStr(context, jsObject, "height");
 
+    JSValue layerValue =
+        JS_GetPropertyStr(context, jsObject, "layer");
+
     if (JS_IsObject(localValue))
     {
         source.local.clear();
@@ -631,6 +634,7 @@ void ScriptEngine::applyJsObject(
     double velocityY = source.velocity.y;
     double width = source.size.x;
     double height = source.size.y;
+    int32_t layer = source.layer;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
@@ -638,6 +642,7 @@ void ScriptEngine::applyJsObject(
     JS_ToFloat64(context, &angle, angleValue);
     JS_ToFloat64(context, &velocityX, velocityXValue);
     JS_ToFloat64(context, &velocityY, velocityYValue);
+    JS_ToInt32(context, &layer, layerValue);
 
     if (JS_ToFloat64(context, &width, widthValue) == 0)
     {
@@ -658,6 +663,7 @@ void ScriptEngine::applyJsObject(
     source.angle = static_cast<float>(angle);
     source.velocity.x = static_cast<float>(velocityX);
     source.velocity.y = static_cast<float>(velocityY);
+    source.layer = layer;
 
     JS_FreeValue(context, localValue);
     JS_FreeValue(context, aliveValue);
@@ -669,6 +675,7 @@ void ScriptEngine::applyJsObject(
     JS_FreeValue(context, velocityYValue);
     JS_FreeValue(context, widthValue);
     JS_FreeValue(context, heightValue);
+    JS_FreeValue(context, layerValue);
 }
 
 void ScriptEngine::applyGlobalObject(JSValue globalObject)
@@ -820,6 +827,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "layer",
+        JS_NewInt32(context, object.layer)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "x",
         JS_NewFloat64(context, object.position.x)
     );
@@ -882,6 +896,20 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
 
     JSValue motion =
         JS_NewObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "speed",
+        JS_NewFloat64(context, object.speed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "angle",
+        JS_NewFloat64(context, object.angle)
+    );
 
     JS_SetPropertyStr(
         context,

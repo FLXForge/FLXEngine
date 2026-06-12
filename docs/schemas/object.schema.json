@@ -42,19 +42,6 @@
       }
     },
 
-    "size": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "width": { "type": "number" },
-        "height": { "type": "number" }
-      }
-    },
-
-    "color": {
-      "type": "string"
-    },
-
     "shape": {
       "oneOf": [
         { "type": "string" },
@@ -74,14 +61,6 @@
         { "type": "string" },
         { "$ref": "bounds.schema.json" }
       ]
-    },
-
-    "speed": {
-      "type": "number"
-    },
-
-    "angle": {
-      "type": "number"
     },
 
     "group": {
@@ -121,5 +100,15 @@
         ]
       }
     }
+  },
+
+  "not": {
+    "anyOf": [
+      { "required": [ "size" ] },
+      { "required": [ "color" ] },
+      { "required": [ "layer" ] },
+      { "required": [ "speed" ] },
+      { "required": [ "angle" ] }
+    ]
   }
 }

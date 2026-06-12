@@ -503,19 +503,19 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
-            <h2>follow_y(object, targetName)</h2>
+            <h2>follow_x(object, targetName)</h2>
 
             <p>
-                Moves an object vertically to follow another object by name.
-                It compares the vertical center of both objects
-                and adjusts the Y position.
+                Moves an object horizontally toward another object.
+                The target is resolved internally by name.
+                It only modifies the object's X position.
             </p>
 
             <div class="code-card">
-                <div class="code-header">follow_y</div>
+                <div class="code-header">follow_x</div>
 
 
-<pre><code>follow_y(enemy, "Ball");</code></pre>
+<pre><code>follow_x(cursor, "ball");</code></pre>
 
 
             </div>
@@ -523,9 +523,34 @@ fade_set(0, "black");</code></pre>
             <h3>Configuration Used</h3>
 
             <ul>
-                <li><code>y</code>: object's vertical position.</li>
-                <li><code>height</code>: object's height.</li>
-                <li><code>speed</code>: follow speed.</li>
+                <li><code>object</code>: object that moves.</li>
+                <li><code>targetName</code>: logical instance name to follow.</li>
+            </ul>
+
+            <hr />
+
+            <h2>follow_y(object, targetName)</h2>
+
+            <p>
+                Moves an object vertically toward another object.
+                The target is resolved internally by name.
+                It only modifies the object's Y position.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_y</div>
+
+
+<pre><code>follow_y(enemy, "ball");</code></pre>
+
+
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that moves.</li>
+                <li><code>targetName</code>: logical instance name to follow.</li>
             </ul>
 
             <hr />

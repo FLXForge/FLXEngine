@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace
@@ -227,10 +228,35 @@ namespace
             object["shape"].is_object();
     }
 
-    bool hasRootSize(const nlohmann::json& object)
+    void rejectRootProperty(
+        const nlohmann::json& object,
+        const std::string& property,
+        const std::string& owner,
+        const std::string& expectedBlock
+    )
     {
-        return object.contains("size") &&
-            object["size"].is_object();
+        if (!object.contains(property))
+        {
+            return;
+        }
+
+        throw std::runtime_error(
+            "Invalid FLX object '" + owner + "': property '" +
+            property + "' must be declared inside '" +
+            expectedBlock + "'"
+        );
+    }
+
+    void validateObjectRootProperties(
+        const nlohmann::json& object,
+        const std::string& owner
+    )
+    {
+        rejectRootProperty(object, "size", owner, "shape");
+        rejectRootProperty(object, "color", owner, "shape");
+        rejectRootProperty(object, "layer", owner, "shape");
+        rejectRootProperty(object, "speed", owner, "motion");
+        rejectRootProperty(object, "angle", owner, "motion");
     }
 
     Vector2 parseOrigin(const nlohmann::json& object)
@@ -265,16 +291,6 @@ namespace
             }
         }
 
-        if (hasRootSize(object))
-        {
-            const auto& size = object["size"];
-
-            return Vector2{
-                size.value("width", 0.0f),
-                size.value("height", 0.0f)
-            };
-        }
-
         return Vector2{ 0.0f, 0.0f };
     }
 
@@ -285,7 +301,7 @@ namespace
     {
         if (!hasShape(object))
         {
-            definition.hasVisual = hasRootSize(object);
+            definition.hasVisual = false;
             return;
         }
 
@@ -298,6 +314,9 @@ namespace
             TextTools::toLower(shape.value("mode", "fill"));
         definition.textContent =
             shape.value("content", definition.textContent);
+
+        definition.layer =
+            shape.value("layer", definition.layer);
 
         if (shape.contains("color"))
         {
@@ -352,6 +371,12 @@ namespace
 
         definition.rotationSpeed =
             motion.value("rotationSpeed", definition.rotationSpeed);
+
+        definition.speed =
+            motion.value("speed", definition.speed);
+
+        definition.angle =
+            motion.value("angle", definition.angle);
 
         definition.acceleration =
             motion.value("acceleration", definition.acceleration);
@@ -644,6 +669,8 @@ namespace
         const std::string& id
     )
     {
+        validateObjectRootProperties(object, id);
+
         ObjectDefinition definition;
         definition.id = id;
 
@@ -688,12 +715,6 @@ namespace
 
         definition.visible =
             object.value("visible", definition.visible);
-
-        definition.speed =
-            object.value("speed", definition.speed);
-
-        definition.angle =
-            object.value("angle", definition.angle);
 
         parseShape(object, definition);
         parseMotion(object, definition);

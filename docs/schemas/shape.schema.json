@@ -33,6 +33,12 @@
       "description": "Named raylib color or hexadecimal value in #rgb or #rrggbb format."
     },
 
+    "layer": {
+      "type": "integer",
+      "default": 0,
+      "description": "Draw layer. Lower values are drawn first."
+    },
+
     "points": {
       "type": "array",
       "items": {

@@ -18,6 +18,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.sourcePath = definition.sourcePath;
     object.hasOrigin = definition.hasOrigin;
     object.visible = definition.visible;
+    object.layer = definition.layer;
 
     if (!definition.hasVisual)
     {

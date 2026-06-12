@@ -1,0 +1,37 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 300,
+    "y": 270
+  },
+
+  "shape": {
+    "type": "block",
+    "mode": "fill",
+    "color": "grey",
+    "size": {
+      "width": 70,
+      "height": 10
+    }
+  },
+
+  "motion": {
+    "speed": 200
+  },
+
+  "group": "paddle",
+
+  "collision": {
+    "type": "box",
+    "size": {
+      "width": 10,
+      "height": 70
+    }
+  },
+
+  "behavior": {
+    "scripts": [ "paddle" ]
+  }
+
+}

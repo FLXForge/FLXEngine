@@ -42,6 +42,7 @@ public:
     bool visible;
     bool alive;
     bool deadCalled;
+    int layer = 0;
 
     Vector2 origin;
     Vector2 position;

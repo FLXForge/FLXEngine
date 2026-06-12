@@ -444,6 +444,7 @@ notes=FLX example with spawn and basic UI
                 </li>
                 <li><code>content</code>: cadena visible cuando <code>type</code> es <code>text</code>. <i>[ Opcional ]</i></li>
                 <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
+                <li><code>layer</code>: orden de dibujado. Los valores menores se dibujan antes. Los objetos con el mismo layer mantienen el orden de creacion. <i>[ Opcional, por defecto 0 ]</i></li>
                 <li><a class="link" href="#size">size</a>: tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -520,6 +521,8 @@ notes=FLX example with spawn and basic UI
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
     "inherit": "creation",
+    "speed": 90,
+    "angle": 45,
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -539,6 +542,8 @@ notes=FLX example with spawn and basic UI
                         <li><code>creation</code>: hereda el movimiento inicial en el momento del spawn.</li>
                     </ul>
                 </li>
+                <li><code>speed</code>: velocidad de movimiento usada por ayudas como <code>advance()</code>.</li>
+                <li><code>angle</code>: angulo de movimiento y rotacion en grados.</li>
                 <li><code>rotationSpeed</code>: velocidad de rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
                 <li><code>acceleration</code>: aceleraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n aplicada al objeto.</li>
                 <li><code>inertia</code>: conservaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del movimiento.</li>

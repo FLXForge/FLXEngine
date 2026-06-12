@@ -446,6 +446,7 @@ notes=FLX example with spawn and basic UI
                     <code>content</code>: visible string used when <code>type</code> is <code>text</code>. <i>[ Optional ]</i>
                 </li>
                 <li><code>color</code>: object color. <i>[ Optional ]</i></li>
+                <li><code>layer</code>: draw order. Lower values are drawn first. Objects with the same layer keep creation order. <i>[ Optional, default 0 ]</i></li>
                 <li>
                     <a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i>
                 </li>
@@ -527,6 +528,8 @@ notes=FLX example with spawn and basic UI
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
     "inherit": "creation",
+    "speed": 90,
+    "angle": 45,
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -547,6 +550,8 @@ notes=FLX example with spawn and basic UI
                         <li><code>creation</code>: inherits the initial movement at spawn time.</li>
                     </ul>
                 </li>
+                <li><code>speed</code>: movement speed used by helpers such as <code>advance()</code>.</li>
+                <li><code>angle</code>: movement and rotation angle in degrees.</li>
                 <li><code>rotationSpeed</code>: rotation speed.</li>
                 <li><code>acceleration</code>: acceleration applied to the object.</li>
                 <li><code>inertia</code>: movement preservation factor.</li>

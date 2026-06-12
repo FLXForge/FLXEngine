@@ -19,6 +19,7 @@ struct ObjectDefinition
 
     bool visible = true;
     bool hasVisual = false;
+    int layer = 0;
 
     Vector2 origin = Vector2{ 0.0f, 0.0f };
     bool hasOrigin = false;

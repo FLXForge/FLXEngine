@@ -98,6 +98,8 @@ public:
 
     void setScreenScale(int scale);
     int getScreenScale() const;
+    void setFrameDelta(float delta);
+    float getFrameDelta() const;
 
     void setFadeSystem(FadeSystem* fadeSystem);
     void fadeOn(const std::string& color);
@@ -129,6 +131,7 @@ private:
     );
 private:
     int screenScale = 0;
+    float frameDelta = 1.0f / 60.0f;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, double> globalState;

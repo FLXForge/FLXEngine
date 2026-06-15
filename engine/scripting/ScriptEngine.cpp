@@ -1059,6 +1059,17 @@ int ScriptEngine::getScreenScale() const
     return screenScale;
 }
 
+void ScriptEngine::setFrameDelta(float delta)
+{
+    frameDelta =
+        delta;
+}
+
+float ScriptEngine::getFrameDelta() const
+{
+    return frameDelta;
+}
+
 void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
 {
     fadeSystem = nextFadeSystem;

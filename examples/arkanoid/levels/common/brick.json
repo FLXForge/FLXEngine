@@ -1,0 +1,13 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "shape": {
+    "type": "block",
+    "mode": "fill",
+    "size": {
+      "width": 30,
+      "height": 10
+    }
+  }
+
+}

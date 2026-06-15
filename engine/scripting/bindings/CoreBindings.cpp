@@ -162,9 +162,17 @@ namespace
         JSValueConst* argv
     )
     {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr)
+        {
+            return JS_NewFloat64(context, 0.0);
+        }
+
         return JS_NewFloat64(
             context,
-            GetFrameTime()
+            scriptEngine->getFrameDelta()
         );
     }
 

@@ -329,12 +329,15 @@
 
             <p>
                 Returns the elapsed time, in seconds,
-                since the previous frame.
+                since the previous frame. FLX clamps this value to a safe
+                maximum of <code>1 / 30</code> seconds to avoid large jumps after
+                window moves, pauses or focus stalls.
             </p>
 
             <p>
                 It allows movement, timers and behaviors
-                to be independent from frame rate.
+                to be independent from frame rate without exposing scripts to
+                abnormal frame spikes.
             </p>
 
             <div class="code-card">

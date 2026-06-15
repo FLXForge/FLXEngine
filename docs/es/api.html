@@ -307,6 +307,12 @@
             <h2>delta()</h2>
 
             <p>
+                Nota: FLX limita <code>delta()</code> a un maximo seguro de
+                <code>1 / 30</code> segundos para evitar saltos grandes al mover
+                la ventana, pausar el sistema o recuperar el foco.
+            </p>
+
+            <p>
                 Retorna el tiempo transcurrido, en segundos, desde el frame anterior.
             </p>
 

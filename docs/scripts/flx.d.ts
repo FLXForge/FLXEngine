@@ -322,6 +322,7 @@ declare function keep_only(object: RuntimeObject): void;
 
 /**
  * Returns elapsed time in seconds since previous frame.
+ * The value is clamped by FLX to avoid abnormal frame spikes.
  */
 declare function delta(): number;
 

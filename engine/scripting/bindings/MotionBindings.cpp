@@ -11,6 +11,19 @@
 
 namespace
 {
+    double frameDelta(JSContext* context)
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr)
+        {
+            return 0.0;
+        }
+
+        return scriptEngine->getFrameDelta();
+    }
+
     JSValue jsMoveX(
         JSContext* context,
         JSValueConst thisValue,
@@ -38,7 +51,7 @@ namespace
         JS_ToFloat64(context, &x, xValue);
         JS_ToFloat64(context, &speed, speedValue);
 
-        x += direction * speed * GetFrameTime();
+        x += direction * speed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,
@@ -80,7 +93,7 @@ namespace
         JS_ToFloat64(context, &y, yValue);
         JS_ToFloat64(context, &speed, speedValue);
 
-        y += direction * speed * GetFrameTime();
+        y += direction * speed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,
@@ -138,7 +151,7 @@ namespace
         JS_ToFloat64(context, &inertia, inertiaValue);
 
         const double delta =
-            GetFrameTime();
+            frameDelta(context);
 
         if (acceleration > 0.0)
         {
@@ -298,7 +311,7 @@ namespace
                 (angle - 90.0) * DEG2RAD;
 
             const double delta =
-                GetFrameTime();
+                frameDelta(context);
 
             velocityX += std::cos(radians) * acceleration * delta;
             velocityY += std::sin(radians) * acceleration * delta;
@@ -367,7 +380,7 @@ namespace
         JS_ToFloat64(context, &angle, angleValue);
         JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
 
-        angle += direction * rotationSpeed * GetFrameTime();
+        angle += direction * rotationSpeed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,
@@ -438,7 +451,7 @@ namespace
             (y + height / 2.0);
 
         const double maxStep =
-            std::abs(speed) * GetFrameTime();
+            std::abs(speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {
@@ -522,7 +535,7 @@ namespace
             (x + width / 2.0);
 
         const double maxStep =
-            std::abs(speed) * GetFrameTime();
+            std::abs(speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {

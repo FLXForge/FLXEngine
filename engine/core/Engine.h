@@ -26,6 +26,7 @@ private:
     void loadProject(const std::string& flxPath);
     void initWindow();
     void configureScriptEngine();
+    float safeFrameDelta() const;
 private:
     ScriptEngine scriptEngine;
     RuntimeWorld world;

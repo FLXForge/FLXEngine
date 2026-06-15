@@ -4,8 +4,15 @@
 #include "../project/FlxContextBuilder.h"
 
 #include <raylib.h>
+#include <algorithm>
 
 Engine::Engine() = default;
+
+namespace
+{
+    constexpr float MaxFrameDelta =
+        1.0f / 30.0f;
+}
 
 void Engine::run(const std::string& flxPath)
 {
@@ -136,13 +143,18 @@ void Engine::configureScriptEngine()
 
 void Engine::update()
 {
+    const float delta =
+        safeFrameDelta();
+
+    scriptEngine.setFrameDelta(delta);
+
     world.update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
         static_cast<float>(context.screenHeight)
     );
 
-    fadeSystem.update(GetFrameTime());
+    fadeSystem.update(delta);
     audioSystem.update();
 }
 
@@ -178,4 +190,26 @@ void Engine::shutdown()
 RuntimeObject* Engine::find(const std::string& name)
 {
     return world.findByName(name);
+}
+
+float Engine::safeFrameDelta() const
+{
+    const float rawDelta =
+        GetFrameTime();
+
+    const float delta =
+        std::min(rawDelta, MaxFrameDelta);
+
+    if (rawDelta > MaxFrameDelta)
+    {
+        Logger::debug(
+            "time",
+            "Frame delta clamped from " +
+            std::to_string(rawDelta) +
+            " to " +
+            std::to_string(delta)
+        );
+    }
+
+    return delta;
 }

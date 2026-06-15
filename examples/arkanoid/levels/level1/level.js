@@ -21,7 +21,7 @@ function action(level){
             spawn(level, "background");
             spawn(level, "board");
             spawn(level, "paddle");
-            // spawn(level, "bricks");
+            spawn(level, "bricks");
         }
     }
 }

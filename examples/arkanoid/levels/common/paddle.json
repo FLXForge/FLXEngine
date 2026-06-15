@@ -29,7 +29,9 @@
     "size": {
       "width": 10,
       "height": 70
-    }
+    },
+    "active": true,
+    "with": [ "wall_side" ]
   },
 
   "children": {

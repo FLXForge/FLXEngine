@@ -6,7 +6,8 @@
   "children": {
     "background": "level1/background",
     "board": "common/board",
-    "paddle": "common/paddle"
+    "paddle": "common/paddle",
+    "bricks": "level1/bricks"
   },
 
   "behavior": {

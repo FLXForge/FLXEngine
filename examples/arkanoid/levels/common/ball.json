@@ -1,9 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-  "origin": {
-    "x": 320,
-    "y": 275
+  "offset": {
+    "x": 35,
+    "y": -5
   },
 
   "shape": {

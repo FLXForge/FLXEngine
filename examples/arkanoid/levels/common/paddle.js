@@ -9,3 +9,15 @@ function action(paddle){
         move_x(paddle, RIGHT);
     }
 }
+
+function collision(paddle, wall) {
+
+    if (wall.group == "wall_side") {
+
+        if (paddle.x < wall.x) {
+            paddle.x = wall.x - paddle.width;
+        } else {
+            paddle.x = wall.x + wall.width;
+        }
+    }
+}

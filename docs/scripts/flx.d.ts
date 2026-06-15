@@ -315,6 +315,12 @@ declare function ray(
 declare function kill(object: RuntimeObject): void;
 
 /**
+ * Marks every living runtime object for destruction except the exact object passed.
+ * Children are not preserved automatically.
+ */
+declare function keep_only(object: RuntimeObject): void;
+
+/**
  * Returns elapsed time in seconds since previous frame.
  */
 declare function delta(): number;

@@ -215,6 +215,8 @@ screen.scale=3
             <p>
                 FLX uses <code>children</code> to declare what may exist below an object.
                 The child <code>spawn</code> value defines when it enters the runtime.
+                The optional <code>creation</code> block defines how the parent creates
+                those children.
             </p>
 
             <ul>
@@ -233,6 +235,15 @@ screen.scale=3
             <p>
                 Together with <code>like</code>, this keeps object composition,
                 reuse and dynamic creation under one JSON property.
+            </p>
+
+            <p>
+                When <code>creation</code> is omitted, the parent behaves as
+                <code>creation.mode = "individual"</code>: each child is handled by its
+                own declaration. In <code>grid</code> mode, the parent position becomes
+                the grid origin, the pattern chooses which child belongs to each cell,
+                and <code>spawn(parent, "child")</code> creates the matching manual
+                cells instead of a free instance.
             </p>
 
             <hr />

@@ -13,6 +13,7 @@ function action(ship) {
         accelerate(ship);
 
         if (probability(20)) {
+            play_sound(ship, "motor");
             spawn(ship, "tail");
         }
     }
@@ -36,6 +37,7 @@ function motion(ship) {
 }
 
 function dead(ship) {
+    play_sound(ship, "dead");
     if (global["lives"] >= 2) {
         global["shipDead"] = 1;
         global["lives"]--;

@@ -49,6 +49,15 @@
     "mode": "wrap",
     "overflow": false
   },
+  "sounds": {
+    "pff": {
+      "wave": "noise",
+      "frequency": 600,
+      "duration": 0.08,
+      "volume": 0.3,
+      "slide": -400
+    }
+  },
   "group": "asteroid",
   "behavior": {
     "scripts": [

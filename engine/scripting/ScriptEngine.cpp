@@ -568,6 +568,27 @@ RayCastResult ScriptEngine::rayCast(
     );
 }
 
+void ScriptEngine::setKeepOnlyFunction(
+    KeepOnlyFunction function
+)
+{
+    keepOnlyFunction =
+        function;
+}
+
+void ScriptEngine::keepOnly(const std::string& runtimeId)
+{
+    if (!keepOnlyFunction)
+    {
+        return;
+    }
+
+    keepOnlyRuntimeId =
+        runtimeId;
+
+    keepOnlyFunction(runtimeId);
+}
+
 void ScriptEngine::applyJsObject(
     RuntimeObject& source,
     JSValue jsObject
@@ -684,6 +705,18 @@ void ScriptEngine::applyJsObject(
     {
         source.size.y =
             static_cast<float>(height);
+    }
+
+    const bool runtimeAliveBeforeApply =
+        source.alive;
+
+    if (
+        !keepOnlyRuntimeId.empty() &&
+        source.runtimeId != keepOnlyRuntimeId &&
+        !runtimeAliveBeforeApply
+        )
+    {
+        alive = false;
     }
 
     source.alive = alive;

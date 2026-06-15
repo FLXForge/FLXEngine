@@ -247,8 +247,11 @@ void RuntimeWorld::load(
         std::move(root)
     );
 
+    RuntimeObject rootSnapshot =
+        objects.front();
+
     instantiateAutoChildren(
-        objects.front(),
+        rootSnapshot,
         objects
     );
 
@@ -331,14 +334,87 @@ void RuntimeWorld::spawn(
     ScriptEngine& scriptEngine
 )
 {
-    RuntimeObject instance =
+    const size_t firstQueuedIndex =
+        pendingObjects.size();
+
+    if (source.creationMode == "grid")
+    {
+        instantiateGridChildren(
+            source,
+            definition.id,
+            "manual",
+            pendingObjects
+        );
+    }
+    else if (source.creationMode == "individual")
+    {
+        RuntimeObject instance =
+            createIndividualChild(
+                source,
+                definition,
+                true
+            );
+
+        pendingObjects.push_back(instance);
+
+        RuntimeObject parentSnapshot =
+            pendingObjects.back();
+
+        instantiateAutoChildren(
+            parentSnapshot,
+            pendingObjects
+        );
+    }
+    else
+    {
+        Logger::warning(
+            "creation",
+            "Unsupported creation mode '" + source.creationMode +
+            "' in " + source.runtimeId
+        );
+
+        return;
+    }
+
+    for (
+        size_t i = firstQueuedIndex;
+        i < pendingObjects.size();
+        ++i
+        )
+    {
+        loadScriptsForObject(pendingObjects[i], scriptEngine);
+    }
+
+    if (pendingObjects.size() == firstQueuedIndex)
+    {
+        Logger::warning(
+            "spawn",
+            "No instances queued for child: " + definition.id
+        );
+
+        return;
+    }
+
+    Logger::debug(
+        "spawn",
+        "Queued child: " + definition.id
+    );
+}
+
+RuntimeObject RuntimeWorld::createIndividualChild(
+    const RuntimeObject& parent,
+    const ObjectDefinition& definition,
+    bool inheritParentAngle
+)
+{
+    RuntimeObject child =
         createRuntimeObject(
             definition,
-            source.runtimeId
+            parent.runtimeId
         );
 
     const float radians =
-        source.angle * DEG2RAD;
+        parent.angle * DEG2RAD;
 
     const float rotatedX =
         definition.offset.x * std::cos(radians) -
@@ -350,58 +426,107 @@ void RuntimeWorld::spawn(
 
     if (definition.hasOffset)
     {
-        instance.position = Vector2{
-            source.position.x + rotatedX,
-            source.position.y + rotatedY
+        child.position = Vector2{
+            parent.position.x + rotatedX,
+            parent.position.y + rotatedY
         };
 
-        instance.origin = instance.position;
+        child.origin = child.position;
     }
-    else if (instance.hasOrigin)
+    else if (!child.hasOrigin)
     {
-        instance.position = instance.origin;
-    }
-    else
-    {
-        instance.position = source.position;
-        instance.origin = instance.position;
+        child.position = parent.position;
+        child.origin = child.position;
     }
 
-    instance.previousPosition =
-        instance.position;
+    child.previousPosition =
+        child.position;
 
-    instance.originalOffset = Vector2{
-        instance.position.x - source.position.x,
-        instance.position.y - source.position.y
+    child.originalOffset = Vector2{
+        child.position.x - parent.position.x,
+        child.position.y - parent.position.y
     };
 
-    instance.angle =
-        source.angle;
-
-    loadScriptsForObject(instance, scriptEngine);
-
-    const size_t firstQueuedIndex =
-        pendingObjects.size();
-
-    pendingObjects.push_back(instance);
-
-    instantiateAutoChildren(
-        pendingObjects.back(),
-        pendingObjects
-    );
-
-    for (
-        size_t i = firstQueuedIndex + 1;
-        i < pendingObjects.size();
-        ++i
-        )
+    if (inheritParentAngle)
     {
-        loadScriptsForObject(pendingObjects[i], scriptEngine);
+        child.angle =
+            parent.angle;
     }
 
-    Logger::debug(
-        "spawn",
-        "Queued instance: " + instance.name
+    return child;
+}
+
+RuntimeObject RuntimeWorld::createGridChild(
+    const RuntimeObject& parent,
+    const ObjectDefinition& definition,
+    int row,
+    int column
+)
+{
+    RuntimeObject child =
+        createRuntimeObject(
+            definition,
+            parent.runtimeId
+        );
+
+    const float cellX =
+        static_cast<float>(column) *
+        parent.gridRules.cellWidth;
+
+    const float cellY =
+        static_cast<float>(row) *
+        parent.gridRules.cellHeight;
+
+    child.position = Vector2{
+        parent.position.x + cellX + definition.offset.x,
+        parent.position.y + cellY + definition.offset.y
+    };
+
+    child.origin =
+        child.position;
+
+    child.previousPosition =
+        child.position;
+
+    child.originalOffset = Vector2{
+        child.position.x - parent.position.x,
+        child.position.y - parent.position.y
+    };
+
+    return child;
+}
+
+void RuntimeWorld::instantiateAutoChildren(
+    const RuntimeObject& parent,
+    std::vector<RuntimeObject>& target
+)
+{
+    if (parent.creationMode == "grid")
+    {
+        instantiateGridChildren(
+            parent,
+            "",
+            "auto",
+            target
+        );
+
+        return;
+    }
+
+    if (parent.creationMode != "individual")
+    {
+        Logger::warning(
+            "creation",
+            "Unsupported creation mode '" + parent.creationMode +
+            "' in " + parent.runtimeId
+        );
+
+        return;
+    }
+
+    instantiateIndividualAutoChildren(
+        parent,
+        target
     );
 }
 
@@ -429,6 +554,36 @@ RuntimeObject* RuntimeWorld::findByRuntimeId(const std::string& id)
     }
 
     return nullptr;
+}
+
+void RuntimeWorld::keepOnly(const std::string& runtimeId)
+{
+    bool found =
+        false;
+
+    for (auto& object : objects)
+    {
+        if (!object.alive)
+        {
+            continue;
+        }
+
+        if (object.runtimeId == runtimeId)
+        {
+            found = true;
+            continue;
+        }
+
+        object.alive = false;
+    }
+
+    if (!found)
+    {
+        Logger::warning(
+            "runtime",
+            "keep_only target not found: " + runtimeId
+        );
+    }
 }
 
 RayCastResult RuntimeWorld::rayCast(
@@ -532,22 +687,13 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
     );
 }
 
-void RuntimeWorld::instantiateAutoChildren(
+void RuntimeWorld::instantiateIndividualAutoChildren(
     const RuntimeObject& parent,
     std::vector<RuntimeObject>& target
 )
 {
     const auto children =
         parent.children;
-
-    const std::string parentRuntimeId =
-        parent.runtimeId;
-
-    const Vector2 parentPosition =
-        parent.position;
-
-    const float parentAngle =
-        parent.angle;
 
     for (const auto& pair : children)
     {
@@ -560,44 +706,11 @@ void RuntimeWorld::instantiateAutoChildren(
         }
 
         RuntimeObject child =
-            createRuntimeObject(
+            createIndividualChild(
+                parent,
                 definition,
-                parentRuntimeId
+                false
             );
-
-        if (definition.hasOffset)
-        {
-            const float radians =
-                parentAngle * DEG2RAD;
-
-            const float rotatedX =
-                definition.offset.x * std::cos(radians) -
-                definition.offset.y * std::sin(radians);
-
-            const float rotatedY =
-                definition.offset.x * std::sin(radians) +
-                definition.offset.y * std::cos(radians);
-
-            child.position = Vector2{
-                parentPosition.x + rotatedX,
-                parentPosition.y + rotatedY
-            };
-
-            child.origin = child.position;
-        }
-        else if (!child.hasOrigin)
-        {
-            child.position = parentPosition;
-            child.origin = child.position;
-        }
-
-        child.previousPosition =
-            child.position;
-
-        child.originalOffset = Vector2{
-            child.position.x - parentPosition.x,
-            child.position.y - parentPosition.y
-        };
 
         std::vector<RuntimeObject> descendants;
 
@@ -616,6 +729,172 @@ void RuntimeWorld::instantiateAutoChildren(
             std::make_move_iterator(descendants.end())
         );
     }
+}
+
+void RuntimeWorld::instantiateGridChildren(
+    const RuntimeObject& parent,
+    const std::string& requestedChildId,
+    const std::string& requestedSpawnMode,
+    std::vector<RuntimeObject>& target
+)
+{
+    if (!validGridCreation(parent))
+    {
+        return;
+    }
+
+    for (int row = 0; row < parent.gridRules.rows; ++row)
+    {
+        for (int column = 0; column < parent.gridRules.columns; ++column)
+        {
+            std::string childId;
+
+            if (!gridChildIdAt(
+                parent,
+                row,
+                column,
+                childId
+            ))
+            {
+                continue;
+            }
+
+            if (!requestedChildId.empty() && childId != requestedChildId)
+            {
+                continue;
+            }
+
+            const auto it =
+                parent.children.find(childId);
+
+            if (it == parent.children.end())
+            {
+                Logger::warning(
+                    "creation",
+                    "Grid pattern references missing child '" +
+                    childId + "' in " + parent.runtimeId
+                );
+
+                continue;
+            }
+
+            const ObjectDefinition& definition =
+                it->second;
+
+            if (definition.spawnMode != requestedSpawnMode)
+            {
+                continue;
+            }
+
+            RuntimeObject child =
+                createGridChild(
+                    parent,
+                    definition,
+                    row,
+                    column
+                );
+
+            std::vector<RuntimeObject> descendants;
+
+            instantiateAutoChildren(
+                child,
+                descendants
+            );
+
+            target.push_back(
+                std::move(child)
+            );
+
+            target.insert(
+                target.end(),
+                std::make_move_iterator(descendants.begin()),
+                std::make_move_iterator(descendants.end())
+            );
+        }
+    }
+}
+
+bool RuntimeWorld::gridChildIdAt(
+    const RuntimeObject& parent,
+    int row,
+    int column,
+    std::string& childId
+) const
+{
+    if (parent.gridPatternIsRows)
+    {
+        if (parent.gridRowPattern.empty())
+        {
+            return false;
+        }
+
+        const std::vector<std::string>& rowPattern =
+            parent.gridRowPattern[
+                row % static_cast<int>(parent.gridRowPattern.size())
+            ];
+
+        if (rowPattern.empty())
+        {
+            return false;
+        }
+
+        childId =
+            rowPattern[
+                column % static_cast<int>(rowPattern.size())
+            ];
+
+        return true;
+    }
+
+    if (parent.gridPattern.empty())
+    {
+        return false;
+    }
+
+    const int index =
+        row * parent.gridRules.columns + column;
+
+    childId =
+        parent.gridPattern[
+            index % static_cast<int>(parent.gridPattern.size())
+        ];
+
+    return true;
+}
+
+bool RuntimeWorld::validGridCreation(
+    const RuntimeObject& parent
+) const
+{
+    if (
+        parent.gridRules.rows <= 0 ||
+        parent.gridRules.columns <= 0 ||
+        parent.gridRules.cellWidth <= 0.0f ||
+        parent.gridRules.cellHeight <= 0.0f
+        )
+    {
+        Logger::error(
+            "creation",
+            "Invalid grid creation rules in " + parent.runtimeId
+        );
+
+        return false;
+    }
+
+    if (
+        (!parent.gridPatternIsRows && parent.gridPattern.empty()) ||
+        (parent.gridPatternIsRows && parent.gridRowPattern.empty())
+        )
+    {
+        Logger::error(
+            "creation",
+            "Grid creation pattern is empty in " + parent.runtimeId
+        );
+
+        return false;
+    }
+
+    return true;
 }
 
 void RuntimeWorld::loadScriptsForObject(

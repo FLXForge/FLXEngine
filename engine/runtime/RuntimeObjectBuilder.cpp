@@ -58,6 +58,11 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.scripts = definition.scripts;
     object.sounds = definition.sounds;
     object.children = definition.children;
+    object.creationMode = definition.creationMode;
+    object.gridRules = definition.gridRules;
+    object.gridPatternIsRows = definition.gridPatternIsRows;
+    object.gridPattern = definition.gridPattern;
+    object.gridRowPattern = definition.gridRowPattern;
 
     return object;
 }

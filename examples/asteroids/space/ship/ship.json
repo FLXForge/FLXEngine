@@ -36,9 +36,23 @@
   "sounds": {
     "laser": {
       "wave": "square",
-      "frequency": 880,
-      "duration": 0.08,
-      "volume": 0.7
+      "frequency": 1200,
+      "duration": 0.05,
+      "volume": 0.4,
+      "slide": -300
+    },
+    "dead": {
+      "wave": "saw",
+      "frequency": 800,
+      "duration": 0.35,
+      "volume": 0.4,
+      "slide": -700
+    },
+    "motor": {
+      "waveform": "triangle",
+      "frequency": 100,
+      "duration": 0.05,
+      "volume": 0.15
     }
   },
   "children": {

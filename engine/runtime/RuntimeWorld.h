@@ -41,6 +41,7 @@ public:
 
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
+    void keepOnly(const std::string& runtimeId);
     RayCastResult rayCast(
         const RuntimeObject& source,
         float angle,
@@ -53,10 +54,46 @@ private:
         const std::string& parentId
     );
 
+    RuntimeObject createIndividualChild(
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition,
+        bool inheritParentAngle
+    );
+
+    RuntimeObject createGridChild(
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition,
+        int row,
+        int column
+    );
+
     void instantiateAutoChildren(
         const RuntimeObject& parent,
         std::vector<RuntimeObject>& target
     );
+
+    void instantiateIndividualAutoChildren(
+        const RuntimeObject& parent,
+        std::vector<RuntimeObject>& target
+    );
+
+    void instantiateGridChildren(
+        const RuntimeObject& parent,
+        const std::string& requestedChildId,
+        const std::string& requestedSpawnMode,
+        std::vector<RuntimeObject>& target
+    );
+
+    bool gridChildIdAt(
+        const RuntimeObject& parent,
+        int row,
+        int column,
+        std::string& childId
+    ) const;
+
+    bool validGridCreation(
+        const RuntimeObject& parent
+    ) const;
 
     void loadScriptsForObject(
         RuntimeObject& object,

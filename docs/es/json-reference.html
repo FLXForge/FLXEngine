@@ -157,6 +157,73 @@ notes=FLX example with spawn and basic UI
                 quedan registrados y pueden crearse despuÃƒÂ©s con <code>spawn(parent, "child")</code>.
             </p>
 
+            <p>
+                <code>children</code> define que puede existir, <code>spawn</code>
+                define cuando entra cada hijo en runtime y <code>creation</code>
+                define como el parent materializa esos children.
+            </p>
+
+            <h2 id="creation">Creation</h2>
+
+            <p>
+                El bloque opcional <code>creation</code> controla como un parent crea
+                sus children declarados. Si no aparece, FLX usa
+                <code>creation.mode = "individual"</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">creation individual</div>
+<pre><code>"creation": {
+    "mode": "individual"
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern lineal</div>
+<pre><code>"children": {
+    "a": { "like": "brick_red" },
+    "b": { "like": "brick_blue", "spawn": "manual" }
+},
+"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": ["a", "b"]
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern por filas</div>
+<pre><code>"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": [
+        ["a"],
+        ["b"]
+    ]
+}</code></pre>
+            </div>
+
+            <p>
+                En modo grid, la posicion del parent es el origen de la rejilla.
+                Cada celda usa <code>column * cellWidth</code> y
+                <code>row * cellHeight</code>. El <code>offset</code> del child se
+                aplica dentro de la celda y el <code>origin</code> del child se ignora.
+            </p>
+
+            <p>
+                Un pattern lineal se consume en orden row-major y se repite al terminar.
+                Un pattern por filas repite sus filas exteriores y cada fila interior
+                repite sus columnas. Los children manuales dentro de un grid no aparecen
+                automaticamente; al llamar <code>spawn(parent, "child")</code> se crean
+                todas las celdas del grid donde el pattern referencia ese child.
+            </p>
+
             <h2 id="sounds">Sounds</h2>
 
             <p>
@@ -643,6 +710,13 @@ notes=FLX example with spawn and basic UI
             <p>
                 El <code>offset</code> opcional es local al objeto que crea el hijo y
                 usa su rotaciÃƒÂ³n actual como referencia.
+            </p>
+
+            <p>
+                Si el parent usa <code>creation.mode = "grid"</code>,
+                <code>spawn(parent, "child")</code> sigue la politica del grid en vez
+                de crear una instancia libre. Crea todas las celdas del grid que
+                correspondan a ese child manual.
             </p>
 
             <hr />

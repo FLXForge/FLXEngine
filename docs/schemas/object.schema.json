@@ -20,6 +20,13 @@
       "default": "auto"
     },
 
+    "creation": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "creation.schema.json" }
+      ]
+    },
+
     "offset": {
       "type": "object",
       "additionalProperties": false,

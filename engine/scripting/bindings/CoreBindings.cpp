@@ -114,6 +114,47 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsKeepOnly(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "keep_only called without a valid object"
+            );
+
+            JS_FreeValue(context, idValue);
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->keepOnly(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        return JS_UNDEFINED;
+    }
+
     JSValue jsDelta(
         JSContext* context,
         JSValueConst thisValue,
@@ -317,6 +358,13 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "kill",
         JS_NewCFunction(context, jsKill, "kill", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "keep_only",
+        JS_NewCFunction(context, jsKeepOnly, "keep_only", 1)
     );
 
     JS_SetPropertyStr(

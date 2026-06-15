@@ -710,6 +710,30 @@ if (Key.down(KEY_LEFT)) {
 
             </div>
 
+            <h2>keep_only(object)</h2>
+
+            <p>
+                Marks every living runtime object for destruction except the exact
+                object passed as parameter. The kept object remains alive, but its
+                children are not preserved automatically.
+            </p>
+
+            <p>
+                Objects removed by <code>keep_only()</code> follow the normal
+                <code>dead()</code> and cleanup flow. The runtime is not modified
+                immediately while scripts are iterating.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">scene transition</div>
+<pre><code>function action(game) {
+    if (global["startLevel"] == 1) {
+        keep_only(game);
+        spawn(game, "level1");
+    }
+}</code></pre>
+            </div>
+
             <hr />
 
             <h2>move_x(object, direction)</h2>

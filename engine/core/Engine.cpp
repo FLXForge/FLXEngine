@@ -125,6 +125,13 @@ void Engine::configureScriptEngine()
             );
         }
     );
+
+    scriptEngine.setKeepOnlyFunction(
+        [this](const std::string& runtimeId)
+        {
+            world.keepOnly(runtimeId);
+        }
+    );
 }
 
 void Engine::update()

@@ -8,6 +8,14 @@
 #include <unordered_map>
 #include <vector>
 
+struct GridCreationRules
+{
+    int rows = 0;
+    int columns = 0;
+    float cellWidth = 0.0f;
+    float cellHeight = 0.0f;
+};
+
 struct ObjectDefinition
 {
     std::string id;
@@ -58,4 +66,10 @@ struct ObjectDefinition
     std::vector<std::string> scripts;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
+
+    std::string creationMode = "individual";
+    GridCreationRules gridRules;
+    bool gridPatternIsRows = false;
+    std::vector<std::string> gridPattern;
+    std::vector<std::vector<std::string>> gridRowPattern;
 };

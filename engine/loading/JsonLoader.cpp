@@ -152,7 +152,8 @@ namespace
             "motion",
             "bounds",
             "collision",
-            "behavior"
+            "behavior",
+            "creation"
         };
 
         for (const auto& key : blockKeys)
@@ -467,6 +468,153 @@ namespace
         }
     }
 
+    void parseCreationPattern(
+        const nlohmann::json& pattern,
+        ObjectDefinition& definition
+    )
+    {
+        definition.gridPattern.clear();
+        definition.gridRowPattern.clear();
+        definition.gridPatternIsRows = false;
+
+        if (!pattern.is_array())
+        {
+            Logger::error(
+                "json",
+                "Invalid grid creation pattern in '" + definition.id +
+                "': expected array"
+            );
+
+            return;
+        }
+
+        if (pattern.empty())
+        {
+            return;
+        }
+
+        if (pattern.front().is_array())
+        {
+            definition.gridPatternIsRows = true;
+
+            for (const auto& row : pattern)
+            {
+                if (!row.is_array())
+                {
+                    Logger::warning(
+                        "json",
+                        "Ignoring invalid grid pattern row in '" +
+                        definition.id + "'"
+                    );
+
+                    continue;
+                }
+
+                std::vector<std::string> rowPattern;
+
+                for (const auto& childId : row)
+                {
+                    if (!childId.is_string())
+                    {
+                        Logger::warning(
+                            "json",
+                            "Ignoring invalid grid pattern value in '" +
+                            definition.id + "'"
+                        );
+
+                        continue;
+                    }
+
+                    rowPattern.push_back(
+                        childId.get<std::string>()
+                    );
+                }
+
+                definition.gridRowPattern.push_back(rowPattern);
+            }
+
+            return;
+        }
+
+        for (const auto& childId : pattern)
+        {
+            if (!childId.is_string())
+            {
+                Logger::warning(
+                    "json",
+                    "Ignoring invalid grid pattern value in '" +
+                    definition.id + "'"
+                );
+
+                continue;
+            }
+
+            definition.gridPattern.push_back(
+                childId.get<std::string>()
+            );
+        }
+    }
+
+    void parseCreation(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("creation") || !object["creation"].is_object())
+        {
+            return;
+        }
+
+        const auto& creation =
+            object["creation"];
+
+        definition.creationMode =
+            TextTools::toLower(
+                creation.value("mode", definition.creationMode)
+            );
+
+        if (definition.creationMode != "individual" &&
+            definition.creationMode != "grid")
+        {
+            Logger::warning(
+                "json",
+                "Unsupported creation mode '" + definition.creationMode +
+                "' in '" + definition.id + "'"
+            );
+        }
+
+        if (definition.creationMode != "grid")
+        {
+            return;
+        }
+
+        if (creation.contains("rules") && creation["rules"].is_object())
+        {
+            const auto& rules =
+                creation["rules"];
+
+            definition.gridRules.rows =
+                rules.value("rows", definition.gridRules.rows);
+
+            definition.gridRules.columns =
+                rules.value("columns", definition.gridRules.columns);
+
+            definition.gridRules.cellWidth =
+                rules.value("cellWidth", definition.gridRules.cellWidth);
+
+            definition.gridRules.cellHeight =
+                rules.value("cellHeight", definition.gridRules.cellHeight);
+        }
+
+        if (creation.contains("pattern"))
+        {
+            parseCreationPattern(
+                creation["pattern"],
+                definition
+            );
+        }
+    }
+
     void parseCollision(
         const nlohmann::json& object,
         ObjectDefinition& definition
@@ -754,6 +902,7 @@ namespace
         parseAttach(object, definition);
         parseBounds(object, definition);
         parseBehavior(object, definition);
+        parseCreation(object, definition);
         parseCollision(object, definition);
         parseSounds(object, sourceFile, definition);
         parseChildren(object, sourceFile, definition);

@@ -21,6 +21,11 @@ public:
 
     std::unordered_map<std::string, ObjectDefinition> children;
     std::unordered_map<std::string, SoundDefinition> sounds;
+    std::string creationMode = "individual";
+    GridCreationRules gridRules;
+    bool gridPatternIsRows = false;
+    std::vector<std::string> gridPattern;
+    std::vector<std::vector<std::string>> gridRowPattern;
 
     void draw(
         int scale,

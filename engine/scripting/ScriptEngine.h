@@ -62,6 +62,9 @@ public:
             float distance
             )>;
 
+    using KeepOnlyFunction =
+        std::function<void(const std::string&)>;
+
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
@@ -80,6 +83,10 @@ public:
         float angle,
         float distance
     );
+
+    void setKeepOnlyFunction(KeepOnlyFunction function);
+
+    void keepOnly(const std::string& runtimeId);
 
     void setFindObjectByIdFunction(
         FindObjectByIdFunction function
@@ -130,8 +137,10 @@ private:
         std::string,
         ScriptModule
     > scriptModules;
+    std::string keepOnlyRuntimeId;
     SpawnObjectFunction spawnObjectFunction;
     RayCastFunction rayCastFunction;
+    KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
     FadeSystem* fadeSystem = nullptr;

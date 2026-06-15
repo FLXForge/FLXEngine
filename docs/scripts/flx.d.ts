@@ -81,11 +81,20 @@ interface RuntimeObject {
     /** Draw layer. Lower values are drawn first. */
     layer: number;
 
+    /** True while the object is attached to its original parent. */
+    attached: boolean;
+
     /** Current X position. */
     x: number;
 
+    /** X position at the beginning of the current frame. */
+    previousX: number;
+
     /** Current Y position. */
     y: number;
+
+    /** Y position at the beginning of the current frame. */
+    previousY: number;
 
     /** Runtime object width. */
     width: number;
@@ -124,6 +133,26 @@ interface RuntimeObject {
 
     /** Motion configuration defined in JSON. */
     motion: MotionConfig;
+}
+
+/**
+ * Result returned by ray().
+ */
+interface RayResult {
+    /** True when the ray hit a compatible collision object. */
+    hit: boolean;
+
+    /** Collision group hit by the ray, or empty string when hit is false. */
+    group: string;
+
+    /** Distance from the ray origin to the impact point. */
+    distance?: number;
+
+    /** Impact X coordinate in logical FLX space. */
+    x?: number;
+
+    /** Impact Y coordinate in logical FLX space. */
+    y?: number;
 }
 
 /**
@@ -196,6 +225,26 @@ declare function follow_x(object: RuntimeObject, targetName: string): void;
 declare function follow_y(object: RuntimeObject, targetName: string): void;
 
 /**
+ * Enables declared attach rules for an object and its original parent.
+ */
+declare function attach(object: RuntimeObject): void;
+
+/**
+ * Disables attach rules. The object keeps its current position and angle.
+ */
+declare function detach(object: RuntimeObject): void;
+
+/**
+ * Returns whether an object is currently attached.
+ */
+declare function is_attached(object: RuntimeObject): boolean;
+
+/**
+ * Applies the carrier movement delta to an object for the current frame.
+ */
+declare function carry(object: RuntimeObject, carrier: RuntimeObject): void;
+
+/**
  * Applies a horizontal bounce by modifying the object's angle.
  */
 declare function bounce_x(object: RuntimeObject): void;
@@ -251,6 +300,15 @@ declare function probability(chance: number, base?: number): boolean;
 declare function random(min: number, max: number): number;
 
 /**
+ * Casts an invisible ray from an object using collision.with as group filter.
+ */
+declare function ray(
+    source: RuntimeObject,
+    angle: number,
+    distance: number
+): RayResult;
+
+/**
  * Marks an object for destruction.
  * The object will be removed at the end of the frame.
  */
@@ -293,6 +351,15 @@ declare function draw_text(
     y: number,
     text: string,
     size?: number,
+    color?: string
+): void;
+
+/**
+ * Draws one screen-space pixel using logical screen coordinates.
+ */
+declare function draw_pixel(
+    x: number,
+    y: number,
     color?: string
 ): void;
 

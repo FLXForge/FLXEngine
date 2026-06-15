@@ -15,10 +15,16 @@ RuntimeObject RuntimeObjectBuilder::build(
 
     object.runtimeId = runtimeId;
     object.parentId = parentId;
+    object.originalParentId = parentId;
     object.sourcePath = definition.sourcePath;
     object.hasOrigin = definition.hasOrigin;
     object.visible = definition.visible;
     object.layer = definition.layer;
+    object.attached = definition.attachOnCreate;
+    object.originalOffset = definition.offset;
+    object.attachFollowX = definition.attachFollowX;
+    object.attachFollowY = definition.attachFollowY;
+    object.attachFollowAngle = definition.attachFollowAngle;
 
     if (!definition.hasVisual)
     {

@@ -33,6 +33,28 @@
       "type": "boolean"
     },
 
+    "attach": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "boolean"
+        },
+        "born": {
+          "type": "boolean"
+        },
+        "x": {
+          "type": "boolean"
+        },
+        "y": {
+          "type": "boolean"
+        },
+        "angle": {
+          "type": "boolean"
+        }
+      }
+    },
+
     "origin": {
       "type": "object",
       "additionalProperties": false,

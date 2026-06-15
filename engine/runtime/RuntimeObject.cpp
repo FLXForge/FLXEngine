@@ -305,11 +305,14 @@ RuntimeObject::RuntimeObject(
     this->name = name;
     this->runtimeId = name;
     this->parentId = "";
+    this->originalParentId = "";
     this->sourcePath = "";
     this->origin = origin;
     this->hasOrigin = false;
     this->position = origin;
+    this->previousPosition = origin;
     this->size = size;
+    this->originalOffset = Vector2{ 0.0f, 0.0f };
     this->color = color;
     this->shapeMode = "fill";
     this->radius = 0.0f;
@@ -320,7 +323,11 @@ RuntimeObject::RuntimeObject(
     this->visible = true;
     this->alive = true;
     this->deadCalled = false;
+    this->attached = false;
     this->layer = 0;
+    this->attachFollowX = false;
+    this->attachFollowY = false;
+    this->attachFollowAngle = false;
     this->shapeType = "block";
     this->textContent = "";
     this->rotationSpeed = 0.0f;

@@ -542,6 +542,32 @@ void ScriptEngine::spawnObject(
     );
 }
 
+void ScriptEngine::setRayCastFunction(
+    RayCastFunction function
+)
+{
+    rayCastFunction =
+        function;
+}
+
+RayCastResult ScriptEngine::rayCast(
+    RuntimeObject& source,
+    float angle,
+    float distance
+)
+{
+    if (!rayCastFunction)
+    {
+        return RayCastResult{};
+    }
+
+    return rayCastFunction(
+        source,
+        angle,
+        distance
+    );
+}
+
 void ScriptEngine::applyJsObject(
     RuntimeObject& source,
     JSValue jsObject
@@ -549,6 +575,9 @@ void ScriptEngine::applyJsObject(
 {
     JSValue aliveValue =
         JS_GetPropertyStr(context, jsObject, "alive");
+
+    JSValue attachedValue =
+        JS_GetPropertyStr(context, jsObject, "attached");
 
     JSValue xValue =
         JS_GetPropertyStr(context, jsObject, "x");
@@ -626,6 +655,7 @@ void ScriptEngine::applyJsObject(
     }
 
     bool alive = JS_ToBool(context, aliveValue);
+    bool attached = JS_ToBool(context, attachedValue);
     double x = source.position.x;
     double y = source.position.y;
     double speed = source.speed;
@@ -657,6 +687,7 @@ void ScriptEngine::applyJsObject(
     }
 
     source.alive = alive;
+    source.attached = attached;
     source.position.x = static_cast<float>(x);
     source.position.y = static_cast<float>(y);
     source.speed = static_cast<float>(speed);
@@ -667,6 +698,7 @@ void ScriptEngine::applyJsObject(
 
     JS_FreeValue(context, localValue);
     JS_FreeValue(context, aliveValue);
+    JS_FreeValue(context, attachedValue);
     JS_FreeValue(context, xValue);
     JS_FreeValue(context, yValue);
     JS_FreeValue(context, speedValue);
@@ -820,6 +852,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "attached",
+        JS_NewBool(context, object.attached)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "group",
         JS_NewString(context, object.group.c_str())
     );
@@ -841,8 +880,22 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "previousX",
+        JS_NewFloat64(context, object.previousPosition.x)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "y",
         JS_NewFloat64(context, object.position.y)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "previousY",
+        JS_NewFloat64(context, object.previousPosition.y)
     );
 
     JS_SetPropertyStr(

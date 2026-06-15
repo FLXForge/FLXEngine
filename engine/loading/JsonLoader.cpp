@@ -388,6 +388,39 @@ namespace
             motion.value("maxSpeed", definition.maxSpeed);
     }
 
+    void parseAttach(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("attach") || !object["attach"].is_object())
+        {
+            return;
+        }
+
+        const auto& attach =
+            object["attach"];
+
+        const bool position =
+            attach.value("position", false);
+
+        definition.attachFollowX =
+            attach.contains("x") ?
+            attach.value("x", false) :
+            position;
+
+        definition.attachFollowY =
+            attach.contains("y") ?
+            attach.value("y", false) :
+            position;
+
+        definition.attachFollowAngle =
+            attach.value("angle", false);
+
+        definition.attachOnCreate =
+            attach.value("born", false);
+    }
+
     void parseBounds(
         const nlohmann::json& object,
         ObjectDefinition& definition
@@ -718,6 +751,7 @@ namespace
 
         parseShape(object, definition);
         parseMotion(object, definition);
+        parseAttach(object, definition);
         parseBounds(object, definition);
         parseBehavior(object, definition);
         parseCollision(object, definition);

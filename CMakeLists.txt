@@ -54,6 +54,7 @@ add_executable(FlxEngine
     engine/runtime/RuntimeObjectBuilder.cpp
     engine/runtime/RuntimeWorld.h
     engine/runtime/RuntimeWorld.cpp
+    engine/runtime/RayCastResult.h
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 

@@ -110,6 +110,21 @@ void Engine::configureScriptEngine()
             );
         }
     );
+
+    scriptEngine.setRayCastFunction(
+        [this](
+            RuntimeObject& source,
+            float angle,
+            float distance
+            )
+        {
+            return world.rayCast(
+                source,
+                angle,
+                distance
+            );
+        }
+    );
 }
 
 void Engine::update()

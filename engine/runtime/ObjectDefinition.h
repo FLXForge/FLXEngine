@@ -17,6 +17,11 @@ struct ObjectDefinition
     Vector2 offset = Vector2{ 0.0f, 0.0f };
     bool hasOffset = false;
 
+    bool attachFollowX = false;
+    bool attachFollowY = false;
+    bool attachFollowAngle = false;
+    bool attachOnCreate = false;
+
     bool visible = true;
     bool hasVisual = false;
     int layer = 0;

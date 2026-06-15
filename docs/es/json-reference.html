@@ -284,6 +284,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -372,11 +373,44 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#motion">motion</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de movimiento, si existe. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites de la pantalla. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <h2 id="attach">Attach</h2>
+
+            <p>
+                Define como un objeto sigue a su parent original mientras esta attached.
+                Attach no cambia parent y no crea jerarquias dinamicas.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>"attach": {
+    "born": true,
+    "position": true,
+    "angle": false
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>born</code>: el objeto nace attached cuando es true. <i>[ Opcional, por defecto false ]</i></li>
+                <li><code>position</code>: sigue X e Y del parent. <i>[ Opcional ]</i></li>
+                <li><code>x</code>: sigue X del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>y</code>: sigue Y del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>angle</code>: sincroniza el angulo del parent sin rotar el offset. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                El runtime usa el parent original y el offset original capturado
+                al crear el objeto.
+                El objeto nace detached salvo que <code>born</code> este declarado como <code>true</code>.
+            </p>
 
             <h2 id="origin">Origin</h2>
 

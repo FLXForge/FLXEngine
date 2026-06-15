@@ -379,8 +379,37 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             </div>
 
             <p>
-                *<code>size</code> is optional, by dafault is 10.
+                *<code>size</code> is optional, by default is 10.
                 <code>color</code> is optional and uses white by default.
+            </p>
+
+            <hr />
+
+            <h2>draw_pixel(x, y, color)</h2>
+
+            <p>
+                Draws one immediate screen-space pixel using logical FLX coordinates.
+                The engine applies <code>screen.scale</code> internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper, like <code>draw_text()</code>.
+                It does not create runtime objects, does not collide, and is drawn
+                above world objects in this version.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">pixels</div>
+<pre><code>function draw(space) {
+    draw_pixel(4, 10);
+    draw_pixel(10, 10, "white");
+    draw_pixel(20, 20, "#ffcc00");
+}</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                It accepts FLX named colors and hexadecimal color values.
             </p>
 
             <hr />
@@ -555,6 +584,57 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
+            <h2>attach(object)</h2>
+
+            <p>
+                Enables the attach rules declared in JSON for the object.
+                The object follows its original parent only; this does not create
+                a new parent relationship.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>attach(ball);</code></pre>
+            </div>
+
+            <h2>detach(object)</h2>
+
+            <p>
+                Disables attach rules. The object keeps its current position and angle.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">detach</div>
+<pre><code>if (is_attached(ball) && Key.pressed(KEY_SPACE)) {
+    detach(ball);
+    ball.angle = -45;
+}</code></pre>
+            </div>
+
+            <h2>is_attached(object)</h2>
+
+            <p>
+                Returns whether the object is currently attached to its original parent.
+            </p>
+
+            <hr />
+
+            <h2>carry(object, carrier)</h2>
+
+            <p>
+                Applies the carrier movement delta to another object during the current frame.
+                It does not change parent, attach state, offset, ownership or collision.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">carry</div>
+<pre><code>function collision(player, platform) {
+    carry(player, platform);
+}</code></pre>
+            </div>
+
+            <hr />
+
             <h2>Key.down(key)</h2>
 
             <p>
@@ -669,6 +749,49 @@ move_y(player, DOWN);</code></pre>
 
 
             </div>
+
+            <hr />
+
+            <h2>ray(source, angle, distance)</h2>
+
+            <p>
+                Casts an invisible ray from a runtime object and returns the closest
+                compatible collision hit.
+            </p>
+
+            <p>
+                The ray starts at <code>source.position</code>, uses FLX logical
+                coordinates, and follows the same angle convention as
+                <code>advance()</code>. It does not draw anything on screen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ray</div>
+<pre><code>function motion(tank) {
+    let sight = ray(tank, tank.angle, 200);
+
+    if (sight.hit && sight.group == "player") {
+        spawn(tank, "bullet");
+    }
+}</code></pre>
+            </div>
+
+            <h3>Return Value</h3>
+
+            <ul>
+                <li>No hit: <code>{ hit: false, group: "" }</code></li>
+                <li>Hit: <code>{ hit: true, group, distance, x, y }</code></li>
+            </ul>
+
+            <h3>Collision Rules</h3>
+
+            <ul>
+                <li>The group filter comes from <code>source.collision.with</code>.</li>
+                <li>The hit object does not need <code>collision.active = true</code>.</li>
+                <li>Invisible objects can be hit if their collision is valid.</li>
+                <li>The source object, dead objects and unsupported collision types are ignored.</li>
+                <li>This version supports <code>circle</code> and <code>box</code> collisions.</li>
+            </ul>
 
             <hr />
 

@@ -11,6 +11,221 @@
 #include <raylib.h>
 #include <vector>
 
+namespace
+{
+    Vector2 rayDirection(float angle)
+    {
+        const float radians =
+            (angle - 90.0f) * DEG2RAD;
+
+        return Vector2{
+            std::cos(radians),
+            std::sin(radians)
+        };
+    }
+
+    Vector2 collisionCenter(const RuntimeObject& object)
+    {
+        if (object.shapeType == "block")
+        {
+            return Vector2{
+                object.position.x + object.size.x / 2.0f,
+                object.position.y + object.size.y / 2.0f
+            };
+        }
+
+        return object.position;
+    }
+
+    float collisionRadius(const RuntimeObject& object)
+    {
+        if (object.collisionRadius > 0.0f)
+        {
+            return object.collisionRadius;
+        }
+
+        return std::max(
+            object.size.x,
+            object.size.y
+        ) / 2.0f;
+    }
+
+    bool rayHitsCircle(
+        Vector2 origin,
+        Vector2 direction,
+        float maxDistance,
+        const RuntimeObject& object,
+        RayCastResult& result
+    )
+    {
+        const Vector2 center =
+            collisionCenter(object);
+
+        const float radius =
+            collisionRadius(object);
+
+        const float ox =
+            origin.x - center.x;
+
+        const float oy =
+            origin.y - center.y;
+
+        const float b =
+            2.0f * (ox * direction.x + oy * direction.y);
+
+        const float c =
+            ox * ox + oy * oy - radius * radius;
+
+        const float discriminant =
+            b * b - 4.0f * c;
+
+        if (discriminant < 0.0f)
+        {
+            return false;
+        }
+
+        const float root =
+            std::sqrt(discriminant);
+
+        float distance =
+            (-b - root) / 2.0f;
+
+        if (distance < 0.0f)
+        {
+            distance =
+                (-b + root) / 2.0f;
+        }
+
+        if (distance < 0.0f || distance > maxDistance)
+        {
+            return false;
+        }
+
+        result.hit = true;
+        result.group = object.group;
+        result.distance = distance;
+        result.point = Vector2{
+            origin.x + direction.x * distance,
+            origin.y + direction.y * distance
+        };
+
+        return true;
+    }
+
+    bool rayHitsBox(
+        Vector2 origin,
+        Vector2 direction,
+        float maxDistance,
+        const RuntimeObject& object,
+        RayCastResult& result
+    )
+    {
+        const Rectangle box = Rectangle{
+            object.position.x,
+            object.position.y,
+            object.size.x,
+            object.size.y
+        };
+
+        float tMin = 0.0f;
+        float tMax = maxDistance;
+
+        const auto updateAxis = [](
+            float originValue,
+            float directionValue,
+            float minValue,
+            float maxValue,
+            float& tMin,
+            float& tMax
+        )
+        {
+            if (std::abs(directionValue) < 0.00001f)
+            {
+                return originValue >= minValue && originValue <= maxValue;
+            }
+
+            float nearDistance =
+                (minValue - originValue) / directionValue;
+
+            float farDistance =
+                (maxValue - originValue) / directionValue;
+
+            if (nearDistance > farDistance)
+            {
+                std::swap(
+                    nearDistance,
+                    farDistance
+                );
+            }
+
+            tMin =
+                std::max(tMin, nearDistance);
+
+            tMax =
+                std::min(tMax, farDistance);
+
+            return tMin <= tMax;
+        };
+
+        if (!updateAxis(
+            origin.x,
+            direction.x,
+            box.x,
+            box.x + box.width,
+            tMin,
+            tMax
+        ))
+        {
+            return false;
+        }
+
+        if (!updateAxis(
+            origin.y,
+            direction.y,
+            box.y,
+            box.y + box.height,
+            tMin,
+            tMax
+        ))
+        {
+            return false;
+        }
+
+        if (tMin < 0.0f || tMin > maxDistance)
+        {
+            return false;
+        }
+
+        result.hit = true;
+        result.group = object.group;
+        result.distance = tMin;
+        result.point = Vector2{
+            origin.x + direction.x * tMin,
+            origin.y + direction.y * tMin
+        };
+
+        return true;
+    }
+
+    bool groupMatches(
+        const RuntimeObject& source,
+        const RuntimeObject& target
+    )
+    {
+        return std::find(
+            source.collisionWith.begin(),
+            source.collisionWith.end(),
+            target.group
+        ) != source.collisionWith.end();
+    }
+
+    bool collisionTypeSupported(const RuntimeObject& object)
+    {
+        return object.collisionType == "circle" ||
+            object.collisionType == "box";
+    }
+}
+
 RuntimeWorld::RuntimeWorld()
 {
     nextRuntimeId = 1;
@@ -50,11 +265,15 @@ void RuntimeWorld::update(
     float screenHeight
 )
 {
+    beginFrame();
+
     actionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
 
     motionPhase(scriptEngine, screenWidth, screenHeight);
     flushSpawnQueue(scriptEngine);
+
+    applyAttachments();
 
     CollisionSystem::run(objects, scriptEngine);
     flushSpawnQueue(scriptEngine);
@@ -148,6 +367,14 @@ void RuntimeWorld::spawn(
         instance.origin = instance.position;
     }
 
+    instance.previousPosition =
+        instance.position;
+
+    instance.originalOffset = Vector2{
+        instance.position.x - source.position.x,
+        instance.position.y - source.position.y
+    };
+
     instance.angle =
         source.angle;
 
@@ -202,6 +429,95 @@ RuntimeObject* RuntimeWorld::findByRuntimeId(const std::string& id)
     }
 
     return nullptr;
+}
+
+RayCastResult RuntimeWorld::rayCast(
+    const RuntimeObject& source,
+    float angle,
+    float distance
+) const
+{
+    RayCastResult closest;
+
+    if (distance <= 0.0f)
+    {
+        return closest;
+    }
+
+    if (source.collisionWith.empty())
+    {
+        Logger::warning(
+            "ray",
+            "ray source has no collision.with groups"
+        );
+
+        return closest;
+    }
+
+    const Vector2 origin =
+        source.position;
+
+    const Vector2 direction =
+        rayDirection(angle);
+
+    for (const RuntimeObject& target : objects)
+    {
+        if (!target.alive)
+        {
+            continue;
+        }
+
+        if (target.runtimeId == source.runtimeId)
+        {
+            continue;
+        }
+
+        if (!groupMatches(source, target))
+        {
+            continue;
+        }
+
+        if (!collisionTypeSupported(target))
+        {
+            continue;
+        }
+
+        RayCastResult candidate;
+
+        if (target.collisionType == "circle")
+        {
+            rayHitsCircle(
+                origin,
+                direction,
+                distance,
+                target,
+                candidate
+            );
+        }
+        else if (target.collisionType == "box")
+        {
+            rayHitsBox(
+                origin,
+                direction,
+                distance,
+                target,
+                candidate
+            );
+        }
+
+        if (!candidate.hit)
+        {
+            continue;
+        }
+
+        if (!closest.hit || candidate.distance < closest.distance)
+        {
+            closest =
+                candidate;
+        }
+    }
+
+    return closest;
 }
 
 RuntimeObject RuntimeWorld::createRuntimeObject(
@@ -274,6 +590,14 @@ void RuntimeWorld::instantiateAutoChildren(
             child.position = parentPosition;
             child.origin = child.position;
         }
+
+        child.previousPosition =
+            child.position;
+
+        child.originalOffset = Vector2{
+            child.position.x - parentPosition.x,
+            child.position.y - parentPosition.y
+        };
 
         std::vector<RuntimeObject> descendants;
 
@@ -350,6 +674,15 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
     pendingObjects.clear();
 }
 
+void RuntimeWorld::beginFrame()
+{
+    for (auto& object : objects)
+    {
+        object.previousPosition =
+            object.position;
+    }
+}
+
 void RuntimeWorld::actionPhase(ScriptEngine& scriptEngine)
 {
     for (auto& object : objects)
@@ -412,6 +745,48 @@ void RuntimeWorld::drawPhase(ScriptEngine& scriptEngine)
                 "draw",
                 object
             );
+        }
+    }
+}
+
+void RuntimeWorld::applyAttachments()
+{
+    for (auto& object : objects)
+    {
+        if (!object.alive || !object.attached)
+        {
+            continue;
+        }
+
+        if (object.originalParentId.empty())
+        {
+            continue;
+        }
+
+        RuntimeObject* parent =
+            findByRuntimeId(object.originalParentId);
+
+        if (parent == nullptr || !parent->alive)
+        {
+            continue;
+        }
+
+        if (object.attachFollowX)
+        {
+            object.position.x =
+                parent->position.x + object.originalOffset.x;
+        }
+
+        if (object.attachFollowY)
+        {
+            object.position.y =
+                parent->position.y + object.originalOffset.y;
+        }
+
+        if (object.attachFollowAngle)
+        {
+            object.angle =
+                parent->angle;
         }
     }
 }

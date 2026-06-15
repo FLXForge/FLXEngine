@@ -36,17 +36,25 @@ public:
     std::string name;
     std::string runtimeId;
     std::string parentId;
+    std::string originalParentId;
     std::string sourcePath;
     std::string group;
 
     bool visible;
     bool alive;
     bool deadCalled;
+    bool attached = false;
     int layer = 0;
 
     Vector2 origin;
     Vector2 position;
+    Vector2 previousPosition;
     Vector2 size;
+    Vector2 originalOffset;
+
+    bool attachFollowX = false;
+    bool attachFollowY = false;
+    bool attachFollowAngle = false;
 
     bool hasOrigin = false;
 

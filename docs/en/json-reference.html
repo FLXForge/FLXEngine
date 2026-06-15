@@ -277,6 +277,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#children">children</a>: child objects loaded with this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
             </ul>
 
@@ -362,11 +363,44 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#motion">motion</a>: movement configuration, if any. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
+
+            <h2 id="attach">Attach</h2>
+
+            <p>
+                Defines how an object follows its original parent while it is attached.
+                Attach never changes parent and never creates dynamic hierarchies.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>"attach": {
+    "born": true,
+    "position": true,
+    "angle": false
+}</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>born</code>: starts the object attached when true. <i>[ Optional, default false ]</i></li>
+                <li><code>position</code>: follows parent X and Y. <i>[ Optional ]</i></li>
+                <li><code>x</code>: follows parent X. If declared, it overrides <code>position</code> for this axis. <i>[ Optional ]</i></li>
+                <li><code>y</code>: follows parent Y. If declared, it overrides <code>position</code> for this axis. <i>[ Optional ]</i></li>
+                <li><code>angle</code>: synchronizes the parent angle without rotating the offset. <i>[ Optional ]</i></li>
+            </ul>
+
+            <p>
+                The runtime uses the original parent and the original offset captured
+                when the object was created.
+                The object starts detached unless <code>born</code> is declared as <code>true</code>.
+            </p>
 
             <h2 id="origin">Origin</h2>
 

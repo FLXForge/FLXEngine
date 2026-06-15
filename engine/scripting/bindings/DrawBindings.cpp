@@ -107,6 +107,45 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsDrawPixel(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 2)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double x = 0.0;
+        double y = 0.0;
+
+        JS_ToFloat64(context, &x, argv[0]);
+        JS_ToFloat64(context, &y, argv[1]);
+
+        const std::string colorText =
+            optionalString(context, argc, argv, 2, "white");
+
+        const Color color =
+            ColorParser::parse(colorText, WHITE);
+
+        const int scale =
+            scriptEngine->getScreenScale();
+
+        DrawPixel(
+            static_cast<int>(x * scale),
+            static_cast<int>(y * scale),
+            color
+        );
+
+        return JS_UNDEFINED;
+    }
+
     JSValue jsFadeOn(
         JSContext* context,
         JSValueConst thisValue,
@@ -243,6 +282,13 @@ void DrawBindings::registerAll(JSContext* context)
         global,
         "draw_text",
         JS_NewCFunction(context, jsDrawText, "draw_text", 5)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "draw_pixel",
+        JS_NewCFunction(context, jsDrawPixel, "draw_pixel", 3)
     );
 
     JS_SetPropertyStr(

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include "RayCastResult.h"
 #include "RuntimeObject.h"
 
 #include <string>
@@ -40,6 +41,11 @@ public:
 
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
+    RayCastResult rayCast(
+        const RuntimeObject& source,
+        float angle,
+        float distance
+    ) const;
 
 private:
     RuntimeObject createRuntimeObject(
@@ -64,6 +70,8 @@ private:
 
     void flushSpawnQueue(ScriptEngine& scriptEngine);
 
+    void beginFrame();
+
     void actionPhase(ScriptEngine& scriptEngine);
 
     void motionPhase(
@@ -73,6 +81,8 @@ private:
     );
 
     void drawPhase(ScriptEngine& scriptEngine);
+
+    void applyAttachments();
 
     void deadPhase(ScriptEngine& scriptEngine);
 

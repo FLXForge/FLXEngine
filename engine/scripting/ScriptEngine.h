@@ -2,6 +2,7 @@
 
 #include "../runtime/RuntimeObject.h"
 #include "../runtime/ObjectDefinition.h"
+#include "../runtime/RayCastResult.h"
 #include "ScriptModule.h"
 
 #include <unordered_map>
@@ -54,6 +55,13 @@ public:
             const ObjectDefinition& definition
             )>;
 
+    using RayCastFunction =
+        std::function<RayCastResult(
+            RuntimeObject& source,
+            float angle,
+            float distance
+            )>;
+
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
@@ -63,6 +71,14 @@ public:
     void spawnObject(
         RuntimeObject& source,
         const ObjectDefinition& definition
+    );
+
+    void setRayCastFunction(RayCastFunction function);
+
+    RayCastResult rayCast(
+        RuntimeObject& source,
+        float angle,
+        float distance
     );
 
     void setFindObjectByIdFunction(
@@ -115,6 +131,7 @@ private:
         ScriptModule
     > scriptModules;
     SpawnObjectFunction spawnObjectFunction;
+    RayCastFunction rayCastFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
     FadeSystem* fadeSystem = nullptr;

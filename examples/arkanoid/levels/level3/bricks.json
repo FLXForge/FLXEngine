@@ -40,10 +40,10 @@
     "pattern": [
       [
         "redbrick",
-        "yellow",
+        "yellowbrick",
         "bluebrick"
       ],
-      [ "yellow", "redbrick" ]
+      [ "yellowbrick", "redbrick" ]
     ]
   }
 

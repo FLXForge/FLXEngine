@@ -38,12 +38,12 @@
       "cellHeight": 15
     },
     "pattern": [
-      [ "yellow" ],
+      [ "yellowbrick" ],
       [
         "redbrick",
         "bluebrick"
       ],
-      [ "yellow" ],
+      [ "yellowbrick" ],
       [
         "bluebrick",
         "redbrick"

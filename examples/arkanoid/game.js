@@ -127,22 +127,22 @@ function handle_transition(game){
 
     if (nextLevel == 1){
         spawn(game, "level1");
-        global["briks"] = 2; // luego 6 * 13
+        global["briks"] = 6 * 13;
     }
 
     if (nextLevel == 2){
         spawn(game, "level2");
-        global["briks"] = 2;
+        global["briks"] = 6 * 13;
     }
 
     if (nextLevel == 3){
         spawn(game, "level3");
-        global["briks"] = 2;
+        global["briks"] = 6 * 13;
     }
 
     if (nextLevel == 4){
         spawn(game, "level4");
-        global["briks"] = 2;
+        global["briks"] = 6 * 13;
     }
 
     currentLevel = nextLevel;

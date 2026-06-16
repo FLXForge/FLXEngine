@@ -7,10 +7,10 @@
     "background": "common/background",
     "board": "common/board",
     "paddle": "common/paddle",
-    "bricks": "level1/bricks"
+    "bricks": "level3/bricks"
   },
 
   "behavior": {
-    "scripts": [ "level1/level" ]
+    "scripts": [ "level3/level" ]
   }
 }

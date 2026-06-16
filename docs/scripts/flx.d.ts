@@ -327,7 +327,10 @@ declare function keep_only(object: RuntimeObject): void;
 declare function delta(): number;
 
 /**
- * Creates a manual child declared in the object's children map.
+ * Creates a child declared in the object's children map.
+ *
+ * Children with spawn = "auto" are created when the parent enters the world,
+ * but they may also be created later with spawn() if another instance is needed.
  *
  * @example
  * spawn(object, "laser");

@@ -37,7 +37,7 @@ function draw(level){
         draw_text(
             270,
             140,
-            "LEVEL 1",
+            "LEVEL 3",
             28,
             "#" + hex + hex + "ff"
         );

@@ -153,8 +153,11 @@ notes=FLX example with spawn and basic UI
             </p>
 
             <p>
-                Los hijos usan <code>spawn: "auto"</code> por defecto. Los hijos manuales
-                quedan registrados y pueden crearse despuÃƒÂ©s con <code>spawn(parent, "child")</code>.
+                Los hijos usan <code>spawn: "auto"</code> por defecto. Esa primera
+                instancia entra en runtime con su padre. Los hijos con
+                <code>spawn: "manual"</code> esperan hasta que un script llama a
+                <code>spawn(parent, "child")</code>. La misma funcion tambien puede
+                crear otra instancia de un hijo <code>auto</code> mas tarde.
             </p>
 
             <p>
@@ -716,7 +719,7 @@ notes=FLX example with spawn and basic UI
                 Si el parent usa <code>creation.mode = "grid"</code>,
                 <code>spawn(parent, "child")</code> sigue la politica del grid en vez
                 de crear una instancia libre. Crea todas las celdas del grid que
-                correspondan a ese child manual.
+                correspondan a ese child.
             </p>
 
             <hr />

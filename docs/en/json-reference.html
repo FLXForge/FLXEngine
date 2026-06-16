@@ -143,8 +143,11 @@ notes=FLX example with spawn and basic UI
             </p>
 
             <p>
-                Children use <code>spawn: "auto"</code> by default. Manual children
-                are registered and can be created later with <code>spawn(parent, "child")</code>.
+                Children use <code>spawn: "auto"</code> by default. That first
+                instance enters the runtime with its parent. Children with
+                <code>spawn: "manual"</code> wait until a script calls
+                <code>spawn(parent, "child")</code>. The same function can also
+                create another instance of an <code>auto</code> child later.
             </p>
 
             <p>
@@ -730,7 +733,7 @@ notes=FLX example with spawn and basic UI
                 If the parent uses <code>creation.mode = "grid"</code>,
                 <code>spawn(parent, "child")</code> follows the grid policy instead
                 of creating one free instance. It creates every matching grid cell for
-                that manual child.
+                that child.
             </p>
 
             <hr />

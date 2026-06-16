@@ -8,6 +8,11 @@
       "width": 30,
       "height": 10
     }
-  }
+  },
 
+  "group": "brick",
+
+  "collision": {
+    "type": "box"
+  }
 }

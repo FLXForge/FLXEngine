@@ -31,7 +31,7 @@
       "height": 70
     },
     "active": true,
-    "with": [ "wall_side" ]
+    "with": [ "wall_side", "powerup" ]
   },
 
   "children": {
@@ -40,6 +40,16 @@
 
   "behavior": {
     "scripts": [ "paddle" ]
+  },
+
+  "sounds": {
+    "pop": {
+      "waveform": "square",
+      "frequency": 900,
+      "duration": 0.06,
+      "volume": 0.35,
+      "slide": 300
+    }
   }
 
 }

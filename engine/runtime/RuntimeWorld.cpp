@@ -342,7 +342,7 @@ void RuntimeWorld::spawn(
         instantiateGridChildren(
             source,
             definition.id,
-            "manual",
+            "",
             pendingObjects
         );
     }
@@ -781,7 +781,10 @@ void RuntimeWorld::instantiateGridChildren(
             const ObjectDefinition& definition =
                 it->second;
 
-            if (definition.spawnMode != requestedSpawnMode)
+            if (
+                !requestedSpawnMode.empty() &&
+                definition.spawnMode != requestedSpawnMode
+                )
             {
                 continue;
             }

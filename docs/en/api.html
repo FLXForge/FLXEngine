@@ -950,7 +950,7 @@ rotate(ship, RIGHT);</code></pre>
             <h2>spawn(object, childName)</h2>
 
             <p>
-                Creates an instance of a manual child declared in the object's
+                Creates an instance of a child declared in the object's
                 <code>children</code> block.
             </p>
 
@@ -960,8 +960,11 @@ rotate(ship, RIGHT);</code></pre>
             </p>
 
             <p>
-                Manual children use <code>spawn: "manual"</code>
-                and may include local offsets.
+                Children with <code>spawn: "manual"</code> wait until
+                <code>spawn()</code> is called. Children with
+                <code>spawn: "auto"</code> are created when the parent enters
+                the world, but <code>spawn()</code> may also create another
+                instance later.
             </p>
 
             <p>
@@ -985,7 +988,7 @@ rotate(ship, RIGHT);</code></pre>
 
             <ul>
                 <li><code>object</code>: object performing the spawn.</li>
-                <li><code>childName</code>: name of the manual child declared in JSON.</li>
+                <li><code>childName</code>: name of the child declared in JSON.</li>
             </ul>
 
             <p>

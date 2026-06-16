@@ -873,7 +873,7 @@ rotate(ship, RIGHT);</code></pre>
             <h2>spawn(object, childName)</h2>
 
             <p>
-                Crea una instancia de un hijo manual declarado en el bloque
+                Crea una instancia de un hijo declarado en el bloque
                 <code>children</code> del objeto.
             </p>
 
@@ -882,8 +882,11 @@ rotate(ship, RIGHT);</code></pre>
             </p>
 
             <p>
-                Los hijos manuales usan <code>spawn: "manual"</code>
-                y pueden incluir offsets locales.
+                Los hijos con <code>spawn: "manual"</code> esperan hasta que
+                se llama a <code>spawn()</code>. Los hijos con
+                <code>spawn: "auto"</code> nacen cuando el padre entra en el
+                mundo, pero <code>spawn()</code> tambien puede crear otra
+                instancia mas tarde.
             </p>
 
             <p>
@@ -903,7 +906,7 @@ rotate(ship, RIGHT);</code></pre>
 
             <ul>
                 <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
-                <li><code>childName</code>: nombre del hijo manual declarado en el JSON.</li>
+                <li><code>childName</code>: nombre del hijo declarado en el JSON.</li>
             </ul>
 
             <p>

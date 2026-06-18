@@ -370,6 +370,9 @@ declare function state_time(object: RuntimeObject): number;
 
 /**
  * Creates or restarts a named timer owned by the object.
+ *
+ * Finished timers stay stored with 0 seconds left until they are restarted,
+ * cleared with timer_clear(), or their owner is destroyed.
  */
 declare function timer(
     object: RuntimeObject,
@@ -386,7 +389,8 @@ declare function timer_active(
 ): boolean;
 
 /**
- * Returns remaining seconds for the named object timer, or 0 if it does not exist.
+ * Returns remaining seconds for the named object timer, or 0 if it does not
+ * exist or has already finished.
  */
 declare function timer_left(
     object: RuntimeObject,

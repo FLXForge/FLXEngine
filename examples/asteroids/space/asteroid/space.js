@@ -1,32 +1,29 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    DeepSpace periodically creates asteroids.
-    Each spawner keeps its own timer and local asteroid limit.
+    DeepSpace periodically creates asteroids while the game is active.
+    The timer is reset while the game is stopped so spawning starts cleanly.
 */
 
 const SPAWN_INTERVAL = 1.5;
-
 const ASTEROID_LIMIT = 10;
 
 function born(space) {
-    space.local["timer"] = 0;
+    timer(space, "spawn", SPAWN_INTERVAL);
 }
 
 function motion(space) {
     if (global["inGame"] == 0) {
+        timer(space, "spawn", SPAWN_INTERVAL);
         return;
     }
 
-    space.local["timer"] += delta();
-
-    if (space.local["timer"] < SPAWN_INTERVAL) {
+    if (timer_active(space, "spawn")) {
         return;
     }
-
-    space.local["timer"] = 0;
 
     if (global["asteroids"] >= ASTEROID_LIMIT) {
+        timer(space, "spawn", SPAWN_INTERVAL);
         return;
     }
 
@@ -39,5 +36,6 @@ function motion(space) {
     }
 
     global["asteroids"] += 2;
-    space.local["timer"] = 0;
+
+    timer(space, "spawn", SPAWN_INTERVAL);
 }

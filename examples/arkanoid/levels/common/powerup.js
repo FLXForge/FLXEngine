@@ -1,9 +1,14 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
-function motion(powerup){
-	move_y(powerup, DOWN);
+/*
+    Arkanoid power-up.
+    It falls down and disappears when it leaves the screen.
+*/
 
-	if (powerup.y > 320) {
-		kill(powerup);
-	}
+function motion(powerup){
+    move_y(powerup, DOWN);
+
+    if (powerup.y > 320) {
+        kill(powerup);
+    }
 }

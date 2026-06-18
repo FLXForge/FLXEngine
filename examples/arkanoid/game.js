@@ -21,6 +21,7 @@ function action(game){
     handle_return_to_title(game);
     handle_transition(game);
     draw_hud();
+    global["level"] = currentLevel;
 }
 
 function reset_game(){
@@ -127,22 +128,22 @@ function handle_transition(game){
 
     if (nextLevel == 1){
         spawn(game, "level1");
-        global["briks"] = 6 * 13;
+        global["briks"] = 39;
     }
 
     if (nextLevel == 2){
         spawn(game, "level2");
-        global["briks"] = 6 * 13;
+        global["briks"] = 65;
     }
 
     if (nextLevel == 3){
         spawn(game, "level3");
-        global["briks"] = 6 * 13;
+        global["briks"] = 59;
     }
 
     if (nextLevel == 4){
         spawn(game, "level4");
-        global["briks"] = 6 * 13;
+        global["briks"] = 104;
     }
 
     currentLevel = nextLevel;

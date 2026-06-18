@@ -42,12 +42,26 @@ namespace
         return object;
     }
 
-    const char* timerNameFromArgument(
+    bool timerNameFromArgument(
         JSContext* context,
-        JSValueConst value
+        JSValueConst value,
+        std::string& outTimerName
     )
     {
-        return JS_ToCString(context, value);
+        const char* timerName =
+            JS_ToCString(context, value);
+
+        if (timerName == nullptr)
+        {
+            return false;
+        }
+
+        outTimerName =
+            timerName;
+
+        JS_FreeCString(context, timerName);
+
+        return true;
     }
 
     JSValue jsTimer(
@@ -65,24 +79,20 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        const char* timerName =
-            timerNameFromArgument(context, argv[1]);
+        std::string timerName;
+        const bool hasTimerName =
+            timerNameFromArgument(context, argv[1], timerName);
 
         double duration = 0.0;
 
         JS_ToFloat64(context, &duration, argv[2]);
 
-        if (object != nullptr && timerName != nullptr)
+        if (object != nullptr && hasTimerName)
         {
             object->timers[timerName].left =
                 static_cast<float>(
                     std::max(0.0, duration)
                 );
-        }
-
-        if (timerName != nullptr)
-        {
-            JS_FreeCString(context, timerName);
         }
 
         return JS_UNDEFINED;
@@ -103,13 +113,14 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        const char* timerName =
-            timerNameFromArgument(context, argv[1]);
+        std::string timerName;
+        const bool hasTimerName =
+            timerNameFromArgument(context, argv[1], timerName);
 
         bool active =
             false;
 
-        if (object != nullptr && timerName != nullptr)
+        if (object != nullptr && hasTimerName)
         {
             const auto it =
                 object->timers.find(timerName);
@@ -117,11 +128,6 @@ namespace
             active =
                 it != object->timers.end() &&
                 it->second.left > 0.0f;
-        }
-
-        if (timerName != nullptr)
-        {
-            JS_FreeCString(context, timerName);
         }
 
         return JS_NewBool(context, active);
@@ -142,13 +148,14 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        const char* timerName =
-            timerNameFromArgument(context, argv[1]);
+        std::string timerName;
+        const bool hasTimerName =
+            timerNameFromArgument(context, argv[1], timerName);
 
         double left =
             0.0;
 
-        if (object != nullptr && timerName != nullptr)
+        if (object != nullptr && hasTimerName)
         {
             const auto it =
                 object->timers.find(timerName);
@@ -158,11 +165,6 @@ namespace
                 left =
                     it->second.left;
             }
-        }
-
-        if (timerName != nullptr)
-        {
-            JS_FreeCString(context, timerName);
         }
 
         return JS_NewFloat64(context, left);
@@ -183,17 +185,13 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        const char* timerName =
-            timerNameFromArgument(context, argv[1]);
+        std::string timerName;
+        const bool hasTimerName =
+            timerNameFromArgument(context, argv[1], timerName);
 
-        if (object != nullptr && timerName != nullptr)
+        if (object != nullptr && hasTimerName)
         {
             object->timers.erase(timerName);
-        }
-
-        if (timerName != nullptr)
-        {
-            JS_FreeCString(context, timerName);
         }
 
         return JS_UNDEFINED;

@@ -9,6 +9,12 @@
   "spawn": "manual",
 
   "children": {
+    "purplebrick": {
+      "like": "../common/brick.json",
+      "shape": {
+        "color": "purple"
+      }
+    },
     "redbrick": {
       "like": "../common/brick.json",
       "shape": {
@@ -32,13 +38,17 @@
   "creation": {
     "mode": "grid",
     "rules": {
-      "rows": 6,
+      "rows": 8,
       "columns": 13,
       "cellWidth": 40,
       "cellHeight": 15
     },
     "pattern": [
-      [ "yellowbrick" ],
+      [ "purplebrick" ],
+      [
+        "redbrick",
+        "bluebrick"
+      ],
       [
         "redbrick",
         "bluebrick"
@@ -47,7 +57,12 @@
       [
         "bluebrick",
         "redbrick"
-      ]
+      ],
+      [
+        "redbrick",
+        "bluebrick"
+      ],
+      [ "yellowbrick" ]
     ]
   }
 

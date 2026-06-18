@@ -955,6 +955,10 @@ rotate(ship, RIGHT);</code></pre>
                 Crea o reinicia un temporizador nombrado propiedad del objeto.
                 El runtime actualiza los temporizadores automaticamente y se
                 destruyen junto con su propietario.
+                Un temporizador terminado permanece guardado con
+                <code>0</code> segundos restantes hasta que se reinicie, se
+                elimine con <code>timer_clear()</code>, o se destruya su
+                propietario.
             </p>
 
 <pre><code>timer(paddle, "gun", 5);
@@ -966,7 +970,7 @@ if (timer_active(paddle, "gun")) {
 
             <ul>
                 <li><code>timer_active(object, "name")</code>: true mientras queda tiempo.</li>
-                <li><code>timer_left(object, "name")</code>: segundos restantes, o <code>0</code>.</li>
+                <li><code>timer_left(object, "name")</code>: segundos restantes, o <code>0</code> cuando no existe o ya ha terminado.</li>
                 <li><code>timer_clear(object, "name")</code>: elimina el temporizador inmediatamente.</li>
             </ul>
 

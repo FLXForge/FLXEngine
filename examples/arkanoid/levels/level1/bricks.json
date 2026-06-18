@@ -17,6 +17,7 @@
     },
     "bluebrick": {
       "like": "../common/brick.json",
+      "spawn": "manual",
       "shape": {
         "color": "blue"
       }

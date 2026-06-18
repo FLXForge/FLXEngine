@@ -1,9 +1,15 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
+/*
+    Ship fragments are explosion debris.
+    Each fragment chooses a movement mode, shrinks over time and then disappears.
+*/
+
 const TIME_TO_DIE = 1.5;
- 
+
 function born(fragment) {
-    fragment.local["timer"] = 0;
+    timer(fragment, "life", TIME_TO_DIE);
+
     fragment.local["mode"] = random(0, 3);
 
     fragment.angle = random(0, 360);
@@ -21,18 +27,12 @@ function motion(fragment) {
         rotate(fragment, RIGHT);
     }
 
-    fragment.local["timer"] += delta();
-
-    const factor = 1 - fragment.local["timer"] / TIME_TO_DIE;
+    const factor = timer_left(fragment, "life") / TIME_TO_DIE;
 
     fragment.width = 1 * factor;
     fragment.height = 10 * factor;
 
-    if (fragment.local["timer"] < TIME_TO_DIE) {
-        return;
-    }
-
-    if (probability(5)) {
+    if (!timer_active(fragment, "life")) {
         kill(fragment);
     }
 }

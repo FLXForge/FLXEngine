@@ -1,34 +1,25 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    The laser moves in its current direction and dies after 4 seconds.
+    The laser moves in its current direction and fades out before disappearing.
 */
 
-const MAX_TIME_LIFE = 4;
-
-let laser_counter = 0;
+const MAX_LIFE_TIME = 4;
 
 function born(laser) {
-    laser.local["life_time"] = 0;
-    laser_counter++;
-    laser.local["laser_number"] = laser_counter;
+    timer(laser, "life", MAX_LIFE_TIME);
 }
 
 function motion(laser) {
+
     advance(laser);
 
-    laser.local["life_time"] += delta();
-
-    const factor = 1 - laser.local["life_time"] / (MAX_TIME_LIFE * 2);
+    const factor = timer_left(laser, "life") / MAX_LIFE_TIME;
 
     laser.width = 1 * factor;
     laser.height = 10 * factor;
 
-    if (laser.local["life_time"] >= MAX_TIME_LIFE) {
+    if (!timer_active(laser, "life")) {
         kill(laser);
     }
-}
-
-function dead(laser) {
-
 }

@@ -1,9 +1,13 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
+/*
+    Asteroid fragments fly away, rotate randomly and shrink until they disappear.
+*/
+
 const LIVE_TIME = 1.2;
 
 function born(fragment) {
-    fragment.local["timer"] = 0;
+    timer(fragment, "life", LIVE_TIME);
 
     fragment.angle = random(0, 360);
     fragment.speed = random(20, 120);
@@ -11,20 +15,18 @@ function born(fragment) {
 }
 
 function motion(fragment) {
-    fragment.local["timer"] += delta();
-
     advance(fragment);
 
     if (probability(50)) {
         rotate(fragment, RIGHT);
     }
 
-    const factor = 1 - fragment.local["timer"] / LIVE_TIME;
+    const factor = timer_left(fragment, "life") / LIVE_TIME;
 
     fragment.width = 1 * factor;
     fragment.height = 10 * factor;
 
-    if (fragment.local["timer"] >= LIVE_TIME) {
+    if (!timer_active(fragment, "life")) {
         kill(fragment);
     }
 }

@@ -1036,6 +1036,9 @@ rotate(ship, RIGHT);</code></pre>
                 Creates or restarts a named timer owned by the object. Timers
                 are updated automatically by the runtime and disappear with
                 their owner.
+                A finished timer remains stored with <code>0</code> seconds
+                left until it is restarted, cleared with
+                <code>timer_clear()</code>, or its owner is destroyed.
             </p>
 
 <pre><code>timer(paddle, "gun", 5);
@@ -1047,7 +1050,7 @@ if (timer_active(paddle, "gun")) {
 
             <ul>
                 <li><code>timer_active(object, "name")</code>: true while the timer has time left.</li>
-                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code>.</li>
+                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code> when it does not exist or has finished.</li>
                 <li><code>timer_clear(object, "name")</code>: removes the timer immediately.</li>
             </ul>
 

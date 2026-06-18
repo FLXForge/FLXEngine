@@ -6,6 +6,12 @@
     "y": 280
   },
 
+  "states": {
+    "initial": "playing",
+    "playing": { "next": [ "respawn" ] },
+    "respawn": { "next": [ "playing" ] }
+  },
+
   "spawn": "manual",
 
   "shape": {

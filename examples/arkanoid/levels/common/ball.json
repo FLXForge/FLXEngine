@@ -42,13 +42,6 @@
         "color": "red"
       }
     },
-    "shoot": {
-      "like": "powerup",
-      "shape": {
-        "content": "H",
-        "color": "yellow"
-      }
-    },
     "broken": {
       "like": "powerup",
       "shape": {

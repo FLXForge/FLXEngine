@@ -955,12 +955,20 @@ void RuntimeWorld::bornObject(
 
 void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
 {
-    for (auto& object : pendingObjects)
-    {
-        bornObject(object, scriptEngine);
+    std::vector<RuntimeObject> queuedObjects =
+        std::move(pendingObjects);
 
+    pendingObjects.clear();
+
+    for (auto& object : queuedObjects)
+    {
         objects.push_back(
             std::move(object)
+        );
+
+        bornObject(
+            objects.back(),
+            scriptEngine
         );
 
         Logger::debug(
@@ -968,8 +976,6 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
             "Spawned instance"
         );
     }
-
-    pendingObjects.clear();
 }
 
 void RuntimeWorld::beginFrame()
@@ -1150,23 +1156,13 @@ void RuntimeWorld::updateObjectTime(float delta)
                 delta;
         }
 
-        for (auto it = object.timers.begin(); it != object.timers.end();)
+        for (auto& timer : object.timers)
         {
-            it->second.left =
+            timer.second.left =
                 std::max(
                     0.0f,
-                    it->second.left - delta
+                    timer.second.left - delta
                 );
-
-            if (it->second.left <= 0.0f)
-            {
-                it =
-                    object.timers.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
         }
     }
 }

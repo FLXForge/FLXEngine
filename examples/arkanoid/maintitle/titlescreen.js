@@ -1,17 +1,20 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
+/*
+    Title screen UI.
+    Draws the blinking start message over the animated title scene.
+*/
+
+function born(ui){
+    ui.local["time"] = 0;
+}
+
 function draw(ui){
-
-    if (ui.local["time"] == null) {
-        ui.local["time"] = 0;
-    }
-
     ui.local["time"] += delta();
 
     let intensity =
         Math.floor(
-            64 +
-            Math.sin(ui.local["time"] * 2) * 64
+            64 + Math.sin(ui.local["time"] * 2) * 64
         );
 
     let hex =

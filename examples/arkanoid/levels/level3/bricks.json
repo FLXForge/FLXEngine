@@ -1,50 +1,100 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-  "origin": {
-    "x": 70,
-    "y": 65
-  },
-
   "spawn": "manual",
 
   "children": {
-    "redbrick": {
-      "like": "../common/brick.json",
-      "shape": {
-        "color": "red"
+    "block1": {
+      "origin": {
+        "x": 70,
+        "y": 65
+      },
+
+      "children": {
+        "purplebrick": {
+          "like": "../common/brick.json",
+          "shape": {
+            "color": "purple"
+          }
+        }
+      },
+
+      "creation": {
+        "mode": "grid",
+        "rules": {
+          "rows": 2,
+          "columns": 13,
+          "cellWidth": 40,
+          "cellHeight": 15
+        },
+        "pattern": [
+          "purplebrick"
+        ]
       }
     },
-    "bluebrick": {
-      "like": "../common/brick.json",
-      "shape": {
-        "color": "blue"
+    "block2": {
+      "origin": {
+        "x": 70,
+        "y": 135
+      },
+
+      "children": {
+        "redbrick": {
+          "like": "../common/brick.json",
+          "shape": {
+            "color": "red"
+          }
+        },
+        "bluebrick": {
+          "like": "../common/brick.json",
+          "spawn": "manual",
+          "shape": {
+            "color": "blue"
+          }
+        }
+      },
+
+      "creation": {
+        "mode": "grid",
+        "rules": {
+          "rows": 3,
+          "columns": 13,
+          "cellWidth": 40,
+          "cellHeight": 15
+        },
+        "pattern": [
+          "redbrick",
+          "bluebrick"
+        ]
       }
     },
-    "yellowbrick": {
-      "like": "../common/brick.json",
-      "shape": {
-        "color": "yellow"
+    "block3": {
+      "origin": {
+        "x": 70,
+        "y": 195
+      },
+
+      "children": {
+        "yellowbrick": {
+          "like": "../common/brick.json",
+          "shape": {
+            "color": "yellow"
+          }
+        }
+      },
+
+      "creation": {
+        "mode": "grid",
+        "rules": {
+          "rows": 1,
+          "columns": 13,
+          "cellWidth": 40,
+          "cellHeight": 15
+        },
+        "pattern": [
+          "yellowbrick"
+        ]
       }
     }
-  },
-
-  "creation": {
-    "mode": "grid",
-    "rules": {
-      "rows": 6,
-      "columns": 13,
-      "cellWidth": 40,
-      "cellHeight": 15
-    },
-    "pattern": [
-      [
-        "redbrick",
-        "yellowbrick",
-        "bluebrick"
-      ],
-      [ "yellowbrick", "redbrick" ]
-    ]
   }
-
 }

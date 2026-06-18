@@ -3,6 +3,12 @@
 
   "spawn": "manual",
 
+  "states": {
+    "initial": "intro",
+    "intro": { "next": [ "playing" ] },
+    "playing": { "next": [] }
+  },
+
   "children": {
     "background": "common/background",
     "board": "common/board",
@@ -11,6 +17,6 @@
   },
 
   "behavior": {
-    "scripts": [ "level4/level" ]
+    "scripts": [ "level" ]
   }
 }

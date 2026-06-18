@@ -38,7 +38,28 @@ FetchContent_Declare(
     GIT_TAG v0.10.1
 )
 
+# FLX embeds QuickJS as a scripting library. QuickJS-NG v0.10.1 exposes
+# options for examples and CLI variants, but its CMake still declares several
+# helper executables unconditionally. Those targets are excluded from ALL after
+# FetchContent_MakeAvailable so normal FLX builds only build the qjs library.
+set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_STATIC OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_WITH_MIMALLOC OFF CACHE BOOL "" FORCE)
+set(QJS_BUILD_CLI_WITH_STATIC_MIMALLOC OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(quickjs)
+
+foreach(quickjs_tool
+    api-test
+    function_source
+    qjs_exe
+    qjsc
+    run-test262
+)
+    if(TARGET ${quickjs_tool})
+        set_target_properties(${quickjs_tool} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    endif()
+endforeach()
 
 add_executable(FlxEngine
     FLXEngine.cpp

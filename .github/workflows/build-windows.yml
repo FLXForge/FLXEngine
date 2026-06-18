@@ -30,3 +30,50 @@ jobs:
         with:
           name: flxengine-windows-x64
           path: build/Release/FlxEngine.exe
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $Version = "0.2.0"
+          $PackageName = "FLXEngine-v$Version-windows-x64"
+          $PackageDir = "dist/$PackageName"
+
+          New-Item -ItemType Directory -Force -Path $PackageDir | Out-Null
+          New-Item -ItemType Directory -Force -Path "$PackageDir/examples" | Out-Null
+
+          Copy-Item "build/Release/FlxEngine.exe" "$PackageDir/FlxEngine.exe" -Force
+
+          Copy-Item "examples/pong" "$PackageDir/examples/pong" -Recurse -Force
+          Copy-Item "examples/asteroids" "$PackageDir/examples/asteroids" -Recurse -Force
+          Copy-Item "examples/arkanoid" "$PackageDir/examples/arkanoid" -Recurse -Force
+
+          if (Test-Path "schemas") {
+            Copy-Item "schemas" "$PackageDir/schemas" -Recurse -Force
+          }
+
+          if (Test-Path "scripts/flx.d.ts") {
+            New-Item -ItemType Directory -Force -Path "$PackageDir/scripts" | Out-Null
+            Copy-Item "scripts/flx.d.ts" "$PackageDir/scripts/flx.d.ts" -Force
+          }
+
+          if (Test-Path "README.md") {
+            Copy-Item "README.md" "$PackageDir/README.md" -Force
+          }
+
+          if (Test-Path "LICENSE") {
+            Copy-Item "LICENSE" "$PackageDir/LICENSE" -Force
+          }
+
+          Compress-Archive -Path "$PackageDir/*" -DestinationPath "dist/$PackageName.zip" -Force
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlxEngine-exe-windows-x64
+          path: build/Release/FlxEngine.exe
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FLXEngine-v0.2.0-windows-x64
+          path: dist/FLXEngine-v0.2.0-windows-x64.zip

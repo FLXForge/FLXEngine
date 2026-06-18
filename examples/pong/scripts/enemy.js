@@ -5,5 +5,5 @@
 */
 
 function motion(enemy) {
-	follow_y(enemy, "ball");
+    follow_y(enemy, "ball");
 }

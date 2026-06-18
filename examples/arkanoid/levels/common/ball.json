@@ -1,0 +1,96 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "offset": {
+    "x": 35,
+    "y": -4
+  },
+
+  "shape": {
+    "type": "circle",
+    "mode": "fill",
+    "color": "white",
+    "size": {
+      "width": 10,
+      "height": 10
+    }
+  },
+
+  "motion": {
+    "speed": 200,
+    "angle": 135
+  },
+
+  "attach": {
+    "born": true,
+    "x": true
+  },
+
+  "children": {
+    "gun": "powerup",
+    "big": {
+      "like": "powerup",
+      "shape": {
+        "content": "B",
+        "color": "purple"
+      }
+    },
+    "small": {
+      "like": "powerup",
+      "shape": {
+        "content": "S",
+        "color": "red"
+      }
+    },
+    "shoot": {
+      "like": "powerup",
+      "shape": {
+        "content": "H",
+        "color": "yellow"
+      }
+    },
+    "broken": {
+      "like": "powerup",
+      "shape": {
+        "content": "K",
+        "color": "green"
+      }
+    }
+  },
+
+  "group": "ball",
+
+  "collision": {
+    "type": "circle",
+    "radius": 5,
+    "active": true,
+    "with": [
+      "wall_side",
+      "wall_top",
+      "title",
+      "paddle",
+      "brick"
+    ]
+  },
+
+  "behavior": {
+    "scripts": [ "ball" ]
+  },
+
+  "sounds": {
+    "paddle": {
+      "wave": "square",
+      "frequency": 440,
+      "duration": 0.08,
+      "volume": 0.8
+    },
+    "lost": {
+      "waveform": "triangle",
+      "frequency": 700,
+      "duration": 0.08,
+      "volume": 0.4,
+      "slide": 500
+    }
+  }
+
+}

@@ -14,7 +14,8 @@
         "triangle",
         "polygon",
         "circle",
-        "line"
+        "line",
+        "text"
       ],
       "default": "block"
     },
@@ -30,6 +31,12 @@
     "color": {
       "type": "string",
       "description": "Named raylib color or hexadecimal value in #rgb or #rrggbb format."
+    },
+
+    "layer": {
+      "type": "integer",
+      "default": 0,
+      "description": "Draw layer. Lower values are drawn first."
     },
 
     "points": {
@@ -59,12 +66,9 @@
       "type": "number"
     },
 
-    "text": {
-      "type": "string"
-    },
-
-    "fontSize": {
-      "type": "number"
+    "content": {
+      "type": "string",
+      "description": "Visible text for shapes with type text."
     }
   }
 }

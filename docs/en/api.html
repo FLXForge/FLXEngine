@@ -329,12 +329,15 @@
 
             <p>
                 Returns the elapsed time, in seconds,
-                since the previous frame.
+                since the previous frame. FLX clamps this value to a safe
+                maximum of <code>1 / 30</code> seconds to avoid large jumps after
+                window moves, pauses or focus stalls.
             </p>
 
             <p>
                 It allows movement, timers and behaviors
-                to be independent from frame rate.
+                to be independent from frame rate without exposing scripts to
+                abnormal frame spikes.
             </p>
 
             <div class="code-card">
@@ -357,7 +360,7 @@
 
             <hr />
 
-            <h2>Draw_text(x, y, text, size)</h2>
+            <h2>Draw_text(x, y, text, size, color)</h2>
 
             <p>
                 Draws text on screen using logical screen coordinates.
@@ -366,34 +369,185 @@
             <p>
                 Coordinates are expressed in FLX logical resolution.
                 The engine applies the configured screen scale internally.
+                This is a screen-space helper. World text should use
+                <code>shape.type = "text"</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">timer</div>
 <pre><code>draw_text( 10, 10, "HELLO ");
 draw_text( 40, 10, "WORLD!", 15);
+draw_text( 10, 30, "READY", 10, "#ffffff");
 </code></pre>
             </div>
 
             <p>
-                *<code>size</code> is optional, by dafault is 10.
+                *<code>size</code> is optional, by default is 10.
+                <code>color</code> is optional and uses white by default.
             </p>
 
             <hr />
 
-            <h2>follow_y(object, targetName)</h2>
+            <h2>draw_pixel(x, y, color)</h2>
 
             <p>
-                Moves an object vertically to follow another object by name.
-                It compares the vertical center of both objects
-                and adjusts the Y position.
+                Draws one immediate screen-space pixel using logical FLX coordinates.
+                The engine applies <code>screen.scale</code> internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper, like <code>draw_text()</code>.
+                It does not create runtime objects, does not collide, and is drawn
+                above world objects in this version.
             </p>
 
             <div class="code-card">
-                <div class="code-header">follow_y</div>
+                <div class="code-header">pixels</div>
+<pre><code>function draw(space) {
+    draw_pixel(4, 10);
+    draw_pixel(10, 10, "white");
+    draw_pixel(20, 20, "#ffcc00");
+}</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                It accepts FLX named colors and hexadecimal color values.
+            </p>
+
+            <hr />
+
+            <h2>fade_on(color)</h2>
+
+            <p>
+                Starts a full-screen fade from transparent to opaque.
+                The overlay is drawn above the world and above text drawn with
+                <code>draw_text()</code>.
+            </p>
+
+            <p>
+                The <code>color</code> parameter is optional.
+                If omitted, the fade uses black.
+                Named colors and hexadecimal colors such as
+                <code>#000</code>
+                and
+                <code>#000000</code>
+                are supported.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_on</div>
+<pre><code>fade_on();
+fade_on("black");
+fade_on("#000000");</code></pre>
+            </div>
+
+            <p>
+                The transition currently lasts one second and remains fully covered
+                when it finishes.
+            </p>
+
+            <hr />
+
+            <h2>fade_off(color)</h2>
+
+            <p>
+                Starts a full-screen fade from opaque to transparent.
+                When the transition finishes, the overlay becomes inactive.
+            </p>
+
+            <p>
+                The <code>color</code> parameter is optional and follows the same
+                color rules as <code>fade_on()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_off</div>
+<pre><code>fade_off();
+fade_off("black");
+fade_off("#000000");</code></pre>
+            </div>
+
+            <p>
+                Duration and intensity parameters are intentionally not part of
+                the API yet. They are planned as future extensions.
+            </p>
+
+            <hr />
+
+            <h2>fade_set(alpha, color)</h2>
+
+            <p>
+                Sets the fade overlay alpha immediately.
+                <code>0</code> means fully visible and <code>1</code> means fully covered.
+                The value is clamped between <code>0</code> and <code>1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_set</div>
+<pre><code>function born(title) {
+    fade_set(1);
+    fade_off();
+}
+
+fade_set(0, "black");</code></pre>
+            </div>
+
+            <p>
+                The <code>color</code> parameter is optional and uses black by default.
+            </p>
+
+            <hr />
+
+            <h2>fade_active()</h2>
+
+            <p>
+                Returns <code>true</code> while a fade transition is running.
+                It returns <code>false</code> when the overlay is stable.
+            </p>
+
+            <h2>fade_done()</h2>
+
+            <p>
+                Returns <code>true</code> when there is no fade transition running.
+                This is useful before continuing with a scene transition.
+            </p>
+
+            <h2>fade_alpha()</h2>
+
+            <p>
+                Returns the current fade alpha.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">safe transition</div>
+<pre><code>function action(title) {
+    if (Key.pressed(KEY_SPACE)) {
+        title.local["leaving"] = 1;
+        fade_on();
+    }
+
+    if (title.local["leaving"] == 1 && fade_done()) {
+        // load next scene
+    }
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>follow_x(object, targetName)</h2>
+
+            <p>
+                Moves an object horizontally toward another object.
+                The target is resolved internally by name.
+                It only modifies the object's X position.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_x</div>
 
 
-<pre><code>follow_y(enemy, "Ball");</code></pre>
+<pre><code>follow_x(cursor, "ball");</code></pre>
 
 
             </div>
@@ -401,10 +555,86 @@ draw_text( 40, 10, "WORLD!", 15);
             <h3>Configuration Used</h3>
 
             <ul>
-                <li><code>y</code>: object's vertical position.</li>
-                <li><code>height</code>: object's height.</li>
-                <li><code>speed</code>: follow speed.</li>
+                <li><code>object</code>: object that moves.</li>
+                <li><code>targetName</code>: logical instance name to follow.</li>
             </ul>
+
+            <hr />
+
+            <h2>follow_y(object, targetName)</h2>
+
+            <p>
+                Moves an object vertically toward another object.
+                The target is resolved internally by name.
+                It only modifies the object's Y position.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_y</div>
+
+
+<pre><code>follow_y(enemy, "ball");</code></pre>
+
+
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that moves.</li>
+                <li><code>targetName</code>: logical instance name to follow.</li>
+            </ul>
+
+            <hr />
+
+            <h2>attach(object)</h2>
+
+            <p>
+                Enables the attach rules declared in JSON for the object.
+                The object follows its original parent only; this does not create
+                a new parent relationship.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>attach(ball);</code></pre>
+            </div>
+
+            <h2>detach(object)</h2>
+
+            <p>
+                Disables attach rules. The object keeps its current position and angle.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">detach</div>
+<pre><code>if (is_attached(ball) && Key.pressed(KEY_SPACE)) {
+    detach(ball);
+    ball.angle = -45;
+}</code></pre>
+            </div>
+
+            <h2>is_attached(object)</h2>
+
+            <p>
+                Returns whether the object is currently attached to its original parent.
+            </p>
+
+            <hr />
+
+            <h2>carry(object, carrier)</h2>
+
+            <p>
+                Applies the carrier movement delta to another object during the current frame.
+                It does not change parent, attach state, offset, ownership or collision.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">carry</div>
+<pre><code>function collision(player, platform) {
+    carry(player, platform);
+}</code></pre>
+            </div>
 
             <hr />
 
@@ -483,6 +713,30 @@ if (Key.down(KEY_LEFT)) {
 
             </div>
 
+            <h2>keep_only(object)</h2>
+
+            <p>
+                Marks every living runtime object for destruction except the exact
+                object passed as parameter. The kept object remains alive, but its
+                children are not preserved automatically.
+            </p>
+
+            <p>
+                Objects removed by <code>keep_only()</code> follow the normal
+                <code>dead()</code> and cleanup flow. The runtime is not modified
+                immediately while scripts are iterating.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">scene transition</div>
+<pre><code>function action(game) {
+    if (global["startLevel"] == 1) {
+        keep_only(game);
+        spawn(game, "level1");
+    }
+}</code></pre>
+            </div>
+
             <hr />
 
             <h2>move_x(object, direction)</h2>
@@ -525,6 +779,49 @@ move_y(player, DOWN);</code></pre>
 
             <hr />
 
+            <h2>ray(source, angle, distance)</h2>
+
+            <p>
+                Casts an invisible ray from a runtime object and returns the closest
+                compatible collision hit.
+            </p>
+
+            <p>
+                The ray starts at <code>source.position</code>, uses FLX logical
+                coordinates, and follows the same angle convention as
+                <code>advance()</code>. It does not draw anything on screen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ray</div>
+<pre><code>function motion(tank) {
+    let sight = ray(tank, tank.angle, 200);
+
+    if (sight.hit && sight.group == "player") {
+        spawn(tank, "bullet");
+    }
+}</code></pre>
+            </div>
+
+            <h3>Return Value</h3>
+
+            <ul>
+                <li>No hit: <code>{ hit: false, group: "" }</code></li>
+                <li>Hit: <code>{ hit: true, group, distance, x, y }</code></li>
+            </ul>
+
+            <h3>Collision Rules</h3>
+
+            <ul>
+                <li>The group filter comes from <code>source.collision.with</code>.</li>
+                <li>The hit object does not need <code>collision.active = true</code>.</li>
+                <li>Invisible objects can be hit if their collision is valid.</li>
+                <li>The source object, dead objects and unsupported collision types are ignored.</li>
+                <li>This version supports <code>circle</code> and <code>box</code> collisions.</li>
+            </ul>
+
+            <hr />
+
             <h2>probability(chance, base)</h2>
 
             <p>
@@ -561,6 +858,37 @@ if (probability(1, 1000)) {
 
 
             </div>
+
+            <hr />
+
+            <h2>play_sound(object, id)</h2>
+
+            <p>
+                Plays a sound declared in the object's
+                <code>sounds</code>
+                block.
+            </p>
+
+            <p>
+                The <code>id</code> parameter identifies the sound declaration
+                owned by that object.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_sound</div>
+<pre><code>if (Key.pressed(KEY_SPACE)) {
+    play_sound(ship, "laser");
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that owns the sound declaration.</li>
+                <li><code>id</code>: name of the sound declared in JSON.</li>
+            </ul>
 
             <hr />
 
@@ -622,7 +950,7 @@ rotate(ship, RIGHT);</code></pre>
             <h2>spawn(object, childName)</h2>
 
             <p>
-                Creates an instance of a manual child declared in the object's
+                Creates an instance of a child declared in the object's
                 <code>children</code> block.
             </p>
 
@@ -632,8 +960,11 @@ rotate(ship, RIGHT);</code></pre>
             </p>
 
             <p>
-                Manual children use <code>spawn: "manual"</code>
-                and may include local offsets.
+                Children with <code>spawn: "manual"</code> wait until
+                <code>spawn()</code> is called. Children with
+                <code>spawn: "auto"</code> are created when the parent enters
+                the world, but <code>spawn()</code> may also create another
+                instance later.
             </p>
 
             <p>
@@ -657,7 +988,7 @@ rotate(ship, RIGHT);</code></pre>
 
             <ul>
                 <li><code>object</code>: object performing the spawn.</li>
-                <li><code>childName</code>: name of the manual child declared in JSON.</li>
+                <li><code>childName</code>: name of the child declared in JSON.</li>
             </ul>
 
             <p>
@@ -669,6 +1000,56 @@ rotate(ship, RIGHT);</code></pre>
                 FLX uses a spawn queue to avoid modifying
                 the object collection while the runtime is iterating over it.
             </p>
+
+            <hr />
+
+            <h2>state(object, stateName)</h2>
+
+            <p>
+                Changes the current state of an object that declares
+                <code>states</code> in JSON. The transition is validated against
+                the current state's <code>next</code> list.
+            </p>
+
+<pre><code>if (state_active(game, "title") &amp;&amp; Key.pressed(KEY_SPACE)) {
+    state(game, "playing");
+}
+</code></pre>
+
+            <ul>
+                <li><code>state_current(object)</code>: returns the current state name.</li>
+                <li><code>state_active(object, "name")</code>: checks the current state.</li>
+                <li><code>state_entered(object)</code>: true only during the frame the object entered its current state.</li>
+                <li><code>state_time(object)</code>: seconds elapsed since entering the current state.</li>
+            </ul>
+
+            <p>
+                States do not run callbacks automatically. Scripts keep deciding
+                when transitions happen and what each state does.
+            </p>
+
+            <hr />
+
+            <h2>timer(object, name, duration)</h2>
+
+            <p>
+                Creates or restarts a named timer owned by the object. Timers
+                are updated automatically by the runtime and disappear with
+                their owner.
+            </p>
+
+<pre><code>timer(paddle, "gun", 5);
+
+if (timer_active(paddle, "gun")) {
+    attach(ball);
+}
+</code></pre>
+
+            <ul>
+                <li><code>timer_active(object, "name")</code>: true while the timer has time left.</li>
+                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code>.</li>
+                <li><code>timer_clear(object, "name")</code>: removes the timer immediately.</li>
+            </ul>
 
             <hr />
 

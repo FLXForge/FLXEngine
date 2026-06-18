@@ -3,6 +3,8 @@
 #include "../runtime/RuntimeWorld.h"
 #include "../scripting/ScriptEngine.h"
 #include "../project/FlxContext.h"
+#include "../audio/AudioSystem.h"
+#include "../graphics/FadeSystem.h"
 
 #include <string>
 
@@ -24,8 +26,11 @@ private:
     void loadProject(const std::string& flxPath);
     void initWindow();
     void configureScriptEngine();
+    float safeFrameDelta() const;
 private:
     ScriptEngine scriptEngine;
     RuntimeWorld world;
+    AudioSystem audioSystem;
+    FadeSystem fadeSystem;
     FlxContext context;
 };

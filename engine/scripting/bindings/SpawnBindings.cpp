@@ -68,7 +68,7 @@ namespace
         {
             Logger::warning(
                 "spawn",
-                "Manual child not found: " + std::string(spawnName) +
+                "Child not found: " + std::string(spawnName) +
                 " in " + std::string(objectId)
             );
 
@@ -82,23 +82,9 @@ namespace
         const ObjectDefinition& definition =
             it->second;
 
-        if (definition.spawnMode != "manual")
-        {
-            Logger::warning(
-                "spawn",
-                "Child is not manual: " + std::string(spawnName)
-            );
-
-            JS_FreeCString(context, spawnName);
-            JS_FreeCString(context, objectId);
-            JS_FreeValue(context, idValue);
-
-            return JS_UNDEFINED;
-        }
-
         Logger::debug(
             "spawn",
-            "Manual child ready: " + definition.id
+            "Child ready: " + definition.id
         );
 
         scriptEngine->spawnObject(

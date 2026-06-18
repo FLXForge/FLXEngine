@@ -20,6 +20,13 @@
       "default": "auto"
     },
 
+    "creation": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "creation.schema.json" }
+      ]
+    },
+
     "offset": {
       "type": "object",
       "additionalProperties": false,
@@ -33,6 +40,28 @@
       "type": "boolean"
     },
 
+    "attach": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "boolean"
+        },
+        "born": {
+          "type": "boolean"
+        },
+        "x": {
+          "type": "boolean"
+        },
+        "y": {
+          "type": "boolean"
+        },
+        "angle": {
+          "type": "boolean"
+        }
+      }
+    },
+
     "origin": {
       "type": "object",
       "additionalProperties": false,
@@ -40,19 +69,6 @@
         "x": { "type": "number" },
         "y": { "type": "number" }
       }
-    },
-
-    "size": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "width": { "type": "number" },
-        "height": { "type": "number" }
-      }
-    },
-
-    "color": {
-      "type": "string"
     },
 
     "shape": {
@@ -76,14 +92,6 @@
       ]
     },
 
-    "speed": {
-      "type": "number"
-    },
-
-    "angle": {
-      "type": "number"
-    },
-
     "group": {
       "type": "string"
     },
@@ -102,6 +110,23 @@
       ]
     },
 
+    "states": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "states.schema.json" }
+      ]
+    },
+
+    "sounds": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "sound.schema.json" }
+        ]
+      }
+    },
+
     "children": {
       "type": "object",
       "additionalProperties": {
@@ -111,5 +136,15 @@
         ]
       }
     }
+  },
+
+  "not": {
+    "anyOf": [
+      { "required": [ "size" ] },
+      { "required": [ "color" ] },
+      { "required": [ "layer" ] },
+      { "required": [ "speed" ] },
+      { "required": [ "angle" ] }
+    ]
   }
 }

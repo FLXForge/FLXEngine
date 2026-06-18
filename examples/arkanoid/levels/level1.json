@@ -1,0 +1,16 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "spawn": "manual",
+
+  "children": {
+    "background": "common/background",
+    "board": "common/board",
+    "paddle": "common/paddle",
+    "bricks": "level1/bricks"
+  },
+
+  "behavior": {
+    "scripts": [ "level1/level" ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "spawn": "manual",
+
+  "children": {
+    "linea": {
+      "origin": {
+        "x": 0,
+        "y": 20
+      },
+      "shape": {
+        "type": "block",
+        "mode": "fill",
+        "color": "#1b3f8b",
+        "layer": -10,
+        "size": {
+          "width": 640,
+          "height": 2
+        }
+      }
+    },
+    "lineb": {
+      "origin": {
+        "x": 0,
+        "y": 24
+      },
+      "shape": {
+        "type": "block",
+        "mode": "fill",
+        "color": "#ffcc40",
+        "layer": -10,
+        "size": {
+          "width": 640,
+          "height": 2
+        }
+      }
+    },
+    "linec": {
+      "origin": {
+        "x": 0,
+        "y": 28
+      },
+      "shape": {
+        "type": "block",
+        "mode": "fill",
+        "color": "#40ccff",
+        "layer": -10,
+        "size": {
+          "width": 640,
+          "height": 2
+        }
+      }
+    }
+  }
+}

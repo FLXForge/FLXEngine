@@ -104,6 +104,17 @@ notes=FLX example with spawn and basic UI
     }
 }
 </code></pre>
+                <div class="code-header">shape text</div>
+<pre><code>"shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "white",
+    "mode": "fill",
+    "size": {
+        "width": 260,
+        "height": 60
+    }
+}</code></pre>
             </div>
 
             <h2 id="children">Children</h2>
@@ -142,8 +153,154 @@ notes=FLX example with spawn and basic UI
             </p>
 
             <p>
-                Los hijos usan <code>spawn: "auto"</code> por defecto. Los hijos manuales
-                quedan registrados y pueden crearse despuÃƒÂ©s con <code>spawn(parent, "child")</code>.
+                Los hijos usan <code>spawn: "auto"</code> por defecto. Esa primera
+                instancia entra en runtime con su padre. Los hijos con
+                <code>spawn: "manual"</code> esperan hasta que un script llama a
+                <code>spawn(parent, "child")</code>. La misma funcion tambien puede
+                crear otra instancia de un hijo <code>auto</code> mas tarde.
+            </p>
+
+            <p>
+                <code>children</code> define que puede existir, <code>spawn</code>
+                define cuando entra cada hijo en runtime y <code>creation</code>
+                define como el parent materializa esos children.
+            </p>
+
+            <h2 id="creation">Creation</h2>
+
+            <p>
+                El bloque opcional <code>creation</code> controla como un parent crea
+                sus children declarados. Si no aparece, FLX usa
+                <code>creation.mode = "individual"</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">creation individual</div>
+<pre><code>"creation": {
+    "mode": "individual"
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern lineal</div>
+<pre><code>"children": {
+    "a": { "like": "brick_red" },
+    "b": { "like": "brick_blue", "spawn": "manual" }
+},
+"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": ["a", "b"]
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern por filas</div>
+<pre><code>"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": [
+        ["a"],
+        ["b"]
+    ]
+}</code></pre>
+            </div>
+
+            <p>
+                En modo grid, la posicion del parent es el origen de la rejilla.
+                Cada celda usa <code>column * cellWidth</code> y
+                <code>row * cellHeight</code>. El <code>offset</code> del child se
+                aplica dentro de la celda y el <code>origin</code> del child se ignora.
+            </p>
+
+            <p>
+                Un pattern lineal se consume en orden row-major y se repite al terminar.
+                Un pattern por filas repite sus filas exteriores y cada fila interior
+                repite sus columnas. Los children manuales dentro de un grid no aparecen
+                automaticamente; al llamar <code>spawn(parent, "child")</code> se crean
+                todas las celdas del grid donde el pattern referencia ese child.
+            </p>
+
+            <h2 id="sounds">Sounds</h2>
+
+            <p>
+                El campo <code>sounds</code> declara sonidos que pertenecen a un objeto.
+                Los scripts pueden reproducirlos con <code>play_sound(object, "id")</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">sounds</div>
+<pre><code>"sounds": {
+    "beep": {
+        "wave": "square",
+        "frequency": 880,
+        "duration": 0.08,
+        "volume": 0.7
+    }
+}</code></pre>
+
+                <div class="code-header">sounds (referencia)</div>
+<pre><code>"sounds": {
+    "beep": "audio/beep"
+}</code></pre>
+            </div>
+
+            <p>
+                Las ondas soportadas son
+                <code>square</code>,
+                <code>sine</code>,
+                <code>triangle</code>,
+                <code>saw</code>
+                y
+                <code>noise</code>.
+            </p>
+
+            <p>
+                Las declaraciones de sonido son datos. Pueden estar en linea,
+                referenciadas como JSON o compuestas con <code>like</code>.
+            </p>
+
+            <h2 id="states">States</h2>
+
+            <p>
+                El bloque opcional <code>states</code> declara una maquina de
+                estados ligera propiedad del objeto. JSON define solo los
+                nombres de estado y las transiciones validas; los scripts
+                deciden cuando ocurren.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code>"states": {
+    "initial": "title",
+
+    "title": {
+        "next": ["playing"]
+    },
+
+    "playing": {
+        "next": ["gameover", "next_level"]
+    },
+
+    "gameover": {
+        "next": ["title"]
+    }
+}</code></pre>
+
+                <div class="code-header">states (referencia)</div>
+<pre><code>"states": "logic/game_states"</code></pre>
+            </div>
+
+            <p>
+                Usa <code>state(object, "playing")</code> para solicitar una
+                transicion. Las transiciones invalidas se ignoran y se registran
+                como warnings.
             </p>
 
             <h2 id="like">ComposiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n JSON (like)</h2>
@@ -231,9 +388,12 @@ notes=FLX example with spawn and basic UI
 
             <ul>
                 <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
-                                                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
             </ul>
 
             <hr />
@@ -321,10 +481,45 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#motion">motion</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de movimiento, si existe. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites de la pantalla. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <h2 id="attach">Attach</h2>
+
+            <p>
+                Define como un objeto sigue a su parent original mientras esta attached.
+                Attach no cambia parent y no crea jerarquias dinamicas.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>"attach": {
+    "born": true,
+    "position": true,
+    "angle": false
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>born</code>: el objeto nace attached cuando es true. <i>[ Opcional, por defecto false ]</i></li>
+                <li><code>position</code>: sigue X e Y del parent. <i>[ Opcional ]</i></li>
+                <li><code>x</code>: sigue X del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>y</code>: sigue Y del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>angle</code>: sincroniza el angulo del parent sin rotar el offset. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                El runtime usa el parent original y el offset original capturado
+                al crear el objeto.
+                El objeto nace detached salvo que <code>born</code> este declarado como <code>true</code>.
+            </p>
 
             <h2 id="origin">Origin</h2>
 
@@ -390,9 +585,24 @@ notes=FLX example with spawn and basic UI
                         <li><code>outline</code>: se dibuja el contorno del color especificado </li>
                     </ul>
                 </li>
+                <li><code>content</code>: cadena visible cuando <code>type</code> es <code>text</code>. <i>[ Opcional ]</i></li>
                 <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
+                <li><code>layer</code>: orden de dibujado. Los valores menores se dibujan antes. Los objetos con el mismo layer mantienen el orden de creacion. <i>[ Opcional, por defecto 0 ]</i></li>
                 <li><a class="link" href="#size">size</a>: tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <p>
+                Una forma de texto es un objeto del mundo. Usa origin, angle,
+                bounds, collision y behavior como cualquier otro objeto. El motor
+                calcula un tamaño de fuente que encaja dentro del cuadro logico
+                definido por <code>size</code>.
+            </p>
+
+            <p>
+                Con <code>mode: "outline"</code>, el texto se dibuja primero con
+                el color seleccionado y luego de nuevo en negro con un tamaño
+                proporcionalmente menor, dejando el color seleccionado como contorno.
+            </p>
 
             <h2 id="size">Size</h2>
 
@@ -454,6 +664,8 @@ notes=FLX example with spawn and basic UI
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
     "inherit": "creation",
+    "speed": 90,
+    "angle": 45,
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -473,6 +685,8 @@ notes=FLX example with spawn and basic UI
                         <li><code>creation</code>: hereda el movimiento inicial en el momento del spawn.</li>
                     </ul>
                 </li>
+                <li><code>speed</code>: velocidad de movimiento usada por ayudas como <code>advance()</code>.</li>
+                <li><code>angle</code>: angulo de movimiento y rotacion en grados.</li>
                 <li><code>rotationSpeed</code>: velocidad de rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
                 <li><code>acceleration</code>: aceleraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n aplicada al objeto.</li>
                 <li><code>inertia</code>: conservaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del movimiento.</li>
@@ -538,6 +752,13 @@ notes=FLX example with spawn and basic UI
             <p>
                 El <code>offset</code> opcional es local al objeto que crea el hijo y
                 usa su rotaciÃƒÂ³n actual como referencia.
+            </p>
+
+            <p>
+                Si el parent usa <code>creation.mode = "grid"</code>,
+                <code>spawn(parent, "child")</code> sigue la politica del grid en vez
+                de crear una instancia libre. Crea todas las celdas del grid que
+                correspondan a ese child.
             </p>
 
             <hr />

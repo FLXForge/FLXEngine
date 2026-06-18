@@ -73,6 +73,30 @@ properties they declare: `shape` makes them drawable, `collision` makes
 them collide, `behavior` attaches scripts and `children` declares what
 can exist below them.
 
+Objects can also declare local sounds:
+
+```json
+{
+  "sounds": {
+    "beep": {
+      "wave": "square",
+      "frequency": 880,
+      "duration": 0.08,
+      "volume": 0.7
+    }
+  }
+}
+```
+
+Scripts can play declared sounds and trigger screen fades:
+
+```js
+play_sound(ship, "beep");
+
+fade_on();
+fade_off("#000000");
+```
+
 ---
 
 ## Built Around Standards

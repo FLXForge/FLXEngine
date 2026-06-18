@@ -1,0 +1,73 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 140,
+    "y": 70
+  },
+
+  "shape": {
+    "type": "text",
+    "layer": 10,
+    "content": "ARKANOID",
+    "color": "black",
+    "mode": "fill",
+    "size": {
+      "width": 370,
+      "height": 90
+    }
+  },
+
+  "children": {
+    "left_titlle": {
+      "like": "wall",
+      "origin": {
+        "x": 140,
+        "y": 80
+      },
+      "group": "wall_side",
+      "shape": {
+        "size": {
+          "height": 60
+        }
+      }
+    },
+    "right_titlle": {
+      "like": "wall",
+      "origin": {
+        "x": 500,
+        "y": 80
+      },
+      "group": "wall_side",
+      "shape": {
+        "size": {
+          "height": 60
+        }
+      }
+    },
+    "bottom_top_titlle": {
+      "like": "wall",
+      "origin": {
+        "x": 150,
+        "y": 80
+      },
+      "group": "wall_top",
+      "shape": {
+        "size": {
+          "width": 350,
+          "height": 60
+        }
+      }
+    }
+  },
+
+  "group": "title",
+
+  "collision": {
+    "type": "box"
+  },
+
+  "behavior": {
+    "scripts": [ "title" ]
+  }
+}

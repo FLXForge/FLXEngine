@@ -6,6 +6,12 @@
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
+
+struct RuntimeTimer
+{
+    float left = 0.0f;
+};
 
 class RuntimeObject
 {
@@ -20,6 +26,14 @@ public:
     std::unordered_map<std::string, double> local;
 
     std::unordered_map<std::string, ObjectDefinition> children;
+    std::unordered_map<std::string, SoundDefinition> sounds;
+    std::unordered_map<std::string, RuntimeTimer> timers;
+    std::unordered_map<std::string, std::vector<std::string>> stateTransitions;
+    std::string creationMode = "individual";
+    GridCreationRules gridRules;
+    bool gridPatternIsRows = false;
+    std::vector<std::string> gridPattern;
+    std::vector<std::vector<std::string>> gridRowPattern;
 
     void draw(
         int scale,
@@ -35,16 +49,28 @@ public:
     std::string name;
     std::string runtimeId;
     std::string parentId;
+    std::string originalParentId;
     std::string sourcePath;
     std::string group;
+    std::string state;
+    float stateTime = 0.0f;
+    uint64_t stateEnteredFrame = 0;
 
     bool visible;
     bool alive;
     bool deadCalled;
+    bool attached = false;
+    int layer = 0;
 
     Vector2 origin;
     Vector2 position;
+    Vector2 previousPosition;
     Vector2 size;
+    Vector2 originalOffset;
+
+    bool attachFollowX = false;
+    bool attachFollowY = false;
+    bool attachFollowAngle = false;
 
     bool hasOrigin = false;
 
@@ -64,6 +90,7 @@ public:
     float inertia;
 
     std::string shapeType;
+    std::string textContent;
     std::vector<Vector2> points;
 
     std::string boundsMode;

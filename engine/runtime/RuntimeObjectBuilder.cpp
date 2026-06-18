@@ -15,9 +15,16 @@ RuntimeObject RuntimeObjectBuilder::build(
 
     object.runtimeId = runtimeId;
     object.parentId = parentId;
+    object.originalParentId = parentId;
     object.sourcePath = definition.sourcePath;
     object.hasOrigin = definition.hasOrigin;
     object.visible = definition.visible;
+    object.layer = definition.layer;
+    object.attached = definition.attachOnCreate;
+    object.originalOffset = definition.offset;
+    object.attachFollowX = definition.attachFollowX;
+    object.attachFollowY = definition.attachFollowY;
+    object.attachFollowAngle = definition.attachFollowAngle;
 
     if (!definition.hasVisual)
     {
@@ -26,6 +33,7 @@ RuntimeObject RuntimeObjectBuilder::build(
 
     object.shapeMode = definition.shapeMode;
     object.shapeType = definition.shapeType;
+    object.textContent = definition.textContent;
     object.radius = definition.radius;
     object.points = definition.points;
 
@@ -48,7 +56,15 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.collisionWith = definition.collisionWith;
 
     object.scripts = definition.scripts;
+    object.sounds = definition.sounds;
     object.children = definition.children;
+    object.state = definition.initialState;
+    object.stateTransitions = definition.stateTransitions;
+    object.creationMode = definition.creationMode;
+    object.gridRules = definition.gridRules;
+    object.gridPatternIsRows = definition.gridPatternIsRows;
+    object.gridPattern = definition.gridPattern;
+    object.gridRowPattern = definition.gridRowPattern;
 
     return object;
 }

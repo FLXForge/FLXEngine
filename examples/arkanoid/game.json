@@ -1,3 +1,16 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json"
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "children": {
+    "title": "maintitle/titlescreen",
+    "level1": "levels/level1",
+    "level2": "levels/level2",
+    "level3": "levels/level3",
+    "level4": "levels/level4",
+    "gameover": "levels/gameover",
+    "congratulations": "levels/congratulations"
+  },
+  "behavior": {
+    "scripts": ["game"]
+  }
 }

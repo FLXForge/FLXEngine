@@ -42,6 +42,8 @@ function collision(asteroid, other) {
 function dead(asteroid) {
     global["asteroids"]--;
     
+    play_sound(asteroid, "pff");
+
     spawn(asteroid, "fragment");
     spawn(asteroid, "fragment");
 

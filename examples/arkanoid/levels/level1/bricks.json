@@ -1,0 +1,40 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 70,
+    "y": 65
+  },
+
+  "spawn": "manual",
+
+  "children": {
+    "redbrick": {
+      "like": "../common/brick.json",
+      "shape": {
+        "color": "red"
+      }
+    },
+    "bluebrick": {
+      "like": "../common/brick.json",
+      "shape": {
+        "color": "blue"
+      }
+    }
+  },
+
+  "creation": {
+    "mode": "grid",
+    "rules": {
+      "rows": 6,
+      "columns": 13,
+      "cellWidth": 40,
+      "cellHeight": 15
+    },
+    "pattern": [
+      "redbrick",
+      "bluebrick"
+    ]
+  }
+  
+}

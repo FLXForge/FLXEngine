@@ -1,6 +1,9 @@
 #include "CoreBindings.h"
+#include "BindingHelpers.h"
 #include "../../debug/Logger.h"
 #include "../../runtime/RuntimeConstants.h"
+#include "../../runtime/RayCastResult.h"
+#include "../ScriptEngine.h"
 
 #include <quickjs.h>
 #include <raylib.h>
@@ -9,6 +12,55 @@
 
 namespace
 {
+    JSValue createRayResult(
+        JSContext* context,
+        const RayCastResult& result
+    )
+    {
+        JSValue object =
+            JS_NewObject(context);
+
+        JS_SetPropertyStr(
+            context,
+            object,
+            "hit",
+            JS_NewBool(context, result.hit)
+        );
+
+        JS_SetPropertyStr(
+            context,
+            object,
+            "group",
+            JS_NewString(context, result.group.c_str())
+        );
+
+        if (result.hit)
+        {
+            JS_SetPropertyStr(
+                context,
+                object,
+                "distance",
+                JS_NewFloat64(context, result.distance)
+            );
+
+            JS_SetPropertyStr(
+                context,
+                object,
+                "x",
+                JS_NewFloat64(context, result.point.x)
+            );
+
+            JS_SetPropertyStr(
+                context,
+                object,
+                "y",
+                JS_NewFloat64(context, result.point.y)
+            );
+        }
+
+        return object;
+    }
+
     JSValue consoleLog(
         JSContext* context,
         JSValueConst thisValue,
@@ -62,6 +114,47 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsKeepOnly(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "keep_only called without a valid object"
+            );
+
+            JS_FreeValue(context, idValue);
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->keepOnly(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        return JS_UNDEFINED;
+    }
+
     JSValue jsDelta(
         JSContext* context,
         JSValueConst thisValue,
@@ -69,9 +162,17 @@ namespace
         JSValueConst* argv
     )
     {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr)
+        {
+            return JS_NewFloat64(context, 0.0);
+        }
+
         return JS_NewFloat64(
             context,
-            GetFrameTime()
+            scriptEngine->getFrameDelta()
         );
     }
 
@@ -145,6 +246,96 @@ namespace
             randomValue
         );
     }
+
+    JSValue jsRay(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 3)
+        {
+            return createRayResult(
+                context,
+                RayCastResult{}
+            );
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            JS_FreeValue(context, idValue);
+
+            return createRayResult(
+                context,
+                RayCastResult{}
+            );
+        }
+
+        RuntimeObject* source =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        if (source == nullptr)
+        {
+            return createRayResult(
+                context,
+                RayCastResult{}
+            );
+        }
+
+        RuntimeObject querySource =
+            *source;
+
+        JSValue xValue =
+            JS_GetPropertyStr(context, argv[0], "x");
+
+        JSValue yValue =
+            JS_GetPropertyStr(context, argv[0], "y");
+
+        double x =
+            querySource.position.x;
+
+        double y =
+            querySource.position.y;
+
+        JS_ToFloat64(context, &x, xValue);
+        JS_ToFloat64(context, &y, yValue);
+
+        querySource.position = Vector2{
+            static_cast<float>(x),
+            static_cast<float>(y)
+        };
+
+        JS_FreeValue(context, xValue);
+        JS_FreeValue(context, yValue);
+
+        double angle = 0.0;
+        double distance = 0.0;
+
+        JS_ToFloat64(context, &angle, argv[1]);
+        JS_ToFloat64(context, &distance, argv[2]);
+
+        return createRayResult(
+            context,
+            scriptEngine->rayCast(
+                querySource,
+                static_cast<float>(angle),
+                static_cast<float>(distance)
+            )
+        );
+    }
 }
 
 void CoreBindings::registerAll(JSContext* context)
@@ -180,6 +371,13 @@ void CoreBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(
         context,
         global,
+        "keep_only",
+        JS_NewCFunction(context, jsKeepOnly, "keep_only", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
         "delta",
         JS_NewCFunction(context, jsDelta, "delta", 0)
     );
@@ -196,6 +394,13 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "probability",
         JS_NewCFunction(context, jsProbability, "probability", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "ray",
+        JS_NewCFunction(context, jsRay, "ray", 3)
     );
 
     JS_FreeValue(context, global);

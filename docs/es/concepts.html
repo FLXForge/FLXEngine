@@ -205,6 +205,16 @@ screen.scale=3
             <h2>Children y momento de spawn</h2>
 
             <p>
+                Modelo resumido: <code>children</code> define que puede existir,
+                <code>spawn</code> define cuando entra en runtime y
+                <code>creation</code> define como el parent materializa esos
+                children. Si <code>creation</code> no se declara, el modo usado es
+                <code>individual</code>. En modo <code>grid</code>,
+                <code>spawn(parent, "child")</code> crea las celdas manuales que
+                correspondan al pattern.
+            </p>
+
+            <p>
                 FLX utiliza <code>children</code> para declarar qué puede existir bajo un objeto.
                 El valor <code>spawn</code> del hijo define cuándo entra en el runtime.
             </p>
@@ -221,6 +231,13 @@ screen.scale=3
                     <code>spawn(parent, "child")</code>.
                 </li>
             </ul>
+
+            <p>
+                <code>spawn(parent, "child")</code> puede crear cualquier hijo
+                declarado. El valor <code>spawn</code> solo controla si la
+                primera instancia nace automaticamente cuando el padre entra
+                en el mundo.
+            </p>
 
             <p>
                 Junto con <code>like</code>, esto mantiene composición,

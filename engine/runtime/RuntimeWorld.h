@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include "RayCastResult.h"
 #include "RuntimeObject.h"
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 class ScriptEngine;
 
@@ -21,7 +23,8 @@ public:
     void update(
         ScriptEngine& scriptEngine,
         float screenWidth,
-        float screenHeight
+        float screenHeight,
+        float delta
     );
 
     void draw(
@@ -40,6 +43,12 @@ public:
 
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
+    void keepOnly(const std::string& runtimeId);
+    RayCastResult rayCast(
+        const RuntimeObject& source,
+        float angle,
+        float distance
+    ) const;
 
 private:
     RuntimeObject createRuntimeObject(
@@ -47,10 +56,46 @@ private:
         const std::string& parentId
     );
 
+    RuntimeObject createIndividualChild(
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition,
+        bool inheritParentAngle
+    );
+
+    RuntimeObject createGridChild(
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition,
+        int row,
+        int column
+    );
+
     void instantiateAutoChildren(
         const RuntimeObject& parent,
         std::vector<RuntimeObject>& target
     );
+
+    void instantiateIndividualAutoChildren(
+        const RuntimeObject& parent,
+        std::vector<RuntimeObject>& target
+    );
+
+    void instantiateGridChildren(
+        const RuntimeObject& parent,
+        const std::string& requestedChildId,
+        const std::string& requestedSpawnMode,
+        std::vector<RuntimeObject>& target
+    );
+
+    bool gridChildIdAt(
+        const RuntimeObject& parent,
+        int row,
+        int column,
+        std::string& childId
+    ) const;
+
+    bool validGridCreation(
+        const RuntimeObject& parent
+    ) const;
 
     void loadScriptsForObject(
         RuntimeObject& object,
@@ -64,6 +109,8 @@ private:
 
     void flushSpawnQueue(ScriptEngine& scriptEngine);
 
+    void beginFrame();
+
     void actionPhase(ScriptEngine& scriptEngine);
 
     void motionPhase(
@@ -74,13 +121,18 @@ private:
 
     void drawPhase(ScriptEngine& scriptEngine);
 
+    void applyAttachments();
+
     void deadPhase(ScriptEngine& scriptEngine);
 
     void cleanupDeadObjects();
 
+    void updateObjectTime(float delta);
+
     std::string createRuntimeId(const std::string& name);
 
     int nextRuntimeId;
+    uint64_t frameIndex = 0;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
 };

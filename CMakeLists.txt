@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 
 project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
 
@@ -54,11 +54,21 @@ add_executable(FlxEngine
     engine/runtime/RuntimeObjectBuilder.cpp
     engine/runtime/RuntimeWorld.h
     engine/runtime/RuntimeWorld.cpp
+    engine/runtime/RayCastResult.h
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
+    engine/audio/SoundDefinition.h
+    engine/audio/AudioSystem.h
+    engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/tools/ColorParser.h
+    engine/tools/ColorParser.cpp
+    engine/tools/TextTools.h
+    engine/tools/TextTools.cpp
+    engine/graphics/FadeSystem.h
+    engine/graphics/FadeSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
@@ -69,6 +79,8 @@ add_executable(FlxEngine
     engine/scripting/ScriptBindings.h
     engine/scripting/ScriptBindings.cpp 
     engine/scripting/bindings/BindingHelpers.h
+    engine/scripting/bindings/AudioBindings.h
+    engine/scripting/bindings/AudioBindings.cpp
     engine/scripting/bindings/CoreBindings.h
     engine/scripting/bindings/CoreBindings.cpp
     engine/scripting/bindings/InputBindings.h
@@ -79,6 +91,10 @@ add_executable(FlxEngine
     engine/scripting/bindings/MotionBindings.cpp
     engine/scripting/bindings/SpawnBindings.h
     engine/scripting/bindings/SpawnBindings.cpp
+    engine/scripting/bindings/StateBindings.h
+    engine/scripting/bindings/StateBindings.cpp
+    engine/scripting/bindings/TimerBindings.h
+    engine/scripting/bindings/TimerBindings.cpp
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)

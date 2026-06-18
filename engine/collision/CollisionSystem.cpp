@@ -75,6 +75,16 @@ void CollisionSystem::run(
                         a,
                         b
                     );
+
+                    if (!a.alive)
+                    {
+                        break;
+                    }
+                }
+
+                if (!a.alive)
+                {
+                    break;
                 }
             }
         }

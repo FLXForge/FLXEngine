@@ -1,6 +1,8 @@
 #include "ScriptEngine.h"
 #include "../runtime/RuntimeConstants.h"
 #include "../debug/Logger.h"
+#include "../audio/AudioSystem.h"
+#include "../graphics/FadeSystem.h"
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
@@ -540,6 +542,53 @@ void ScriptEngine::spawnObject(
     );
 }
 
+void ScriptEngine::setRayCastFunction(
+    RayCastFunction function
+)
+{
+    rayCastFunction =
+        function;
+}
+
+RayCastResult ScriptEngine::rayCast(
+    RuntimeObject& source,
+    float angle,
+    float distance
+)
+{
+    if (!rayCastFunction)
+    {
+        return RayCastResult{};
+    }
+
+    return rayCastFunction(
+        source,
+        angle,
+        distance
+    );
+}
+
+void ScriptEngine::setKeepOnlyFunction(
+    KeepOnlyFunction function
+)
+{
+    keepOnlyFunction =
+        function;
+}
+
+void ScriptEngine::keepOnly(const std::string& runtimeId)
+{
+    if (!keepOnlyFunction)
+    {
+        return;
+    }
+
+    keepOnlyRuntimeId =
+        runtimeId;
+
+    keepOnlyFunction(runtimeId);
+}
+
 void ScriptEngine::applyJsObject(
     RuntimeObject& source,
     JSValue jsObject
@@ -547,6 +596,9 @@ void ScriptEngine::applyJsObject(
 {
     JSValue aliveValue =
         JS_GetPropertyStr(context, jsObject, "alive");
+
+    JSValue attachedValue =
+        JS_GetPropertyStr(context, jsObject, "attached");
 
     JSValue xValue =
         JS_GetPropertyStr(context, jsObject, "x");
@@ -574,6 +626,9 @@ void ScriptEngine::applyJsObject(
 
     JSValue heightValue =
         JS_GetPropertyStr(context, jsObject, "height");
+
+    JSValue layerValue =
+        JS_GetPropertyStr(context, jsObject, "layer");
 
     if (JS_IsObject(localValue))
     {
@@ -621,6 +676,7 @@ void ScriptEngine::applyJsObject(
     }
 
     bool alive = JS_ToBool(context, aliveValue);
+    bool attached = JS_ToBool(context, attachedValue);
     double x = source.position.x;
     double y = source.position.y;
     double speed = source.speed;
@@ -629,6 +685,7 @@ void ScriptEngine::applyJsObject(
     double velocityY = source.velocity.y;
     double width = source.size.x;
     double height = source.size.y;
+    int32_t layer = source.layer;
 
     JS_ToFloat64(context, &x, xValue);
     JS_ToFloat64(context, &y, yValue);
@@ -636,6 +693,7 @@ void ScriptEngine::applyJsObject(
     JS_ToFloat64(context, &angle, angleValue);
     JS_ToFloat64(context, &velocityX, velocityXValue);
     JS_ToFloat64(context, &velocityY, velocityYValue);
+    JS_ToInt32(context, &layer, layerValue);
 
     if (JS_ToFloat64(context, &width, widthValue) == 0)
     {
@@ -649,16 +707,31 @@ void ScriptEngine::applyJsObject(
             static_cast<float>(height);
     }
 
+    const bool runtimeAliveBeforeApply =
+        source.alive;
+
+    if (
+        !keepOnlyRuntimeId.empty() &&
+        source.runtimeId != keepOnlyRuntimeId &&
+        !runtimeAliveBeforeApply
+        )
+    {
+        alive = false;
+    }
+
     source.alive = alive;
+    source.attached = attached;
     source.position.x = static_cast<float>(x);
     source.position.y = static_cast<float>(y);
     source.speed = static_cast<float>(speed);
     source.angle = static_cast<float>(angle);
     source.velocity.x = static_cast<float>(velocityX);
     source.velocity.y = static_cast<float>(velocityY);
+    source.layer = layer;
 
     JS_FreeValue(context, localValue);
     JS_FreeValue(context, aliveValue);
+    JS_FreeValue(context, attachedValue);
     JS_FreeValue(context, xValue);
     JS_FreeValue(context, yValue);
     JS_FreeValue(context, speedValue);
@@ -667,6 +740,7 @@ void ScriptEngine::applyJsObject(
     JS_FreeValue(context, velocityYValue);
     JS_FreeValue(context, widthValue);
     JS_FreeValue(context, heightValue);
+    JS_FreeValue(context, layerValue);
 }
 
 void ScriptEngine::applyGlobalObject(JSValue globalObject)
@@ -811,8 +885,22 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "attached",
+        JS_NewBool(context, object.attached)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "group",
         JS_NewString(context, object.group.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "layer",
+        JS_NewInt32(context, object.layer)
     );
 
     JS_SetPropertyStr(
@@ -825,8 +913,22 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "previousX",
+        JS_NewFloat64(context, object.previousPosition.x)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "y",
         JS_NewFloat64(context, object.position.y)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "previousY",
+        JS_NewFloat64(context, object.previousPosition.y)
     );
 
     JS_SetPropertyStr(
@@ -880,6 +982,20 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
 
     JSValue motion =
         JS_NewObject(context);
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "speed",
+        JS_NewFloat64(context, object.speed)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        motion,
+        "angle",
+        JS_NewFloat64(context, object.angle)
+    );
 
     JS_SetPropertyStr(
         context,
@@ -941,4 +1057,115 @@ void ScriptEngine::setScreenScale(int scale)
 int ScriptEngine::getScreenScale() const
 {
     return screenScale;
+}
+
+void ScriptEngine::setFrameDelta(float delta)
+{
+    frameDelta =
+        delta;
+}
+
+float ScriptEngine::getFrameDelta() const
+{
+    return frameDelta;
+}
+
+void ScriptEngine::setRuntimeFrame(uint64_t frame)
+{
+    runtimeFrame =
+        frame;
+}
+
+uint64_t ScriptEngine::getRuntimeFrame() const
+{
+    return runtimeFrame;
+}
+
+void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
+{
+    fadeSystem = nextFadeSystem;
+}
+
+void ScriptEngine::fadeOn(const std::string& color)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->fadeOn(color);
+}
+
+void ScriptEngine::fadeOff(const std::string& color)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->fadeOff(color);
+}
+
+void ScriptEngine::fadeSet(
+    float alpha,
+    const std::string& color
+)
+{
+    if (fadeSystem == nullptr)
+    {
+        return;
+    }
+
+    fadeSystem->set(alpha, color);
+}
+
+bool ScriptEngine::fadeActive() const
+{
+    return fadeSystem != nullptr && fadeSystem->isActive();
+}
+
+bool ScriptEngine::fadeDone() const
+{
+    return fadeSystem == nullptr || fadeSystem->isDone();
+}
+
+float ScriptEngine::fadeAlpha() const
+{
+    if (fadeSystem == nullptr)
+    {
+        return 0.0f;
+    }
+
+    return fadeSystem->getAlpha();
+}
+
+void ScriptEngine::setAudioSystem(AudioSystem* nextAudioSystem)
+{
+    audioSystem = nextAudioSystem;
+}
+
+void ScriptEngine::playSound(
+    RuntimeObject& source,
+    const std::string& id
+)
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    const auto it =
+        source.sounds.find(id);
+
+    if (it == source.sounds.end())
+    {
+        Logger::warning(
+            "audio",
+            "Sound not found: " + id + " in " + source.runtimeId
+        );
+
+        return;
+    }
+
+    audioSystem->play(it->second);
 }

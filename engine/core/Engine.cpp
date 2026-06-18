@@ -4,8 +4,15 @@
 #include "../project/FlxContextBuilder.h"
 
 #include <raylib.h>
+#include <algorithm>
 
 Engine::Engine() = default;
+
+namespace
+{
+    constexpr float MaxFrameDelta =
+        1.0f / 30.0f;
+}
 
 void Engine::run(const std::string& flxPath)
 {
@@ -25,8 +32,6 @@ void Engine::run(const std::string& flxPath)
 void Engine::init(const std::string& flxPath)
 {
     loadProject(flxPath);
-    initWindow();
-    configureScriptEngine();
 
     SetTargetFPS(60);
 }
@@ -55,12 +60,15 @@ void Engine::loadProject(const std::string& flxPath)
         "Loaded root: " + rootPath
     );
 
+    initWindow();
+    audioSystem.init();
+    scriptEngine.setScreenScale(context.screenScale);
+    configureScriptEngine();
+
     const ObjectDefinition rootDefinition =
         JsonLoader::loadObjectDefinition(rootPath);
 
     world.load(rootDefinition, scriptEngine);
-
-    scriptEngine.setScreenScale(context.screenScale);
 }
 
 void Engine::initWindow()
@@ -79,6 +87,9 @@ void Engine::initWindow()
 
 void Engine::configureScriptEngine()
 {
+    scriptEngine.setFadeSystem(&fadeSystem);
+    scriptEngine.setAudioSystem(&audioSystem);
+
     scriptEngine.setFindObjectFunction(
         [this](const std::string& name)
         {
@@ -106,15 +117,46 @@ void Engine::configureScriptEngine()
             );
         }
     );
+
+    scriptEngine.setRayCastFunction(
+        [this](
+            RuntimeObject& source,
+            float angle,
+            float distance
+            )
+        {
+            return world.rayCast(
+                source,
+                angle,
+                distance
+            );
+        }
+    );
+
+    scriptEngine.setKeepOnlyFunction(
+        [this](const std::string& runtimeId)
+        {
+            world.keepOnly(runtimeId);
+        }
+    );
 }
 
 void Engine::update()
 {
+    const float delta =
+        safeFrameDelta();
+
+    scriptEngine.setFrameDelta(delta);
+
     world.update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight)
+        static_cast<float>(context.screenHeight),
+        delta
     );
+
+    fadeSystem.update(delta);
+    audioSystem.update();
 }
 
 void Engine::draw()
@@ -131,15 +173,44 @@ void Engine::draw()
         context.debugCollisions
     );
 
+    fadeSystem.draw(
+        context.screenWidth,
+        context.screenHeight,
+        context.screenScale
+    );
+
     EndDrawing();
 }
 
 void Engine::shutdown()
 {
+    audioSystem.shutdown();
     CloseWindow();
 }
 
 RuntimeObject* Engine::find(const std::string& name)
 {
     return world.findByName(name);
+}
+
+float Engine::safeFrameDelta() const
+{
+    const float rawDelta =
+        GetFrameTime();
+
+    const float delta =
+        std::min(rawDelta, MaxFrameDelta);
+
+    if (rawDelta > MaxFrameDelta)
+    {
+        Logger::debug(
+            "time",
+            "Frame delta clamped from " +
+            std::to_string(rawDelta) +
+            " to " +
+            std::to_string(delta)
+        );
+    }
+
+    return delta;
 }

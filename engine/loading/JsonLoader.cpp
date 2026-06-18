@@ -1,13 +1,12 @@
 #include "JsonLoader.h"
 #include "../debug/Logger.h"
+#include "../tools/ColorParser.h"
+#include "../tools/TextTools.h"
 
-#include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include <optional>
-#include <unordered_map>
+#include <stdexcept>
 #include <vector>
 
 namespace
@@ -68,165 +67,6 @@ namespace
         }
 
         return true;
-    }
-
-    std::optional<int> hexValue(char value)
-    {
-        if (value >= '0' && value <= '9')
-        {
-            return value - '0';
-        }
-
-        if (value >= 'a' && value <= 'f')
-        {
-            return 10 + value - 'a';
-        }
-
-        if (value >= 'A' && value <= 'F')
-        {
-            return 10 + value - 'A';
-        }
-
-        return std::nullopt;
-    }
-
-    std::optional<Color> parseHexColor(const std::string& value)
-    {
-        if (value.size() != 4 && value.size() != 7)
-        {
-            return std::nullopt;
-        }
-
-        if (value[0] != '#')
-        {
-            return std::nullopt;
-        }
-
-        auto readDigit = [](char digit) -> std::optional<unsigned char>
-        {
-            const auto parsed = hexValue(digit);
-
-            if (!parsed.has_value())
-            {
-                return std::nullopt;
-            }
-
-            return static_cast<unsigned char>(
-                parsed.value() * 17
-            );
-        };
-
-        auto readByte = [](char high, char low) -> std::optional<unsigned char>
-        {
-            const auto parsedHigh = hexValue(high);
-            const auto parsedLow = hexValue(low);
-
-            if (!parsedHigh.has_value() || !parsedLow.has_value())
-            {
-                return std::nullopt;
-            }
-
-            return static_cast<unsigned char>(
-                parsedHigh.value() * 16 + parsedLow.value()
-            );
-        };
-
-        std::optional<unsigned char> r;
-        std::optional<unsigned char> g;
-        std::optional<unsigned char> b;
-
-        if (value.size() == 4)
-        {
-            r = readDigit(value[1]);
-            g = readDigit(value[2]);
-            b = readDigit(value[3]);
-        }
-        else
-        {
-            r = readByte(value[1], value[2]);
-            g = readByte(value[3], value[4]);
-            b = readByte(value[5], value[6]);
-        }
-
-        if (!r.has_value() || !g.has_value() || !b.has_value())
-        {
-            return std::nullopt;
-        }
-
-        return Color{
-            r.value(),
-            g.value(),
-            b.value(),
-            255
-        };
-    }
-
-    Color parseColor(std::string colorName)
-    {
-        const auto hexColor =
-            parseHexColor(colorName);
-
-        if (hexColor.has_value())
-        {
-            return hexColor.value();
-        }
-
-        std::transform(
-            colorName.begin(),
-            colorName.end(),
-            colorName.begin(),
-            [](unsigned char value)
-            {
-                return static_cast<char>(std::tolower(value));
-            }
-        );
-
-        static const std::unordered_map<std::string, Color> colors = {
-            { "lightgray", LIGHTGRAY },
-            { "lightgrey", LIGHTGRAY },
-            { "gray", GRAY },
-            { "grey", GRAY },
-            { "darkgray", DARKGRAY },
-            { "darkgrey", DARKGRAY },
-            { "yellow", YELLOW },
-            { "gold", GOLD },
-            { "orange", ORANGE },
-            { "pink", PINK },
-            { "red", RED },
-            { "maroon", MAROON },
-            { "green", GREEN },
-            { "lime", LIME },
-            { "darkgreen", DARKGREEN },
-            { "skyblue", SKYBLUE },
-            { "blue", BLUE },
-            { "darkblue", DARKBLUE },
-            { "purple", PURPLE },
-            { "violet", VIOLET },
-            { "darkpurple", DARKPURPLE },
-            { "beige", BEIGE },
-            { "brown", BROWN },
-            { "darkbrown", DARKBROWN },
-            { "white", WHITE },
-            { "black", BLACK },
-            { "blank", BLANK },
-            { "magenta", MAGENTA },
-            { "raywhite", RAYWHITE }
-        };
-
-        const auto it =
-            colors.find(colorName);
-
-        if (it != colors.end())
-        {
-            return it->second;
-        }
-
-        Logger::warning(
-            "json",
-            "Unknown color '" + colorName + "', using white"
-        );
-
-        return WHITE;
     }
 
     void mergeJson(
@@ -312,7 +152,9 @@ namespace
             "motion",
             "bounds",
             "collision",
-            "behavior"
+            "behavior",
+            "creation",
+            "states"
         };
 
         for (const auto& key : blockKeys)
@@ -388,10 +230,35 @@ namespace
             object["shape"].is_object();
     }
 
-    bool hasRootSize(const nlohmann::json& object)
+    void rejectRootProperty(
+        const nlohmann::json& object,
+        const std::string& property,
+        const std::string& owner,
+        const std::string& expectedBlock
+    )
     {
-        return object.contains("size") &&
-            object["size"].is_object();
+        if (!object.contains(property))
+        {
+            return;
+        }
+
+        throw std::runtime_error(
+            "Invalid FLX object '" + owner + "': property '" +
+            property + "' must be declared inside '" +
+            expectedBlock + "'"
+        );
+    }
+
+    void validateObjectRootProperties(
+        const nlohmann::json& object,
+        const std::string& owner
+    )
+    {
+        rejectRootProperty(object, "size", owner, "shape");
+        rejectRootProperty(object, "color", owner, "shape");
+        rejectRootProperty(object, "layer", owner, "shape");
+        rejectRootProperty(object, "speed", owner, "motion");
+        rejectRootProperty(object, "angle", owner, "motion");
     }
 
     Vector2 parseOrigin(const nlohmann::json& object)
@@ -426,16 +293,6 @@ namespace
             }
         }
 
-        if (hasRootSize(object))
-        {
-            const auto& size = object["size"];
-
-            return Vector2{
-                size.value("width", 0.0f),
-                size.value("height", 0.0f)
-            };
-        }
-
         return Vector2{ 0.0f, 0.0f };
     }
 
@@ -446,20 +303,30 @@ namespace
     {
         if (!hasShape(object))
         {
-            definition.hasVisual = hasRootSize(object);
+            definition.hasVisual = false;
             return;
         }
 
         const auto& shape = object["shape"];
 
         definition.hasVisual = true;
-        definition.shapeType = shape.value("type", "block");
-        definition.shapeMode = shape.value("mode", "fill");
+        definition.shapeType =
+            TextTools::toLower(shape.value("type", "block"));
+        definition.shapeMode =
+            TextTools::toLower(shape.value("mode", "fill"));
+        definition.textContent =
+            shape.value("content", definition.textContent);
+
+        definition.layer =
+            shape.value("layer", definition.layer);
 
         if (shape.contains("color"))
         {
             definition.color =
-                parseColor(shape["color"].get<std::string>());
+                ColorParser::parse(
+                    shape["color"].get<std::string>(),
+                    WHITE
+                );
         }
 
         if (shape.contains("radius"))
@@ -507,6 +374,12 @@ namespace
         definition.rotationSpeed =
             motion.value("rotationSpeed", definition.rotationSpeed);
 
+        definition.speed =
+            motion.value("speed", definition.speed);
+
+        definition.angle =
+            motion.value("angle", definition.angle);
+
         definition.acceleration =
             motion.value("acceleration", definition.acceleration);
 
@@ -515,6 +388,39 @@ namespace
 
         definition.maxSpeed =
             motion.value("maxSpeed", definition.maxSpeed);
+    }
+
+    void parseAttach(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("attach") || !object["attach"].is_object())
+        {
+            return;
+        }
+
+        const auto& attach =
+            object["attach"];
+
+        const bool position =
+            attach.value("position", false);
+
+        definition.attachFollowX =
+            attach.contains("x") ?
+            attach.value("x", false) :
+            position;
+
+        definition.attachFollowY =
+            attach.contains("y") ?
+            attach.value("y", false) :
+            position;
+
+        definition.attachFollowAngle =
+            attach.value("angle", false);
+
+        definition.attachOnCreate =
+            attach.value("born", false);
     }
 
     void parseBounds(
@@ -530,7 +436,9 @@ namespace
         const auto& bounds = object["bounds"];
 
         definition.boundsMode =
-            bounds.value("mode", definition.boundsMode);
+            TextTools::toLower(
+                bounds.value("mode", definition.boundsMode)
+            );
 
         definition.boundsOverflow =
             bounds.value("overflow", definition.boundsOverflow);
@@ -561,6 +469,153 @@ namespace
         }
     }
 
+    void parseCreationPattern(
+        const nlohmann::json& pattern,
+        ObjectDefinition& definition
+    )
+    {
+        definition.gridPattern.clear();
+        definition.gridRowPattern.clear();
+        definition.gridPatternIsRows = false;
+
+        if (!pattern.is_array())
+        {
+            Logger::error(
+                "json",
+                "Invalid grid creation pattern in '" + definition.id +
+                "': expected array"
+            );
+
+            return;
+        }
+
+        if (pattern.empty())
+        {
+            return;
+        }
+
+        if (pattern.front().is_array())
+        {
+            definition.gridPatternIsRows = true;
+
+            for (const auto& row : pattern)
+            {
+                if (!row.is_array())
+                {
+                    Logger::warning(
+                        "json",
+                        "Ignoring invalid grid pattern row in '" +
+                        definition.id + "'"
+                    );
+
+                    continue;
+                }
+
+                std::vector<std::string> rowPattern;
+
+                for (const auto& childId : row)
+                {
+                    if (!childId.is_string())
+                    {
+                        Logger::warning(
+                            "json",
+                            "Ignoring invalid grid pattern value in '" +
+                            definition.id + "'"
+                        );
+
+                        continue;
+                    }
+
+                    rowPattern.push_back(
+                        childId.get<std::string>()
+                    );
+                }
+
+                definition.gridRowPattern.push_back(rowPattern);
+            }
+
+            return;
+        }
+
+        for (const auto& childId : pattern)
+        {
+            if (!childId.is_string())
+            {
+                Logger::warning(
+                    "json",
+                    "Ignoring invalid grid pattern value in '" +
+                    definition.id + "'"
+                );
+
+                continue;
+            }
+
+            definition.gridPattern.push_back(
+                childId.get<std::string>()
+            );
+        }
+    }
+
+    void parseCreation(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("creation") || !object["creation"].is_object())
+        {
+            return;
+        }
+
+        const auto& creation =
+            object["creation"];
+
+        definition.creationMode =
+            TextTools::toLower(
+                creation.value("mode", definition.creationMode)
+            );
+
+        if (definition.creationMode != "individual" &&
+            definition.creationMode != "grid")
+        {
+            Logger::warning(
+                "json",
+                "Unsupported creation mode '" + definition.creationMode +
+                "' in '" + definition.id + "'"
+            );
+        }
+
+        if (definition.creationMode != "grid")
+        {
+            return;
+        }
+
+        if (creation.contains("rules") && creation["rules"].is_object())
+        {
+            const auto& rules =
+                creation["rules"];
+
+            definition.gridRules.rows =
+                rules.value("rows", definition.gridRules.rows);
+
+            definition.gridRules.columns =
+                rules.value("columns", definition.gridRules.columns);
+
+            definition.gridRules.cellWidth =
+                rules.value("cellWidth", definition.gridRules.cellWidth);
+
+            definition.gridRules.cellHeight =
+                rules.value("cellHeight", definition.gridRules.cellHeight);
+        }
+
+        if (creation.contains("pattern"))
+        {
+            parseCreationPattern(
+                creation["pattern"],
+                definition
+            );
+        }
+    }
+
     void parseCollision(
         const nlohmann::json& object,
         ObjectDefinition& definition
@@ -574,7 +629,9 @@ namespace
         const auto& collision = object["collision"];
 
         definition.collisionType =
-            collision.value("type", definition.collisionType);
+            TextTools::toLower(
+                collision.value("type", definition.collisionType)
+            );
 
         definition.collisionRadius =
             collision.value("radius", definition.collisionRadius);
@@ -604,6 +661,193 @@ namespace
                     definition.size.x,
                     definition.size.y
                 ) / 2.0f;
+        }
+    }
+
+    nlohmann::json normalizeSoundValue(
+        const nlohmann::json& value,
+        const std::filesystem::path& currentFile
+    )
+    {
+        if (value.is_string())
+        {
+            const auto soundPath =
+                resolvePath(
+                    currentFile,
+                    value.get<std::string>()
+                );
+
+            nlohmann::json soundData;
+
+            if (!loadJson(soundPath, soundData))
+            {
+                return nlohmann::json{};
+            }
+
+            nlohmann::json resolvedSound;
+
+            if (!resolveLike(soundPath, soundData, resolvedSound))
+            {
+                return nlohmann::json{};
+            }
+
+            if (resolvedSound.contains("sound"))
+            {
+                return resolvedSound["sound"];
+            }
+
+            return resolvedSound;
+        }
+
+        if (value.is_object() && value.contains("like"))
+        {
+            nlohmann::json resolvedSound;
+
+            if (!resolveLike(currentFile, value, resolvedSound))
+            {
+                return nlohmann::json{};
+            }
+
+            if (resolvedSound.contains("sound"))
+            {
+                return resolvedSound["sound"];
+            }
+
+            return resolvedSound;
+        }
+
+        return value;
+    }
+
+    void parseSounds(
+        const nlohmann::json& object,
+        const std::filesystem::path& currentFile,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("sounds") || !object["sounds"].is_object())
+        {
+            return;
+        }
+
+        const auto& sounds =
+            object["sounds"];
+
+        for (auto it = sounds.begin(); it != sounds.end(); ++it)
+        {
+            const nlohmann::json data =
+                normalizeSoundValue(
+                    it.value(),
+                    currentFile
+                );
+
+            if (!data.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid sound '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            SoundDefinition sound;
+            sound.wave =
+                TextTools::toLower(data.value("wave", sound.wave));
+            sound.frequency =
+                data.value("frequency", sound.frequency);
+            sound.duration =
+                data.value("duration", sound.duration);
+            sound.volume =
+                data.value("volume", sound.volume);
+
+            definition.sounds[it.key()] =
+                sound;
+        }
+    }
+
+    void parseStates(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("states") || !object["states"].is_object())
+        {
+            return;
+        }
+
+        const auto& states =
+            object["states"];
+
+        definition.initialState =
+            states.value("initial", definition.initialState);
+
+        for (auto it = states.begin(); it != states.end(); ++it)
+        {
+            if (it.key() == "initial")
+            {
+                continue;
+            }
+
+            if (!it.value().is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid state '" + it.key() + "' in '" +
+                    definition.id + "': expected object"
+                );
+
+                continue;
+            }
+
+            std::vector<std::string> nextStates;
+
+            if (it.value().contains("next"))
+            {
+                if (!it.value()["next"].is_array())
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid next states in '" + it.key() +
+                        "': expected array"
+                    );
+                }
+                else
+                {
+                    for (const auto& nextState : it.value()["next"])
+                    {
+                        if (!nextState.is_string())
+                        {
+                            Logger::warning(
+                                "json",
+                                "Ignoring invalid next state in '" +
+                                it.key() + "'"
+                            );
+
+                            continue;
+                        }
+
+                        nextStates.push_back(
+                            nextState.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            definition.stateTransitions[it.key()] =
+                nextStates;
+        }
+
+        if (
+            !definition.initialState.empty() &&
+            !definition.stateTransitions.contains(definition.initialState)
+            )
+        {
+            Logger::warning(
+                "json",
+                "Initial state '" + definition.initialState +
+                "' is not declared in '" + definition.id + "'"
+            );
         }
     }
 
@@ -692,6 +936,8 @@ namespace
         const std::string& id
     )
     {
+        validateObjectRootProperties(object, id);
+
         ObjectDefinition definition;
         definition.id = id;
 
@@ -705,7 +951,9 @@ namespace
             sourceFile.generic_string();
 
         definition.spawnMode =
-            object.value("spawn", definition.spawnMode);
+            TextTools::toLower(
+                object.value("spawn", definition.spawnMode)
+            );
 
         definition.hasOffset =
             object.contains("offset") && object["offset"].is_object();
@@ -735,17 +983,15 @@ namespace
         definition.visible =
             object.value("visible", definition.visible);
 
-        definition.speed =
-            object.value("speed", definition.speed);
-
-        definition.angle =
-            object.value("angle", definition.angle);
-
         parseShape(object, definition);
         parseMotion(object, definition);
+        parseAttach(object, definition);
         parseBounds(object, definition);
         parseBehavior(object, definition);
+        parseCreation(object, definition);
         parseCollision(object, definition);
+        parseSounds(object, sourceFile, definition);
+        parseStates(object, definition);
         parseChildren(object, sourceFile, definition);
 
         return definition;

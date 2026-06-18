@@ -2,14 +2,18 @@
 
 #include "../runtime/RuntimeObject.h"
 #include "../runtime/ObjectDefinition.h"
+#include "../runtime/RayCastResult.h"
 #include "ScriptModule.h"
 
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
 #include <functional>
+#include <cstdint>
 #include <quickjs.h>
 
+class FadeSystem;
+class AudioSystem;
 struct JSRuntime;
 struct JSContext;
 
@@ -52,6 +56,16 @@ public:
             const ObjectDefinition& definition
             )>;
 
+    using RayCastFunction =
+        std::function<RayCastResult(
+            RuntimeObject& source,
+            float angle,
+            float distance
+            )>;
+
+    using KeepOnlyFunction =
+        std::function<void(const std::string&)>;
+
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
@@ -63,6 +77,18 @@ public:
         const ObjectDefinition& definition
     );
 
+    void setRayCastFunction(RayCastFunction function);
+
+    RayCastResult rayCast(
+        RuntimeObject& source,
+        float angle,
+        float distance
+    );
+
+    void setKeepOnlyFunction(KeepOnlyFunction function);
+
+    void keepOnly(const std::string& runtimeId);
+
     void setFindObjectByIdFunction(
         FindObjectByIdFunction function
     );
@@ -73,6 +99,27 @@ public:
 
     void setScreenScale(int scale);
     int getScreenScale() const;
+    void setFrameDelta(float delta);
+    float getFrameDelta() const;
+    void setRuntimeFrame(uint64_t frame);
+    uint64_t getRuntimeFrame() const;
+
+    void setFadeSystem(FadeSystem* fadeSystem);
+    void fadeOn(const std::string& color);
+    void fadeOff(const std::string& color);
+    void fadeSet(
+        float alpha,
+        const std::string& color
+    );
+    bool fadeActive() const;
+    bool fadeDone() const;
+    float fadeAlpha() const;
+
+    void setAudioSystem(AudioSystem* audioSystem);
+    void playSound(
+        RuntimeObject& source,
+        const std::string& id
+    );
 
 private:
     JSValue createJsObject(RuntimeObject& object);
@@ -87,6 +134,8 @@ private:
     );
 private:
     int screenScale = 0;
+    float frameDelta = 1.0f / 60.0f;
+    uint64_t runtimeFrame = 0;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, double> globalState;
@@ -95,7 +144,12 @@ private:
         std::string,
         ScriptModule
     > scriptModules;
+    std::string keepOnlyRuntimeId;
     SpawnObjectFunction spawnObjectFunction;
+    RayCastFunction rayCastFunction;
+    KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
+    FadeSystem* fadeSystem = nullptr;
+    AudioSystem* audioSystem = nullptr;
 };

@@ -608,7 +608,7 @@ namespace
         return JS_UNDEFINED;
     }
 
-    JSValue jsIsAttached(
+    JSValue jsAttachActive(
         JSContext* context,
         JSValueConst thisValue,
         int argc,
@@ -752,7 +752,7 @@ void MotionBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(context, global, "follow_y", JS_NewCFunction(context, jsFollowY, "follow_y", 2));
     JS_SetPropertyStr(context, global, "attach", JS_NewCFunction(context, jsAttach, "attach", 1));
     JS_SetPropertyStr(context, global, "detach", JS_NewCFunction(context, jsDetach, "detach", 1));
-    JS_SetPropertyStr(context, global, "is_attached", JS_NewCFunction(context, jsIsAttached, "is_attached", 1));
+    JS_SetPropertyStr(context, global, "attach_active", JS_NewCFunction(context, jsAttachActive, "attach_active", 1));
     JS_SetPropertyStr(context, global, "carry", JS_NewCFunction(context, jsCarry, "carry", 2));
     JS_SetPropertyStr(context, global, "bounce_x", JS_NewCFunction(context, jsBounceX, "bounce_x", 1));
     JS_SetPropertyStr(context, global, "bounce_y", JS_NewCFunction(context, jsBounceY, "bounce_y", 1));

@@ -36,30 +36,65 @@ FetchContent_Declare(
     quickjs
     GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
     GIT_TAG v0.10.1
+    SOURCE_SUBDIR flx-no-upstream-cmake
 )
-
-# FLX embeds QuickJS as a scripting library. QuickJS-NG v0.10.1 exposes
-# options for examples and CLI variants, but its CMake still declares several
-# helper executables unconditionally. Those targets are excluded from ALL after
-# FetchContent_MakeAvailable so normal FLX builds only build the qjs library.
-set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_CLI_STATIC OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_CLI_WITH_MIMALLOC OFF CACHE BOOL "" FORCE)
-set(QJS_BUILD_CLI_WITH_STATIC_MIMALLOC OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(quickjs)
 
-foreach(quickjs_tool
-    api-test
-    function_source
-    qjs_exe
-    qjsc
-    run-test262
+# FLX embeds QuickJS as a scripting library. QuickJS-NG v0.10.1 declares
+# qjs.exe, qjsc.exe and test helpers unconditionally from its CMakeLists.txt,
+# so FLX only uses FetchContent to populate the source tree and defines the
+# embedded qjs library target directly.
+add_library(qjs
+    ${quickjs_SOURCE_DIR}/cutils.c
+    ${quickjs_SOURCE_DIR}/libregexp.c
+    ${quickjs_SOURCE_DIR}/libunicode.c
+    ${quickjs_SOURCE_DIR}/quickjs.c
+    ${quickjs_SOURCE_DIR}/xsum.c
 )
-    if(TARGET ${quickjs_tool})
-        set_target_properties(${quickjs_tool} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    endif()
-endforeach()
+
+set_target_properties(
+    qjs
+    PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS ON
+)
+
+target_compile_definitions(qjs PRIVATE _GNU_SOURCE)
+
+if(WIN32)
+    target_compile_definitions(
+        qjs
+        PRIVATE
+        WIN32_LEAN_AND_MEAN
+        _WIN32_WINNT=0x0601
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(qjs PRIVATE /experimental:c11atomics)
+endif()
+
+target_include_directories(
+    qjs
+    PUBLIC
+    ${quickjs_SOURCE_DIR}
+)
+
+target_link_libraries(qjs PUBLIC ${CMAKE_DL_LIBS})
+
+find_package(Threads)
+
+if(Threads_FOUND)
+    target_link_libraries(qjs PUBLIC Threads::Threads)
+endif()
+
+find_library(M_LIBRARIES m)
+
+if(M_LIBRARIES)
+    target_link_libraries(qjs PUBLIC ${M_LIBRARIES})
+endif()
 
 add_executable(FlxEngine
     FLXEngine.cpp

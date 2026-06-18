@@ -237,7 +237,7 @@ declare function detach(object: RuntimeObject): void;
 /**
  * Returns whether an object is currently attached.
  */
-declare function is_attached(object: RuntimeObject): boolean;
+declare function attach_active(object: RuntimeObject): boolean;
 
 /**
  * Applies the carrier movement delta to an object for the current frame.

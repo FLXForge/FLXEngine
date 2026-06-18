@@ -16,14 +16,17 @@ jobs:
 
       - name: Build Release
         uses: threeal/cmake-action@v2.1.0
+        with:
+          build-dir: build
+          build-args: --config Release
 
       - name: Find EXE
         shell: pwsh
         run: |
           Get-ChildItem -Path build -Recurse -Filter *.exe
 
-      - name: Upload EXE artifact
+      - name: Upload FlxEngine EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: flxengine-windows-x64
-          path: build/**/*.exe
+          path: build/Release/FlxEngine.exe

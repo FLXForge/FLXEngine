@@ -921,6 +921,57 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
+            <h2>state(object, stateName)</h2>
+
+            <p>
+                Cambia el estado actual de un objeto que declara
+                <code>states</code> en JSON. La transicion se valida contra la
+                lista <code>next</code> del estado actual.
+            </p>
+
+<pre><code>if (state_active(game, "title") &amp;&amp; Key.pressed(KEY_SPACE)) {
+    state(game, "playing");
+}
+</code></pre>
+
+            <ul>
+                <li><code>state_current(object)</code>: devuelve el estado actual.</li>
+                <li><code>state_active(object, "name")</code>: comprueba el estado actual.</li>
+                <li><code>state_entered(object)</code>: true solo durante el frame en el que el objeto entra en su estado actual.</li>
+                <li><code>state_time(object)</code>: segundos transcurridos desde la entrada en el estado actual.</li>
+            </ul>
+
+            <p>
+                Los estados no ejecutan callbacks automaticos. Los scripts
+                siguen decidiendo cuando ocurren las transiciones y que hace
+                cada estado.
+            </p>
+
+            <hr />
+
+            <h2>timer(object, name, duration)</h2>
+
+            <p>
+                Crea o reinicia un temporizador nombrado propiedad del objeto.
+                El runtime actualiza los temporizadores automaticamente y se
+                destruyen junto con su propietario.
+            </p>
+
+<pre><code>timer(paddle, "gun", 5);
+
+if (timer_active(paddle, "gun")) {
+    attach(ball);
+}
+</code></pre>
+
+            <ul>
+                <li><code>timer_active(object, "name")</code>: true mientras queda tiempo.</li>
+                <li><code>timer_left(object, "name")</code>: segundos restantes, o <code>0</code>.</li>
+                <li><code>timer_clear(object, "name")</code>: elimina el temporizador inmediatamente.</li>
+            </ul>
+
+            <hr />
+
             <h2>to_origin(object)</h2>
 
             <p>

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 class ScriptEngine;
 
@@ -22,7 +23,8 @@ public:
     void update(
         ScriptEngine& scriptEngine,
         float screenWidth,
-        float screenHeight
+        float screenHeight,
+        float delta
     );
 
     void draw(
@@ -125,9 +127,12 @@ private:
 
     void cleanupDeadObjects();
 
+    void updateObjectTime(float delta);
+
     std::string createRuntimeId(const std::string& name);
 
     int nextRuntimeId;
+    uint64_t frameIndex = 0;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
 };

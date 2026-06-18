@@ -6,6 +6,8 @@
 #include "bindings/InputBindings.h"
 #include "bindings/MotionBindings.h"
 #include "bindings/SpawnBindings.h"
+#include "bindings/StateBindings.h"
+#include "bindings/TimerBindings.h"
 
 #include <quickjs.h>
 
@@ -22,4 +24,6 @@ void ScriptBindings::registerAll(
     DrawBindings::registerAll(context);
     AudioBindings::registerAll(context);
     SpawnBindings::registerAll(context);
+    StateBindings::registerAll(context);
+    TimerBindings::registerAll(context);
 }

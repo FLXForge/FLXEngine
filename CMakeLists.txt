@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 
 project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
 
@@ -91,6 +91,10 @@ add_executable(FlxEngine
     engine/scripting/bindings/MotionBindings.cpp
     engine/scripting/bindings/SpawnBindings.h
     engine/scripting/bindings/SpawnBindings.cpp
+    engine/scripting/bindings/StateBindings.h
+    engine/scripting/bindings/StateBindings.cpp
+    engine/scripting/bindings/TimerBindings.h
+    engine/scripting/bindings/TimerBindings.cpp
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)

@@ -110,6 +110,13 @@
       ]
     },
 
+    "states": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "states.schema.json" }
+      ]
+    },
+
     "sounds": {
       "type": "object",
       "additionalProperties": {

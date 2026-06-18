@@ -151,7 +151,8 @@ void Engine::update()
     world.update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight)
+        static_cast<float>(context.screenHeight),
+        delta
     );
 
     fadeSystem.update(delta);

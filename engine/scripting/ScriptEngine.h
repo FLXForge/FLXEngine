@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <string>
 #include <functional>
+#include <cstdint>
 #include <quickjs.h>
 
 class FadeSystem;
@@ -100,6 +101,8 @@ public:
     int getScreenScale() const;
     void setFrameDelta(float delta);
     float getFrameDelta() const;
+    void setRuntimeFrame(uint64_t frame);
+    uint64_t getRuntimeFrame() const;
 
     void setFadeSystem(FadeSystem* fadeSystem);
     void fadeOn(const std::string& color);
@@ -132,6 +135,7 @@ private:
 private:
     int screenScale = 0;
     float frameDelta = 1.0f / 60.0f;
+    uint64_t runtimeFrame = 0;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, double> globalState;

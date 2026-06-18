@@ -67,6 +67,9 @@ struct ObjectDefinition
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
 
+    std::string initialState;
+    std::unordered_map<std::string, std::vector<std::string>> stateTransitions;
+
     std::string creationMode = "individual";
     GridCreationRules gridRules;
     bool gridPatternIsRows = false;

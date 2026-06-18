@@ -6,6 +6,12 @@
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
+
+struct RuntimeTimer
+{
+    float left = 0.0f;
+};
 
 class RuntimeObject
 {
@@ -21,6 +27,8 @@ public:
 
     std::unordered_map<std::string, ObjectDefinition> children;
     std::unordered_map<std::string, SoundDefinition> sounds;
+    std::unordered_map<std::string, RuntimeTimer> timers;
+    std::unordered_map<std::string, std::vector<std::string>> stateTransitions;
     std::string creationMode = "individual";
     GridCreationRules gridRules;
     bool gridPatternIsRows = false;
@@ -44,6 +52,9 @@ public:
     std::string originalParentId;
     std::string sourcePath;
     std::string group;
+    std::string state;
+    float stateTime = 0.0f;
+    uint64_t stateEnteredFrame = 0;
 
     bool visible;
     bool alive;

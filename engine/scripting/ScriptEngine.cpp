@@ -1070,6 +1070,17 @@ float ScriptEngine::getFrameDelta() const
     return frameDelta;
 }
 
+void ScriptEngine::setRuntimeFrame(uint64_t frame)
+{
+    runtimeFrame =
+        frame;
+}
+
+uint64_t ScriptEngine::getRuntimeFrame() const
+{
+    return runtimeFrame;
+}
+
 void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
 {
     fadeSystem = nextFadeSystem;

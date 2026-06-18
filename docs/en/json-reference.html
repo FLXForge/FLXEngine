@@ -256,6 +256,42 @@ notes=FLX example with spawn and basic UI
                 JSON file, or composed with <code>like</code>.
             </p>
 
+            <h2 id="states">States</h2>
+
+            <p>
+                The optional <code>states</code> block declares a lightweight
+                state machine owned by the object. JSON defines only the state
+                names and valid transitions; scripts decide when transitions
+                happen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code>"states": {
+    "initial": "title",
+
+    "title": {
+        "next": ["playing"]
+    },
+
+    "playing": {
+        "next": ["gameover", "next_level"]
+    },
+
+    "gameover": {
+        "next": ["title"]
+    }
+}</code></pre>
+
+                <div class="code-header">states (reference)</div>
+<pre><code>"states": "logic/game_states"</code></pre>
+            </div>
+
+            <p>
+                Use <code>state(object, "playing")</code> to request a transition.
+                Invalid transitions are ignored and logged as warnings.
+            </p>
+
             <h2 id="like">JSON Composition (like)</h2>
 
             <p>
@@ -349,6 +385,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
             </ul>
 
             <hr />
@@ -435,6 +472,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>

@@ -239,6 +239,7 @@ void RuntimeWorld::load(
     objects.clear();
     pendingObjects.clear();
     nextRuntimeId = 1;
+    frameIndex = 0;
 
     RuntimeObject root =
         createRuntimeObject(rootDefinition, "");
@@ -265,9 +266,13 @@ void RuntimeWorld::load(
 void RuntimeWorld::update(
     ScriptEngine& scriptEngine,
     float screenWidth,
-    float screenHeight
+    float screenHeight,
+    float delta
 )
 {
+    ++frameIndex;
+    scriptEngine.setRuntimeFrame(frameIndex);
+
     beginFrame();
 
     actionPhase(scriptEngine);
@@ -280,6 +285,8 @@ void RuntimeWorld::update(
 
     CollisionSystem::run(objects, scriptEngine);
     flushSpawnQueue(scriptEngine);
+
+    updateObjectTime(delta);
 
     deadPhase(scriptEngine);
     cleanupDeadObjects();
@@ -680,11 +687,20 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
     const std::string& parentId
 )
 {
-    return RuntimeObjectBuilder::build(
+    RuntimeObject object =
+        RuntimeObjectBuilder::build(
         definition,
         createRuntimeId(definition.id),
         parentId
     );
+
+    if (!object.state.empty())
+    {
+        object.stateEnteredFrame =
+            frameIndex;
+    }
+
+    return object;
 }
 
 void RuntimeWorld::instantiateIndividualAutoChildren(
@@ -962,6 +978,15 @@ void RuntimeWorld::beginFrame()
     {
         object.previousPosition =
             object.position;
+
+        if (
+            !object.state.empty() &&
+            object.stateEnteredFrame == 0
+            )
+        {
+            object.stateEnteredFrame =
+                frameIndex;
+        }
     }
 }
 
@@ -1108,6 +1133,42 @@ void RuntimeWorld::cleanupDeadObjects()
         ),
         objects.end()
     );
+}
+
+void RuntimeWorld::updateObjectTime(float delta)
+{
+    for (auto& object : objects)
+    {
+        if (!object.alive)
+        {
+            continue;
+        }
+
+        if (!object.state.empty())
+        {
+            object.stateTime +=
+                delta;
+        }
+
+        for (auto it = object.timers.begin(); it != object.timers.end();)
+        {
+            it->second.left =
+                std::max(
+                    0.0f,
+                    it->second.left - delta
+                );
+
+            if (it->second.left <= 0.0f)
+            {
+                it =
+                    object.timers.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
 }
 
 std::string RuntimeWorld::createRuntimeId(const std::string& name)

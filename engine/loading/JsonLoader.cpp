@@ -153,7 +153,8 @@ namespace
             "bounds",
             "collision",
             "behavior",
-            "creation"
+            "creation",
+            "states"
         };
 
         for (const auto& key : blockKeys)
@@ -765,6 +766,91 @@ namespace
         }
     }
 
+    void parseStates(
+        const nlohmann::json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("states") || !object["states"].is_object())
+        {
+            return;
+        }
+
+        const auto& states =
+            object["states"];
+
+        definition.initialState =
+            states.value("initial", definition.initialState);
+
+        for (auto it = states.begin(); it != states.end(); ++it)
+        {
+            if (it.key() == "initial")
+            {
+                continue;
+            }
+
+            if (!it.value().is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid state '" + it.key() + "' in '" +
+                    definition.id + "': expected object"
+                );
+
+                continue;
+            }
+
+            std::vector<std::string> nextStates;
+
+            if (it.value().contains("next"))
+            {
+                if (!it.value()["next"].is_array())
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid next states in '" + it.key() +
+                        "': expected array"
+                    );
+                }
+                else
+                {
+                    for (const auto& nextState : it.value()["next"])
+                    {
+                        if (!nextState.is_string())
+                        {
+                            Logger::warning(
+                                "json",
+                                "Ignoring invalid next state in '" +
+                                it.key() + "'"
+                            );
+
+                            continue;
+                        }
+
+                        nextStates.push_back(
+                            nextState.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            definition.stateTransitions[it.key()] =
+                nextStates;
+        }
+
+        if (
+            !definition.initialState.empty() &&
+            !definition.stateTransitions.contains(definition.initialState)
+            )
+        {
+            Logger::warning(
+                "json",
+                "Initial state '" + definition.initialState +
+                "' is not declared in '" + definition.id + "'"
+            );
+        }
+    }
+
     ObjectDefinition parseDefinition(
         const nlohmann::json& object,
         const std::filesystem::path& currentFile,
@@ -905,6 +991,7 @@ namespace
         parseCreation(object, definition);
         parseCollision(object, definition);
         parseSounds(object, sourceFile, definition);
+        parseStates(object, definition);
         parseChildren(object, sourceFile, definition);
 
         return definition;

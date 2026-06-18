@@ -341,6 +341,67 @@ declare function spawn(
 ): void;
 
 /**
+ * Changes the current state of an object using its JSON states declaration.
+ */
+declare function state(object: RuntimeObject, stateName: string): void;
+
+/**
+ * Returns the current state name, or an empty string if the object has none.
+ */
+declare function state_current(object: RuntimeObject): string;
+
+/**
+ * Returns true when the object is currently in the given state.
+ */
+declare function state_active(
+    object: RuntimeObject,
+    stateName: string
+): boolean;
+
+/**
+ * Returns true only during the frame in which the object entered its state.
+ */
+declare function state_entered(object: RuntimeObject): boolean;
+
+/**
+ * Returns seconds elapsed since the object entered its current state.
+ */
+declare function state_time(object: RuntimeObject): number;
+
+/**
+ * Creates or restarts a named timer owned by the object.
+ */
+declare function timer(
+    object: RuntimeObject,
+    timerName: string,
+    duration: number
+): void;
+
+/**
+ * Returns true while the named object timer exists and has time left.
+ */
+declare function timer_active(
+    object: RuntimeObject,
+    timerName: string
+): boolean;
+
+/**
+ * Returns remaining seconds for the named object timer, or 0 if it does not exist.
+ */
+declare function timer_left(
+    object: RuntimeObject,
+    timerName: string
+): number;
+
+/**
+ * Removes a named object timer immediately.
+ */
+declare function timer_clear(
+    object: RuntimeObject,
+    timerName: string
+): void;
+
+/**
  * Draws text on screen using logical screen coordinates.
  *
  * Coordinates are expressed in FLX logical resolution.

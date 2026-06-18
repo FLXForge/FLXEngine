@@ -1003,6 +1003,56 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
+            <h2>state(object, stateName)</h2>
+
+            <p>
+                Changes the current state of an object that declares
+                <code>states</code> in JSON. The transition is validated against
+                the current state's <code>next</code> list.
+            </p>
+
+<pre><code>if (state_active(game, "title") &amp;&amp; Key.pressed(KEY_SPACE)) {
+    state(game, "playing");
+}
+</code></pre>
+
+            <ul>
+                <li><code>state_current(object)</code>: returns the current state name.</li>
+                <li><code>state_active(object, "name")</code>: checks the current state.</li>
+                <li><code>state_entered(object)</code>: true only during the frame the object entered its current state.</li>
+                <li><code>state_time(object)</code>: seconds elapsed since entering the current state.</li>
+            </ul>
+
+            <p>
+                States do not run callbacks automatically. Scripts keep deciding
+                when transitions happen and what each state does.
+            </p>
+
+            <hr />
+
+            <h2>timer(object, name, duration)</h2>
+
+            <p>
+                Creates or restarts a named timer owned by the object. Timers
+                are updated automatically by the runtime and disappear with
+                their owner.
+            </p>
+
+<pre><code>timer(paddle, "gun", 5);
+
+if (timer_active(paddle, "gun")) {
+    attach(ball);
+}
+</code></pre>
+
+            <ul>
+                <li><code>timer_active(object, "name")</code>: true while the timer has time left.</li>
+                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code>.</li>
+                <li><code>timer_clear(object, "name")</code>: removes the timer immediately.</li>
+            </ul>
+
+            <hr />
+
             <h2>to_origin(object)</h2>
 
             <p>

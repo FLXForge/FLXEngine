@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - develop
+
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Release
+        uses: threeal/cmake-action@v2.1.0
+        with:
+          build-dir: build
+          build-args: --config Release
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: FlxEngine-exe-windows-x64
+          path: build/Release/FlxEngine.exe

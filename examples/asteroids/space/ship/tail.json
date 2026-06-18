@@ -13,7 +13,7 @@
   },
   "behavior": {
     "scripts": [
-      "../../scripts/tail"
+      "tail"
     ]
   }
 }

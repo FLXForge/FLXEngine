@@ -2,7 +2,7 @@
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "behavior": {
     "scripts": [
-      "scripts/game"
+      "game"
     ]
   },
   "children": {

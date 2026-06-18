@@ -23,7 +23,7 @@
   },
   "behavior": {
     "scripts": [
-      "../../scripts/laser"
+      "laser"
     ]
   }
 }

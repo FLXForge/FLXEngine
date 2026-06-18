@@ -28,7 +28,7 @@
   },
   "behavior": {
     "scripts": [
-      "../../scripts/asteroid"
+      "asteroid"
     ]
   },
   "children": {

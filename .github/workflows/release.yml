@@ -1,18 +1,37 @@
-name: Build Windows EXE
+name: Release
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - develop
+    tags:
+      - 'v*'
 
 jobs:
-  build-windows:
+  release-windows:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag is on main
+        shell: pwsh
+        run: |
+          git fetch origin main
+          $tagCommit = git rev-parse HEAD
+          $mainContains = git branch -r --contains $tagCommit | Select-String "origin/main"
+
+          if (-not $mainContains) {
+            Write-Error "This tag is not on main. Releases must be created from main."
+            exit 1
+          }
+
+      - name: Extract version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Build Release
         uses: threeal/cmake-action@v2.1.0
@@ -20,16 +39,11 @@ jobs:
           build-dir: build
           build-args: --config Release
 
-      - name: Find EXE
+      - name: Package release
         shell: pwsh
         run: |
-          Get-ChildItem -Path build -Recurse -Filter *.exe
-
-      - name: Package release folder
-        shell: pwsh
-        run: |
-          $Version = "0.2.0"
-          $PackageName = "FLXEngine-v$Version-windows-x64"
+          $Version = "${{ steps.version.outputs.version }}"
+          $PackageName = "FLXEngine-$Version-windows-x64"
           $PackageDir = "dist/$PackageName"
 
           Remove-Item "dist" -Recurse -Force -ErrorAction SilentlyContinue
@@ -72,14 +86,11 @@ jobs:
           pause
           "@ | Set-Content "$PackageDir\run_arkanoid.bat"
 
-      - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FlxEngine-exe-windows-x64
-          path: build/Release/FlxEngine.exe
+          Compress-Archive -Path "$PackageDir\*" -DestinationPath "dist/$PackageName.zip" -Force
 
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: FLXEngine-v0.2.0-windows-x64
-          path: dist/FLXEngine-v0.2.0-windows-x64
+          files: |
+            build/Release/FlxEngine.exe
+            dist/FLXEngine-${{ steps.version.outputs.version }}-windows-x64.zip

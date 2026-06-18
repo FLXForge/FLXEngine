@@ -30,7 +30,7 @@
   },
   "behavior": {
     "scripts": [
-      "../../scripts/ship"
+      "ship"
     ]
   },
   "sounds": {

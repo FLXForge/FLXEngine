@@ -61,7 +61,7 @@
   "group": "asteroid",
   "behavior": {
     "scripts": [
-      "../../scripts/asteroid_small"
+      "asteroid_small"
     ]
   },
   "children": {

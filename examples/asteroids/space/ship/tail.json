@@ -1,21 +1,19 @@
 {
-  "$schema": "../../../tools/schemas/drawable.schema.json",
-  "name": "tail",
-
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "shape": {
     "type": "triangle",
-    "color": "BLUE",
+    "color": "blue",
     "size": {
       "width": 6,
       "height": 8
     }
   },
-
   "motion": {
     "maxSpeed": 180
   },
-
   "behavior": {
-    "scripts": [ "scripts/tail" ]
+    "scripts": [
+      "tail"
+    ]
   }
 }

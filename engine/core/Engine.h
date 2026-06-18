@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../runtime/RuntimeObject.h"
+#include "../runtime/RuntimeWorld.h"
 #include "../scripting/ScriptEngine.h"
-#include "../project/GameConfig.h"
+#include "../project/FlxContext.h"
+#include "../audio/AudioSystem.h"
+#include "../graphics/FadeSystem.h"
 
 #include <string>
-#include <functional>
-#include <vector>
-#include <unordered_map>
 
 class Engine
 {
@@ -24,59 +23,14 @@ private:
     void draw();
     void shutdown();
 
-    void actionPhase();
-    void motionPhase();
-    void collisionPhase();
-    void drawPhase();
-    void deadPhase();
-    void cleanupDeadObjects();
-
-    void loadObjectsFromJson(const std::string& path);
-
-    using BehaviorFunction =
-        std::function<void(RuntimeObject&)>;
-
     void loadProject(const std::string& flxPath);
     void initWindow();
-    void bornObject(RuntimeObject& object);
     void configureScriptEngine();
-    void loadScripts();
-    void flushSpawnQueue();
-    void loadPrefabs();
-    void loadPrefabRecursive(
-        const SpawnDefinition& spawnDefinition
-    );
-
-    std::string resolveJsonPath(
-        const std::string& basePath,
-        const std::string& file
-    ) const;
-
-    std::string resolveScriptPath(
-        const std::string& basePath,
-        const std::string& file
-    ) const;
-
-    std::string createRuntimeId(
-        const std::string& name
-    );
-
-    RuntimeObject* findByRuntimeId(
-        const std::string& id
-    );
-
-    std::vector<RuntimeObject> pendingObjects;
-    std::unordered_map<std::string, RuntimeObject> prefabs;
+    float safeFrameDelta() const;
 private:
-
-    int nextRuntimeId;
-
-    int screenWidth;
-    int screenHeight;
-    int screenScale;
-
     ScriptEngine scriptEngine;
-    std::vector<RuntimeObject> objects;
-    GameConfig gameConfig;
-    std::string projectBasePath;
+    RuntimeWorld world;
+    AudioSystem audioSystem;
+    FadeSystem fadeSystem;
+    FlxContext context;
 };

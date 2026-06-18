@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20)
 
 project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
 
@@ -36,9 +36,65 @@ FetchContent_Declare(
     quickjs
     GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
     GIT_TAG v0.10.1
+    SOURCE_SUBDIR flx-no-upstream-cmake
 )
 
 FetchContent_MakeAvailable(quickjs)
+
+# FLX embeds QuickJS as a scripting library. QuickJS-NG v0.10.1 declares
+# qjs.exe, qjsc.exe and test helpers unconditionally from its CMakeLists.txt,
+# so FLX only uses FetchContent to populate the source tree and defines the
+# embedded qjs library target directly.
+add_library(qjs
+    ${quickjs_SOURCE_DIR}/cutils.c
+    ${quickjs_SOURCE_DIR}/libregexp.c
+    ${quickjs_SOURCE_DIR}/libunicode.c
+    ${quickjs_SOURCE_DIR}/quickjs.c
+    ${quickjs_SOURCE_DIR}/xsum.c
+)
+
+set_target_properties(
+    qjs
+    PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS ON
+)
+
+target_compile_definitions(qjs PRIVATE _GNU_SOURCE)
+
+if(WIN32)
+    target_compile_definitions(
+        qjs
+        PRIVATE
+        WIN32_LEAN_AND_MEAN
+        _WIN32_WINNT=0x0601
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(qjs PRIVATE /experimental:c11atomics)
+endif()
+
+target_include_directories(
+    qjs
+    PUBLIC
+    ${quickjs_SOURCE_DIR}
+)
+
+target_link_libraries(qjs PUBLIC ${CMAKE_DL_LIBS})
+
+find_package(Threads)
+
+if(Threads_FOUND)
+    target_link_libraries(qjs PUBLIC Threads::Threads)
+endif()
+
+find_library(M_LIBRARIES m)
+
+if(M_LIBRARIES)
+    target_link_libraries(qjs PUBLIC ${M_LIBRARIES})
+endif()
 
 add_executable(FlxEngine
     FLXEngine.cpp
@@ -49,19 +105,52 @@ add_executable(FlxEngine
 
     engine/runtime/RuntimeObject.h
     engine/runtime/RuntimeObject.cpp 
+    engine/runtime/ObjectDefinition.h
+    engine/runtime/RuntimeObjectBuilder.h
+    engine/runtime/RuntimeObjectBuilder.cpp
+    engine/runtime/RuntimeWorld.h
+    engine/runtime/RuntimeWorld.cpp
+    engine/runtime/RayCastResult.h
     engine/runtime/RuntimeHelpers.h
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
+    engine/audio/SoundDefinition.h
+    engine/audio/AudioSystem.h
+    engine/audio/AudioSystem.cpp
+    engine/collision/CollisionSystem.h
+    engine/collision/CollisionSystem.cpp
+    engine/tools/ColorParser.h
+    engine/tools/ColorParser.cpp
+    engine/tools/TextTools.h
+    engine/tools/TextTools.cpp
+    engine/graphics/FadeSystem.h
+    engine/graphics/FadeSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
-    engine/project/FlxManifest.h
-    engine/project/FlxManifestLoader.h
-    engine/project/FlxManifestLoader.cpp
-    engine/project/GameConfig.h
+    engine/project/FlxContext.h
+    engine/project/FlxContextBuilder.h
+    engine/project/FlxContextBuilder.cpp
     engine/scripting/ScriptEngine.h
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h
     engine/scripting/ScriptBindings.cpp 
+    engine/scripting/bindings/BindingHelpers.h
+    engine/scripting/bindings/AudioBindings.h
+    engine/scripting/bindings/AudioBindings.cpp
+    engine/scripting/bindings/CoreBindings.h
+    engine/scripting/bindings/CoreBindings.cpp
+    engine/scripting/bindings/InputBindings.h
+    engine/scripting/bindings/InputBindings.cpp
+    engine/scripting/bindings/DrawBindings.h
+    engine/scripting/bindings/DrawBindings.cpp
+    engine/scripting/bindings/MotionBindings.h
+    engine/scripting/bindings/MotionBindings.cpp
+    engine/scripting/bindings/SpawnBindings.h
+    engine/scripting/bindings/SpawnBindings.cpp
+    engine/scripting/bindings/StateBindings.h
+    engine/scripting/bindings/StateBindings.cpp
+    engine/scripting/bindings/TimerBindings.h
+    engine/scripting/bindings/TimerBindings.cpp
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)

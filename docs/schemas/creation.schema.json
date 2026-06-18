@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "creation.schema.json",
+  "title": "FLX Creation",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [ "individual", "grid" ],
+      "default": "individual"
+    },
+
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cellWidth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cellHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+
+    "pattern": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "grid"
+          }
+        },
+        "required": [ "mode" ]
+      },
+      "then": {
+        "required": [ "rules", "pattern" ],
+        "properties": {
+          "rules": {
+            "required": [ "rows", "columns", "cellWidth", "cellHeight" ]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "sounds": {
+    "pfooom": {
+      "wave": "noise",
+      "frequency": 300,
+      "duration": 0.18,
+      "volume": 0.5,
+      "slide": -200
+    }
+  },
+
+  "bounds": {
+    "mode": "wrap",
+    "overflow": true
+  },
+  "group": "asteroid",
+  "collision": {
+    "type": "circle",
+    "active": true,
+    "with": [
+      "ship",
+      "asteroid",
+      "laser"
+    ],
+    "radius": 16
+  },
+  "behavior": {
+    "scripts": [
+      "asteroid"
+    ]
+  },
+  "children": {
+    "small": {
+      "like": "asteroid_small",
+      "spawn": "manual"
+    },
+    "fragment": {
+      "like": "asteroid_fragment",
+      "spawn": "manual"
+    }
+  }
+}

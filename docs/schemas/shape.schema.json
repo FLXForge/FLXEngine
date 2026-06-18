@@ -5,17 +5,38 @@
   "type": "object",
   "additionalProperties": false,
 
-  "required": [ "type", "color", "size" ],
-
   "properties": {
     "type": {
       "type": "string",
-      "enum": [ "block", "rectangle", "triangle", "polygon", "line", "text" ],
+      "enum": [
+        "block",
+        "rectangle",
+        "triangle",
+        "polygon",
+        "circle",
+        "line",
+        "text"
+      ],
       "default": "block"
     },
 
+    "mode": {
+      "type": "string",
+      "enum": [
+        "fill",
+        "outline"
+      ]
+    },
+
     "color": {
-      "type": "string"
+      "type": "string",
+      "description": "Named raylib color or hexadecimal value in #rgb or #rrggbb format."
+    },
+
+    "layer": {
+      "type": "integer",
+      "default": 0,
+      "description": "Draw layer. Lower values are drawn first."
     },
 
     "points": {
@@ -41,12 +62,13 @@
       }
     },
 
-    "text": {
-      "type": "string"
+    "radius": {
+      "type": "number"
     },
 
-    "fontSize": {
-      "type": "number"
+    "content": {
+      "type": "string",
+      "description": "Visible text for shapes with type text."
     }
   }
 }

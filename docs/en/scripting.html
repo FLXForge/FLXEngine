@@ -125,7 +125,7 @@ Runtime -> Connects both
 
             <div class="code-card">
                 <div class="code-header">reference</div>
-<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 </code></pre>
             </div>
 
@@ -147,8 +147,6 @@ Runtime -> Connects both
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
       ↓
-   start()
-
  Object Born
       ↓
    born()
@@ -178,18 +176,51 @@ Runtime -> Connects both
             <h3>Main Functions</h3>
 
             <ul>
-                <li><code>start()</code>: executed once when the runtime starts.</li>
-
                 <li><code>born(object)</code>: executed when an object enters the world.</li>
 
                 <li><code>action(object)</code>: main logic and interaction.</li>
 
                 <li><code>motion(object)</code>: movement and transformations.</li>
 
-                <li><code>collision(object, other)</code>: interaction between objects.</li>
+                <li>
+                    <code>collision(object, other)</code>:
+                    executed when the object has
+                    <code>collision.active = true</code>
+                    and the other object's group is included in
+                    <code>collision.with</code>.
+                </li>
 
                 <li><code>dead(object)</code>: last opportunity to react before physical removal.</li>
             </ul>
+
+            <hr />
+
+            <h3>Collision execution rule</h3>
+
+            <p>
+                <code>collision.active</code> does not mean that an object can be collided with.
+            </p>
+
+            <p>
+                It means that the object actively checks collisions.
+            </p>
+
+            <ul>
+                <li><code>active</code>: asks for collisions.</li>
+                <li><code>with</code>: defines which groups it asks about.</li>
+                <li><code>collision()</code>: defines what happens when a match is found.</li>
+            </ul>
+
+            <p>
+                Only active objects execute
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Objects listed in <code>collision.with</code>
+                do not automatically execute their own collision handler
+                unless they are also active and independently detect a matching collision.
+            </p>
 
             <hr />
 
@@ -337,7 +368,7 @@ function born(laser) {
 
             <div class="code-card">
                 <div class="code-header">Global scope</div>
-<pre><code>function start() {
+<pre><code>function born(game) {
     global["score"] = 0;
     global["lives"] = 3;
 }
@@ -364,30 +395,17 @@ function collision(player, asteroid) {
             <h2>Program Scripts</h2>
 
             <p>
-                Program Scripts execute logic associated
-                with the runtime as a whole.
+                Program scripts are not part of the current runtime contract.
             </p>
 
             <p>
-                While object scripts react to the lifecycle
-                of a specific object,
-                Program Scripts react to the lifecycle
-                of the runtime itself.
+                For now, global game state should be initialized from the
+                <code>born(object)</code> function of the root object.
             </p>
 
-            <div class="code-card">
-                <div class="code-header">game.json</div>
-<pre><code>"program": {
-    "scripts": [
-        "scripts/program"
-    ]
-}
-</code></pre>
-            </div>
-
             <p>
-                The final shape of these contexts
-                is still evolving.
+                A dedicated program lifecycle may return later with explicit
+                <code>start</code> and <code>end</code> phases.
             </p>
 
             <hr />

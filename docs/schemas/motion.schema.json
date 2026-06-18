@@ -16,6 +16,14 @@
       "type": "number"
     },
 
+    "speed": {
+      "type": "number"
+    },
+
+    "angle": {
+      "type": "number"
+    },
+
     "acceleration": {
       "type": "number"
     },

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "behavior": {
+    "scripts": [
+      "game"
+    ]
+  },
+  "children": {
+    "level": "space/level"
+  }
+}

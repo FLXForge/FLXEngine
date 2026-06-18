@@ -1,0 +1,55 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "children": {
+    "title": "title",
+    "title_ball": "ball",
+    "paddle": "paddle",
+    "background": "background",
+    "top_wall": {
+      "like": "wall",
+      "origin": {
+        "x": 0,
+        "y": -10
+      },
+      "group": "wall_top",
+      "shape": {
+        "size": {
+          "width": 640
+        }
+      }
+    },
+    "right_wall": {
+      "like": "wall",
+      "origin": {
+        "x": 640,
+        "y": 0
+      },
+      "group": "wall_side",
+      "shape": {
+        "size": {
+          "height": 320
+        }
+      }
+    },
+    "left_wall": {
+      "like": "wall",
+      "origin": {
+        "x": -10,
+        "y": 0
+      },
+      "group": "wall_side",
+      "shape": {
+        "size": {
+          "height": 320
+        }
+      }
+
+    }
+  },
+
+
+    "behavior": {
+      "scripts": [ "titlescreen" ]
+    }
+  }

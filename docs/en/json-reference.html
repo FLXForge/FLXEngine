@@ -22,130 +22,274 @@
             <h1>JSON Reference</h1>
 
             <p>
-                This section documents the JSON structures used by FLX
-                to define the main runtime, objects and their properties.
+                This section documents the project manifest and JSON structures
+                used by FLX to define runtime objects and their properties.
             </p>
 
             <p class="placeholder">
                 FLX is under active development. Some fields may change during 0.x versions.
             </p>
 
-            <h2>JSON Types</h2>
+            <h2>Project Files</h2>
 
             <p>
-                FLX currently uses different JSON files depending on their role within the runtime.
+                FLX separates project metadata from world data.
             </p>
 
             <ul>
-                <li><code>main</code>: defines the runtime entry point.</li>
-                <li><code>node</code>: defines a container that may contain other elements.</li>
-                <li><code>drawable</code>: defines objects that can be rendered visually.</li>
+                <li><code>.flx</code>: defines project metadata and runtime configuration.</li>
+                <li><code>object</code>: defines an object that may contain other elements.</li>
+                <li><code>object</code>: defines objects that can be rendered visually.</li>
             </ul>
 
             <hr />
 
-            <h2 class="placeholder">Main JSON</h2>
+            <h2 class="placeholder">FLX Manifest</h2>
 
             <p>
-                The main file organizes the base structure of the runtime.
+                The <code>.flx</code> file is a properties-style manifest.
+                It points to the root object and contains runtime configuration.
             </p>
 
             <div class="code-card">
-                <div class="code-header">world.json</div>
-<pre><code>{
-    "$schema": "tools/schemas/main.schema.json",
-    "name": "Main",
-    "description": "This is a description.",
-
- 
-"screen": {
-    "title": "Title in window",
-    "width": 320,
-    "height": 180
-},
-
-"scale": 3,
-
-"children": [ ... ],
-
-"spawns": { ... },
-
-"behavior": {
-    "scripts": [ "scripts/game" ]
-}
- 
-
-} </code></pre>
+                <div class="code-header">game.flx</div>
+<pre><code>name=Asteroids
+version=1.0.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
+debug.collisions=false
+debug.logs=false
+notes=FLX example with spawn and basic UI
+</code></pre>
 
             </div>
 
             <h3>Fields</h3>
 
             <ul>
-                <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical name of the main runtime. <i>[ Required ]</i></li>
-                <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#screen">screen</a>: window or runtime surface configuration. <i>[ Required ]</i></li>
-                <li><code>scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#children">children</a>: list of structures loaded by the main runtime. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#behavior">behavior</a>: scripts associated with the overall behavior. <i>[ Optional ]</i></li>
+                <li><code>name</code>: project name. <i>[ Optional ]</i></li>
+                <li><code>version</code>: project version. <i>[ Optional ]</i></li>
+                <li><code>engine</code>: target FLX version. <i>[ Optional ]</i></li>
+                <li><code>path</code>: project content directory. <i>[ Optional ]</i></li>
+                <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
+                <li><code>title</code>: window title. <i>[ Optional ]</i></li>
+                <li><code>screen.width</code>: internal reference width. <i>[ Optional ]</i></li>
+                <li><code>screen.height</code>: internal reference height. <i>[ Optional ]</i></li>
+                <li><code>screen.scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
+                <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
+                <li><code>debug.logs</code>: enables internal debug logs. <i>[ Optional ]</i></li>
+                <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
-            <h2 id="screen">Screen</h2>
+            <h2 id="root">Root Object</h2>
 
             <p>
-                The <code>screen</code> block defines the basic window properties.
+                The root object is special only because the manifest points to it.
+                Its JSON uses the same schema as any other FLX object.
             </p>
 
             <div class="code-card">
-                <div class="code-header">screen</div>
-<pre><code>"screen": {
-    "title": "Title in window",
-    "width": 320,
-    "height": 180
+                <div class="code-header">space.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",    "behavior": {
+        "scripts": [ "scripts/game" ]
+    },
+
+    "children": {
+        "level": "space/level"
+    }
 }
 </code></pre>
             </div>
 
-            <ul>
-                <li><code>title</code>: window title. <i>[ Optional ]</i></li>
-                <li><code>width</code>: internal reference width. <i>[ Required ]</i></li>
-                <li><code>height</code>: internal reference height. <i>[ Required ]</i></li>
-            </ul>
-
             <h2 id="children">Children</h2>
 
             <p>
-                The <code>children</code> field declares objects contained by the main runtime.
+                The <code>children</code> field declares objects contained by another object.
             </p>
 
             <div class="code-card">
-                <div class="code-header">children (link)</div>
-<pre><code>"children": [ "objects/tofu" ]</code></pre>
-
+                <div class="code-header">children (reference)</div>
+<pre><code>"children": {
+    "ball": "objects/ball"
+}</code></pre>
 
                 <div class="code-header">children (inline)</div>
+<pre><code>"children": {
+    "ship": {
+        "like": "ship/ship",
+        "origin": { "x": 160, "y": 90 }
+    }
+}</code></pre>
 
-
-<pre><code>"children": [ {"name": "Tofu", ... } ]</code></pre>
-
-
-                <div class="code-header">children (mix)</div>
-
-
-<pre><code>"children": [ "objects/tofu", {"name": "Tofu", ... }, ... ]</code></pre>
-
+                <div class="code-header">children (manual)</div>
+<pre><code>"children": {
+    "laser": {
+        "like": "ship/laser",
+        "spawn": "manual",
+        "offset": { "x": 0, "y": -14 }
+    }
+}</code></pre>
             </div>
 
             <p>
-                Each value references an object that the runtime must load.
+                Each key in <code>children</code> is the logical instance name.
+                A string value is syntactic sugar for an object with <code>like</code>.
             </p>
 
             <p>
-                Objects may be referenced as external files
-                (the JSON extension is not required)
-                or declared inline.
+                Children use <code>spawn: "auto"</code> by default. That first
+                instance enters the runtime with its parent. Children with
+                <code>spawn: "manual"</code> wait until a script calls
+                <code>spawn(parent, "child")</code>. The same function can also
+                create another instance of an <code>auto</code> child later.
+            </p>
+
+            <p>
+                <code>children</code> defines what may exist, <code>spawn</code>
+                defines when each child enters the runtime, and <code>creation</code>
+                defines how the parent materializes those children.
+            </p>
+
+            <h2 id="creation">Creation</h2>
+
+            <p>
+                The optional <code>creation</code> block controls how a parent creates
+                its declared children. If it is omitted, FLX uses
+                <code>creation.mode = "individual"</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">individual creation</div>
+<pre><code>"creation": {
+    "mode": "individual"
+}</code></pre>
+
+                <div class="code-header">grid creation with linear pattern</div>
+<pre><code>"children": {
+    "a": { "like": "brick_red" },
+    "b": { "like": "brick_blue", "spawn": "manual" }
+},
+"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": ["a", "b"]
+}</code></pre>
+
+                <div class="code-header">grid creation with row pattern</div>
+<pre><code>"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": [
+        ["a"],
+        ["b"]
+    ]
+}</code></pre>
+            </div>
+
+            <p>
+                In grid mode, the parent position is the grid origin. Each cell uses
+                <code>column * cellWidth</code> and <code>row * cellHeight</code>.
+                The child <code>offset</code> is applied inside the cell and the child
+                <code>origin</code> is ignored.
+            </p>
+
+            <p>
+                A linear pattern is consumed in row-major order and repeats when it ends.
+                A row pattern repeats its outer rows and each inner row repeats its columns.
+                Manual children inside a grid do not appear automatically; calling
+                <code>spawn(parent, "child")</code> creates every grid cell where the
+                pattern references that child.
+            </p>
+
+            <h2 id="sounds">Sounds</h2>
+
+            <p>
+                The <code>sounds</code> field declares sounds owned by an object.
+                Scripts can play them with <code>play_sound(object, "id")</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">sounds</div>
+<pre><code>"sounds": {
+    "beep": {
+        "wave": "square",
+        "frequency": 880,
+        "duration": 0.08,
+        "volume": 0.7
+    }
+}</code></pre>
+
+                <div class="code-header">sounds (reference)</div>
+<pre><code>"sounds": {
+    "beep": "audio/beep"
+}</code></pre>
+            </div>
+
+            <p>
+                Supported waves are
+                <code>square</code>,
+                <code>sine</code>,
+                <code>triangle</code>,
+                <code>saw</code>
+                and
+                <code>noise</code>.
+            </p>
+
+            <p>
+                Sound declarations are data. They can be inline, referenced as a
+                JSON file, or composed with <code>like</code>.
+            </p>
+
+            <h2 id="states">States</h2>
+
+            <p>
+                The optional <code>states</code> block declares a lightweight
+                state machine owned by the object. JSON defines only the state
+                names and valid transitions; scripts decide when transitions
+                happen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code>"states": {
+    "initial": "title",
+
+    "title": {
+        "next": ["playing"]
+    },
+
+    "playing": {
+        "next": ["gameover", "next_level"]
+    },
+
+    "gameover": {
+        "next": ["title"]
+    }
+}</code></pre>
+
+                <div class="code-header">states (reference)</div>
+<pre><code>"states": "logic/game_states"</code></pre>
+            </div>
+
+            <p>
+                Use <code>state(object, "playing")</code> to request a transition.
+                Invalid transitions are ignored and logged as warnings.
             </p>
 
             <h2 id="like">JSON Composition (like)</h2>
@@ -162,11 +306,7 @@
 
             <div class="code-card">
                 <div class="code-header">like</div>
-<pre><code>{
-    "name": "DeepSpaceLeft",
-
- 
-"like": "asteroid/deep_space",
+<pre><code>{"like": "asteroid/deep_space",
 
 "origin": {
     "x": 5,
@@ -209,27 +349,28 @@
 
             <hr />
 
-            <h2 class="placeholder">Node JSON</h2>
+            <h2 class="placeholder">Object JSON</h2>
 
             <p>
-                A <code>node</code> defines a group of objects.
+                A <code>object</code> defines a group of objects.
                 It is not rendered visually but may contain logic.
             </p>
 
             <div class="code-card">
                 <div class="code-header">tofu.json</div>
 <pre><code>{
-    "$schema": "tools/schemas/node.schema.json",
-    "name": "Level",
-    "description" : "This is a description.",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
     "collision": {
-      "type": "box"
+        "type": "box"
     },
- 
-    "children": [...],
 
-    "spawns": {...}
+    "children": {
+        "laser": {
+            "like": "objects/laser",
+            "spawn": "manual"
+        }
+    }
 }
 </code></pre>
 
@@ -239,23 +380,24 @@
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical name of the node. <i>[ Required ]</i></li>
-                <li><code>description</code>: optional description. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object or node. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#children">children</a>: list of objects loaded by the runtime. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#children">children</a>: child objects loaded with this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
             </ul>
 
             <hr />
 
-            <h2 id="drawable" class="placeholder">Drawable JSON</h2>
+            <h2 id="capabilities" class="placeholder">Object Capabilities</h2>
 
             <p>
-                A <code>drawable</code> file defines an object that can be rendered visually.
+                A <code>object</code> file defines an object that can be rendered visually.
             </p>
 
             <p>
-                A <code>drawable</code> may also be used as a logical node.
+                An object may also be used as a logical controller without visual data.
             </p>
 
             <p>
@@ -267,17 +409,14 @@
             <div class="code-card">
                 <div class="code-header">tofu.json</div>
 <pre><code>{
-    "$schema": "../tools/schemas/drawable.schema.json",
-    "name": "Tofu",
-
-    "origin": {
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",    "origin": {
         "x": 157,
         "y": 87
     },
 
     "shape": {
         "type": "triangle",
-        "color": "WHITE",
+        "color": "white",
         "size": {
             "width": 18,
             "height": 24
@@ -296,9 +435,10 @@
       "overflow": true
     },
 
-    "spawns": {
+    "children": {
         "laser": {
-            "prefab": "objects/laser",
+            "like": "objects/laser",
+            "spawn": "manual",
             "offset": {
                 "x": 0,
                 "y": -12
@@ -325,16 +465,50 @@
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><code>name</code>: logical object name. <i>[ Required ]</i></li>
-                <li><a class="link" href="#origin">origin</a>: object's initial position. <i>[ Optional ]</i></li>
+                                <li><a class="link" href="#origin">origin</a>: object's initial position. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#shape">shape</a>: object's visual information. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#motion">motion</a>: movement configuration, if any. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#spawns">spawns</a>: declarative spawn definitions associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object or node. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
+
+            <h2 id="attach">Attach</h2>
+
+            <p>
+                Defines how an object follows its original parent while it is attached.
+                Attach never changes parent and never creates dynamic hierarchies.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>"attach": {
+    "born": true,
+    "position": true,
+    "angle": false
+}</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>born</code>: starts the object attached when true. <i>[ Optional, default false ]</i></li>
+                <li><code>position</code>: follows parent X and Y. <i>[ Optional ]</i></li>
+                <li><code>x</code>: follows parent X. If declared, it overrides <code>position</code> for this axis. <i>[ Optional ]</i></li>
+                <li><code>y</code>: follows parent Y. If declared, it overrides <code>position</code> for this axis. <i>[ Optional ]</i></li>
+                <li><code>angle</code>: synchronizes the parent angle without rotating the offset. <i>[ Optional ]</i></li>
+            </ul>
+
+            <p>
+                The runtime uses the original parent and the original offset captured
+                when the object was created.
+                The object starts detached unless <code>born</code> is declared as <code>true</code>.
+            </p>
 
             <h2 id="origin">Origin</h2>
 
@@ -368,13 +542,24 @@
                 <div class="code-header">shape</div>
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "WHITE",
+    "color": "white",
     "size": {
         "width": 18,
         "height": 24
     }
 }
 </code></pre>
+                <div class="code-header">text shape</div>
+<pre><code>"shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "white",
+    "mode": "fill",
+    "size": {
+        "width": 260,
+        "height": 60
+    }
+}</code></pre>
             </div>
 
             <h3>Fields</h3>
@@ -383,17 +568,44 @@
                 <li>
                     <code>type</code>: shape type to render. <i>[ Optional ]</i>
                     <ul>
-                        <li><code>block</code>: default solid block. Rotation mechanics do not apply.</li>
+                        <li><code>block</code>: default solid block. Rotation mechanics are not applied.</li>
                         <li><code>rectangle</code>: rectangle with support for rotation and oriented movement.</li>
-                        <li><code>triangle</code>: unfilled triangle.</li>
+                        <li><code>triangle</code>: triangle with support for rotation and oriented movement.</li>
+                        <li><code>circle</code>: circle with support for rotation and oriented movement.</li>
                         <li><code>polygon</code>: polygon defined by a list of points.</li>
-                        <li><code>line</code>: line defined between two points.</li>
+                        <li><code>line</code>: line defined by two points.</li>
                         <li><code>text</code>: renderable text.</li>
                     </ul>
                 </li>
+                <li>
+                    <code>mode</code>: rendering mode used to draw the shape. <i>[ Optional ]</i>
+                    <ul>
+                        <li><code>fill</code>: the shape is rendered filled using the specified color.</li>
+                        <li><code>outline</code>: only the outline is rendered using the specified color.</li>
+                    </ul>
+                </li>
+                <li>
+                    <code>content</code>: visible string used when <code>type</code> is <code>text</code>. <i>[ Optional ]</i>
+                </li>
                 <li><code>color</code>: object color. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i></li>
+                <li><code>layer</code>: draw order. Lower values are drawn first. Objects with the same layer keep creation order. <i>[ Optional, default 0 ]</i></li>
+                <li>
+                    <a class="link" href="#size">size</a>: object size. <i>[ Optional ]</i>
+                </li>
             </ul>
+
+            <p>
+                A text shape is a world object. It uses origin, angle, bounds,
+                collision and behavior like any other object. The engine calculates
+                a font size that fits inside the logical <code>size</code> box.
+            </p>
+
+            <p>
+                With <code>mode: "outline"</code>, text is drawn first in the
+                selected color and then again in black at a smaller proportional
+                size, leaving the selected color as the outline.
+            </p>
+
 
             <h2 id="size">Size</h2>
 
@@ -428,7 +640,7 @@
                 <div class="code-header">polygon</div>
 <pre><code>"shape": {
     "type": "polygon",
-    "color": "WHITE",
+    "color": "white",
 
  
 "points": [
@@ -458,6 +670,8 @@
                 <div class="code-header">motion</div>
 <pre><code>"motion": {
     "inherit": "creation",
+    "speed": 90,
+    "angle": 45,
     "rotationSpeed": 180,
     "acceleration": 120,
     "inertia": 0.99,
@@ -478,6 +692,8 @@
                         <li><code>creation</code>: inherits the initial movement at spawn time.</li>
                     </ul>
                 </li>
+                <li><code>speed</code>: movement speed used by helpers such as <code>advance()</code>.</li>
+                <li><code>angle</code>: movement and rotation angle in degrees.</li>
                 <li><code>rotationSpeed</code>: rotation speed.</li>
                 <li><code>acceleration</code>: acceleration applied to the object.</li>
                 <li><code>inertia</code>: movement preservation factor.</li>
@@ -524,95 +740,72 @@
 
             </ul>
 
-            <h2 id="spawns">Spawns</h2>
+            <h2 id="manual-children">Manual Children</h2>
 
             <p>
-                Defines objects that can be instantiated dynamically by the runtime.
+                Manual children are declared inside <code>children</code> with
+                <code>spawn: "manual"</code>. They do not enter the world when
+                the parent is loaded; scripts create them with <code>spawn()</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">spawns</div>
-<pre><code>"spawns": {
+                <div class="code-header">manual child</div>
+<pre><code>"children": {
     "laser": {
-        "prefab": "objects/laser",
-
- 
-    "offset": {
-        "x": 0,
-        "y": -12
+        "like": "ship/laser",
+        "spawn": "manual",
+        "offset": {
+            "x": 0,
+            "y": -12
+        }
     }
-}
- 
-
-} </code></pre>
-
+}</code></pre>
             </div>
 
             <p>
-                Spawn definitions use prefabs previously loaded by the runtime.
+                The optional <code>offset</code> is local to the spawning object and
+                uses the object's current rotation as reference.
             </p>
 
             <p>
-                Prefab paths are resolved relative
-                to the JSON file that declares the spawn.
+                If the parent uses <code>creation.mode = "grid"</code>,
+                <code>spawn(parent, "child")</code> follows the grid policy instead
+                of creating one free instance. It creates every matching grid cell for
+                that child.
             </p>
-
-            <p>
-                This allows reusable structures to be built
-                without depending on a fixed location within the project.
-            </p>
-
-            <h3>Fields</h3>
-
-            <ul>
-                <li>
-                    <code>prefab</code>:
-                    path to the prefab that should be instantiated.
-                    <i>[ Required ]</i>
-                </li>
-
-
-                <li>
-                    <code>offset</code>:
-                    local offset applied to the spawned object.
-                    <i>[ Optional ]</i>
-                </li>
-
-
-            </ul>
-
-            <p>
-                The offset uses the object's current rotation as reference.
-            </p>
-
-            <h3>Children and Spawns</h3>
-
-            <ul>
-                <li>
-                    <code>children</code>:
-                    objects that enter the world when the runtime is loaded.
-                </li>
-
-
-                <li>
-                    <code>spawns</code>:
-                    objects that may be instantiated later during execution.
-                </li>
-
-            </ul>
 
             <hr />
 
             <h2 id="collision">Collision</h2>
 
             <p>
-                Defines the collision associated with the object or node.
+                Defines the collision associated with the object.
+            </p>
+
+            <p>
+                The <code>collision(object, other)</code> function
+                is only executed when <code>collision.active</code> is set to
+                <code>true</code> and the other object's group is included in
+                <code>collision.with</code>.
+            </p>
+
+            <p>
+                Only active objects execute
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Objects listed in <code>collision.with</code>
+                do not automatically execute their own collision handler
+                unless they are also active and independently detect a matching collision.
             </p>
 
             <div class="code-card">
                 <div class="code-header">collision</div>
 <pre><code>"collision": {
     "type": "circle",
+    "active": "true",
+    "with": [ "wall" ],
     "radius": 16
 },
 </code></pre>
@@ -629,6 +822,18 @@
                         <li><code>box</code>: box collision.</li>
                         <li><code>circle</code>: circular collision.</li>
                     </ul>
+                </li>
+
+                <li>
+                    <code>active</code>:
+                    enables or disables collision processing for this object.
+                    <i>[ Optional ]</i>
+                </li>
+
+                <li>
+                    <code>with</code>:
+                    list of groups this object can collide with.
+                    <i>[ Optional ]</i>
                 </li>
 
                 <li>
@@ -681,17 +886,17 @@
             </p>
 
             <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introduction</a></li>
-                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
-                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
-                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
-                <li>↓ <a class="link" href="getting-started.html">Getting Started</a></li>
-                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
-                <li class="current">↓ JSON Reference ← You are here</li>
-                <li class="recommended"><a class="link" href="api.html">FLX API</a> → Recommended</li>
-                <li>↓ <a class="link" href="examples.html">Examples</a></li>
-                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="index.html">Introduction</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="philosophy.html">Philosophy</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="concepts.html">Core Concepts</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="getting-started.html">Getting Started</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="scripting.html">Scripting</a></li>
+                <li class="current">ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ JSON Reference ÃƒÂ¢Ã¢â‚¬Â Ã‚Â You are here</li>
+                <li class="recommended"><a class="link" href="api.html">FLX API</a> ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Recommended</li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="examples.html">Examples</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
         </article>
     </main>

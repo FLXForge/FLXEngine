@@ -1,14 +1,168 @@
 {
-  "$schema": "../../tools/schemas/main.schema.json",
-  "name": "Pong_Game",
-  "description": "Example of one of the first games",
-
-  "screen": {
-    "title": "FLX Engine - Pong Example",
-    "width": 320,
-    "height": 180
-  },
-  "scale": 3,
-
-  "children": [ "levels/level" ]
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "player": {
+      "origin": {
+        "x": 16,
+        "y": 90
+      },
+      "shape": {
+        "type": "block",
+        "color": "white",
+        "size": {
+          "width": 5,
+          "height": 30
+        }
+      },
+      "motion": {
+        "speed": 120
+      },
+      "group": "paddle",
+      "collision": {
+        "type": "box"
+      },
+      "behavior": {
+        "scripts": [ "player" ]
+      }
+    },
+    "enemy": {
+      "origin": {
+        "x": 299,
+        "y": 90
+      },
+      "shape": {
+        "type": "block",
+        "color": "white",
+        "size": {
+          "width": 5,
+          "height": 30
+        }
+      },
+      "motion": {
+        "speed": 55
+      },
+      "group": "paddle",
+      "collision": {
+        "type": "box"
+      },
+      "behavior": {
+        "scripts": [ "enemy" ]
+      }
+    },
+    "ball": {
+      "origin": {
+        "x": 157,
+        "y": 87
+      },
+      "shape": {
+        "type": "block",
+        "color": "white",
+        "size": {
+          "width": 5,
+          "height": 5
+        }
+      },
+      "motion": {
+        "speed": 90,
+        "angle": 45
+      },
+      "group": "ball",
+      "collision": {
+        "type": "box",
+        "active": true,
+        "with": [
+          "wall",
+          "goal",
+          "paddle"
+        ]
+      },
+      "behavior": {
+        "scripts": [ "ball" ]
+      },
+      "sounds": {
+        "beep": {
+          "wave": "square",
+          "frequency": 880,
+          "duration": 0.08,
+          "volume": 0.7
+        }
+      }
+    },
+    "left_goal": {
+      "origin": {
+        "x": -10,
+        "y": 0
+      },
+      "shape": {
+        "type": "block",
+        "color": "black",
+        "size": {
+          "width": 10,
+          "height": 180
+        }
+      },
+      "group": "goal",
+      "collision": {
+        "type": "box"
+      },
+      "visible": false
+    },
+    "right_goal": {
+      "origin": {
+        "x": 320,
+        "y": 0
+      },
+      "shape": {
+        "type": "block",
+        "color": "black",
+        "size": {
+          "width": 10,
+          "height": 180
+        }
+      },
+      "group": "goal",
+      "collision": {
+        "type": "box"
+      },
+      "visible": false
+    },
+    "top_wall": {
+      "origin": {
+        "x": 0,
+        "y": -10
+      },
+      "shape": {
+        "type": "block",
+        "color": "white",
+        "size": {
+          "width": 320,
+          "height": 10
+        }
+      },
+      "group": "wall",
+      "collision": {
+        "type": "box"
+      },
+      "visible": false
+    },
+    "bottom_wall": {
+      "origin": {
+        "x": 0,
+        "y": 180
+      },
+      "shape": {
+        "type": "block",
+        "color": "white",
+        "size": {
+          "width": 320,
+          "height": 10
+        }
+      },
+      "group": "wall",
+      "collision": {
+        "type": "box"
+      },
+      "visible": false
+    }
+  }
 }

@@ -1,6 +1,12 @@
-name:Asteroids
-version:1.0
-flxEngineVersion:0.0.1
-path:asteroids
-main:game.json
-notes:FLX example with spawn and basic UI
+name=Asteroids
+version=1.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
+debug.collisions=false
+debug.logs=false
+notes=FLX example with spawn and basic UI

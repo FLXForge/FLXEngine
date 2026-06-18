@@ -125,7 +125,7 @@ Runtime -> Conecta ambos
 
             <div class="code-card">
                 <div class="code-header">reference</div>
-<pre><code>/// &lt;reference path="../tools/scripts/flx.d.ts" /&gt;
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 </code></pre>
             </div>
 
@@ -147,8 +147,6 @@ Runtime -> Conecta ambos
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
       ↓
-   start()
-
  Object Born
       ↓
    born()
@@ -178,18 +176,50 @@ Runtime -> Conecta ambos
             <h3>Funciones principales</h3>
 
             <ul>
-                <li><code>start()</code>: se ejecuta una vez al iniciar el runtime.</li>
-
                 <li><code>born(object)</code>: se ejecuta cuando un objeto entra en el mundo.</li>
 
                 <li><code>action(object)</code>: lógica principal e interacción.</li>
 
                 <li><code>motion(object)</code>: movimiento y transformaciones.</li>
 
-                <li><code>collision(object, other)</code>: interacción entre objetos.</li>
+                <li>
+                    <code>collision(object, other)</code>:
+                    se ejecuta cuando el objeto tiene <code>collision.active = true</code>
+                    y el grupo del otro objeto está incluido en <code>collision.with</code>.
+                </li>
 
                 <li><code>dead(object)</code>: última oportunidad de actuar antes de la eliminación física.</li>
             </ul>
+
+            <hr />
+
+            <h3>Regla de ejecución de colisiones</h3>
+
+            <p>
+                <code>collision.active</code> no significa que un objeto pueda recibir colisiones.
+            </p>
+
+            <p>
+                Significa que ese objeto comprueba colisiones activamente.
+            </p>
+
+            <ul>
+                <li><code>active</code>: pregunta si hay colisiones.</li>
+                <li><code>with</code>: define a qué grupos pregunta.</li>
+                <li><code>collision()</code>: define qué ocurre cuando encuentra una coincidencia.</li>
+            </ul>
+
+            <p>
+                Solo los objetos activos ejecutan
+                <code>collision(object, other)</code>.
+            </p>
+
+            <p>
+                Los objetos incluidos en <code>collision.with</code>
+                no ejecutan automáticamente su propio manejador de colisión,
+                salvo que también estén activos y detecten de forma independiente
+                una colisión coincidente.
+            </p>
 
             <hr />
 
@@ -336,7 +366,7 @@ function born(laser) {
 
             <div class="code-card">
                 <div class="code-header">Global scope</div>
-<pre><code>function start() {
+<pre><code>function born(game) {
     global["score"] = 0;
     global["lives"] = 3;
 }
@@ -360,35 +390,21 @@ function collision(player, asteroid) {
 
             <hr />
 
-            <h2>Program Scripts</h2>
+            <h2>Scripts de programa</h2>
 
             <p>
-                Los Program Scripts permiten ejecutar lógica asociada
-                al runtime completo.
+                Los scripts de programa no forman parte del contrato actual del runtime.
             </p>
 
             <p>
-                Mientras que los scripts de objeto reaccionan
-                a la vida de un objeto concreto,
-                los Program Scripts reaccionan
-                a la vida del runtime.
+                De momento, el estado global del juego debe inicializarse desde
+                la función <code>born(object)</code> del objeto root.
             </p>
-
-            <div class="code-card">
-                <div class="code-header">game.json</div>
-<pre><code>"program": {
-    "scripts": [
-        "scripts/program"
-    ]
-}
-</code></pre>
-            </div>
 
             <p>
-                La forma definitiva de estos contextos
-                todavía continúa evolucionando.
+                Más adelante se evaluará un ciclo de programa dedicado con fases
+                explícitas <code>start</code> y <code>end</code>.
             </p>
-
             <hr />
 
             <h2>Buenas prácticas</h2>

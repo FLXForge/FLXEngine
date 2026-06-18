@@ -4,7 +4,6 @@
 
 struct ScriptModule
 {
-    JSValue start = JS_UNDEFINED;
     JSValue born = JS_UNDEFINED;
     JSValue action = JS_UNDEFINED;
     JSValue motion = JS_UNDEFINED;

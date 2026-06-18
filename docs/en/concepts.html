@@ -38,7 +38,7 @@
             <h2>Project</h2>
 
             <p>
-                Every FLX project begins with a main file
+                Every FLX project begins with a project file
                 using the <code>.flx</code> extension.
             </p>
 
@@ -50,10 +50,15 @@
                 <div class="code-header">Asteroids.flx</div>
 
 
-<pre><code>name:Asteroids
-version:1.0
-flxEngineVersion:0.1.0
-main:game.json
+<pre><code>name=Asteroids
+version=1.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+screen.width=640
+screen.height=320
+screen.scale=3
 </code></pre>
 
 
@@ -61,20 +66,22 @@ main:game.json
 
             <p>
                 From this file,
-                the runtime loads the main structure,
+                the runtime loads the root object,
                 resources and required configuration.
             </p>
 
             <hr />
 
-            <h2>Main</h2>
+            <h2>Root Object</h2>
 
             <p>
-                The main structure is the root of the runtime.
+                The root object is the object selected by the <code>root</code>
+                field in the <code>.flx</code> file.
             </p>
 
             <p>
-                It organizes objects, resources and execution logic.
+                It is a normal JSON object that organizes objects,
+                resources and execution logic.
             </p>
 
             <p>
@@ -186,7 +193,7 @@ main:game.json
             </p>
 
             <p>
-                If it defines <code>behavior</code>, <code>spawns</code> or <code>collision</code>,
+                If it defines <code>behavior</code>, <code>children</code> or <code>collision</code>,
                 it can act as a logical node, level manager, HUD, spawner, trigger
                 or game controller.
             </p>
@@ -203,34 +210,47 @@ main:game.json
 
             <hr />
 
-            <h2>Children and Spawns</h2>
+            <h2>Children and Spawn Timing</h2>
 
             <p>
-                FLX distinguishes between objects that exist when the runtime starts
-                and objects that may appear later.
+                FLX uses <code>children</code> to declare what may exist below an object.
+                The child <code>spawn</code> value defines when it enters the runtime.
+                The optional <code>creation</code> block defines how the parent creates
+                those children.
             </p>
 
             <ul>
                 <li>
-                    <code>children</code>:
-                    objects that enter the world when the scene is loaded.
+                    <code>spawn: "auto"</code>:
+                    the child is instantiated when the parent enters the world.
                 </li>
 
                 <li>
-                    <code>spawns</code>:
-                    reusable definitions used to create new instances during execution.
+                    <code>spawn: "manual"</code>:
+                    the child is registered and can be created later with
+                    <code>spawn(parent, "child")</code>.
                 </li>
             </ul>
 
             <p>
-                This separation helps maintain a clear structure
-                between initial content and dynamic content.
+                <code>spawn(parent, "child")</code> can create any declared
+                child. The <code>spawn</code> value only controls whether the
+                first instance is created automatically when the parent enters
+                the world.
             </p>
 
             <p>
-                Together with <code>like</code>,
-                these mechanisms form the foundation of how FLX builds,
-                reuses and instantiates runtime objects.
+                Together with <code>like</code>, this keeps object composition,
+                reuse and dynamic creation under one JSON property.
+            </p>
+
+            <p>
+                When <code>creation</code> is omitted, the parent behaves as
+                <code>creation.mode = "individual"</code>: each child is handled by its
+                own declaration. In <code>grid</code> mode, the parent position becomes
+                the grid origin, the pattern chooses which child belongs to each cell,
+                and <code>spawn(parent, "child")</code> creates the matching
+                cells instead of a free instance.
             </p>
 
             <hr />
@@ -279,7 +299,9 @@ main:game.json
             </table>
 
             <p>
-                Colors can be declared directly from JSON.
+                Colors can be declared directly from JSON using raylib color
+                names or hexadecimal values in <code>#rgb</code> and
+                <code>#rrggbb</code> format.
             </p>
 
             <div class="code-card">
@@ -288,7 +310,7 @@ main:game.json
 
 <pre><code>"shape": {
     "type": "triangle",
-    "color": "WHITE"
+    "color": "#2f3a44"
 }
 </code></pre>
 
@@ -336,6 +358,19 @@ main:game.json
             <p>
                 In many cases both definitions may be similar,
                 but they are not required to match.
+            </p>
+
+            <p>
+                In addition to defining the collider shape,
+                the <code>collision</code> block can control whether collision
+                is active and which groups the object can interact with.
+            </p>
+
+            <p>
+                Collision checks are active and directional:
+                an object only executes <code>collision()</code>
+                when its own <code>collision.active</code> is enabled
+                and the other object's group matches its <code>collision.with</code> list.
             </p>
 
             <div class="code-card">

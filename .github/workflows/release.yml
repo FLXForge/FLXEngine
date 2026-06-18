@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag is on main
+        shell: pwsh
+        run: |
+          git fetch origin main
+          $tagCommit = git rev-parse HEAD
+          $mainContains = git branch -r --contains $tagCommit | Select-String "origin/main"
+
+          if (-not $mainContains) {
+            Write-Error "This tag is not on main. Releases must be created from main."
+            exit 1
+          }
+
+      - name: Extract version
+        id: version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build Release
+        uses: threeal/cmake-action@v2.1.0
+        with:
+          build-dir: build
+          build-args: --config Release
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $Version = "${{ steps.version.outputs.version }}"
+          $PackageName = "FLXEngine-$Version-windows-x64"
+          $PackageDir = "dist/$PackageName"
+
+          Remove-Item "dist" -Recurse -Force -ErrorAction SilentlyContinue
+
+          New-Item -ItemType Directory -Force -Path $PackageDir | Out-Null
+          New-Item -ItemType Directory -Force -Path "$PackageDir/examples" | Out-Null
+
+          Copy-Item "build/Release/FlxEngine.exe" "$PackageDir/FlxEngine.exe" -Force
+
+          Copy-Item "examples/pong.flx" "$PackageDir/examples/pong.flx" -Force
+          Copy-Item "examples/pong" "$PackageDir/examples/pong" -Recurse -Force
+          Copy-Item "examples/asteroids.flx" "$PackageDir/examples/asteroids.flx" -Force
+          Copy-Item "examples/asteroids" "$PackageDir/examples/asteroids" -Recurse -Force
+          Copy-Item "examples/arkanoid.flx" "$PackageDir/examples/arkanoid.flx" -Force
+          Copy-Item "examples/arkanoid" "$PackageDir/examples/arkanoid" -Recurse -Force
+
+          Copy-Item "docs/schemas" "$PackageDir/schemas" -Recurse -Force
+
+          New-Item -ItemType Directory -Force -Path "$PackageDir/scripts" | Out-Null
+          Copy-Item "docs/scripts/flx.d.ts" "$PackageDir/scripts/flx.d.ts" -Force
+
+          Copy-Item "README.md" "$PackageDir/README.md" -Force
+          Copy-Item "LICENSE" "$PackageDir/LICENSE" -Force
+
+          @"
+          @echo off
+          FlxEngine.exe examples\pong.flx
+          pause
+          "@ | Set-Content "$PackageDir\run_pong.bat"
+
+          @"
+          @echo off
+          FlxEngine.exe examples\asteroids.flx
+          pause
+          "@ | Set-Content "$PackageDir\run_asteroids.bat"
+
+          @"
+          @echo off
+          FlxEngine.exe examples\arkanoid.flx
+          pause
+          "@ | Set-Content "$PackageDir\run_arkanoid.bat"
+
+          Compress-Archive -Path "$PackageDir\*" -DestinationPath "dist/$PackageName.zip" -Force
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/Release/FlxEngine.exe
+            dist/FLXEngine-${{ steps.version.outputs.version }}-windows-x64.zip

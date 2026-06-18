@@ -1,0 +1,25 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "states": {
+    "initial": "title",
+    "title": { "next": [ "to_level" ] },
+    "to_level": { "next": [ "playing" ] },
+    "playing": { "next": [ "to_level", "gameover", "congratulations" ] },
+    "gameover": { "next": [ "title" ] },
+    "congratulations": { "next": [ "title" ] }
+  },
+
+  "children": {
+    "title": "maintitle/titlescreen",
+    "level1": "levels/level1",
+    "level2": "levels/level2",
+    "level3": "levels/level3",
+    "level4": "levels/level4",
+    "gameover": "levels/gameover",
+    "congratulations": "levels/congratulations"
+  },
+  "behavior": {
+    "scripts": [ "game" ]
+  }
+}

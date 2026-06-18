@@ -1,16 +1,16 @@
 #pragma once
 
+#include "ObjectDefinition.h"
+
 #include <string>
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
 
-struct SpawnDefinition
+struct RuntimeTimer
 {
-    std::string prefab;
-    std::string basePath;
-    Vector2 offset;
-    bool hasOffset = false;
+    float left = 0.0f;
 };
 
 class RuntimeObject
@@ -25,7 +25,15 @@ public:
 
     std::unordered_map<std::string, double> local;
 
-    std::unordered_map<std::string, SpawnDefinition> spawns;
+    std::unordered_map<std::string, ObjectDefinition> children;
+    std::unordered_map<std::string, SoundDefinition> sounds;
+    std::unordered_map<std::string, RuntimeTimer> timers;
+    std::unordered_map<std::string, std::vector<std::string>> stateTransitions;
+    std::string creationMode = "individual";
+    GridCreationRules gridRules;
+    bool gridPatternIsRows = false;
+    std::vector<std::string> gridPattern;
+    std::vector<std::vector<std::string>> gridRowPattern;
 
     void draw(
         int scale,
@@ -40,21 +48,36 @@ public:
 public:
     std::string name;
     std::string runtimeId;
+    std::string parentId;
+    std::string originalParentId;
     std::string sourcePath;
     std::string group;
+    std::string state;
+    float stateTime = 0.0f;
+    uint64_t stateEnteredFrame = 0;
 
     bool visible;
     bool alive;
     bool deadCalled;
+    bool attached = false;
+    int layer = 0;
 
     Vector2 origin;
     Vector2 position;
+    Vector2 previousPosition;
     Vector2 size;
+    Vector2 originalOffset;
+
+    bool attachFollowX = false;
+    bool attachFollowY = false;
+    bool attachFollowAngle = false;
 
     bool hasOrigin = false;
 
     Color color;
+    std::string shapeMode;
 
+    float radius;
     float speed;
     float angle;
     float originSpeed;
@@ -67,11 +90,14 @@ public:
     float inertia;
 
     std::string shapeType;
+    std::string textContent;
     std::vector<Vector2> points;
 
     std::string boundsMode;
     bool boundsOverflow;
 
+    bool collisionActive;
+    std::vector<std::string> collisionWith;
     std::string collisionType;
     float collisionRadius;
 

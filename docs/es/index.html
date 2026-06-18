@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introducción | FLX Engine</title>
+    <title>IntroducciÃ³n | FLX Engine</title>
     <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
     <link rel="shortcut icon" href="../favicon.ico" />
@@ -19,8 +19,8 @@
 
         <article class="doc-content">
 
-            <p class="eyebrow">Documentación FLX</p>
-            <h1>Introducción</h1>
+            <p class="eyebrow">DocumentaciÃ³n FLX</p>
+            <h1>IntroducciÃ³n</h1>
 
             <section class="hero">
                 <div class="logo-block">
@@ -28,7 +28,7 @@
                 </div>
 
                 <div class="hero-text">
-                    <h2>Un pequeño motor 2D basado en datos</h2>
+                    <h2>Un pequeÃ±o motor 2D basado en datos</h2>
                     <p>
                         Define estructuras mediante JSON, comportamientos mediante JavaScript
                         y deja que el runtime haga el resto.
@@ -36,10 +36,10 @@
                 </div>
             </section>
 
-            <h2>La filosofía FLX: datos, funciones y runtime</h2>
+            <h2>La filosofÃ­a FLX: datos, funciones y runtime</h2>
 
             <p>
-                FLX está construido alrededor de una idea muy sencilla:
+                FLX estÃ¡ construido alrededor de una idea muy sencilla:
             </p>
 
             <div class="code-card">
@@ -53,27 +53,27 @@ Runtime -> Conecta ambos
             </div>
 
             <p>
-                Los objetos definen qué existe.
+                Los objetos definen quÃ© existe.
             </p>
 
             <p>
-                Los scripts definen qué ocurre.
+                Los scripts definen quÃ© ocurre.
             </p>
 
             <p>
-                El runtime conecta ambos durante la ejecución.
+                El runtime conecta ambos durante la ejecuciÃ³n.
             </p>
 
             <div class="code-card">
                 <div class="code-header">ship.json</div>
 <pre><code>{
-    "$schema": "../../../tools/schemas/drawable.schema.json",
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
     "name": "Ship",
 
     "shape": {
         "type": "triangle",
-        "color": "WHITE",
+        "color": "white",
         "size": {
             "width": 18,
             "height": 24
@@ -96,7 +96,7 @@ Runtime -> Conecta ambos
 
             <div class="code-card">
                 <div class="code-header">ship.js</div>
-<pre><code>/// &lt;reference path="../../../../tools/scripts/flx.d.ts" /&gt;
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
 function action(ship) {
     if (Key.down(KEY_UP)) {
@@ -127,7 +127,7 @@ function motion(ship) {
             <h2>Ruta recomendada</h2>
 
             <p>
-                La documentación está organizada para introducir los conceptos
+                La documentaciÃ³n estÃ¡ organizada para introducir los conceptos
                 progresivamente.
             </p>
 
@@ -136,17 +136,17 @@ function motion(ship) {
             </p>
 
             <ul class="doc-path">
-                <li class="current">↓ Introducción ← Estás aquí</li>
-                <li class="recommended"><a class="link" href="mental-model.html">Cómo piensa FLX</a> → Recomendado</li>
-                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
-                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
-                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
-                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
-                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
-                <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
-                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+                <li class="current">â†“ IntroducciÃ³n â† EstÃ¡s aquÃ­</li>
+                <li class="recommended"><a class="link" href="mental-model.html">CÃ³mo piensa FLX</a> â†’ Recomendado</li>
+                <li>â†“ <a class="link" href="philosophy.html">FilosofÃ­a</a></li>
+                <li>â†“ <a class="link" href="concepts.html">Conceptos bÃ¡sicos</a></li>
+                <li>â†“ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>â†“ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>â†“ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li>â†“ <a class="link" href="api.html">FLX API</a></li>
+                <li>â†“ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>â†“ <a class="link" href="howdo.html">Â¿CÃ³mo hacer...?</a></li>
+                <li>â†“ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
         </article>
     </main>

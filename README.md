@@ -40,8 +40,7 @@ FLX is especially suited for:
 
 ```json
 {
-  "$schema": "../../../tools/schemas/drawable.schema.json",
-  "name": "Ship",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
   "origin": {
     "x": 320,
@@ -60,12 +59,43 @@ FLX is especially suited for:
 ```
 
 ```js
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
+
 function motion(ship) {
     advance(ship);
 }
 ```
 
 FLX keeps game structure simple, readable and easy to modify.
+
+JSON files describe FLX objects. Objects gain capabilities from the
+properties they declare: `shape` makes them drawable, `collision` makes
+them collide, `behavior` attaches scripts and `children` declares what
+can exist below them.
+
+Objects can also declare local sounds:
+
+```json
+{
+  "sounds": {
+    "beep": {
+      "wave": "square",
+      "frequency": 880,
+      "duration": 0.08,
+      "volume": 0.7
+    }
+  }
+}
+```
+
+Scripts can play declared sounds and trigger screen fades:
+
+```js
+play_sound(ship, "beep");
+
+fade_on();
+fade_off("#000000");
+```
 
 ---
 
@@ -93,7 +123,7 @@ Every FLX project starts with a single entry point:
 MyGame.flx
 ```
 
-This file defines the project structure, scenes, scripts and engine configuration.
+This file defines project metadata, runtime configuration and the root object.
 
 ---
 

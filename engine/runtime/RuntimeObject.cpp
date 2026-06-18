@@ -1,31 +1,298 @@
 #include "RuntimeObject.h"
 
+#include <algorithm>
 #include <cmath>
 
-static Vector2 rotatePoint(
-    Vector2 point,
-    Vector2 center,
-    float angleDegrees
-)
+namespace
 {
-    const float radians = angleDegrees * DEG2RAD;
+    Vector2 rotatePoint(
+        Vector2 point,
+        Vector2 center,
+        float angleDegrees
+    )
+    {
+        const float radians =
+            angleDegrees * DEG2RAD;
 
-    const float translatedX = point.x - center.x;
-    const float translatedY = point.y - center.y;
+        const float translatedX =
+            point.x - center.x;
 
-    const float rotatedX =
-        translatedX * cosf(radians) -
-        translatedY * sinf(radians);
-        translatedY * sinf(radians);
+        const float translatedY =
+            point.y - center.y;
 
-    const float rotatedY =
-        translatedX * sinf(radians) +
-        translatedY * cosf(radians);
+        const float rotatedX =
+            translatedX * cosf(radians) -
+            translatedY * sinf(radians);
 
-    return Vector2{
-        center.x + rotatedX,
-        center.y + rotatedY
-    };
+        const float rotatedY =
+            translatedX * sinf(radians) +
+            translatedY * cosf(radians);
+
+        return Vector2{
+            center.x + rotatedX,
+            center.y + rotatedY
+        };
+    }
+
+    bool isOutlineMode(
+        const std::string& mode
+    )
+    {
+        return mode == "outline";
+    }
+
+    Vector2 toScreenPoint(
+        Vector2 center,
+        Vector2 local,
+        int scale,
+        float angle
+    )
+    {
+        Vector2 point = {
+            center.x + local.x * scale,
+            center.y + local.y * scale
+        };
+
+        return rotatePoint(
+            point,
+            center,
+            angle
+        );
+    }
+
+    std::vector<Vector2> buildRectanglePoints(
+        float width,
+        float height
+    )
+    {
+        return {
+            Vector2{ -width / 2.0f, -height / 2.0f },
+            Vector2{  width / 2.0f, -height / 2.0f },
+            Vector2{  width / 2.0f,  height / 2.0f },
+            Vector2{ -width / 2.0f,  height / 2.0f }
+        };
+    }
+
+    void drawPolygonPoints(
+        const std::vector<Vector2>& transformedPoints,
+        const std::string& shapeMode,
+        Color color,
+        int scale
+    )
+    {
+        if (transformedPoints.size() < 2)
+        {
+            return;
+        }
+
+        if (!isOutlineMode(shapeMode) && transformedPoints.size() >= 3)
+        {
+            for (size_t i = 1; i + 1 < transformedPoints.size(); ++i)
+            {
+                DrawTriangle(
+                    transformedPoints[0],
+                    transformedPoints[i + 1],
+                    transformedPoints[i],
+                    color
+                );
+            }
+
+            return;
+        }
+
+        for (size_t i = 0; i < transformedPoints.size(); ++i)
+        {
+            const Vector2 current =
+                transformedPoints[i];
+
+            const Vector2 next =
+                transformedPoints[
+                    (i + 1) % transformedPoints.size()
+                ];
+
+            DrawLineEx(
+                current,
+                next,
+                1.0f * scale,
+                color
+            );
+        }
+    }
+
+    std::vector<Vector2> transformPoints(
+        const std::vector<Vector2>& localPoints,
+        Vector2 center,
+        int scale,
+        float angle
+    )
+    {
+        std::vector<Vector2> transformed;
+
+        transformed.reserve(localPoints.size());
+
+        for (const auto& localPoint : localPoints)
+        {
+            transformed.push_back(
+                toScreenPoint(
+                    center,
+                    localPoint,
+                    scale,
+                    angle
+                )
+            );
+        }
+
+        return transformed;
+    }
+
+    int fitFontSize(
+        const std::string& text,
+        float maxWidth,
+        float maxHeight
+    )
+    {
+        if (text.empty() || maxWidth <= 0.0f || maxHeight <= 0.0f)
+        {
+            return 1;
+        }
+
+        const Font font =
+            GetFontDefault();
+
+        const float spacing =
+            1.0f;
+
+        int low = 1;
+        int high =
+            std::max(
+                1,
+                static_cast<int>(maxHeight)
+            );
+
+        int best = 1;
+
+        while (low <= high)
+        {
+            const int middle =
+                (low + high) / 2;
+
+            const Vector2 measured =
+                MeasureTextEx(
+                    font,
+                    text.c_str(),
+                    static_cast<float>(middle),
+                    spacing
+                );
+
+            if (measured.x <= maxWidth && measured.y <= maxHeight)
+            {
+                best = middle;
+                low = middle + 1;
+            }
+            else
+            {
+                high = middle - 1;
+            }
+        }
+
+        return best;
+    }
+
+    void drawTextInBox(
+        const std::string& text,
+        Vector2 topLeft,
+        Vector2 boxSize,
+        float angle,
+        Color color,
+        const std::string& shapeMode
+    )
+    {
+        if (text.empty())
+        {
+            return;
+        }
+
+        const Font font =
+            GetFontDefault();
+
+        const float spacing =
+            1.0f;
+
+        const int fontSize =
+            fitFontSize(
+                text,
+                boxSize.x,
+                boxSize.y
+            );
+
+        const Vector2 measured =
+            MeasureTextEx(
+                font,
+                text.c_str(),
+                static_cast<float>(fontSize),
+                spacing
+            );
+
+        const Vector2 center = {
+            topLeft.x + boxSize.x / 2.0f,
+            topLeft.y + boxSize.y / 2.0f
+        };
+
+        if (isOutlineMode(shapeMode))
+        {
+            DrawTextPro(
+                font,
+                text.c_str(),
+                center,
+                Vector2{ measured.x / 2.0f, measured.y / 2.0f },
+                angle,
+                static_cast<float>(fontSize),
+                spacing,
+                color
+            );
+
+            const int innerFontSize =
+                std::max(
+                    1,
+                    static_cast<int>(fontSize * 0.82f)
+                );
+
+            const Vector2 innerMeasured =
+                MeasureTextEx(
+                    font,
+                    text.c_str(),
+                    static_cast<float>(innerFontSize),
+                    spacing
+                );
+
+            DrawTextPro(
+                font,
+                text.c_str(),
+                center,
+                Vector2{
+                    innerMeasured.x / 2.0f,
+                    innerMeasured.y / 2.0f
+                },
+                angle,
+                static_cast<float>(innerFontSize),
+                spacing,
+                BLACK
+            );
+
+            return;
+        }
+
+        DrawTextPro(
+            font,
+            text.c_str(),
+            center,
+            Vector2{ measured.x / 2.0f, measured.y / 2.0f },
+            angle,
+            static_cast<float>(fontSize),
+            spacing,
+            color
+        );
+    }
 }
 
 RuntimeObject::RuntimeObject(
@@ -37,12 +304,18 @@ RuntimeObject::RuntimeObject(
 {
     this->name = name;
     this->runtimeId = name;
+    this->parentId = "";
+    this->originalParentId = "";
     this->sourcePath = "";
     this->origin = origin;
     this->hasOrigin = false;
     this->position = origin;
+    this->previousPosition = origin;
     this->size = size;
+    this->originalOffset = Vector2{ 0.0f, 0.0f };
     this->color = color;
+    this->shapeMode = "fill";
+    this->radius = 0.0f;
     this->speed = 120.0f;
     this->angle = 0.0f;
     this->originSpeed = speed;
@@ -50,7 +323,13 @@ RuntimeObject::RuntimeObject(
     this->visible = true;
     this->alive = true;
     this->deadCalled = false;
+    this->attached = false;
+    this->layer = 0;
+    this->attachFollowX = false;
+    this->attachFollowY = false;
+    this->attachFollowAngle = false;
     this->shapeType = "block";
+    this->textContent = "";
     this->rotationSpeed = 0.0f;
     this->acceleration = 0.0f;
     this->maxSpeed = 0.0f;
@@ -59,6 +338,7 @@ RuntimeObject::RuntimeObject(
     this->boundsMode = "none";
     this->boundsOverflow = false;
     this->collisionType = "none";
+    this->collisionActive = false;
     this->collisionRadius = 0.0f;
 }
 
@@ -164,160 +444,312 @@ void RuntimeObject::draw(
     }
 }
 
-void RuntimeObject::drawAt(Vector2 drawPosition, int scale) const
-{
-
-    if (shapeType == "triangle")
+    void RuntimeObject::drawAt(
+        Vector2 drawPosition,
+        int scale
+    ) const
     {
-        const float x = drawPosition.x * scale;
-        const float y = drawPosition.y * scale;
+        const float x =
+            drawPosition.x * scale;
 
-        const float width = size.x * scale;
-        const float height = size.y * scale;
+        const float y =
+            drawPosition.y * scale;
 
-        Vector2 center = { x, y };
-
-        Vector2 top = {
-            x,
-            y - height / 2.0f
-        };
-
-        Vector2 left = {
-            x - width / 2.0f,
-            y + height / 2.0f
-        };
-
-        Vector2 right = {
-            x + width / 2.0f,
-            y + height / 2.0f
-        };
-
-        top = rotatePoint(top, center, angle);
-        left = rotatePoint(left, center, angle);
-        right = rotatePoint(right, center, angle);
-
-        DrawLineV(top, left, color);
-        DrawLineV(left, right, color);
-        DrawLineV(right, top, color);
-    }
-    else if (shapeType == "rectangle")
-    {
-        const float x = drawPosition.x * scale;
-        const float y = drawPosition.y * scale;
-
-        const float width = size.x * scale;
-        const float height = size.y * scale;
-
-        Rectangle rect = {
-            x,
-            y,
-            width,
-            height
-        };
-
-        Vector2 origin = {
-            width / 2.0f,
-            height / 2.0f
-        };
-
-        DrawRectanglePro(
-            rect,
-            origin,
-            angle,
-            color
-        );
-    }
-    else if (shapeType == "polygon")
-    {
-        if (points.size() < 2)
+        if (shapeType == "triangle")
         {
-            return;
-        }
+            const float width =
+                size.x * scale;
 
-        const Vector2 center = {
-            drawPosition.x * scale,
-            drawPosition.y * scale
-        };
+            const float height =
+                size.y * scale;
 
-        for (size_t i = 0; i < points.size(); ++i)
-        {
-            const Vector2 currentLocal = points[i];
-            const Vector2 nextLocal = points[(i + 1) % points.size()];
-
-            Vector2 current = {
-                center.x + currentLocal.x * scale,
-                center.y + currentLocal.y * scale
+            const Vector2 center = {
+                x,
+                y
             };
 
-            Vector2 next = {
-                center.x + nextLocal.x * scale,
-                center.y + nextLocal.y * scale
+            Vector2 top = {
+                x,
+                y - height / 2.0f
             };
 
-            current =
+            Vector2 left = {
+                x - width / 2.0f,
+                y + height / 2.0f
+            };
+
+            Vector2 right = {
+                x + width / 2.0f,
+                y + height / 2.0f
+            };
+
+            top =
                 rotatePoint(
-                    current,
+                    top,
                     center,
                     angle
                 );
 
-            next =
+            left =
                 rotatePoint(
-                    next,
+                    left,
                     center,
+                    angle
+                );
+
+            right =
+                rotatePoint(
+                    right,
+                    center,
+                    angle
+                );
+
+            if (isOutlineMode(shapeMode))
+            {
+                DrawLineV(top, left, color);
+                DrawLineV(left, right, color);
+                DrawLineV(right, top, color);
+            }
+            else
+            {
+                DrawTriangle(
+                    top,
+                    left,
+                    right,
+                    color
+                );
+            }
+
+            return;
+        }
+
+        if (shapeType == "rectangle")
+        {
+            const float width =
+                size.x;
+
+            const float height =
+                size.y;
+
+            const Vector2 center = {
+                x,
+                y
+            };
+
+            const std::vector<Vector2> localPoints =
+                buildRectanglePoints(
+                    width,
+                    height
+                );
+
+            const std::vector<Vector2> transformedPoints =
+                transformPoints(
+                    localPoints,
+                    center,
+                    scale,
+                    angle
+                );
+
+            drawPolygonPoints(
+                transformedPoints,
+                shapeMode,
+                color,
+                scale
+            );
+
+            return;
+        }
+
+        if (shapeType == "circle")
+        {
+            float drawRadius =
+                radius;
+
+            if (drawRadius <= 0.0f)
+            {
+                drawRadius =
+                    std::max(
+                        size.x,
+                        size.y
+                    ) / 2.0f;
+            }
+
+            drawRadius *= scale;
+
+            if (isOutlineMode(shapeMode))
+            {
+                DrawCircleLines(
+                    static_cast<int>(x),
+                    static_cast<int>(y),
+                    drawRadius,
+                    color
+                );
+            }
+            else
+            {
+                DrawCircle(
+                    static_cast<int>(x),
+                    static_cast<int>(y),
+                    drawRadius,
+                    color
+                );
+            }
+
+            return;
+        }
+
+        if (shapeType == "polygon")
+        {
+            if (points.size() < 2)
+            {
+                return;
+            }
+
+            const Vector2 center = {
+                x,
+                y
+            };
+
+            std::vector<Vector2> transformedPoints;
+
+            transformedPoints.reserve(
+                points.size()
+            );
+
+            for (const auto& localPoint : points)
+            {
+                transformedPoints.push_back(
+                    toScreenPoint(
+                        center,
+                        localPoint,
+                        scale,
+                        angle
+                    )
+                );
+            }
+
+            if (!isOutlineMode(shapeMode) && transformedPoints.size() >= 3)
+            {
+                for (size_t i = 1; i + 1 < transformedPoints.size(); ++i)
+                {
+                    DrawTriangle(
+                        transformedPoints[0],
+                        transformedPoints[i + 1],
+                        transformedPoints[i],
+                        color
+                    );
+                }
+            }
+            else
+            {
+                for (size_t i = 0; i < transformedPoints.size(); ++i)
+                {
+                    const Vector2 current =
+                        transformedPoints[i];
+
+                    const Vector2 next =
+                        transformedPoints[
+                            (i + 1) % transformedPoints.size()
+                        ];
+
+                    DrawLineEx(
+                        current,
+                        next,
+                        1.0f * scale,
+                        color
+                    );
+                }
+            }
+
+            return;
+        }
+
+        if (shapeType == "line")
+        {
+            const float thickness =
+                size.x * scale;
+
+            const float length =
+                size.y * scale;
+
+            Vector2 start = {
+                x,
+                y - length / 2.0f
+            };
+
+            Vector2 end = {
+                x,
+                y + length / 2.0f
+            };
+
+            start =
+                rotatePoint(
+                    start,
+                    Vector2{ x, y },
+                    angle
+                );
+
+            end =
+                rotatePoint(
+                    end,
+                    Vector2{ x, y },
                     angle
                 );
 
             DrawLineEx(
-                current,
-                next,
-                1.0f * scale,
+                start,
+                end,
+                thickness,
+                color
+            );
+
+            return;
+        }
+
+        if (shapeType == "text")
+        {
+            drawTextInBox(
+                textContent,
+                Vector2{ x, y },
+                Vector2{
+                    size.x * scale,
+                    size.y * scale
+                },
+                angle,
+                color,
+                shapeMode
+            );
+
+            return;
+        }
+
+        const float width =
+            size.x * scale;
+
+        const float height =
+            size.y * scale;
+
+        if (isOutlineMode(shapeMode))
+        {
+            DrawRectangleLines(
+                static_cast<int>(drawPosition.x * scale),
+                static_cast<int>(drawPosition.y * scale),
+                static_cast<int>(width),
+                static_cast<int>(height),
+                color
+            );
+        }
+        else
+        {
+            DrawRectangle(
+                static_cast<int>(drawPosition.x * scale),
+                static_cast<int>(drawPosition.y * scale),
+                static_cast<int>(width),
+                static_cast<int>(height),
                 color
             );
         }
     }
-    else if (shapeType == "line")
-    {
-        const float x = drawPosition.x * scale;
-        const float y = drawPosition.y * scale;
-
-        const float thickness = size.x * scale;
-        const float length = size.y * scale;
-
-        const float radians =
-            angle * DEG2RAD;
-
-        Vector2 start = {
-            x,
-            y - length / 2.0f
-        };
-
-        Vector2 end = {
-            x,
-            y + length / 2.0f
-        };
-
-        start = rotatePoint(start, Vector2{ x, y }, angle);
-        end = rotatePoint(end, Vector2{ x, y }, angle);
-
-        DrawLineEx(
-            start,
-            end,
-            thickness,
-            color
-        );
-    }
-    else
-    {
-        DrawRectangle(
-            static_cast<int>(position.x * scale),
-            static_cast<int>(position.y * scale),
-            static_cast<int>(size.x * scale),
-            static_cast<int>(size.y * scale),
-            color
-        );
-    } 
-}
 
 void RuntimeObject::drawCollision(float scale) const
 {

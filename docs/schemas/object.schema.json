@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "object.schema.json",
+  "title": "FLX Object",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+
+    "like": {
+      "type": "string"
+    },
+
+    "spawn": {
+      "type": "string",
+      "enum": [ "auto", "manual" ],
+      "default": "auto"
+    },
+
+    "creation": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "creation.schema.json" }
+      ]
+    },
+
+    "offset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "default": 0 },
+        "y": { "type": "number", "default": 0 }
+      }
+    },
+
+    "visible": {
+      "type": "boolean"
+    },
+
+    "attach": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "boolean"
+        },
+        "born": {
+          "type": "boolean"
+        },
+        "x": {
+          "type": "boolean"
+        },
+        "y": {
+          "type": "boolean"
+        },
+        "angle": {
+          "type": "boolean"
+        }
+      }
+    },
+
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+
+    "shape": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "shape.schema.json" }
+      ]
+    },
+
+    "motion": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "motion.schema.json" }
+      ]
+    },
+
+    "bounds": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "bounds.schema.json" }
+      ]
+    },
+
+    "group": {
+      "type": "string"
+    },
+
+    "collision": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "collision.schema.json" }
+      ]
+    },
+
+    "behavior": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "behavior.schema.json" }
+      ]
+    },
+
+    "states": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "states.schema.json" }
+      ]
+    },
+
+    "sounds": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "sound.schema.json" }
+        ]
+      }
+    },
+
+    "children": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "object.schema.json" }
+        ]
+      }
+    }
+  },
+
+  "not": {
+    "anyOf": [
+      { "required": [ "size" ] },
+      { "required": [ "color" ] },
+      { "required": [ "layer" ] },
+      { "required": [ "speed" ] },
+      { "required": [ "angle" ] }
+    ]
+  }
+}

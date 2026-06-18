@@ -1,33 +1,28 @@
 {
-  "$schema": "../../../tools/schemas/node.schema.json",
-  "name": "Level",
-
-  "children": [
-    {
-      "name": "DeepSpaceLeft",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "behavior": {
+    "scripts": [
+      "ui"
+    ]
+  },
+  "children": {
+    "DeepSpaceLeft": {
       "like": "asteroid/deep_space",
       "origin": {
         "x": 20,
         "y": 20
       }
     },
-    {
-      "name": "DeepSpaceRight",
+    "DeepSpaceRight": {
       "like": "asteroid/deep_space",
       "origin": {
         "x": 620,
         "y": 20
       }
-    }
-  ],
-
-  "spawns": {
+    },
     "ship": {
-      "prefab": "ship/ship"
+      "like": "ship/ship",
+      "spawn": "manual"
     }
-  },
-
-  "behavior": {
-    "scripts": [ "scripts/ui" ]
   }
 }

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "spawn": "manual",
+
+  "states": {
+    "initial": "intro"
+  },
+
+    "behavior": {
+      "scripts": [ "gameover" ]
+    }
+  }

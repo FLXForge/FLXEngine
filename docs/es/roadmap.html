@@ -152,16 +152,16 @@
                     <code>probability(chance, base)</code>.
                 </li>
 
-                <li>Spawns declarativos definidos directamente en JSON.</li>
+                <li>Hijos manuales declarados directamente en JSON.</li>
 
-                <li>Prefabs cargados y cacheados sin instanciación inmediata.</li>
+                <li>Definiciones reutilizables cargadas sin instanciación inmediata.</li>
 
                 <li>
                     Instanciación runtime mediante
                     <code>spawn(object, "laser")</code>.
                 </li>
 
-                <li>Creación dinámica de objetos desde prefabs.</li>
+                <li>Creación dinámica de objetos desde hijos manuales.</li>
 
                 <li>Spawn queue segura mediante <code>pendingObjects</code> y <code>flushSpawnQueue()</code>.</li>
 
@@ -169,13 +169,12 @@
 
                 <li>Offsets locales rotados según el ángulo del objeto.</li>
 
-                <li>Carga y caché de scripts de prefab mediante <code>ScriptEngine</code>.</li>
+                <li>Carga y caché de scripts mediante <code>ScriptEngine</code>.</li>
 
                 <li>Sistema de disparo funcional desde la nave.</li>
 
                 <li>
                     Lifecycle completo:
-                    <code>start()</code>,
                     <code>born()</code>,
                     <code>action()</code>,
                     <code>motion()</code>,
@@ -209,7 +208,7 @@
 
                 <li>
                     Reutilización de configuraciones mediante
-                    prefabs y definiciones derivadas.
+                    definiciones reutilizables y derivadas.
                 </li>
 
                 <li>
@@ -291,6 +290,17 @@
                 Tercer ejemplo principal del runtime.
             </p>
 
+            <p>
+                Actualmente utilizado para validar:
+            </p>
+
+            <ul>
+                <li>
+                    Colisiones activables y filtradas por grupo mediante 
+                    <code>collision.active</code> y <code>collision.with</code>.
+                </li>
+            </ul>
+
             <h3>Actualmente en desarrollo</h3>
 
             <p>
@@ -349,12 +359,6 @@
                 </li>
 
                 <li>
-                    Implementar un ámbito global persistente
-                    para puntuación, vidas, estado de partida
-                    y datos compartidos del runtime.
-                </li>
-
-                <li>
                     Definir contextos <code>game</code>/<code>level</code>
                     y persistencia entre niveles.
                 </li>
@@ -379,11 +383,6 @@
                 </li>
 
                 <li>
-                    Añadir avisos por nombres duplicados
-                    en objetos y prefabs.
-                </li>
-
-                <li>
                     Definir una identidad única de runtime
                     (<code>runtimeId</code>)
                     para cada instancia.
@@ -400,20 +399,21 @@
 
             <ul>
                 <li>
-                    Definir callbacks de runtime para scripts de juego.
+                    Evaluar un ciclo dedicado para scripts de programa a nivel de juego.
                 </li>
 
                 <li>
                     Evaluar y formalizar:
                     <code>start()</code>,
-                    <code>update()</code>
+                    <code>update()</code>,
+                    <code>end()</code>
                     y
                     <code>draw()</code>.
                 </li>
 
                 <li>
-                    Ejecutar <code>draw()</code>
-                    para scripts de juego.
+                    Definir si los scripts de programa se declaran en el manifiesto
+                    <code>.flx</code> o mediante un futuro contrato runtime del root.
                 </li>
 
             </ul>
@@ -435,7 +435,7 @@
                 <li>
                     Centralizar completamente la normalización de rutas
                     para evitar lógica duplicada entre recursos,
-                    prefabs y scripts.
+                    definiciones de objeto y scripts.
                 </li>
 
                 <li>
@@ -451,9 +451,28 @@
                 </li>
 
                 <li>
-                    Añadir opciones de depuración mediante JSON
-                    o mediante el fichero <code>.flx</code>.
-                    Actualmente son flags internos del motor.
+                    Evaluar nuevas opciones de manifiesto <code>debug.*</code>:
+                    <code>debug.bounds</code>,
+                    <code>debug.origins</code>,
+                    <code>debug.lifecycle</code>,
+                    <code>debug.scripts</code>,
+                    <code>debug.fps</code>
+                    y <code>debug.metrics</code>.
+                </li>
+
+            </ul>
+
+            <h3>Ayudas graficas y audio</h3>
+
+            <ul>
+                <li>
+                    Ampliar <code>fade_on()</code> y <code>fade_off()</code>
+                    con parametros opcionales de duracion e intensidad.
+                </li>
+
+                <li>
+                    Explorar datos de audio declarativo mas ricos manteniendo
+                    <code>play_sound(object, id)</code> simple.
                 </li>
 
             </ul>
@@ -583,7 +602,7 @@
 
                 <li>
                     Explorar una herramienta visual
-                    para composición JSON y prefabs.
+                    para composición JSON y definiciones reutilizables.
                 </li>
 
             </ul>

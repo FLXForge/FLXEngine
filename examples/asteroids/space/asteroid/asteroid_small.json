@@ -1,40 +1,73 @@
 {
-  "$schema": "../../../../tools/schemas/drawable.schema.json",
-  "name": "SmallAsteroid",
-
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "shape": {
     "type": "polygon",
-    "color": "WHITE",
+    "color": "white",
+    "mode": "outline",
     "points": [
-      { "x": 0, "y": -8 },
-      { "x": 7, "y": -5 },
-      { "x": 8, "y": 2 },
-      { "x": 4, "y": 8 },
-      { "x": -5, "y": 6 },
-      { "x": -8, "y": -1 },
-      { "x": -4, "y": -7 }
+      {
+        "x": 0,
+        "y": -8
+      },
+      {
+        "x": 7,
+        "y": -5
+      },
+      {
+        "x": 8,
+        "y": 2
+      },
+      {
+        "x": 4,
+        "y": 8
+      },
+      {
+        "x": -5,
+        "y": 6
+      },
+      {
+        "x": -8,
+        "y": -1
+      },
+      {
+        "x": -4,
+        "y": -7
+      }
     ]
   },
-
   "collision": {
     "type": "circle",
+    "active": true,
+    "with": [
+      "ship",
+      "asteroid",
+      "laser"
+    ],
     "radius": 8
   },
-
   "bounds": {
     "mode": "wrap",
     "overflow": false
   },
-
-  "group": "asteroid",
-
-  "behavior": {
-    "scripts": [ "scripts/asteroid_small" ]
+  "sounds": {
+    "pff": {
+      "wave": "noise",
+      "frequency": 600,
+      "duration": 0.08,
+      "volume": 0.3,
+      "slide": -400
+    }
   },
-
-  "spawns": {
+  "group": "asteroid",
+  "behavior": {
+    "scripts": [
+      "asteroid_small"
+    ]
+  },
+  "children": {
     "fragment": {
-      "prefab": "asteroid_fragment"
+      "like": "asteroid_fragment",
+      "spawn": "manual"
     }
   }
 }

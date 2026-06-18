@@ -1,0 +1,31 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "shape": {
+    "type": "text",
+    "layer": 10,
+    "content": "G",
+    "color": "blue",
+    "mode": "fill",
+    "size": {
+      "width": 10,
+      "height": 10
+    }
+  },
+
+  "spawn": "manual",
+
+  "motion": {
+    "speed": 30
+  },
+
+  "group": "powerup",
+
+  "collision": {
+    "type": "box"
+  },
+
+  "behavior": {
+    "scripts": [ "powerup" ]
+  }
+}

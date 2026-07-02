@@ -6,6 +6,7 @@
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
 
+#include <raylib.h>
 #include <string>
 
 class Engine
@@ -25,7 +26,9 @@ private:
 
     void loadProject(const std::string& flxPath);
     void initWindow();
+    void initVideoOutput();
     void configureScriptEngine();
+    void shutdownVideoOutput();
     float safeFrameDelta() const;
 private:
     ScriptEngine scriptEngine;
@@ -33,4 +36,7 @@ private:
     AudioSystem audioSystem;
     FadeSystem fadeSystem;
     FlxContext context;
+    RenderTexture2D renderTarget = {};
+    bool renderTargetLoaded = false;
+    Color backgroundColor = BLACK;
 };

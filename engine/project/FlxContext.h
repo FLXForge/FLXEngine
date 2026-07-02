@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../machine/MachineDefinition.h"
+
 #include <string>
 
 struct FlxContext
@@ -12,12 +14,15 @@ struct FlxContext
     std::string rootDirectory;
     std::string projectPath;
     std::string root;
+    std::string machinePath;
 
     std::string screenTitle;
-    int screenWidth = 320;
-    int screenHeight = 180;
-    int screenScale = 3;
+    int screenWidth = 640;
+    int screenHeight = 480;
+    int screenScale = 1;
 
     bool debugCollisions = false;
     bool debugLogs = false;
+
+    MachineDefinition machine;
 };

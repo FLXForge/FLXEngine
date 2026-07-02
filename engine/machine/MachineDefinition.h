@@ -1,0 +1,57 @@
+#pragma once
+
+#include <raylib.h>
+
+#include <string>
+#include <vector>
+
+struct VideoChipDefinition
+{
+    int screenWidth = 640;
+    int screenHeight = 480;
+    std::string clearColor = "black";
+
+    std::vector<Color> colorPalette;
+    bool hasColorPalette = false;
+
+    int colorLevelsRed = 0;
+    int colorLevelsGreen = 0;
+    int colorLevelsBlue = 0;
+    bool hasColorLevels = false;
+
+    std::string colorToneBase = "";
+    int colorToneLevels = 0;
+    bool hasColorTone = false;
+
+    bool colorAlpha = true;
+
+    bool planesEnabled = false;
+    bool objectsSprites = false;
+
+    int outputScale = 1;
+    bool smoothing = false;
+};
+
+struct AudioChipDefinition
+{
+    int voicesMusic = 8;
+    int voicesSound = 16;
+    std::string voicesMode = "shared";
+    std::string voicesOverflow = "replace_oldest";
+};
+
+struct InputChipDefinition
+{
+    int players = 1;
+    std::string direction = "analog";
+    int buttons = 8;
+    bool pointer = true;
+    bool text = true;
+};
+
+struct MachineDefinition
+{
+    VideoChipDefinition video;
+    AudioChipDefinition audio;
+    InputChipDefinition input;
+};

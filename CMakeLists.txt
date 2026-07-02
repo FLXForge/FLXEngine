@@ -33,6 +33,20 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(
+    yaml_cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
+
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+FetchContent_MakeAvailable(yaml_cpp)
+
+FetchContent_Declare(
     quickjs
     GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
     GIT_TAG v0.10.1
@@ -125,6 +139,11 @@ add_executable(FlxEngine
     engine/tools/TextTools.cpp
     engine/graphics/FadeSystem.h
     engine/graphics/FadeSystem.cpp
+    engine/machine/MachineDefinition.h
+    engine/machine/MachineLoader.h
+    engine/machine/MachineLoader.cpp
+    engine/machine/VideoColorProcessor.h
+    engine/machine/VideoColorProcessor.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
@@ -166,5 +185,6 @@ target_link_libraries(
     PRIVATE
     raylib
     nlohmann_json::nlohmann_json
+    yaml-cpp::yaml-cpp
     qjs
 )

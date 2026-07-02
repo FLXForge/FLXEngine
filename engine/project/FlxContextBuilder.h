@@ -10,6 +10,10 @@ public:
     static FlxContext build(const std::string& path);
 
 private:
+    static void loadMachine(FlxContext& context);
+    static void applyMachineScreenDefaults(FlxContext& context);
+    static void logResolvedContext(const FlxContext& context);
+
     static void assign(
         FlxContext& context,
         const std::string& key,

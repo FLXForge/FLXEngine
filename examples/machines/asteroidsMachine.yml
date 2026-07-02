@@ -1,0 +1,9 @@
+﻿machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 320
+    output:
+      scale: 3
+      smoothing: false

@@ -123,7 +123,15 @@ Every FLX project starts with a single entry point:
 MyGame.flx
 ```
 
-This file defines project metadata, runtime configuration and the root object.
+This file defines project metadata, runtime configuration, the root object and,
+optionally, the Machine YAML used by the project.
+
+```text
+machine=machines/standard.yml
+```
+
+If no Machine is declared, FLX uses an internal default Machine compatible with
+the current runtime behavior.
 
 ---
 

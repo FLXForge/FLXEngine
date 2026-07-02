@@ -60,9 +60,7 @@ engine=0.2.0
 path=asteroids
 root=space
 title=Asteroids
-screen.width=640
-screen.height=320
-screen.scale=3
+machine=machines/standard.yml
 debug.collisions=false
 debug.logs=false
 notes=FLX example with spawn and basic UI
@@ -77,13 +75,37 @@ notes=FLX example with spawn and basic UI
                 <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>root</code>: objeto JSON raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z cargado por el runtime. <i>[ Obligatorio ]</i></li>
                 <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
-                <li><code>screen.width</code>: ancho interno de referencia. <i>[ Opcional ]</i></li>
-                <li><code>screen.height</code>: alto interno de referencia. <i>[ Opcional ]</i></li>
-                <li><code>screen.scale</code>: factor de escala aplicado al renderizado. <i>[ Opcional ]</i></li>
+                <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
                 <li><code>debug.collisions</code>: activa el dibujo de depuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiones. <i>[ Opcional ]</i></li>
                 <li><code>debug.logs</code>: activa los logs internos de depuración. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <p>
+                Una Machine describe capacidades disponibles mediante chips como
+                video, audio e input. El tamano de pantalla, el color de fondo
+                y la escala de salida vienen ahora del chip de video, no del
+                manifiesto <code>.flx</code>.
+            </p>
+
+            <p>
+                En <code>color.levels</code>, cada canal RGB acepta valores desde
+                <code>0</code>. El valor <code>0</code> desactiva ese canal.
+                En <code>color.tone.base</code>, los colores hexadecimales pueden
+                escribirse con comillas o sin comillas, por ejemplo
+                <code>base: "#9BBC0F"</code> y <code>base: #9BBC0F</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">machines/standard.yml</div>
+<pre><code>machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 480
+</code></pre>
+            </div>
 
             <h2 id="root">Objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z</h2>
 

@@ -1,5 +1,6 @@
 #include "FlxContextBuilder.h"
 #include "../debug/Logger.h"
+#include "../machine/MachineLoader.h"
 
 #include <fstream>
 #include <filesystem>
@@ -50,7 +51,93 @@ FlxContext FlxContextBuilder::build(const std::string& path)
         context.screenTitle = context.name;
     }
 
+    Logger::setDebugEnabled(context.debugLogs);
+
+    loadMachine(context);
+    applyMachineScreenDefaults(context);
+    logResolvedContext(context);
+
     return context;
+}
+
+void FlxContextBuilder::loadMachine(FlxContext& context)
+{
+    if (context.machinePath.empty())
+    {
+        context.machine =
+            MachineLoader::defaultMachine();
+
+        Logger::debug(
+            "machine",
+            "Using internal default machine"
+        );
+
+        return;
+    }
+
+    context.machine =
+        MachineLoader::load(context.machinePath);
+}
+
+void FlxContextBuilder::applyMachineScreenDefaults(FlxContext& context)
+{
+    context.screenWidth =
+        context.machine.video.screenWidth;
+
+    context.screenHeight =
+        context.machine.video.screenHeight;
+
+    context.screenScale =
+        context.machine.video.outputScale;
+}
+
+void FlxContextBuilder::logResolvedContext(const FlxContext& context)
+{
+    const std::string machineSource =
+        context.machinePath.empty()
+        ? "internal default"
+        : context.machinePath;
+
+    Logger::debug(
+        "machine",
+        "Machine: " + machineSource
+    );
+
+    Logger::debug(
+        "machine",
+        "Video screen: " +
+        std::to_string(context.machine.video.screenWidth) +
+        "x" +
+        std::to_string(context.machine.video.screenHeight) +
+        " scale " +
+        std::to_string(context.machine.video.outputScale)
+    );
+
+    Logger::debug(
+        "machine",
+        "Audio voices: music " +
+        std::to_string(context.machine.audio.voicesMusic) +
+        ", sound " +
+        std::to_string(context.machine.audio.voicesSound)
+    );
+
+    Logger::debug(
+        "machine",
+        "Input capabilities: " +
+        context.machine.input.direction +
+        ", buttons " +
+        std::to_string(context.machine.input.buttons)
+    );
+
+    Logger::debug(
+        "machine",
+        "Resolved screen: " +
+        std::to_string(context.screenWidth) +
+        "x" +
+        std::to_string(context.screenHeight) +
+        " scale " +
+        std::to_string(context.screenScale)
+    );
 }
 
 void FlxContextBuilder::assign(
@@ -80,21 +167,14 @@ void FlxContextBuilder::assign(
     {
         context.root = value;
     }
+    else if (key == "machine")
+    {
+        context.machinePath =
+            joinPath(context.rootDirectory, value);
+    }
     else if (key == "title")
     {
         context.screenTitle = value;
-    }
-    else if (key == "screen.width")
-    {
-        context.screenWidth = std::stoi(value);
-    }
-    else if (key == "screen.height")
-    {
-        context.screenHeight = std::stoi(value);
-    }
-    else if (key == "screen.scale")
-    {
-        context.screenScale = std::stoi(value);
     }
     else if (key == "debug.collisions")
     {

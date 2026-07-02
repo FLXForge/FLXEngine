@@ -1,0 +1,6 @@
+machine:
+  title: pong machine
+
+  video: chips/video/shape.yml
+  audio: chips/audio/basic.yml
+  input: chips/input/pong.yml

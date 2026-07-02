@@ -1,12 +1,17 @@
+# Game data
+title=Asteroids
 name=Asteroids
 version=1.0
 engine=0.2.0
+
+# Configuration
 path=asteroids
 root=space
-title=Asteroids
-screen.width=640
-screen.height=320
-screen.scale=3
+machine=machines/asteroidsMachine.yml
+
+# Debug
 debug.collisions=false
 debug.logs=false
+
+# Notes
 notes=FLX example with spawn and basic UI

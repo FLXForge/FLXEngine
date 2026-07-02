@@ -56,9 +56,7 @@ engine=0.2.0
 path=asteroids
 root=space
 title=Asteroids
-screen.width=640
-screen.height=320
-screen.scale=3
+machine=machines/standard.yml
 </code></pre>
 
 
@@ -68,6 +66,8 @@ screen.scale=3
                 From this file,
                 the runtime loads the root object,
                 resources and required configuration.
+                If the file declares <code>machine</code>, FLX also loads the
+                referenced YAML Machine and its chips.
             </p>
 
             <hr />

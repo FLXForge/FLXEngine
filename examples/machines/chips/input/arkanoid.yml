@@ -1,0 +1,8 @@
+input:
+  players: 1
+
+  capabilities:
+    direction: 2way
+    buttons: 1
+    pointer: false
+    text: false

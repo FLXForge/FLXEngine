@@ -1,17 +1,15 @@
 #Game data
+title=Arkanoid
 name=Arkanoid
 version=1.0
 engine=0.2.0
+
+# Configuration
 path=arkanoid
 root=game
-title=Arkanoid
+machine=machines/arkanoidMachine.yml
 
-#Screen configuration
-screen.width=640
-screen.height=320
-screen.scale=3
-
-#Debug configuration
+#Debug
 debug.collisions=false
 debug.logs=false
 

@@ -59,9 +59,7 @@ engine=0.2.0
 path=asteroids
 root=space
 title=Asteroids
-screen.width=640
-screen.height=320
-screen.scale=3
+machine=machines/standard.yml
 debug.collisions=false
 debug.logs=false
 notes=FLX example with spawn and basic UI
@@ -78,13 +76,55 @@ notes=FLX example with spawn and basic UI
                 <li><code>path</code>: project content directory. <i>[ Optional ]</i></li>
                 <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
-                <li><code>screen.width</code>: internal reference width. <i>[ Optional ]</i></li>
-                <li><code>screen.height</code>: internal reference height. <i>[ Optional ]</i></li>
-                <li><code>screen.scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
+                <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
                 <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
                 <li><code>debug.logs</code>: enables internal debug logs. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
+
+            <p>
+                A Machine describes available capabilities through chips such as
+                video, audio and input. Screen size, background color and output
+                scale now come from the video chip, not from the <code>.flx</code>
+                manifest.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">machines/standard.yml</div>
+<pre><code>machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 480
+</code></pre>
+            </div>
+
+            <p>
+                The video chip currently supports:
+                <code>screen.width</code>, <code>screen.height</code>,
+                <code>screen.color</code>, <code>color.palette</code>,
+                <code>color.levels.red</code>,
+                <code>color.levels.green</code>,
+                <code>color.levels.blue</code>,
+                <code>color.tone.base</code>,
+                <code>color.tone.levels</code>,
+                <code>color.alpha</code>, <code>planes.enabled</code>,
+                <code>objects.sprites</code>, <code>output.scale</code> and
+                <code>output.smoothing</code>.
+                Color models are applied when object definitions are loaded;
+                they are not full-screen filters.
+                Alpha, planes and sprite restrictions are declared but not
+                enforced yet.
+            </p>
+
+            <p>
+                In <code>color.levels</code>, each RGB channel accepts values
+                from <code>0</code> upward. A value of <code>0</code> disables
+                that channel. In <code>color.tone.base</code>, hexadecimal
+                colors may be written quoted or unquoted, for example
+                <code>base: "#9BBC0F"</code> and <code>base: #9BBC0F</code>.
+            </p>
 
             <h2 id="root">Root Object</h2>
 

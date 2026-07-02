@@ -1,7 +1,9 @@
 #include "Engine.h"
 #include "../debug/Logger.h"
 #include "../loading/JsonLoader.h"
+#include "../machine/VideoColorProcessor.h"
 #include "../project/FlxContextBuilder.h"
+#include "../tools/ColorParser.h"
 
 #include <raylib.h>
 #include <algorithm>
@@ -12,6 +14,26 @@ namespace
 {
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
+
+    void projectDefinitionColors(
+        ObjectDefinition& definition,
+        const VideoChipDefinition& video
+    )
+    {
+        definition.color =
+            VideoColorProcessor::project(
+                definition.color,
+                video
+            );
+
+        for (auto& child : definition.children)
+        {
+            projectDefinitionColors(
+                child.second,
+                video
+            );
+        }
+    }
 }
 
 void Engine::run(const std::string& flxPath)
@@ -61,12 +83,18 @@ void Engine::loadProject(const std::string& flxPath)
     );
 
     initWindow();
+    initVideoOutput();
     audioSystem.init();
-    scriptEngine.setScreenScale(context.screenScale);
+    scriptEngine.setScreenScale(1);
     configureScriptEngine();
 
-    const ObjectDefinition rootDefinition =
+    ObjectDefinition rootDefinition =
         JsonLoader::loadObjectDefinition(rootPath);
+
+    projectDefinitionColors(
+        rootDefinition,
+        context.machine.video
+    );
 
     world.load(rootDefinition, scriptEngine);
 }
@@ -78,10 +106,58 @@ void Engine::initWindow()
         ? "Flx"
         : context.screenTitle;
 
+    Logger::info(
+        "graphics",
+        "Window size: " +
+        std::to_string(context.screenWidth * context.screenScale) +
+        "x" +
+        std::to_string(context.screenHeight * context.screenScale)
+    );
+
     InitWindow(
         context.screenWidth * context.screenScale,
         context.screenHeight * context.screenScale,
         title.c_str()
+    );
+}
+
+void Engine::initVideoOutput()
+{
+    backgroundColor =
+        ColorParser::parse(
+            context.machine.video.clearColor,
+            BLACK
+        );
+
+    backgroundColor =
+        VideoColorProcessor::project(
+            backgroundColor,
+            context.machine.video
+        );
+
+    Logger::info(
+        "graphics",
+        "Logical screen: " +
+        std::to_string(context.screenWidth) +
+        "x" +
+        std::to_string(context.screenHeight) +
+        " scale " +
+        std::to_string(context.screenScale)
+    );
+
+    renderTarget =
+        LoadRenderTexture(
+            context.screenWidth,
+            context.screenHeight
+        );
+
+    renderTargetLoaded = true;
+
+    SetTextureFilter(
+        renderTarget.texture,
+        context.machine.video.smoothing
+        ? TEXTURE_FILTER_BILINEAR
+        : TEXTURE_FILTER_POINT
     );
 }
 
@@ -161,13 +237,13 @@ void Engine::update()
 
 void Engine::draw()
 {
-    BeginDrawing();
+    BeginTextureMode(renderTarget);
 
-    ClearBackground(BLACK);
+    ClearBackground(backgroundColor);
 
     world.draw(
         scriptEngine,
-        context.screenScale,
+        1,
         static_cast<float>(context.screenWidth),
         static_cast<float>(context.screenHeight),
         context.debugCollisions
@@ -176,7 +252,32 @@ void Engine::draw()
     fadeSystem.draw(
         context.screenWidth,
         context.screenHeight,
-        context.screenScale
+        1
+    );
+
+    EndTextureMode();
+
+    BeginDrawing();
+
+    ClearBackground(backgroundColor);
+
+    DrawTexturePro(
+        renderTarget.texture,
+        Rectangle{
+            0.0f,
+            0.0f,
+            static_cast<float>(renderTarget.texture.width),
+            static_cast<float>(-renderTarget.texture.height)
+        },
+        Rectangle{
+            0.0f,
+            0.0f,
+            static_cast<float>(context.screenWidth * context.screenScale),
+            static_cast<float>(context.screenHeight * context.screenScale)
+        },
+        Vector2{ 0.0f, 0.0f },
+        0.0f,
+        WHITE
     );
 
     EndDrawing();
@@ -184,8 +285,20 @@ void Engine::draw()
 
 void Engine::shutdown()
 {
+    shutdownVideoOutput();
     audioSystem.shutdown();
     CloseWindow();
+}
+
+void Engine::shutdownVideoOutput()
+{
+    if (!renderTargetLoaded)
+    {
+        return;
+    }
+
+    UnloadRenderTexture(renderTarget);
+    renderTargetLoaded = false;
 }
 
 RuntimeObject* Engine::find(const std::string& name)

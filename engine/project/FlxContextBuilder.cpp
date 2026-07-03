@@ -118,7 +118,33 @@ void FlxContextBuilder::logResolvedContext(const FlxContext& context)
         "Audio voices: music " +
         std::to_string(context.machine.audio.voicesMusic) +
         ", sound " +
-        std::to_string(context.machine.audio.voicesSound)
+        std::to_string(context.machine.audio.voicesSound) +
+        ", mode " +
+        context.machine.audio.voicesMode +
+        ", overflow " +
+        context.machine.audio.voicesOverflow
+    );
+
+    Logger::debug(
+        "machine",
+        "Audio synthesis: " +
+        context.machine.audio.synthesisModel +
+        ", " +
+        context.machine.audio.synthesisTexture +
+        ", " +
+        context.machine.audio.synthesisMovement +
+        ", noise " +
+        context.machine.audio.synthesisNoise
+    );
+
+    Logger::debug(
+        "machine",
+        "Audio fidelity: " +
+        context.machine.audio.fidelityResolution +
+        ", " +
+        context.machine.audio.fidelityDynamics +
+        ", " +
+        context.machine.audio.fidelitySpace
     );
 
     Logger::debug(

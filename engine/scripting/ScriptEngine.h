@@ -3,8 +3,10 @@
 #include "../runtime/RuntimeObject.h"
 #include "../runtime/ObjectDefinition.h"
 #include "../runtime/RayCastResult.h"
+#include "../machine/MachineDefinition.h"
 #include "ScriptModule.h"
 
+#include <raylib.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
@@ -99,6 +101,12 @@ public:
 
     void setScreenScale(int scale);
     int getScreenScale() const;
+    void setVideoChip(const VideoChipDefinition* videoChip);
+    Color parseColor(
+        const std::string& color,
+        Color fallback
+    ) const;
+    Color projectColor(Color color) const;
     void setFrameDelta(float delta);
     float getFrameDelta() const;
     void setRuntimeFrame(uint64_t frame);
@@ -120,6 +128,14 @@ public:
         RuntimeObject& source,
         const std::string& id
     );
+    void playMusic(
+        RuntimeObject& source,
+        const std::string& id
+    );
+    void stopMusic();
+    void pauseMusic();
+    bool musicActive() const;
+    bool musicPaused() const;
 
 private:
     JSValue createJsObject(RuntimeObject& object);
@@ -136,6 +152,7 @@ private:
     int screenScale = 0;
     float frameDelta = 1.0f / 60.0f;
     uint64_t runtimeFrame = 0;
+    const VideoChipDefinition* videoChip = nullptr;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, double> globalState;

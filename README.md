@@ -88,10 +88,46 @@ Objects can also declare local sounds:
 }
 ```
 
-Scripts can play declared sounds and trigger screen fades:
+Sounds can also use a musical note instead of a raw frequency:
+
+```json
+{
+  "sounds": {
+    "coin": {
+      "wave": "square",
+      "note": "C5",
+      "duration": 0.08,
+      "volume": 0.4
+    }
+  }
+}
+```
+
+Objects can declare generated music:
+
+```json
+{
+  "music": {
+    "theme": {
+      "tempo": 120,
+      "loop": true,
+      "channels": {
+        "lead": {
+          "wave": "square",
+          "volume": 0.35,
+          "notes": ["C4", "E4", "G4", "C5"]
+        }
+      }
+    }
+  }
+}
+```
+
+Scripts can play declared audio and trigger screen fades:
 
 ```js
 play_sound(ship, "beep");
+play_music(game, "theme");
 
 fade_on();
 fade_off("#000000");
@@ -132,6 +168,11 @@ machine=machines/standard.yml
 
 If no Machine is declared, FLX uses an internal default Machine compatible with
 the current runtime behavior.
+
+Machine YAML can define video, audio and input chips. The audio chip describes
+machine sound capabilities such as voice budgets, overflow policy, synthesis
+character, fidelity and external audio resource support. Current runtime support
+applies the sound voice limit and overflow policy to generated sound effects.
 
 ---
 

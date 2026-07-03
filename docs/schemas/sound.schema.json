@@ -27,6 +27,10 @@
       "default": 440
     },
 
+    "note": {
+      "type": "string"
+    },
+
     "duration": {
       "type": "number",
       "default": 0.1

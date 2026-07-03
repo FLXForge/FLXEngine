@@ -56,6 +56,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.collisionWith = definition.collisionWith;
 
     object.scripts = definition.scripts;
+    object.music = definition.music;
     object.sounds = definition.sounds;
     object.children = definition.children;
     object.state = definition.initialState;

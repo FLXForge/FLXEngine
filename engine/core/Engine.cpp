@@ -84,6 +84,7 @@ void Engine::loadProject(const std::string& flxPath)
 
     initWindow();
     initVideoOutput();
+    audioSystem.configure(context.machine.audio);
     audioSystem.init();
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
@@ -163,6 +164,7 @@ void Engine::initVideoOutput()
 
 void Engine::configureScriptEngine()
 {
+    scriptEngine.setVideoChip(&context.machine.video);
     scriptEngine.setFadeSystem(&fadeSystem);
     scriptEngine.setAudioSystem(&audioSystem);
 

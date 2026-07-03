@@ -16,6 +16,8 @@ function born(game) {
     global["inGame"] = 0;
     global["shipDead"] = 0;
 
+    play_music(game, "menu");
+
     for(let i = 0; i < 100; i++){
 
         stars.push({

@@ -44,6 +44,7 @@ function dead(ship) {
     } else {
         global["inGame"] = 0;
         global["lives"] = 0;
+        pause_music();
     }
     spawn(ship, "fragment");
     spawn(ship, "fragment");

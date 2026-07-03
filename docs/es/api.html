@@ -386,6 +386,58 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <p>
                 <code>color</code> es opcional y usa blanco por defecto.
                 Acepta colores con nombre de FLX y valores hexadecimales.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <hr />
+
+            <h2>draw_line(x, y, x1, y1, color)</h2>
+
+            <p>
+                Dibuja una linea inmediata en pantalla usando coordenadas logicas FLX.
+                El motor aplica internamente la escala de salida del chip de video.
+            </p>
+
+            <p>
+                Es una funcion de dibujo de overlay. No crea runtime objects
+                y no colisiona.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">line</div>
+<pre><code>draw_line(10, 10, 40, 10);
+draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> es opcional y usa blanco por defecto.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <hr />
+
+            <h2>draw_rectangle(x, y, width, height, color)</h2>
+
+            <p>
+                Dibuja el contorno de un rectangulo inmediato en pantalla usando
+                coordenadas logicas FLX. El motor aplica internamente la escala
+                de salida del chip de video.
+            </p>
+
+            <p>
+                Es una funcion de dibujo de overlay. No crea runtime objects
+                y no colisiona.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rectangle</div>
+<pre><code>draw_rectangle(8, 8, 40, 20);
+draw_rectangle(60, 8, 30, 30, "green");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> es opcional y usa blanco por defecto.
+                El color final se proyecta mediante el chip de video activo.
             </p>
 
             <hr />
@@ -405,6 +457,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
                 <code>#000</code>
                 y
                 <code>#000000</code>.
+                El color final se proyecta mediante el chip de video activo.
             </p>
 
             <div class="code-card">
@@ -824,6 +877,68 @@ if (probability(1, 1000)) {
                 <li><code>object</code>: objeto que posee la declaracion de sonido.</li>
                 <li><code>id</code>: nombre del sonido declarado en JSON.</li>
             </ul>
+
+            <hr />
+
+            <h2>play_music(object, id)</h2>
+
+            <p>
+                Reproduce musica generada declarada en el bloque
+                <code>music</code>
+                del objeto. Si ya hay otra cancion sonando, se sustituye.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_music</div>
+<pre><code>function born(game) {
+    play_music(game, "theme");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que posee la declaracion de musica.</li>
+                <li><code>id</code>: nombre de la cancion declarada en JSON.</li>
+            </ul>
+
+            <p>
+                La musica usa <code>voices.music</code> del Audio Chip. Los
+                canales sobrantes se ignoran con un warning.
+            </p>
+
+            <hr />
+
+            <h2>stop_music()</h2>
+
+            <p>
+                Detiene la musica generada actual.
+            </p>
+
+            <hr />
+
+            <h2>pause_music()</h2>
+
+            <p>
+                Pausa la musica actual, o la reanuda si ya estaba pausada.
+            </p>
+
+            <hr />
+
+            <h2>music_active()</h2>
+
+            <p>
+                Devuelve <code>true</code> mientras hay musica generada activa.
+            </p>
+
+            <hr />
+
+            <h2>music_paused()</h2>
+
+            <p>
+                Devuelve <code>true</code> cuando la musica actual esta pausada.
+            </p>
 
             <hr />
 

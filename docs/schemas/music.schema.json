@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "music.schema.json",
+  "title": "FLX Music",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "like": {
+      "type": "string"
+    },
+
+    "tempo": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 120
+    },
+
+    "loop": {
+      "type": "boolean",
+      "default": false
+    },
+
+    "channels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "wave": {
+            "type": "string",
+            "enum": [
+              "square",
+              "sine",
+              "triangle",
+              "saw",
+              "noise"
+            ],
+            "default": "square"
+          },
+
+          "volume": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 1
+          },
+
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [ "notes" ]
+      }
+    }
+  },
+
+  "required": [ "channels" ]
+}

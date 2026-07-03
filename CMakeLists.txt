@@ -129,6 +129,9 @@ add_executable(FlxEngine
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
     engine/audio/SoundDefinition.h
+    engine/audio/MusicDefinition.h
+    engine/audio/NoteTools.h
+    engine/audio/NoteTools.cpp
     engine/audio/AudioSystem.h
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h

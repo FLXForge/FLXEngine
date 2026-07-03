@@ -413,6 +413,58 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <p>
                 <code>color</code> is optional and uses white by default.
                 It accepts FLX named colors and hexadecimal color values.
+                The final color is projected through the active video chip.
+            </p>
+
+            <hr />
+
+            <h2>draw_line(x, y, x1, y1, color)</h2>
+
+            <p>
+                Draws one immediate screen-space line using logical FLX coordinates.
+                The engine applies the video chip output scale internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper. It does not create runtime
+                objects and does not collide.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">line</div>
+<pre><code>draw_line(10, 10, 40, 10);
+draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                The final color is projected through the active video chip.
+            </p>
+
+            <hr />
+
+            <h2>draw_rectangle(x, y, width, height, color)</h2>
+
+            <p>
+                Draws one immediate screen-space rectangle outline using logical
+                FLX coordinates. The engine applies the video chip output scale
+                internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper. It does not create runtime
+                objects and does not collide.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rectangle</div>
+<pre><code>draw_rectangle(8, 8, 40, 20);
+draw_rectangle(60, 8, 30, 30, "green");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                The final color is projected through the active video chip.
             </p>
 
             <hr />
@@ -433,6 +485,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
                 and
                 <code>#000000</code>
                 are supported.
+                The final color is projected through the active video chip.
             </p>
 
             <div class="code-card">
@@ -889,6 +942,68 @@ if (probability(1, 1000)) {
                 <li><code>object</code>: object that owns the sound declaration.</li>
                 <li><code>id</code>: name of the sound declared in JSON.</li>
             </ul>
+
+            <hr />
+
+            <h2>play_music(object, id)</h2>
+
+            <p>
+                Plays generated music declared in the object's
+                <code>music</code>
+                block. If another song is playing, it is replaced.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_music</div>
+<pre><code>function born(game) {
+    play_music(game, "theme");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that owns the music declaration.</li>
+                <li><code>id</code>: name of the song declared in JSON.</li>
+            </ul>
+
+            <p>
+                Music uses Audio Chip <code>voices.music</code>. Extra channels
+                beyond that limit are ignored with a warning.
+            </p>
+
+            <hr />
+
+            <h2>stop_music()</h2>
+
+            <p>
+                Stops the current generated music.
+            </p>
+
+            <hr />
+
+            <h2>pause_music()</h2>
+
+            <p>
+                Pauses the current music, or resumes it if it is already paused.
+            </p>
+
+            <hr />
+
+            <h2>music_active()</h2>
+
+            <p>
+                Returns <code>true</code> while generated music is active.
+            </p>
+
+            <hr />
+
+            <h2>music_paused()</h2>
+
+            <p>
+                Returns <code>true</code> when the current music is paused.
+            </p>
 
             <hr />
 

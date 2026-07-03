@@ -1,0 +1,28 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "shape": {
+    "type": "rectangle",
+    "mode": "fill",
+    "color": "red",
+    "size": {
+      "width": 2,
+      "height": 8
+    }
+  },
+
+  "motion": {
+    "speed": 160,
+    "angle": 180
+  },
+
+  "group": "enemy",
+
+  "collision": {
+    "type": "box"
+  },
+
+  "behavior": {
+    "scripts": [ "laser" ]
+  }
+}

@@ -127,6 +127,16 @@
       }
     },
 
+    "music": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "music.schema.json" }
+        ]
+      }
+    },
+
     "children": {
       "type": "object",
       "additionalProperties": {

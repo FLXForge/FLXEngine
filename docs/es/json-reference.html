@@ -96,6 +96,62 @@ notes=FLX example with spawn and basic UI
                 <code>base: "#9BBC0F"</code> y <code>base: #9BBC0F</code>.
             </p>
 
+            <p>
+                El chip de audio define las capacidades sonoras de la Machine.
+                No declara sonidos concretos, canciones, instrumentos ni assets.
+                En esta version, <code>voices.sound</code> limita los efectos
+                generados simultaneos y <code>voices.overflow</code> decide que
+                ocurre cuando no queda una voz de sonido libre.
+                <code>voices.music</code> limita los canales de musica generada.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">audio chip</div>
+<pre><code>audio:
+  voices:
+    music: 3
+    sound: 1
+    mode: reserved
+    overflow: replace_oldest
+
+  synthesis:
+    model: pulse
+    texture: clean
+    movement: simple
+    noise: simple
+
+  fidelity:
+    resolution: low
+    dynamics: limited
+    space: mono
+
+  resources:
+    generated: true
+    samples: false
+    streams: false
+
+  fileAudio:
+    mode: off</code></pre>
+            </div>
+
+            <p>
+                <code>voices.mode</code> acepta <code>shared</code>,
+                <code>preferred</code> y <code>reserved</code>.
+                <code>voices.overflow</code> acepta <code>ignore</code>,
+                <code>replace_oldest</code>, <code>replace_newest</code>,
+                <code>replace_lowest_priority</code> y
+                <code>steal_from_music</code>. Los efectos generados actuales usan
+                la misma prioridad. <code>steal_from_music</code> puede detener la
+                musica generada activa para permitir reproducir un efecto.
+            </p>
+
+            <p>
+                <code>synthesis</code>, <code>fidelity</code>,
+                <code>resources</code> y <code>fileAudio</code> se validan y se
+                guardan en la definicion de Machine. Todavia no cargan librerias
+                externas ni activan reproduccion de WAV, OGG o MP3.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">machines/standard.yml</div>
 <pre><code>machine:
@@ -274,6 +330,15 @@ notes=FLX example with spawn and basic UI
             </div>
 
             <p>
+                Un sonido puede declarar <code>note</code> en lugar de
+                <code>frequency</code>. Las notas usan notacion musical como
+                <code>C4</code>, <code>F#4</code> o <code>Bb3</code>.
+                <code>A4</code> equivale a 440 Hz. Si aparecen
+                <code>frequency</code> y <code>note</code> a la vez,
+                <code>frequency</code> tiene prioridad y FLX registra un warning.
+            </p>
+
+            <p>
                 Las ondas soportadas son
                 <code>square</code>,
                 <code>sine</code>,
@@ -286,6 +351,47 @@ notes=FLX example with spawn and basic UI
             <p>
                 Las declaraciones de sonido son datos. Pueden estar en linea,
                 referenciadas como JSON o compuestas con <code>like</code>.
+            </p>
+
+            <h2 id="music">Music</h2>
+
+            <p>
+                El campo <code>music</code> declara canciones generadas que
+                pertenecen a un objeto. Los scripts pueden reproducirlas con
+                <code>play_music(object, "id")</code>. La musica usa la
+                capacidad <code>voices.music</code> del Audio Chip y no consume
+                <code>voices.sound</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">music</div>
+<pre><code>"music": {
+    "theme": {
+        "tempo": 120,
+        "loop": true,
+        "channels": {
+            "lead": {
+                "wave": "square",
+                "volume": 0.35,
+                "notes": ["C4", "E4", "G4", "C5"]
+            },
+            "bass": {
+                "wave": "triangle",
+                "volume": 0.25,
+                "notes": ["C3", "-", "G2", "-"]
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <p>
+                Cada entrada de <code>notes</code> dura un beat segun el tempo
+                de la cancion. <code>-</code> es silencio. En un canal
+                <code>noise</code>, <code>x</code> es un golpe de ruido. Los
+                canales conservan el orden declarado en JSON; si una cancion
+                declara mas canales que <code>voices.music</code>, los canales
+                sobrantes se ignoran con un warning.
             </p>
 
             <h2 id="states">States</h2>
@@ -415,6 +521,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -505,6 +612,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>

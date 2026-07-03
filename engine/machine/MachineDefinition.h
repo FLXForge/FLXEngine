@@ -38,6 +38,21 @@ struct AudioChipDefinition
     int voicesSound = 16;
     std::string voicesMode = "shared";
     std::string voicesOverflow = "replace_oldest";
+
+    std::string synthesisModel = "open";
+    std::string synthesisTexture = "rich";
+    std::string synthesisMovement = "expressive";
+    std::string synthesisNoise = "rich";
+
+    std::string fidelityResolution = "high";
+    std::string fidelityDynamics = "expressive";
+    std::string fidelitySpace = "stereo";
+
+    bool resourcesGenerated = true;
+    bool resourcesSamples = true;
+    bool resourcesStreams = true;
+
+    std::string fileAudioMode = "all";
 };
 
 struct InputChipDefinition

@@ -7,5 +7,44 @@
   },
   "children": {
     "level": "space/level"
+  },
+
+  "music": {
+    "menu": {
+
+      "tempo": 110,
+      "loop": true,
+
+      "channels": {
+
+        "lead": {
+          "wave": "square",
+          "notes": [
+            "C4",
+            "E4",
+            "G4",
+            "E4",
+            "D4",
+            "F4",
+            "A4",
+            "F4"
+          ]
+        },
+
+        "bass": {
+          "wave": "triangle",
+          "notes": [
+            "C2",
+            "-",
+            "C2",
+            "-",
+            "F2",
+            "-",
+            "F2",
+            "-"
+          ]
+        }
+      }
+    }
   }
 }

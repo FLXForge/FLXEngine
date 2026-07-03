@@ -2,6 +2,7 @@
 
 #include <raylib.h>
 
+#include "../audio/MusicDefinition.h"
 #include "../audio/SoundDefinition.h"
 
 #include <string>
@@ -64,6 +65,7 @@ struct ObjectDefinition
     std::vector<std::string> collisionWith;
 
     std::vector<std::string> scripts;
+    std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
 

@@ -10,6 +10,7 @@ const INIT_LIVES = 3;
 function action(ui) {
     if (global["inGame"] == 0) {
         if (Key.down(KEY_SPACE)) {
+            pause_music();
             global["score"] = 0;
             global["lives"] = INIT_LIVES;
             global["inGame"] = 1;

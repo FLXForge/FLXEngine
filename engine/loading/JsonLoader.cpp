@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <vector>
 
+using Json = nlohmann::ordered_json;
+
 namespace
 {
     std::string ensureExtension(
@@ -34,7 +36,7 @@ namespace
 
     bool loadJson(
         const std::filesystem::path& path,
-        nlohmann::json& data
+        Json& data
     )
     {
         std::ifstream file(path);
@@ -53,7 +55,7 @@ namespace
         {
             file >> data;
         }
-        catch (const nlohmann::json::parse_error& error)
+        catch (const Json::parse_error& error)
         {
             Logger::error(
                 "json",
@@ -70,8 +72,8 @@ namespace
     }
 
     void mergeJson(
-        nlohmann::json& base,
-        const nlohmann::json& override
+        Json& base,
+        const Json& override
     )
     {
         for (auto it = override.begin(); it != override.end(); ++it)
@@ -95,13 +97,13 @@ namespace
 
     bool resolveLike(
         const std::filesystem::path& currentFile,
-        const nlohmann::json& object,
-        nlohmann::json& resolved
+        const Json& object,
+        Json& resolved
     );
 
     bool resolveBlockReference(
         const std::filesystem::path& currentFile,
-        nlohmann::json& object,
+        Json& object,
         const std::string& key
     )
     {
@@ -116,14 +118,14 @@ namespace
                 object[key].get<std::string>()
             );
 
-        nlohmann::json block;
+        Json block;
 
         if (!loadJson(blockPath, block))
         {
             return false;
         }
 
-        nlohmann::json resolvedBlock;
+        Json resolvedBlock;
 
         if (!resolveLike(blockPath, block, resolvedBlock))
         {
@@ -144,7 +146,7 @@ namespace
 
     bool resolveBlockReferences(
         const std::filesystem::path& currentFile,
-        nlohmann::json& object
+        Json& object
     )
     {
         static const std::vector<std::string> blockKeys = {
@@ -170,8 +172,8 @@ namespace
 
     bool resolveLike(
         const std::filesystem::path& currentFile,
-        const nlohmann::json& object,
-        nlohmann::json& resolved
+        const Json& object,
+        Json& resolved
     )
     {
         if (!object.is_object())
@@ -192,7 +194,7 @@ namespace
                 object["like"].get<std::string>()
             );
 
-        nlohmann::json base;
+        Json base;
 
         if (!loadJson(basePath, base))
         {
@@ -204,14 +206,14 @@ namespace
             return false;
         }
 
-        nlohmann::json resolvedBase;
+        Json resolvedBase;
 
         if (!resolveLike(basePath, base, resolvedBase))
         {
             return false;
         }
 
-        nlohmann::json override =
+        Json override =
             object;
 
         override.erase("like");
@@ -224,14 +226,14 @@ namespace
         return resolveBlockReferences(currentFile, resolved);
     }
 
-    bool hasShape(const nlohmann::json& object)
+    bool hasShape(const Json& object)
     {
         return object.contains("shape") &&
             object["shape"].is_object();
     }
 
     void rejectRootProperty(
-        const nlohmann::json& object,
+        const Json& object,
         const std::string& property,
         const std::string& owner,
         const std::string& expectedBlock
@@ -250,7 +252,7 @@ namespace
     }
 
     void validateObjectRootProperties(
-        const nlohmann::json& object,
+        const Json& object,
         const std::string& owner
     )
     {
@@ -261,7 +263,7 @@ namespace
         rejectRootProperty(object, "angle", owner, "motion");
     }
 
-    Vector2 parseOrigin(const nlohmann::json& object)
+    Vector2 parseOrigin(const Json& object)
     {
         if (!object.contains("origin") || !object["origin"].is_object())
         {
@@ -276,7 +278,7 @@ namespace
         };
     }
 
-    Vector2 parseSize(const nlohmann::json& object)
+    Vector2 parseSize(const Json& object)
     {
         if (hasShape(object))
         {
@@ -297,7 +299,7 @@ namespace
     }
 
     void parseShape(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -360,7 +362,7 @@ namespace
     }
 
     void parseMotion(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -391,7 +393,7 @@ namespace
     }
 
     void parseAttach(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -424,7 +426,7 @@ namespace
     }
 
     void parseBounds(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -445,7 +447,7 @@ namespace
     }
 
     void parseBehavior(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -470,7 +472,7 @@ namespace
     }
 
     void parseCreationPattern(
-        const nlohmann::json& pattern,
+        const Json& pattern,
         ObjectDefinition& definition
     )
     {
@@ -557,7 +559,7 @@ namespace
     }
 
     void parseCreation(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -617,7 +619,7 @@ namespace
     }
 
     void parseCollision(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -664,8 +666,8 @@ namespace
         }
     }
 
-    nlohmann::json normalizeSoundValue(
-        const nlohmann::json& value,
+    Json normalizeSoundValue(
+        const Json& value,
         const std::filesystem::path& currentFile
     )
     {
@@ -677,18 +679,18 @@ namespace
                     value.get<std::string>()
                 );
 
-            nlohmann::json soundData;
+            Json soundData;
 
             if (!loadJson(soundPath, soundData))
             {
-                return nlohmann::json{};
+                return Json{};
             }
 
-            nlohmann::json resolvedSound;
+            Json resolvedSound;
 
             if (!resolveLike(soundPath, soundData, resolvedSound))
             {
-                return nlohmann::json{};
+                return Json{};
             }
 
             if (resolvedSound.contains("sound"))
@@ -701,11 +703,11 @@ namespace
 
         if (value.is_object() && value.contains("like"))
         {
-            nlohmann::json resolvedSound;
+            Json resolvedSound;
 
             if (!resolveLike(currentFile, value, resolvedSound))
             {
-                return nlohmann::json{};
+                return Json{};
             }
 
             if (resolvedSound.contains("sound"))
@@ -720,7 +722,7 @@ namespace
     }
 
     void parseSounds(
-        const nlohmann::json& object,
+        const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
     )
@@ -735,7 +737,7 @@ namespace
 
         for (auto it = sounds.begin(); it != sounds.end(); ++it)
         {
-            const nlohmann::json data =
+            const Json data =
                 normalizeSoundValue(
                     it.value(),
                     currentFile
@@ -754,8 +756,29 @@ namespace
             SoundDefinition sound;
             sound.wave =
                 TextTools::toLower(data.value("wave", sound.wave));
-            sound.frequency =
-                data.value("frequency", sound.frequency);
+
+            if (data.contains("note") && data["note"].is_string())
+            {
+                sound.note =
+                    data["note"].get<std::string>();
+            }
+
+            if (data.contains("frequency"))
+            {
+                sound.frequency =
+                    data.value("frequency", sound.frequency);
+                sound.hasFrequency = true;
+            }
+
+            if (sound.hasFrequency && !sound.note.empty())
+            {
+                Logger::warning(
+                    "json",
+                    "Sound '" + it.key() +
+                    "' declares both frequency and note; frequency has priority"
+                );
+            }
+
             sound.duration =
                 data.value("duration", sound.duration);
             sound.volume =
@@ -766,8 +789,185 @@ namespace
         }
     }
 
+    Json normalizeMusicValue(
+        const Json& value,
+        const std::filesystem::path& currentFile
+    )
+    {
+        if (value.is_string())
+        {
+            const auto musicPath =
+                resolvePath(
+                    currentFile,
+                    value.get<std::string>()
+                );
+
+            Json musicData;
+
+            if (!loadJson(musicPath, musicData))
+            {
+                return Json{};
+            }
+
+            Json resolvedMusic;
+
+            if (!resolveLike(musicPath, musicData, resolvedMusic))
+            {
+                return Json{};
+            }
+
+            if (resolvedMusic.contains("music"))
+            {
+                return resolvedMusic["music"];
+            }
+
+            return resolvedMusic;
+        }
+
+        if (value.is_object() && value.contains("like"))
+        {
+            Json resolvedMusic;
+
+            if (!resolveLike(currentFile, value, resolvedMusic))
+            {
+                return Json{};
+            }
+
+            if (resolvedMusic.contains("music"))
+            {
+                return resolvedMusic["music"];
+            }
+
+            return resolvedMusic;
+        }
+
+        return value;
+    }
+
+    void parseMusic(
+        const Json& object,
+        const std::filesystem::path& currentFile,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("music") || !object["music"].is_object())
+        {
+            return;
+        }
+
+        const auto& music =
+            object["music"];
+
+        for (auto it = music.begin(); it != music.end(); ++it)
+        {
+            const Json data =
+                normalizeMusicValue(
+                    it.value(),
+                    currentFile
+                );
+
+            if (!data.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid music '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            MusicDefinition song;
+            song.tempo =
+                data.value("tempo", song.tempo);
+            song.loop =
+                data.value("loop", song.loop);
+
+            if (!data.contains("channels") || !data["channels"].is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid music '" + it.key() +
+                    "': expected channels object"
+                );
+
+                continue;
+            }
+
+            const auto& channels =
+                data["channels"];
+
+            for (
+                auto channelIt = channels.begin();
+                channelIt != channels.end();
+                ++channelIt
+            )
+            {
+                if (!channelIt.value().is_object())
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid music channel '" + channelIt.key() +
+                        "' in '" + it.key() + "': expected object"
+                    );
+
+                    continue;
+                }
+
+                const Json& channelData =
+                    channelIt.value();
+
+                MusicChannelDefinition channel;
+                channel.id =
+                    channelIt.key();
+                channel.wave =
+                    TextTools::toLower(
+                        channelData.value("wave", channel.wave)
+                    );
+                channel.volume =
+                    channelData.value("volume", channel.volume);
+
+                if (
+                    !channelData.contains("notes") ||
+                    !channelData["notes"].is_array()
+                )
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid music channel '" + channel.id +
+                        "' in '" + it.key() + "': expected notes array"
+                    );
+
+                    continue;
+                }
+
+                for (const auto& note : channelData["notes"])
+                {
+                    if (!note.is_string())
+                    {
+                        Logger::warning(
+                            "json",
+                            "Invalid note in music channel '" + channel.id +
+                            "': expected string"
+                        );
+
+                        continue;
+                    }
+
+                    channel.notes.push_back(
+                        note.get<std::string>()
+                    );
+                }
+
+                song.channels.push_back(channel);
+            }
+
+            definition.music[it.key()] =
+                song;
+        }
+    }
+
     void parseStates(
-        const nlohmann::json& object,
+        const Json& object,
         ObjectDefinition& definition
     )
     {
@@ -852,16 +1052,16 @@ namespace
     }
 
     ObjectDefinition parseDefinition(
-        const nlohmann::json& object,
+        const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
     );
 
-    nlohmann::json normalizeChildValue(const nlohmann::json& value)
+    Json normalizeChildValue(const Json& value)
     {
         if (value.is_string())
         {
-            return nlohmann::json{
+            return Json{
                 { "like", value.get<std::string>() }
             };
         }
@@ -870,7 +1070,7 @@ namespace
     }
 
     void parseChildren(
-        const nlohmann::json& object,
+        const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
     )
@@ -895,7 +1095,7 @@ namespace
 
         for (auto it = children.begin(); it != children.end(); ++it)
         {
-            nlohmann::json childData =
+            Json childData =
                 normalizeChildValue(it.value());
 
             if (!childData.is_object())
@@ -908,7 +1108,7 @@ namespace
                 continue;
             }
 
-            nlohmann::json resolvedChild;
+            Json resolvedChild;
 
             if (!resolveLike(currentFile, childData, resolvedChild))
             {
@@ -931,7 +1131,7 @@ namespace
     }
 
     ObjectDefinition parseDefinition(
-        const nlohmann::json& object,
+        const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
     )
@@ -991,6 +1191,7 @@ namespace
         parseCreation(object, definition);
         parseCollision(object, definition);
         parseSounds(object, sourceFile, definition);
+        parseMusic(object, sourceFile, definition);
         parseStates(object, definition);
         parseChildren(object, sourceFile, definition);
 
@@ -1030,14 +1231,14 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 {
     const std::filesystem::path objectPath(path);
 
-    nlohmann::json data;
+    Json data;
 
     if (!loadJson(objectPath, data))
     {
         return ObjectDefinition{};
     }
 
-    nlohmann::json resolved;
+    Json resolved;
 
     if (!resolveLike(objectPath, data, resolved))
     {

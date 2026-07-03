@@ -3,6 +3,8 @@
 #include "../debug/Logger.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
+#include "../machine/VideoColorProcessor.h"
+#include "../tools/ColorParser.h"
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
@@ -1059,6 +1061,38 @@ int ScriptEngine::getScreenScale() const
     return screenScale;
 }
 
+void ScriptEngine::setVideoChip(const VideoChipDefinition* nextVideoChip)
+{
+    videoChip =
+        nextVideoChip;
+}
+
+Color ScriptEngine::parseColor(
+    const std::string& color,
+    Color fallback
+) const
+{
+    return projectColor(
+        ColorParser::parse(
+            color,
+            fallback
+        )
+    );
+}
+
+Color ScriptEngine::projectColor(Color color) const
+{
+    if (videoChip == nullptr)
+    {
+        return color;
+    }
+
+    return VideoColorProcessor::project(
+        color,
+        *videoChip
+    );
+}
+
 void ScriptEngine::setFrameDelta(float delta)
 {
     frameDelta =
@@ -1093,7 +1127,9 @@ void ScriptEngine::fadeOn(const std::string& color)
         return;
     }
 
-    fadeSystem->fadeOn(color);
+    fadeSystem->fadeOn(
+        parseColor(color, BLACK)
+    );
 }
 
 void ScriptEngine::fadeOff(const std::string& color)
@@ -1103,7 +1139,9 @@ void ScriptEngine::fadeOff(const std::string& color)
         return;
     }
 
-    fadeSystem->fadeOff(color);
+    fadeSystem->fadeOff(
+        parseColor(color, BLACK)
+    );
 }
 
 void ScriptEngine::fadeSet(
@@ -1116,7 +1154,10 @@ void ScriptEngine::fadeSet(
         return;
     }
 
-    fadeSystem->set(alpha, color);
+    fadeSystem->set(
+        alpha,
+        parseColor(color, BLACK)
+    );
 }
 
 bool ScriptEngine::fadeActive() const
@@ -1168,4 +1209,60 @@ void ScriptEngine::playSound(
     }
 
     audioSystem->play(it->second);
+}
+
+void ScriptEngine::playMusic(
+    RuntimeObject& source,
+    const std::string& id
+)
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    const auto it =
+        source.music.find(id);
+
+    if (it == source.music.end())
+    {
+        Logger::warning(
+            "audio",
+            "Music not found: " + id + " in " + source.runtimeId
+        );
+
+        return;
+    }
+
+    audioSystem->playMusic(it->second);
+}
+
+void ScriptEngine::stopMusic()
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    audioSystem->stopMusic();
+}
+
+void ScriptEngine::pauseMusic()
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    audioSystem->togglePauseMusic();
+}
+
+bool ScriptEngine::musicActive() const
+{
+    return audioSystem != nullptr && audioSystem->isMusicActive();
+}
+
+bool ScriptEngine::musicPaused() const
+{
+    return audioSystem != nullptr && audioSystem->isMusicPaused();
 }

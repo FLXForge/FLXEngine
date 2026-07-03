@@ -623,9 +623,24 @@ namespace
         const YAML::Node& node
     )
     {
+        const YAML::Node voicesNode =
+            childNode(node, { "voices" });
+
+        const YAML::Node synthesisNode =
+            childNode(node, { "synthesis" });
+
+        const YAML::Node fidelityNode =
+            childNode(node, { "fidelity" });
+
+        const YAML::Node resourcesNode =
+            childNode(node, { "resources" });
+
+        const YAML::Node fileAudioNode =
+            childNode(node, { "fileAudio" });
+
         chip.voicesMusic =
             nodeToInt(
-                childNode(node, { "voices", "music" }),
+                childNode(voicesNode, { "music" }),
                 chip.voicesMusic,
                 "audio.voices.music",
                 0
@@ -633,7 +648,7 @@ namespace
 
         chip.voicesSound =
             nodeToInt(
-                childNode(node, { "voices", "sound" }),
+                childNode(voicesNode, { "sound" }),
                 chip.voicesSound,
                 "audio.voices.sound",
                 0
@@ -641,18 +656,109 @@ namespace
 
         chip.voicesMode =
             nodeToEnum(
-                childNode(node, { "voices", "mode" }),
+                childNode(voicesNode, { "mode" }),
                 chip.voicesMode,
                 "audio.voices.mode",
-                { "shared", "reserved" }
+                { "shared", "preferred", "reserved" }
             );
 
         chip.voicesOverflow =
             nodeToEnum(
-                childNode(node, { "voices", "overflow" }),
+                childNode(voicesNode, { "overflow" }),
                 chip.voicesOverflow,
                 "audio.voices.overflow",
-                { "ignore", "replace_oldest", "replace_newest" }
+                {
+                    "ignore",
+                    "replace_oldest",
+                    "replace_newest",
+                    "replace_lowest_priority",
+                    "steal_from_music"
+                }
+            );
+
+        chip.synthesisModel =
+            nodeToEnum(
+                childNode(synthesisNode, { "model" }),
+                chip.synthesisModel,
+                "audio.synthesis.model",
+                { "buzzer", "pulse", "wave", "fm", "sample", "open" }
+            );
+
+        chip.synthesisTexture =
+            nodeToEnum(
+                childNode(synthesisNode, { "texture" }),
+                chip.synthesisTexture,
+                "audio.synthesis.texture",
+                { "raw", "coarse", "clean", "rich" }
+            );
+
+        chip.synthesisMovement =
+            nodeToEnum(
+                childNode(synthesisNode, { "movement" }),
+                chip.synthesisMovement,
+                "audio.synthesis.movement",
+                { "none", "simple", "expressive" }
+            );
+
+        chip.synthesisNoise =
+            nodeToEnum(
+                childNode(synthesisNode, { "noise" }),
+                chip.synthesisNoise,
+                "audio.synthesis.noise",
+                { "none", "simple", "rich" }
+            );
+
+        chip.fidelityResolution =
+            nodeToEnum(
+                childNode(fidelityNode, { "resolution" }),
+                chip.fidelityResolution,
+                "audio.fidelity.resolution",
+                { "very_low", "low", "medium", "high" }
+            );
+
+        chip.fidelityDynamics =
+            nodeToEnum(
+                childNode(fidelityNode, { "dynamics" }),
+                chip.fidelityDynamics,
+                "audio.fidelity.dynamics",
+                { "fixed", "limited", "expressive" }
+            );
+
+        chip.fidelitySpace =
+            nodeToEnum(
+                childNode(fidelityNode, { "space" }),
+                chip.fidelitySpace,
+                "audio.fidelity.space",
+                { "mono", "stereo" }
+            );
+
+        chip.resourcesGenerated =
+            nodeToBool(
+                childNode(resourcesNode, { "generated" }),
+                chip.resourcesGenerated,
+                "audio.resources.generated"
+            );
+
+        chip.resourcesSamples =
+            nodeToBool(
+                childNode(resourcesNode, { "samples" }),
+                chip.resourcesSamples,
+                "audio.resources.samples"
+            );
+
+        chip.resourcesStreams =
+            nodeToBool(
+                childNode(resourcesNode, { "streams" }),
+                chip.resourcesStreams,
+                "audio.resources.streams"
+            );
+
+        chip.fileAudioMode =
+            nodeToEnum(
+                childNode(fileAudioNode, { "mode" }),
+                chip.fileAudioMode,
+                "audio.fileAudio.mode",
+                { "off", "sound", "music", "all" }
             );
     }
 
@@ -751,6 +857,17 @@ MachineDefinition MachineLoader::defaultMachine()
     machine.audio.voicesSound = 16;
     machine.audio.voicesMode = "shared";
     machine.audio.voicesOverflow = "replace_oldest";
+    machine.audio.synthesisModel = "open";
+    machine.audio.synthesisTexture = "rich";
+    machine.audio.synthesisMovement = "expressive";
+    machine.audio.synthesisNoise = "rich";
+    machine.audio.fidelityResolution = "high";
+    machine.audio.fidelityDynamics = "expressive";
+    machine.audio.fidelitySpace = "stereo";
+    machine.audio.resourcesGenerated = true;
+    machine.audio.resourcesSamples = true;
+    machine.audio.resourcesStreams = true;
+    machine.audio.fileAudioMode = "all";
 
     machine.input.players = 1;
     machine.input.direction = "analog";

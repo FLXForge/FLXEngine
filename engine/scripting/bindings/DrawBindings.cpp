@@ -1,6 +1,5 @@
 #include "DrawBindings.h"
 #include "BindingHelpers.h"
-#include "../../tools/ColorParser.h"
 
 #include <quickjs.h>
 #include <raylib.h>
@@ -60,22 +59,11 @@ namespace
             JS_ToInt32(context, &fontSize, argv[3]);
         }
 
-        Color color =
-            WHITE;
+        const std::string colorText =
+            optionalString(context, argc, argv, 4, "white");
 
-        if (argc >= 5)
-        {
-            const char* colorValue =
-                JS_ToCString(context, argv[4]);
-
-            if (colorValue != nullptr)
-            {
-                color =
-                    ColorParser::parse(colorValue, WHITE);
-
-                JS_FreeCString(context, colorValue);
-            }
-        }
+        const Color color =
+            scriptEngine->parseColor(colorText, WHITE);
 
         const int scale =
             scriptEngine->getScreenScale();
@@ -132,7 +120,7 @@ namespace
             optionalString(context, argc, argv, 2, "white");
 
         const Color color =
-            ColorParser::parse(colorText, WHITE);
+            scriptEngine->parseColor(colorText, WHITE);
 
         const int scale =
             scriptEngine->getScreenScale();
@@ -140,6 +128,96 @@ namespace
         DrawPixel(
             static_cast<int>(x * scale),
             static_cast<int>(y * scale),
+            color
+        );
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsDrawLine(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 4)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double x = 0.0;
+        double y = 0.0;
+        double x1 = 0.0;
+        double y1 = 0.0;
+
+        JS_ToFloat64(context, &x, argv[0]);
+        JS_ToFloat64(context, &y, argv[1]);
+        JS_ToFloat64(context, &x1, argv[2]);
+        JS_ToFloat64(context, &y1, argv[3]);
+
+        const std::string colorText =
+            optionalString(context, argc, argv, 4, "white");
+
+        const Color color =
+            scriptEngine->parseColor(colorText, WHITE);
+
+        const int scale =
+            scriptEngine->getScreenScale();
+
+        DrawLine(
+            static_cast<int>(x * scale),
+            static_cast<int>(y * scale),
+            static_cast<int>(x1 * scale),
+            static_cast<int>(y1 * scale),
+            color
+        );
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsDrawRectangle(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 4)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double x = 0.0;
+        double y = 0.0;
+        double width = 0.0;
+        double height = 0.0;
+
+        JS_ToFloat64(context, &x, argv[0]);
+        JS_ToFloat64(context, &y, argv[1]);
+        JS_ToFloat64(context, &width, argv[2]);
+        JS_ToFloat64(context, &height, argv[3]);
+
+        const std::string colorText =
+            optionalString(context, argc, argv, 4, "white");
+
+        const Color color =
+            scriptEngine->parseColor(colorText, WHITE);
+
+        const int scale =
+            scriptEngine->getScreenScale();
+
+        DrawRectangleLines(
+            static_cast<int>(x * scale),
+            static_cast<int>(y * scale),
+            static_cast<int>(width * scale),
+            static_cast<int>(height * scale),
             color
         );
 
@@ -289,6 +367,20 @@ void DrawBindings::registerAll(JSContext* context)
         global,
         "draw_pixel",
         JS_NewCFunction(context, jsDrawPixel, "draw_pixel", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "draw_line",
+        JS_NewCFunction(context, jsDrawLine, "draw_line", 5)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "draw_rectangle",
+        JS_NewCFunction(context, jsDrawRectangle, "draw_rectangle", 5)
     );
 
     JS_SetPropertyStr(

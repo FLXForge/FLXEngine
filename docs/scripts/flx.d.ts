@@ -439,6 +439,28 @@ declare function draw_pixel(
 ): void;
 
 /**
+ * Draws a screen-space line using logical screen coordinates.
+ */
+declare function draw_line(
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    color?: string
+): void;
+
+/**
+ * Draws a screen-space rectangle outline using logical screen coordinates.
+ */
+declare function draw_rectangle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color?: string
+): void;
+
+/**
  * Starts a full-screen fade from transparent to opaque.
  *
  * Default color is black and duration is currently fixed to one second.
@@ -507,6 +529,38 @@ declare function play_sound(
     object: RuntimeObject,
     id: string
 ): void;
+
+/**
+ * Plays generated music declared in the object's music map.
+ * Replaces the currently playing music, if any.
+ *
+ * @example
+ * play_music(game, "theme");
+ */
+declare function play_music(
+    object: RuntimeObject,
+    id: string
+): void;
+
+/**
+ * Stops the current generated music.
+ */
+declare function stop_music(): void;
+
+/**
+ * Pauses the current music, or resumes it if it is already paused.
+ */
+declare function pause_music(): void;
+
+/**
+ * Returns true while generated music is currently active.
+ */
+declare function music_active(): boolean;
+
+/**
+ * Returns true when the current music is paused.
+ */
+declare function music_paused(): boolean;
 
 /**
  * Called when an object enters the world.

@@ -373,11 +373,13 @@ notes=FLX example with spawn and basic UI
             "lead": {
                 "wave": "square",
                 "volume": 0.35,
+                "length": "1/8",
                 "notes": ["C4", "E4", "G4", "C5"]
             },
             "bass": {
                 "wave": "triangle",
                 "volume": 0.25,
+                "length": "1/4",
                 "notes": ["C3", "-", "G2", "-"]
             }
         }
@@ -386,12 +388,20 @@ notes=FLX example with spawn and basic UI
             </div>
 
             <p>
-                Cada entrada de <code>notes</code> dura un beat segun el tempo
-                de la cancion. <code>-</code> es silencio. En un canal
-                <code>noise</code>, <code>x</code> es un golpe de ruido. Los
-                canales conservan el orden declarado en JSON; si una cancion
-                declara mas canales que <code>voices.music</code>, los canales
-                sobrantes se ignoran con un warning.
+                Cada canal puede declarar su propio <code>length</code>. Si se
+                omite, FLX usa <code>1/4</code>. Los valores aceptados son
+                <code>1/1</code>, <code>1/2</code>, <code>1/4</code>,
+                <code>1/8</code> y <code>1/16</code>. A tempo 120,
+                <code>1/4</code> dura 0.5 segundos, <code>1/8</code> dura
+                0.25 segundos y <code>1/16</code> dura 0.125 segundos.
+            </p>
+
+            <p>
+                <code>-</code> es silencio. En un canal <code>noise</code>,
+                <code>x</code> es un golpe de ruido. Los canales conservan el
+                orden declarado en JSON; si una cancion declara mas canales que
+                <code>voices.music</code>, los canales sobrantes se ignoran con
+                un warning.
             </p>
 
             <h2 id="states">States</h2>

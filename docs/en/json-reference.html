@@ -381,11 +381,13 @@ notes=FLX example with spawn and basic UI
             "lead": {
                 "wave": "square",
                 "volume": 0.35,
+                "length": "1/8",
                 "notes": ["C4", "E4", "G4", "C5"]
             },
             "bass": {
                 "wave": "triangle",
                 "volume": 0.25,
+                "length": "1/4",
                 "notes": ["C3", "-", "G2", "-"]
             }
         }
@@ -394,9 +396,17 @@ notes=FLX example with spawn and basic UI
             </div>
 
             <p>
-                Each entry in <code>notes</code> lasts one beat at the song
-                tempo. <code>-</code> is silence. In a <code>noise</code>
-                channel, <code>x</code> is a noise hit. Channels keep their JSON
+                Each channel may declare its own <code>length</code>. If omitted,
+                FLX uses <code>1/4</code>. Accepted values are
+                <code>1/1</code>, <code>1/2</code>, <code>1/4</code>,
+                <code>1/8</code> and <code>1/16</code>. At tempo 120,
+                <code>1/4</code> lasts 0.5 seconds, <code>1/8</code> lasts
+                0.25 seconds and <code>1/16</code> lasts 0.125 seconds.
+            </p>
+
+            <p>
+                <code>-</code> is silence. In a <code>noise</code> channel,
+                <code>x</code> is a noise hit. Channels keep their JSON
                 declaration order; if a song declares more channels than the
                 Audio Chip exposes as <code>voices.music</code>, the extra
                 channels are ignored with a warning.

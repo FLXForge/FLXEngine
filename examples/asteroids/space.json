@@ -19,6 +19,7 @@
 
         "lead": {
           "wave": "square",
+          "length": "1/16",
           "notes": [
             "C4",
             "E4",

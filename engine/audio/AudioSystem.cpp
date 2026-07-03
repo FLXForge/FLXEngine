@@ -48,6 +48,31 @@ namespace
     {
         return note == "-" || note.empty();
     }
+
+    float lengthToQuarterMultiplier(const std::string& length)
+    {
+        if (length == "1/1")
+        {
+            return 4.0f;
+        }
+
+        if (length == "1/2")
+        {
+            return 2.0f;
+        }
+
+        if (length == "1/8")
+        {
+            return 0.5f;
+        }
+
+        if (length == "1/16")
+        {
+            return 0.25f;
+        }
+
+        return 1.0f;
+    }
 }
 
 AudioSystem::AudioSystem() = default;
@@ -505,19 +530,20 @@ Wave AudioSystem::createMusicWave(
         std::string id;
         std::string wave;
         float volume = 1.0f;
+        float stepDuration = 0.5f;
         std::vector<PreparedNote> notes;
     };
 
     const float tempo =
         std::max(definition.tempo, 1.0f);
 
-    const float stepDuration =
+    const float quarterDuration =
         60.0f / tempo;
 
     std::vector<PreparedChannel> preparedChannels;
     preparedChannels.reserve(static_cast<size_t>(channelCount));
 
-    size_t stepCount = 0;
+    float duration = 0.01f;
 
     for (int channelIndex = 0; channelIndex < channelCount; ++channelIndex)
     {
@@ -529,6 +555,8 @@ Wave AudioSystem::createMusicWave(
         preparedChannel.wave = channel.wave;
         preparedChannel.volume =
             std::clamp(channel.volume, 0.0f, 1.0f);
+        preparedChannel.stepDuration =
+            quarterDuration * lengthToQuarterMultiplier(channel.length);
         preparedChannel.notes.reserve(channel.notes.size());
 
         for (const std::string& note : channel.notes)
@@ -576,20 +604,15 @@ Wave AudioSystem::createMusicWave(
             preparedChannel.notes.push_back(preparedNote);
         }
 
-        stepCount =
+        duration =
             std::max(
-                stepCount,
-                preparedChannel.notes.size()
+                duration,
+                preparedChannel.stepDuration *
+                    static_cast<float>(preparedChannel.notes.size())
             );
 
         preparedChannels.push_back(preparedChannel);
     }
-
-    const float duration =
-        std::max(
-            stepDuration * static_cast<float>(stepCount),
-            0.01f
-        );
 
     const int sampleCount =
         std::max(1, static_cast<int>(duration * sampleRate));
@@ -603,13 +626,13 @@ Wave AudioSystem::createMusicWave(
         const float time =
             static_cast<float>(i) / static_cast<float>(sampleRate);
 
-        const size_t step =
-            static_cast<size_t>(time / stepDuration);
-
         float mixedValue = 0.0f;
 
         for (const PreparedChannel& channel : preparedChannels)
         {
+            const size_t step =
+                static_cast<size_t>(time / channel.stepDuration);
+
             if (step >= channel.notes.size())
             {
                 continue;
@@ -624,7 +647,7 @@ Wave AudioSystem::createMusicWave(
             }
 
             const float noteTime =
-                time - static_cast<float>(step) * stepDuration;
+                time - static_cast<float>(step) * channel.stepDuration;
 
             mixedValue +=
                 sampleValue(channel.wave, note.frequency, noteTime) *

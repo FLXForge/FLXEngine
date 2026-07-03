@@ -8,6 +8,7 @@ struct MusicChannelDefinition
     std::string id;
     std::string wave = "square";
     float volume = 1.0f;
+    std::string length = "1/4";
     std::vector<std::string> notes;
 };
 

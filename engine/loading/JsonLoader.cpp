@@ -850,6 +850,17 @@ namespace
         ObjectDefinition& definition
     )
     {
+        const auto validMusicLength =
+            [](const std::string& length)
+            {
+                return
+                    length == "1/1" ||
+                    length == "1/2" ||
+                    length == "1/4" ||
+                    length == "1/8" ||
+                    length == "1/16";
+            };
+
         if (!object.contains("music") || !object["music"].is_object())
         {
             return;
@@ -925,6 +936,20 @@ namespace
                     );
                 channel.volume =
                     channelData.value("volume", channel.volume);
+                channel.length =
+                    channelData.value("length", channel.length);
+
+                if (!validMusicLength(channel.length))
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid length '" + channel.length +
+                        "' in music channel '" + channel.id +
+                        "'; using 1/4"
+                    );
+
+                    channel.length = "1/4";
+                }
 
                 if (
                     !channelData.contains("notes") ||

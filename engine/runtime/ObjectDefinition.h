@@ -59,6 +59,7 @@ struct ObjectDefinition
     bool boundsOverflow = false;
 
     std::string group;
+    std::string role;
     std::string collisionType = "none";
     bool collisionActive = false;
     float collisionRadius = 0.0f;

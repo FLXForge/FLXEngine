@@ -901,6 +901,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "role",
+        JS_NewString(context, object.role.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "layer",
         JS_NewInt32(context, object.layer)
     );

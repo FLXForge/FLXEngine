@@ -96,6 +96,10 @@
       "type": "string"
     },
 
+    "role": {
+      "type": "string"
+    },
+
     "collision": {
       "oneOf": [
         { "type": "string" },

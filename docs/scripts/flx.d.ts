@@ -158,6 +158,9 @@ interface RuntimeObject {
     /** Collision group identifier. */
     group: string;
 
+    /** Optional role inside the collision group. */
+    role: string;
+
     /** Draw layer. Lower values are drawn first. */
     layer: number;
 

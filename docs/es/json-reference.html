@@ -737,6 +737,7 @@ notes=FLX example with spawn and basic UI
     },
 
     "group": "paddle",
+    "role": "player",
 
     "collision": {
         "type": "circle",
@@ -763,10 +764,19 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
-                <li><code>group</code>: grupo lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gico asociado al objeto. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
+                <li><code>group</code>: grupo logico asociado al objeto. <i>[ Opcional ]</i></li>
+                <li><code>role</code>: papel opcional dentro del grupo del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collision</a>: configuracion de colision asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <p>
+                <code>group</code> clasifica que tipo de objeto es para colisiones y consultas.
+                <code>role</code> matiza el papel concreto de ese objeto dentro del mismo grupo.
+                Por ejemplo, Pong puede usar <code>group: "wall"</code> con <code>role: "top"</code>
+                o <code>role: "bottom"</code>, sin crear grupos artificiales como
+                <code>wall_top</code> y <code>wall_bottom</code>.
+            </p>
 
             <h2 id="attach">Attach</h2>
 

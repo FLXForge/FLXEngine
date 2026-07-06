@@ -2117,6 +2117,9 @@ namespace
         definition.group =
             object.value("group", definition.group);
 
+        definition.role =
+            object.value("role", definition.role);
+
         definition.visible =
             object.value("visible", definition.visible);
 

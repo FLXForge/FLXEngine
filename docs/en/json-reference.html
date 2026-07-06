@@ -738,6 +738,7 @@ notes=FLX example with spawn and basic UI
     },
 
     "group": "paddle",
+    "role": "player",
 
     "collision": {
       "type": "circle",
@@ -766,9 +767,18 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#music">music</a>: generated music declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
+                <li><code>role</code>: optional role inside the object's group. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
+
+            <p>
+                <code>group</code> classifies what kind of object it is for collisions and queries.
+                <code>role</code> refines the concrete purpose of that object inside the same group.
+                For example, Pong can use <code>group: "wall"</code> with <code>role: "top"</code>
+                or <code>role: "bottom"</code>, without creating artificial groups such as
+                <code>wall_top</code> and <code>wall_bottom</code>.
+            </p>
 
             <h2 id="attach">Attach</h2>
 

@@ -53,6 +53,7 @@ public:
     std::string originalParentId;
     std::string sourcePath;
     std::string group;
+    std::string role;
     std::string state;
     float stateTime = 0.0f;
     uint64_t stateEnteredFrame = 0;

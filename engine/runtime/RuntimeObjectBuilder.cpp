@@ -50,6 +50,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.boundsOverflow = definition.boundsOverflow;
 
     object.group = definition.group;
+    object.role = definition.role;
     object.collisionType = definition.collisionType;
     object.collisionActive = definition.collisionActive;
     object.collisionRadius = definition.collisionRadius;

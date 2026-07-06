@@ -743,6 +743,59 @@ if (Key.down(KEY_LEFT)) {
 }</code></pre>
             </div>
 
+            <h2>exit()</h2>
+
+            <p>
+                Solicita el cierre ordenado del proyecto actual. El runtime
+                termina el bucle principal y despues libera recursos normalmente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">exit</div>
+<pre><code>function action(menu) {
+    if (key_pressed(KEY_ESCAPE)) {
+        exit();
+    }
+}</code></pre>
+            </div>
+
+            <h2>save(name, key, value)</h2>
+
+            <p>
+                Guarda un boolean, number o string en un archivo binario
+                <code>saves/&lt;name&gt;.flxsave</code>. Guardar una clave no elimina
+                las demas claves del mismo archivo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">save</div>
+<pre><code>save("progress", "pong_completed", true);
+save("progress", "score", 12500);
+save("settings", "music", false);</code></pre>
+            </div>
+
+            <h2>load(name, key, defaultValue)</h2>
+
+            <p>
+                Carga un valor guardado. Si el archivo no existe, la clave no
+                existe, el archivo esta corrupto o el tipo guardado no coincide
+                con <code>defaultValue</code>, FLX devuelve
+                <code>defaultValue</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">load</div>
+<pre><code>let completed = load("progress", "pong_completed", false);
+let score = load("progress", "score", 0);
+let music = load("settings", "music", true);</code></pre>
+            </div>
+
+            <p>
+                Los archivos de guardado no son JSON ni texto plano. Incluyen
+                version de formato, entradas tipadas, ofuscacion ligera y un
+                checksum simple para detectar ediciones casuales o corrupcion.
+            </p>
+
             <h2>move_x(object, direction)</h2>
 
             <p>

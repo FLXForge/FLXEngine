@@ -18,7 +18,41 @@
       "channels": {
 
         "lead": {
-          "wave": "square",
+          "instrument": {
+            "source": {
+              "type": "oscillator",
+              "wave": "square"
+            },
+            "tone": {
+              "material": {
+                "brightness": 0.8,
+                "roughness": 0.1,
+                "noise": 0.0,
+                "resonance": 0.2,
+                "metal": 0.0
+              },
+              "envelope": {
+                "attack": 0.0,
+                "decay": 0.05,
+                "sustain": 0.5,
+                "release": 0.03
+              },
+              "space": {
+                "mode": "mono",
+                "width": 0.0,
+                "echo": 0.0
+              }
+            },
+            "play": {
+              "legato": false,
+              "glide": 0.0,
+              "vibrato": 0.0
+            },
+            "range": {
+              "min": "C0",
+              "max": "B8"
+            }
+          },
           "length": "1/16",
           "notes": [
             "C4",
@@ -33,7 +67,12 @@
         },
 
         "bass": {
-          "wave": "triangle",
+          "instrument": {
+            "source": {
+              "type": "oscillator",
+              "wave": "triangle"
+            }
+          },
           "notes": [
             "C2",
             "-",

@@ -35,22 +35,72 @@
   },
   "sounds": {
     "laser": {
-      "wave": "square",
-      "frequency": 1200,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": "/music/notes:laser",
+        "slide": -300,
+        "movement": {
+          "type": "fall",
+          "amount": 0.25
+        }
+      },
+      "tone": {
+        "material": {
+          "brightness": 0.9,
+          "roughness": 0.1,
+          "noise": 0.02,
+          "resonance": 0.1,
+          "metal": 0.0
+        }
+      },
       "duration": 0.05,
-      "volume": 0.4,
-      "slide": -300
+      "volume": 0.4
     },
     "dead": {
-      "wave": "saw",
-      "frequency": 800,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "saw"
+        },
+        "note": 800,
+        "slide": -700,
+        "movement": {
+          "type": "fall",
+          "amount": 0.8
+        }
+      },
+      "tone": {
+        "material": {
+          "brightness": 0.55,
+          "roughness": 0.7,
+          "noise": 0.1,
+          "resonance": 0.15,
+          "metal": 0.0
+        }
+      },
       "duration": 0.35,
-      "volume": 0.4,
-      "slide": -700
+      "volume": 0.4
     },
     "motor": {
-      "waveform": "triangle",
-      "frequency": 100,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "triangle"
+        },
+        "note": 100
+      },
+      "tone": {
+        "material": {
+          "brightness": 0.25,
+          "roughness": 0.2,
+          "noise": 0.0,
+          "resonance": 0.0,
+          "metal": 0.0
+        }
+      },
       "duration": 0.05,
       "volume": 0.15
     }

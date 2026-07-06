@@ -3,11 +3,29 @@
 
   "sounds": {
     "pfooom": {
-      "wave": "noise",
-      "frequency": 300,
+      "kind": {
+        "source": {
+          "type": "noise",
+          "wave": "noise"
+        },
+        "note": 300,
+        "slide": -200,
+        "movement": {
+          "type": "fall",
+          "amount": 0.25
+        }
+      },
+      "tone": {
+        "material": {
+          "brightness": 0.35,
+          "roughness": 0.8,
+          "noise": 0.4,
+          "resonance": 0.1,
+          "metal": 0.0
+        }
+      },
       "duration": 0.18,
-      "volume": 0.5,
-      "slide": -200
+      "volume": 0.5
     }
   },
 

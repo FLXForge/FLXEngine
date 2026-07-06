@@ -681,7 +681,7 @@ namespace
                 childNode(synthesisNode, { "model" }),
                 chip.synthesisModel,
                 "audio.synthesis.model",
-                { "buzzer", "pulse", "wave", "fm", "sample", "open" }
+                { "buzzer", "pulse", "wave", "mixed", "fm", "sample", "open" }
             );
 
         chip.synthesisTexture =
@@ -689,7 +689,7 @@ namespace
                 childNode(synthesisNode, { "texture" }),
                 chip.synthesisTexture,
                 "audio.synthesis.texture",
-                { "raw", "coarse", "clean", "rich" }
+                { "raw", "coarse", "clean", "rough", "rich" }
             );
 
         chip.synthesisMovement =
@@ -697,7 +697,7 @@ namespace
                 childNode(synthesisNode, { "movement" }),
                 chip.synthesisMovement,
                 "audio.synthesis.movement",
-                { "none", "simple", "expressive" }
+                { "none", "simple", "dynamic", "expressive" }
             );
 
         chip.synthesisNoise =
@@ -721,7 +721,7 @@ namespace
                 childNode(fidelityNode, { "dynamics" }),
                 chip.fidelityDynamics,
                 "audio.fidelity.dynamics",
-                { "fixed", "limited", "expressive" }
+                { "fixed", "limited", "normal", "expressive" }
             );
 
         chip.fidelitySpace =

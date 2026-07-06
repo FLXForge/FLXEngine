@@ -1,18 +1,33 @@
 #include "JsonLoader.h"
+#include "../audio/NoteTools.h"
 #include "../debug/Logger.h"
 #include "../tools/ColorParser.h"
 #include "../tools/TextTools.h"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using Json = nlohmann::ordered_json;
 
 namespace
 {
+    struct ResolvedJsonReference
+    {
+        bool ok = false;
+        Json data;
+        std::filesystem::path sourceFile;
+    };
+
+    std::filesystem::path projectJsonRoot;
+    std::unordered_map<std::string, Json> jsonCache;
+
     std::string ensureExtension(
         const std::string& path,
         const std::string& extension
@@ -26,12 +41,57 @@ namespace
         return path + extension;
     }
 
+    std::string genericPathString(
+        const std::filesystem::path& path
+    )
+    {
+        std::string result =
+            path.lexically_normal().generic_string();
+
+        std::replace(
+            result.begin(),
+            result.end(),
+            '\\',
+            '/'
+        );
+
+        return result;
+    }
+
+    std::filesystem::path normalizedRelativePath(
+        const std::string& path,
+        const std::string& extension
+    )
+    {
+        std::string normalized =
+            ensureExtension(path, extension);
+
+        std::replace(
+            normalized.begin(),
+            normalized.end(),
+            '\\',
+            '/'
+        );
+
+        return std::filesystem::path(normalized).lexically_normal();
+    }
+
     std::filesystem::path resolvePath(
         const std::filesystem::path& parentFile,
         const std::string& child
     )
     {
-        return parentFile.parent_path() / ensureExtension(child, ".json");
+        return (
+            parentFile.parent_path() /
+            normalizedRelativePath(child, ".json")
+        ).lexically_normal();
+    }
+
+    bool isFlxReference(
+        const std::string& value
+    )
+    {
+        return !value.empty() && value.front() == '/';
     }
 
     bool loadJson(
@@ -45,7 +105,7 @@ namespace
         {
             Logger::error(
                 "json",
-                "The file could not be opened " + path.string()
+                "The file could not be opened " + genericPathString(path)
             );
 
             return false;
@@ -60,7 +120,7 @@ namespace
             Logger::error(
                 "json",
                 "Invalid JSON in " +
-                path.string() +
+                genericPathString(path) +
                 ": " +
                 error.what()
             );
@@ -69,6 +129,153 @@ namespace
         }
 
         return true;
+    }
+
+    bool loadJsonCached(
+        const std::filesystem::path& path,
+        Json& data
+    )
+    {
+        const std::filesystem::path normalized =
+            std::filesystem::absolute(path).lexically_normal();
+
+        const std::string key =
+            normalized.generic_string();
+
+        const auto found =
+            jsonCache.find(key);
+
+        if (found != jsonCache.end())
+        {
+            data = found->second;
+            return true;
+        }
+
+        if (!loadJson(normalized, data))
+        {
+            return false;
+        }
+
+        jsonCache[key] = data;
+
+        return true;
+    }
+
+    bool pathStartsWith(
+        const std::filesystem::path& child,
+        const std::filesystem::path& root
+    )
+    {
+        std::string childText =
+            child.lexically_normal().generic_string();
+        std::string rootText =
+            root.lexically_normal().generic_string();
+
+        std::transform(
+            childText.begin(),
+            childText.end(),
+            childText.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); }
+        );
+        std::transform(
+            rootText.begin(),
+            rootText.end(),
+            rootText.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); }
+        );
+
+        if (!rootText.ends_with("/"))
+        {
+            rootText += "/";
+        }
+
+        return childText.starts_with(rootText) ||
+            childText == rootText.substr(0, rootText.size() - 1);
+    }
+
+    bool containsParentTraversal(
+        const std::filesystem::path& path
+    )
+    {
+        for (const auto& part : path)
+        {
+            if (part == "..")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    std::filesystem::path resolveFlxReferencePath(
+        const std::string& path
+    )
+    {
+        if (projectJsonRoot.empty())
+        {
+            Logger::error(
+                "json",
+                "FLX project root is not configured"
+            );
+
+            return {};
+        }
+
+        if (path.empty() || path == "/")
+        {
+            Logger::error(
+                "json",
+                "FLX reference is empty after '/'"
+            );
+
+            return {};
+        }
+
+        std::string normalized =
+            path;
+
+        while (!normalized.empty() && normalized.front() == '/')
+        {
+            normalized.erase(normalized.begin());
+        }
+
+        std::replace(
+            normalized.begin(),
+            normalized.end(),
+            '\\',
+            '/'
+        );
+
+        std::filesystem::path relative =
+            ensureExtension(normalized, ".json");
+
+        if (containsParentTraversal(relative))
+        {
+            Logger::error(
+                "json",
+                "FLX reference cannot escape project root: " + path
+            );
+
+            return {};
+        }
+
+        const std::filesystem::path root =
+            std::filesystem::absolute(projectJsonRoot).lexically_normal();
+        const std::filesystem::path resolved =
+            std::filesystem::absolute(root / relative).lexically_normal();
+
+        if (!pathStartsWith(resolved, root))
+        {
+            Logger::error(
+                "json",
+                "FLX reference resolved outside project root: " + path
+            );
+
+            return {};
+        }
+
+        return resolved;
     }
 
     void mergeJson(
@@ -101,6 +308,10 @@ namespace
         Json& resolved
     );
 
+    ResolvedJsonReference resolveJsonReference(
+        const std::string& reference
+    );
+
     bool resolveBlockReference(
         const std::filesystem::path& currentFile,
         Json& object,
@@ -112,10 +323,40 @@ namespace
             return true;
         }
 
+        const std::string reference =
+            object[key].get<std::string>();
+
+        if (isFlxReference(reference))
+        {
+            ResolvedJsonReference resolvedReference =
+                resolveJsonReference(reference);
+
+            if (!resolvedReference.ok)
+            {
+                return false;
+            }
+
+            if (
+                resolvedReference.data.is_object() &&
+                resolvedReference.data.contains(key)
+            )
+            {
+                object[key] =
+                    resolvedReference.data[key];
+            }
+            else
+            {
+                object[key] =
+                    resolvedReference.data;
+            }
+
+            return true;
+        }
+
         const auto blockPath =
             resolvePath(
                 currentFile,
-                object[key].get<std::string>()
+                reference
             );
 
         Json block;
@@ -184,14 +425,50 @@ namespace
         if (!object.contains("like"))
         {
             resolved = object;
-            resolved["__sourceFile"] = currentFile.generic_string();
+            resolved["__sourceFile"] = genericPathString(currentFile);
             return resolveBlockReferences(currentFile, resolved);
+        }
+
+        const std::string likeReference =
+            object["like"].get<std::string>();
+
+        if (isFlxReference(likeReference))
+        {
+            ResolvedJsonReference resolvedReference =
+                resolveJsonReference(likeReference);
+
+            if (!resolvedReference.ok || !resolvedReference.data.is_object())
+            {
+                Logger::error(
+                    "json",
+                    "Like target could not be resolved: " + likeReference
+                );
+
+                return false;
+            }
+
+            Json override =
+                object;
+
+            override.erase("like");
+
+            mergeJson(resolvedReference.data, override);
+
+            resolved =
+                resolvedReference.data;
+            resolved["__sourceFile"] =
+                genericPathString(resolvedReference.sourceFile);
+
+            return resolveBlockReferences(
+                resolvedReference.sourceFile,
+                resolved
+            );
         }
 
         const auto basePath =
             resolvePath(
                 currentFile,
-                object["like"].get<std::string>()
+                likeReference
             );
 
         Json base;
@@ -200,7 +477,7 @@ namespace
         {
             Logger::error(
                 "json",
-                "Like target could not be loaded: " + basePath.string()
+                "Like target could not be loaded: " + genericPathString(basePath)
             );
 
             return false;
@@ -221,7 +498,7 @@ namespace
         mergeJson(resolvedBase, override);
 
         resolved = resolvedBase;
-        resolved["__sourceFile"] = basePath.generic_string();
+        resolved["__sourceFile"] = genericPathString(basePath);
 
         return resolveBlockReferences(currentFile, resolved);
     }
@@ -673,10 +950,31 @@ namespace
     {
         if (value.is_string())
         {
+            const std::string reference =
+                value.get<std::string>();
+
+            if (isFlxReference(reference))
+            {
+                ResolvedJsonReference resolvedReference =
+                    resolveJsonReference(reference);
+
+                if (!resolvedReference.ok)
+                {
+                    return Json{};
+                }
+
+                if (resolvedReference.data.contains("sound"))
+                {
+                    return resolvedReference.data["sound"];
+                }
+
+                return resolvedReference.data;
+            }
+
             const auto soundPath =
                 resolvePath(
                     currentFile,
-                    value.get<std::string>()
+                    reference
                 );
 
             Json soundData;
@@ -721,6 +1019,509 @@ namespace
         return value;
     }
 
+    ResolvedJsonReference resolveJsonReference(
+        const std::string& reference
+    )
+    {
+        if (!isFlxReference(reference))
+        {
+            return {};
+        }
+
+        const size_t separator =
+            reference.find(':');
+
+        const std::string path =
+            separator == std::string::npos
+            ? reference
+            : reference.substr(0, separator);
+        const std::string key =
+            separator == std::string::npos
+            ? ""
+            : reference.substr(separator + 1);
+
+        if (path.empty() || path == "/")
+        {
+            Logger::error(
+                "json",
+                "Invalid FLX reference: " + reference
+            );
+
+            return {};
+        }
+
+        if (separator != std::string::npos && key.empty())
+        {
+            Logger::error(
+                "json",
+                "FLX reference key is empty: " + reference
+            );
+
+            return {};
+        }
+
+        const std::filesystem::path referencePath =
+            resolveFlxReferencePath(path);
+
+        if (referencePath.empty())
+        {
+            return {};
+        }
+
+        Json data;
+
+        if (!loadJsonCached(referencePath, data))
+        {
+            Logger::error(
+                "json",
+                "FLX reference file not found or invalid: " + reference
+            );
+
+            return {};
+        }
+
+        Json resolved;
+
+        if (!resolveLike(referencePath, data, resolved))
+        {
+            return {};
+        }
+
+        if (separator == std::string::npos)
+        {
+            return ResolvedJsonReference{
+                true,
+                resolved,
+                referencePath
+            };
+        }
+
+        if (!resolved.contains(key))
+        {
+            Logger::error(
+                "json",
+                "FLX reference key not found: " + reference
+            );
+
+            return {};
+        }
+
+        return ResolvedJsonReference{
+            true,
+            resolved[key],
+            referencePath
+        };
+    }
+
+    Json resolveJsonValue(
+        const std::filesystem::path& currentFile,
+        const Json& value
+    )
+    {
+        if (value.is_string())
+        {
+            const std::string reference =
+                value.get<std::string>();
+
+            if (isFlxReference(reference))
+            {
+                ResolvedJsonReference resolvedReference =
+                    resolveJsonReference(reference);
+
+                return resolvedReference.ok
+                    ? resolvedReference.data
+                    : Json{};
+            }
+        }
+
+        if (value.is_object() && value.contains("like"))
+        {
+            Json resolved;
+
+            if (!resolveLike(currentFile, value, resolved))
+            {
+                return Json{};
+            }
+
+            return resolved;
+        }
+
+        return value;
+    }
+
+    float clampAudioValue(
+        float value,
+        float minValue,
+        float maxValue,
+        const std::string& label
+    )
+    {
+        if (value < minValue || value > maxValue)
+        {
+            Logger::warning(
+                "json",
+                label + " outside range; clamping"
+            );
+        }
+
+        return std::clamp(value, minValue, maxValue);
+    }
+
+    bool isValidSourceType(const std::string& type)
+    {
+        static const std::unordered_set<std::string> valid{
+            "oscillator",
+            "noise",
+            "impact",
+            "pulse"
+        };
+
+        return valid.contains(type);
+    }
+
+    bool isValidWave(const std::string& wave)
+    {
+        static const std::unordered_set<std::string> valid{
+            "sine",
+            "square",
+            "triangle",
+            "saw",
+            "pulse",
+            "noise"
+        };
+
+        return valid.contains(wave);
+    }
+
+    AudioSourceDefinition parseAudioSource(
+        const Json& value,
+        const std::filesystem::path& currentFile,
+        const std::string& label
+    )
+    {
+        AudioSourceDefinition source;
+        const Json data =
+            resolveJsonValue(currentFile, value);
+
+        if (!data.is_object())
+        {
+            return source;
+        }
+
+        source.type =
+            TextTools::toLower(data.value("type", source.type));
+        source.wave =
+            TextTools::toLower(data.value("wave", source.wave));
+        source.duty =
+            clampAudioValue(
+                data.value("duty", source.duty),
+                0.05f,
+                0.95f,
+                label + ".duty"
+            );
+
+        if (!isValidSourceType(source.type))
+        {
+            Logger::warning(
+                "json",
+                "Invalid source.type in " + label + "; using oscillator"
+            );
+
+            source.type = "oscillator";
+        }
+
+        if (!isValidWave(source.wave))
+        {
+            Logger::warning(
+                "json",
+                "Invalid source.wave in " + label + "; using square"
+            );
+
+            source.wave = "square";
+        }
+
+        if (source.type == "noise")
+        {
+            source.wave = "noise";
+        }
+
+        return source;
+    }
+
+    AudioToneDefinition parseAudioTone(
+        const Json& value,
+        const std::filesystem::path& currentFile,
+        const std::string& label
+    )
+    {
+        AudioToneDefinition tone;
+        const Json data =
+            resolveJsonValue(currentFile, value);
+
+        if (!data.is_object())
+        {
+            return tone;
+        }
+
+        if (data.contains("material") && data["material"].is_object())
+        {
+            const Json& material =
+                data["material"];
+
+            tone.material.brightness =
+                clampAudioValue(
+                    material.value("brightness", tone.material.brightness),
+                    0.0f,
+                    1.0f,
+                    label + ".material.brightness"
+                );
+            tone.material.roughness =
+                clampAudioValue(
+                    material.value("roughness", tone.material.roughness),
+                    0.0f,
+                    1.0f,
+                    label + ".material.roughness"
+                );
+            tone.material.noise =
+                clampAudioValue(
+                    material.value("noise", tone.material.noise),
+                    0.0f,
+                    1.0f,
+                    label + ".material.noise"
+                );
+            tone.material.resonance =
+                clampAudioValue(
+                    material.value("resonance", tone.material.resonance),
+                    0.0f,
+                    1.0f,
+                    label + ".material.resonance"
+                );
+            tone.material.metal =
+                clampAudioValue(
+                    material.value("metal", tone.material.metal),
+                    0.0f,
+                    1.0f,
+                    label + ".material.metal"
+                );
+        }
+
+        if (data.contains("envelope") && data["envelope"].is_object())
+        {
+            const Json& envelope =
+                data["envelope"];
+
+            tone.envelope.attack =
+                std::max(0.0f, envelope.value("attack", tone.envelope.attack));
+            tone.envelope.decay =
+                std::max(0.0f, envelope.value("decay", tone.envelope.decay));
+            tone.envelope.sustain =
+                clampAudioValue(
+                    envelope.value("sustain", tone.envelope.sustain),
+                    0.0f,
+                    1.0f,
+                    label + ".envelope.sustain"
+                );
+            tone.envelope.release =
+                std::max(0.0f, envelope.value("release", tone.envelope.release));
+        }
+
+        if (data.contains("space") && data["space"].is_object())
+        {
+            const Json& space =
+                data["space"];
+
+            tone.space.mode =
+                TextTools::toLower(space.value("mode", tone.space.mode));
+
+            if (tone.space.mode != "mono" && tone.space.mode != "stereo")
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid space.mode in " + label + "; using mono"
+                );
+
+                tone.space.mode = "mono";
+            }
+
+            tone.space.width =
+                clampAudioValue(
+                    space.value("width", tone.space.width),
+                    0.0f,
+                    1.0f,
+                    label + ".space.width"
+                );
+            tone.space.echo =
+                clampAudioValue(
+                    space.value("echo", tone.space.echo),
+                    0.0f,
+                    1.0f,
+                    label + ".space.echo"
+                );
+        }
+
+        return tone;
+    }
+
+    float parseAudioNote(
+        const Json& value,
+        const std::filesystem::path& currentFile,
+        const std::string& label
+    )
+    {
+        const Json data =
+            resolveJsonValue(currentFile, value);
+
+        if (data.is_number())
+        {
+            return std::max(1.0f, data.get<float>());
+        }
+
+        if (data.is_string())
+        {
+            float frequency = 0.0f;
+
+            if (NoteTools::noteToFrequency(data.get<std::string>(), frequency))
+            {
+                return frequency;
+            }
+
+            Logger::warning(
+                "json",
+                "Invalid note in " + label + "; using A4"
+            );
+
+            return 440.0f;
+        }
+
+        if (data.is_object() && data.contains("frequency"))
+        {
+            return std::max(1.0f, data.value("frequency", 440.0f));
+        }
+
+        return 440.0f;
+    }
+
+    AudioMovementDefinition parseAudioMovement(
+        const Json& value,
+        const std::filesystem::path& currentFile,
+        const std::string& label
+    )
+    {
+        AudioMovementDefinition movement;
+        const Json data =
+            resolveJsonValue(currentFile, value);
+
+        if (!data.is_object())
+        {
+            return movement;
+        }
+
+        movement.type =
+            TextTools::toLower(data.value("type", movement.type));
+
+        static const std::unordered_set<std::string> valid{
+            "none",
+            "rise",
+            "fall",
+            "pulse",
+            "wobble",
+            "scatter",
+            "random"
+        };
+
+        if (!valid.contains(movement.type))
+        {
+            Logger::warning(
+                "json",
+                "Invalid movement.type in " + label + "; using none"
+            );
+
+            movement.type = "none";
+        }
+
+        movement.amount =
+            clampAudioValue(
+                data.value("amount", movement.amount),
+                0.0f,
+                1.0f,
+                label + ".movement.amount"
+            );
+
+        return movement;
+    }
+
+    InstrumentDefinition parseInstrument(
+        const Json& value,
+        const std::filesystem::path& currentFile,
+        const std::string& label
+    )
+    {
+        InstrumentDefinition instrument;
+        const Json data =
+            resolveJsonValue(currentFile, value);
+
+        if (!data.is_object())
+        {
+            return instrument;
+        }
+
+        if (data.contains("source"))
+        {
+            instrument.source =
+                parseAudioSource(
+                    data["source"],
+                    currentFile,
+                    label + ".source"
+                );
+        }
+
+        if (data.contains("tone"))
+        {
+            instrument.tone =
+                parseAudioTone(
+                    data["tone"],
+                    currentFile,
+                    label + ".tone"
+                );
+        }
+
+        if (data.contains("play") && data["play"].is_object())
+        {
+            const Json& play =
+                data["play"];
+
+            instrument.play.legato =
+                play.value("legato", instrument.play.legato);
+            instrument.play.glide =
+                clampAudioValue(
+                    play.value("glide", instrument.play.glide),
+                    0.0f,
+                    1.0f,
+                    label + ".play.glide"
+                );
+            instrument.play.vibrato =
+                clampAudioValue(
+                    play.value("vibrato", instrument.play.vibrato),
+                    0.0f,
+                    1.0f,
+                    label + ".play.vibrato"
+                );
+        }
+
+        if (data.contains("range") && data["range"].is_object())
+        {
+            const Json& range =
+                data["range"];
+
+            instrument.range.min =
+                range.value("min", instrument.range.min);
+            instrument.range.max =
+                range.value("max", instrument.range.max);
+        }
+
+        return instrument;
+    }
+
     void parseSounds(
         const Json& object,
         const std::filesystem::path& currentFile,
@@ -754,35 +1555,84 @@ namespace
             }
 
             SoundDefinition sound;
-            sound.wave =
-                TextTools::toLower(data.value("wave", sound.wave));
 
-            if (data.contains("note") && data["note"].is_string())
+            if (data.contains("kind"))
             {
-                sound.note =
-                    data["note"].get<std::string>();
+                const Json kindData =
+                    resolveJsonValue(currentFile, data["kind"]);
+
+                if (kindData.is_object())
+                {
+                    if (kindData.contains("source"))
+                    {
+                        sound.kind.source =
+                            parseAudioSource(
+                                kindData["source"],
+                                currentFile,
+                                "sound '" + it.key() + "'.kind.source"
+                            );
+                    }
+
+                    if (kindData.contains("note"))
+                    {
+                        sound.kind.noteFrequency =
+                            parseAudioNote(
+                                kindData["note"],
+                                currentFile,
+                                "sound '" + it.key() + "'.kind.note"
+                            );
+                    }
+
+                    sound.kind.slide =
+                        kindData.value("slide", sound.kind.slide);
+
+                    if (kindData.contains("movement"))
+                    {
+                        sound.kind.movement =
+                            parseAudioMovement(
+                                kindData["movement"],
+                                currentFile,
+                                "sound '" + it.key() + "'.kind"
+                            );
+                    }
+                }
+                else
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid kind in sound '" + it.key() + "': expected object"
+                    );
+                }
             }
 
-            if (data.contains("frequency"))
+            if (data.contains("tone"))
             {
-                sound.frequency =
-                    data.value("frequency", sound.frequency);
-                sound.hasFrequency = true;
+                sound.tone =
+                    parseAudioTone(
+                        data["tone"],
+                        currentFile,
+                        "sound '" + it.key() + "'.tone"
+                    );
             }
 
-            if (sound.hasFrequency && !sound.note.empty())
+            if (!data.contains("duration"))
             {
                 Logger::warning(
                     "json",
                     "Sound '" + it.key() +
-                    "' declares both frequency and note; frequency has priority"
+                    "' has no duration; using 0.1"
                 );
             }
 
             sound.duration =
                 data.value("duration", sound.duration);
             sound.volume =
-                data.value("volume", sound.volume);
+                clampAudioValue(
+                    data.value("volume", sound.volume),
+                    0.0f,
+                    1.0f,
+                    "sound '" + it.key() + "'.volume"
+                );
 
             definition.sounds[it.key()] =
                 sound;
@@ -796,10 +1646,31 @@ namespace
     {
         if (value.is_string())
         {
+            const std::string reference =
+                value.get<std::string>();
+
+            if (isFlxReference(reference))
+            {
+                ResolvedJsonReference resolvedReference =
+                    resolveJsonReference(reference);
+
+                if (!resolvedReference.ok)
+                {
+                    return Json{};
+                }
+
+                if (resolvedReference.data.contains("music"))
+                {
+                    return resolvedReference.data["music"];
+                }
+
+                return resolvedReference.data;
+            }
+
             const auto musicPath =
                 resolvePath(
                     currentFile,
-                    value.get<std::string>()
+                    reference
                 );
 
             Json musicData;
@@ -930,12 +1801,53 @@ namespace
                 MusicChannelDefinition channel;
                 channel.id =
                     channelIt.key();
-                channel.wave =
-                    TextTools::toLower(
-                        channelData.value("wave", channel.wave)
-                    );
+
+                if (channelData.contains("instrument"))
+                {
+                    channel.instrument =
+                        parseInstrument(
+                            channelData["instrument"],
+                            currentFile,
+                            "music '" + it.key() +
+                            "'.channel '" + channel.id + "'.instrument"
+                        );
+                }
+
+                if (channelData.contains("wave"))
+                {
+                    channel.instrument.source.wave =
+                        TextTools::toLower(
+                            channelData.value(
+                                "wave",
+                                channel.instrument.source.wave
+                            )
+                        );
+
+                    if (!isValidWave(channel.instrument.source.wave))
+                    {
+                        Logger::warning(
+                            "json",
+                            "Invalid wave in music channel '" + channel.id +
+                            "'; using square"
+                        );
+
+                        channel.instrument.source.wave = "square";
+                    }
+
+                    if (channel.instrument.source.wave == "noise")
+                    {
+                        channel.instrument.source.type = "noise";
+                    }
+                }
+
                 channel.volume =
-                    channelData.value("volume", channel.volume);
+                    clampAudioValue(
+                        channelData.value("volume", channel.volume),
+                        0.0f,
+                        1.0f,
+                        "music '" + it.key() +
+                        "'.channel '" + channel.id + "'.volume"
+                    );
                 channel.length =
                     channelData.value("length", channel.length);
 
@@ -1109,7 +2021,7 @@ namespace
         {
             Logger::warning(
                 "json",
-                "Invalid children in " + currentFile.string() +
+                "Invalid children in " + genericPathString(currentFile) +
                 ": expected object"
             );
 
@@ -1169,11 +2081,11 @@ namespace
         const std::filesystem::path sourceFile =
             object.value(
                 "__sourceFile",
-                currentFile.generic_string()
+                genericPathString(currentFile)
             );
 
         definition.sourcePath =
-            sourceFile.generic_string();
+            genericPathString(sourceFile);
 
         definition.spawnMode =
             TextTools::toLower(
@@ -1230,11 +2142,21 @@ std::string JsonLoader::resolveProjectPath(
     const std::string& extension
 )
 {
-    const std::filesystem::path resolved =
-        std::filesystem::path(projectPath) /
-        ensureExtension(path, extension);
+    const std::filesystem::path normalizedRoot =
+        std::filesystem::absolute(projectPath).lexically_normal();
 
-    return resolved.generic_string();
+    if (projectJsonRoot != normalizedRoot)
+    {
+        projectJsonRoot =
+            normalizedRoot;
+        jsonCache.clear();
+    }
+
+    const std::filesystem::path resolved =
+        projectJsonRoot /
+        normalizedRelativePath(path, extension);
+
+    return genericPathString(resolved);
 }
 
 std::string JsonLoader::resolveReferencedPath(
@@ -1245,9 +2167,9 @@ std::string JsonLoader::resolveReferencedPath(
 {
     const std::filesystem::path resolved =
         std::filesystem::path(sourceFile).parent_path() /
-        ensureExtension(path, extension);
+        normalizedRelativePath(path, extension);
 
-    return resolved.generic_string();
+    return genericPathString(resolved);
 }
 
 ObjectDefinition JsonLoader::loadObjectDefinition(
@@ -1255,6 +2177,13 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 )
 {
     const std::filesystem::path objectPath(path);
+
+    if (projectJsonRoot.empty())
+    {
+        projectJsonRoot =
+            std::filesystem::absolute(objectPath.parent_path()).lexically_normal();
+        jsonCache.clear();
+    }
 
     Json data;
 

@@ -42,9 +42,15 @@ void Engine::run(const std::string& flxPath)
 
     init(flxPath);
 
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() && !scriptEngine.exitRequested())
     {
         update();
+
+        if (scriptEngine.exitRequested())
+        {
+            break;
+        }
+
         draw();
     }
 

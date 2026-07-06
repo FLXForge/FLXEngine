@@ -7,9 +7,9 @@
 
     color:
       levels:
-        red: 0
+        red: 100
         green: 100
-        blue: 0
+        blue: 100
       alpha: false
 
     output:
@@ -18,7 +18,7 @@
 
   audio:
     voices:
-      music: 3
+      music: 2
       sound: 1
       mode: reserved
       overflow: replace_oldest
@@ -30,9 +30,9 @@
       noise: none
 
     fidelity:
-      resolution: high
-      dynamics: normal
-      space: stereo
+      resolution: low
+      dynamics: limited
+      space: mono
 
     resources:
       generated: true

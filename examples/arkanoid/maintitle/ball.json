@@ -41,8 +41,13 @@
 
   "sounds": {
     "paddle": {
-      "wave": "square",
-      "frequency": 440,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": 440
+      },
       "duration": 0.08,
       "volume": 0.8
     }

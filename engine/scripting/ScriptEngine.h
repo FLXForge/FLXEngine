@@ -4,6 +4,7 @@
 #include "../runtime/ObjectDefinition.h"
 #include "../runtime/RayCastResult.h"
 #include "../machine/MachineDefinition.h"
+#include "../persistence/PersistenceSystem.h"
 #include "ScriptModule.h"
 
 #include <raylib.h>
@@ -12,6 +13,7 @@
 #include <string>
 #include <functional>
 #include <cstdint>
+#include <optional>
 #include <quickjs.h>
 
 class FadeSystem;
@@ -137,6 +139,20 @@ public:
     bool musicActive() const;
     bool musicPaused() const;
 
+    void requestExit();
+    bool exitRequested() const;
+
+    bool saveValue(
+        const std::string& name,
+        const std::string& key,
+        const PersistedValue& value
+    );
+
+    std::optional<PersistedValue> loadValue(
+        const std::string& name,
+        const std::string& key
+    );
+
 private:
     JSValue createJsObject(RuntimeObject& object);
     void applyJsObject(RuntimeObject& source, JSValue jsObject);
@@ -169,4 +185,6 @@ private:
     FindObjectByIdFunction findObjectById;
     FadeSystem* fadeSystem = nullptr;
     AudioSystem* audioSystem = nullptr;
+    PersistenceSystem persistenceSystem;
+    bool requestedExit = false;
 };

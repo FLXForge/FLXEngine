@@ -147,6 +147,8 @@ add_executable(FlxEngine
     engine/machine/MachineLoader.cpp
     engine/machine/VideoColorProcessor.h
     engine/machine/VideoColorProcessor.cpp
+    engine/persistence/PersistenceSystem.h
+    engine/persistence/PersistenceSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h

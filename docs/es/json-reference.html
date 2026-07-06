@@ -88,6 +88,36 @@ notes=FLX example with spawn and basic UI
                 manifiesto <code>.flx</code>.
             </p>
 
+            <h2 id="flx-references">Referencias JSON FLX</h2>
+
+            <p>
+                Los recursos JSON pueden usar referencias desde la raiz del
+                proyecto empezando un string con <code>/</code>. Esa barra
+                inicial es la raiz de contenido FLX declarada por
+                <code>path</code> en el manifiesto, no la raiz del sistema
+                operativo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">JSON completo</div>
+<pre><code>"shape": "/ui/title_shape"</code></pre>
+
+                <div class="code-header">clave de primer nivel dentro del JSON</div>
+<pre><code>"note": "/music/notes:a"</code></pre>
+            </div>
+
+            <p>
+                <code>/music/notes</code> carga
+                <code>path/music/notes.json</code>. <code>/music/notes:a</code>
+                carga el mismo archivo y devuelve su entrada de primer nivel
+                <code>a</code>. La extension <code>.json</code> es opcional.
+                Strings normales como <code>red</code>, <code>C4</code>,
+                <code>square</code> o <code>player</code> no son referencias.
+                Archivos inexistentes, JSON invalido, claves no encontradas e
+                intentos de salir de la raiz del proyecto se registran como
+                errores.
+            </p>
+
             <p>
                 En <code>color.levels</code>, cada canal RGB acepta valores desde
                 <code>0</code>. El valor <code>0</code> desactiva ese canal.
@@ -141,15 +171,21 @@ notes=FLX example with spawn and basic UI
                 <code>replace_oldest</code>, <code>replace_newest</code>,
                 <code>replace_lowest_priority</code> y
                 <code>steal_from_music</code>. Los efectos generados actuales usan
-                la misma prioridad. <code>steal_from_music</code> puede detener la
-                musica generada activa para permitir reproducir un efecto.
+                la misma prioridad. <code>steal_from_music</code> queda reservado
+                para una implementacion futura de robo real de voces; en esta
+                version las voces de sonido y musica no compiten.
             </p>
 
             <p>
                 <code>synthesis</code>, <code>fidelity</code>,
                 <code>resources</code> y <code>fileAudio</code> se validan y se
-                guardan en la definicion de Machine. Todavia no cargan librerias
-                externas ni activan reproduccion de WAV, OGG o MP3.
+                guardan en la definicion de Machine. El audio generado usa
+                <code>synthesis.model</code>, <code>synthesis.texture</code>,
+                <code>synthesis.movement</code>, <code>synthesis.noise</code>,
+                <code>fidelity.resolution</code> y
+                <code>fidelity.dynamics</code> para moldear los osciladores.
+                Los campos de audio por archivo siguen siendo solo validacion y
+                todavia no activan reproduccion de WAV, OGG o MP3.
             </p>
 
             <div class="code-card">
@@ -316,8 +352,33 @@ notes=FLX example with spawn and basic UI
                 <div class="code-header">sounds</div>
 <pre><code>"sounds": {
     "beep": {
-        "wave": "square",
-        "frequency": 880,
+        "kind": {
+            "source": {
+                "type": "oscillator",
+                "wave": "square"
+            },
+            "note": 880
+        },
+        "tone": {
+            "material": {
+                "brightness": 0.8,
+                "roughness": 0.1,
+                "noise": 0.0,
+                "resonance": 0.0,
+                "metal": 0.0
+            },
+            "envelope": {
+                "attack": 0.0,
+                "decay": 0.05,
+                "sustain": 0.0,
+                "release": 0.0
+            },
+            "space": {
+                "mode": "mono",
+                "width": 0.0,
+                "echo": 0.0
+            }
+        },
         "duration": 0.08,
         "volume": 0.7
     }
@@ -330,12 +391,32 @@ notes=FLX example with spawn and basic UI
             </div>
 
             <p>
-                Un sonido puede declarar <code>note</code> en lugar de
-                <code>frequency</code>. Las notas usan notacion musical como
-                <code>C4</code>, <code>F#4</code> o <code>Bb3</code>.
-                <code>A4</code> equivale a 440 Hz. Si aparecen
-                <code>frequency</code> y <code>note</code> a la vez,
-                <code>frequency</code> tiene prioridad y FLX registra un warning.
+                <code>kind</code> define el evento sonoro.
+                <code>kind.source</code> puede usar <code>oscillator</code> o
+                <code>noise</code> en esta implementacion.
+                <code>kind.note</code> acepta una nota musical como
+                <code>C4</code>, una frecuencia numerica como <code>1200</code>,
+                un objeto como <code>{ "frequency": 1200 }</code>, o una
+                referencia FLX explicita como <code>/music/notes:a</code>. Si
+                falta, FLX usa A4.
+            </p>
+
+            <p>
+                <code>kind.slide</code> es el cambio total de frecuencia durante
+                el sonido. <code>kind.movement.type = "fall"</code> o
+                <code>"rise"</code> puede mapear el movimiento a slide cuando
+                <code>slide</code> no esta especificado. <code>"wobble"</code>
+                aplica vibrato y <code>"pulse"</code> aplica tremolo.
+            </p>
+
+            <p>
+                <code>tone</code> define el caracter del sonido mediante
+                <code>material</code>, <code>envelope</code> y
+                <code>space</code>. El envelope se aplica a cada muestra
+                generada. Material brightness, roughness, noise, resonance y
+                metal aportan caracter audible. <code>space.echo</code> anade
+                un pequeno delay; el ancho stereo esta preparado en el modelo de
+                datos, pero el generador actual sigue renderizando en mono.
             </p>
 
             <p>
@@ -344,8 +425,13 @@ notes=FLX example with spawn and basic UI
                 <code>sine</code>,
                 <code>triangle</code>,
                 <code>saw</code>
+                ,
+                <code>pulse</code>
                 y
-                <code>noise</code>.
+                <code>noise</code>. <code>source.duty</code> controla el ciclo
+                de trabajo de pulse entre <code>0.05</code> y
+                <code>0.95</code>. <code>square</code> siempre usa duty
+                <code>0.5</code>.
             </p>
 
             <p>
@@ -371,7 +457,41 @@ notes=FLX example with spawn and basic UI
         "loop": true,
         "channels": {
             "lead": {
-                "wave": "square",
+                "instrument": {
+                    "source": {
+                        "type": "oscillator",
+                        "wave": "square"
+                    },
+                    "tone": {
+                        "material": {
+                            "brightness": 0.8,
+                            "roughness": 0.1,
+                            "noise": 0.0,
+                            "resonance": 0.2,
+                            "metal": 0.0
+                        },
+                        "envelope": {
+                            "attack": 0.0,
+                            "decay": 0.05,
+                            "sustain": 0.5,
+                            "release": 0.03
+                        },
+                        "space": {
+                            "mode": "mono",
+                            "width": 0.0,
+                            "echo": 0.0
+                        }
+                    },
+                    "play": {
+                        "legato": false,
+                        "glide": 0.0,
+                        "vibrato": 0.0
+                    },
+                    "range": {
+                        "min": "C0",
+                        "max": "B8"
+                    }
+                },
                 "volume": 0.35,
                 "length": "1/8",
                 "notes": ["C4", "E4", "G4", "C5"]
@@ -386,6 +506,25 @@ notes=FLX example with spawn and basic UI
     }
 }</code></pre>
             </div>
+
+            <p>
+                Un canal puede declarar <code>instrument</code> en linea o como
+                referencia explicita, por ejemplo
+                <code>/music/instruments:lead_square</code>. Los instrumentos
+                usan el mismo modelo <code>source</code> y <code>tone</code> que
+                los sonidos, ademas de <code>play</code> y <code>range</code>.
+                En esta primera implementacion, <code>legato</code>,
+                <code>glide</code> y stereo width se cargan y validan, pero
+                quedan preparados para comportamiento audible futuro.
+                <code>play.vibrato</code> y <code>tone.space.echo</code> ya
+                afectan a la musica generada.
+            </p>
+
+            <p>
+                Para canales simples, <code>wave</code> puede declararse
+                directamente en el canal. FLX lo interpreta como
+                <code>instrument.source.wave</code>.
+            </p>
 
             <p>
                 Cada canal puede declarar su propio <code>length</code>. Si se

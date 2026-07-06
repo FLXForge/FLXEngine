@@ -51,7 +51,6 @@ private:
     bool reserveSoundVoice();
     void unloadActiveSound(size_t index);
     bool stealMusicVoice();
-    float resolveSoundFrequency(const SoundDefinition& definition) const;
 
     bool initialized = false;
     int sampleRate = 44100;

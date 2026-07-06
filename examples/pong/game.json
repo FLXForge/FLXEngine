@@ -81,8 +81,13 @@
       },
       "sounds": {
         "beep": {
-          "wave": "square",
-          "frequency": 880,
+          "kind": {
+            "source": {
+              "type": "oscillator",
+              "wave": "square"
+            },
+            "note": 880
+          },
           "duration": 0.08,
           "volume": 0.7
         }

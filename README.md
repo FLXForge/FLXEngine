@@ -79,8 +79,14 @@ Objects can also declare local sounds:
 {
   "sounds": {
     "beep": {
-      "wave": "square",
-      "frequency": 880,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "pulse",
+          "duty": 0.35
+        },
+        "note": 880
+      },
       "duration": 0.08,
       "volume": 0.7
     }
@@ -94,8 +100,13 @@ Sounds can also use a musical note instead of a raw frequency:
 {
   "sounds": {
     "coin": {
-      "wave": "square",
-      "note": "C5",
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": "C5"
+      },
       "duration": 0.08,
       "volume": 0.4
     }
@@ -113,8 +124,14 @@ Objects can declare generated music:
       "loop": true,
       "channels": {
         "lead": {
-          "wave": "square",
+          "instrument": {
+            "source": {
+              "type": "oscillator",
+              "wave": "square"
+            }
+          },
           "volume": 0.35,
+          "length": "1/8",
           "notes": ["C4", "E4", "G4", "C5"]
         }
       }
@@ -169,10 +186,22 @@ machine=machines/standard.yml
 If no Machine is declared, FLX uses an internal default Machine compatible with
 the current runtime behavior.
 
+JSON files can reference reusable project resources with FLX-root paths. The
+leading slash points to the manifest `path`, not to the operating system root:
+
+```json
+{
+  "note": "/music/notes:a",
+  "shape": "/ui/title_shape"
+}
+```
+
 Machine YAML can define video, audio and input chips. The audio chip describes
 machine sound capabilities such as voice budgets, overflow policy, synthesis
-character, fidelity and external audio resource support. Current runtime support
-applies the sound voice limit and overflow policy to generated sound effects.
+character, fidelity and external audio resource support. Runtime support applies
+the sound voice limit before generating waves, keeps music voices separate from
+sound voices, and uses synthesis/fidelity settings to shape generated
+oscillators. File audio resources are validated but not played yet.
 
 ---
 

@@ -59,6 +59,86 @@ interface MotionConfig {
     maxSpeed: number;
 }
 
+type AudioSourceType = "oscillator" | "noise" | "impact" | "pulse";
+type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
+type AudioMovementType = "none" | "rise" | "fall" | "pulse" | "wobble" | "scatter" | "random";
+type AudioSpaceMode = "mono" | "stereo";
+type MusicLength = "1/1" | "1/2" | "1/4" | "1/8" | "1/16";
+
+interface AudioSourceConfig {
+    type?: AudioSourceType;
+    wave?: AudioWave;
+    /** Pulse duty cycle from 0.05 to 0.95. Only pulse uses it; square is fixed at 0.5. */
+    duty?: number;
+}
+
+interface AudioMovementConfig {
+    type?: AudioMovementType;
+    amount?: number;
+}
+
+type AudioNoteConfig =
+    string |
+    number |
+    {
+        frequency: number;
+    };
+
+interface AudioToneConfig {
+    material?: {
+        brightness?: number;
+        roughness?: number;
+        noise?: number;
+        resonance?: number;
+        metal?: number;
+    };
+    envelope?: {
+        attack?: number;
+        decay?: number;
+        sustain?: number;
+        release?: number;
+    };
+    space?: {
+        mode?: AudioSpaceMode;
+        width?: number;
+        echo?: number;
+    };
+}
+
+interface SoundConfig {
+    kind?: {
+        source?: AudioSourceConfig | string;
+        note?: AudioNoteConfig;
+        slide?: number;
+        movement?: AudioMovementConfig | string;
+    };
+    tone?: AudioToneConfig | string;
+    duration?: number;
+    volume?: number;
+}
+
+interface InstrumentConfig {
+    source?: AudioSourceConfig | string;
+    tone?: AudioToneConfig | string;
+    play?: {
+        legato?: boolean;
+        glide?: number;
+        vibrato?: number;
+    };
+    range?: {
+        min?: string;
+        max?: string;
+    };
+}
+
+interface MusicChannelConfig {
+    instrument?: InstrumentConfig | string;
+    wave?: AudioWave;
+    volume?: number;
+    length?: MusicLength;
+    notes: string[];
+}
+
 /**
  * Runtime representation of an object created by FLX.
  */
@@ -561,6 +641,30 @@ declare function music_active(): boolean;
  * Returns true when the current music is paused.
  */
 declare function music_paused(): boolean;
+
+/**
+ * Requests an orderly shutdown of the current FLX runtime.
+ */
+declare function exit(): void;
+
+/**
+ * Saves a boolean, number or string value in saves/<name>.flxsave.
+ */
+declare function save(
+    name: string,
+    key: string,
+    value: boolean | number | string
+): void;
+
+/**
+ * Loads a boolean, number or string value from saves/<name>.flxsave.
+ * Returns defaultValue when the file, key or expected type is unavailable.
+ */
+declare function load<T extends boolean | number | string>(
+    name: string,
+    key: string,
+    defaultValue: T
+): T;
 
 /**
  * Called when an object enters the world.

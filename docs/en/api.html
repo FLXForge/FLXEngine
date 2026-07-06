@@ -792,6 +792,60 @@ if (Key.down(KEY_LEFT)) {
 
             <hr />
 
+            <h2>exit()</h2>
+
+            <p>
+                Requests an orderly shutdown of the current project. The runtime
+                finishes the main loop and then releases resources normally.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">exit</div>
+<pre><code>function action(menu) {
+    if (key_pressed(KEY_ESCAPE)) {
+        exit();
+    }
+}</code></pre>
+            </div>
+
+            <h2>save(name, key, value)</h2>
+
+            <p>
+                Stores a boolean, number or string in a binary
+                <code>saves/&lt;name&gt;.flxsave</code> file. Saving one key does
+                not remove the other keys from the same file.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">save</div>
+<pre><code>save("progress", "pong_completed", true);
+save("progress", "score", 12500);
+save("settings", "music", false);</code></pre>
+            </div>
+
+            <h2>load(name, key, defaultValue)</h2>
+
+            <p>
+                Loads a stored value. If the file does not exist, the key does
+                not exist, the file is corrupt or the stored type differs from
+                <code>defaultValue</code>, FLX returns <code>defaultValue</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">load</div>
+<pre><code>let completed = load("progress", "pong_completed", false);
+let score = load("progress", "score", 0);
+let music = load("settings", "music", true);</code></pre>
+            </div>
+
+            <p>
+                Save files are not JSON or plain text. They include a format
+                version, typed entries, light obfuscation and a simple checksum
+                to detect casual edits or corruption.
+            </p>
+
+            <hr />
+
             <h2>move_x(object, direction)</h2>
 
             <p>

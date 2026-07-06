@@ -1266,3 +1266,42 @@ bool ScriptEngine::musicPaused() const
 {
     return audioSystem != nullptr && audioSystem->isMusicPaused();
 }
+
+void ScriptEngine::requestExit()
+{
+    requestedExit = true;
+
+    Logger::info(
+        "runtime",
+        "Exit requested"
+    );
+}
+
+bool ScriptEngine::exitRequested() const
+{
+    return requestedExit;
+}
+
+bool ScriptEngine::saveValue(
+    const std::string& name,
+    const std::string& key,
+    const PersistedValue& value
+)
+{
+    return persistenceSystem.save(
+        name,
+        key,
+        value
+    );
+}
+
+std::optional<PersistedValue> ScriptEngine::loadValue(
+    const std::string& name,
+    const std::string& key
+)
+{
+    return persistenceSystem.load(
+        name,
+        key
+    );
+}

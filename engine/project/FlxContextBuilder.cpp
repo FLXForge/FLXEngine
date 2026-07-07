@@ -51,6 +51,7 @@ FlxContext FlxContextBuilder::build(const std::string& path)
         context.screenTitle = context.name;
     }
 
+    Logger::setConsoleEnabled(context.debugConsole);
     Logger::setDebugEnabled(context.debugLogs);
 
     loadMachine(context);
@@ -151,8 +152,10 @@ void FlxContextBuilder::logResolvedContext(const FlxContext& context)
         "machine",
         "Input capabilities: " +
         context.machine.input.direction +
-        ", buttons " +
-        std::to_string(context.machine.input.buttons)
+        ", player buttons " +
+        std::to_string(context.machine.input.playerButtons) +
+        ", system buttons " +
+        std::to_string(context.machine.input.systemButtons)
     );
 
     Logger::debug(
@@ -163,6 +166,11 @@ void FlxContextBuilder::logResolvedContext(const FlxContext& context)
         std::to_string(context.screenHeight) +
         " scale " +
         std::to_string(context.screenScale)
+    );
+
+    Logger::debug(
+        "window",
+        "Window mode: " + context.windowMode
     );
 }
 
@@ -198,17 +206,46 @@ void FlxContextBuilder::assign(
         context.machinePath =
             joinPath(context.rootDirectory, value);
     }
+    else if (key == "input.mapping")
+    {
+        context.inputMappingPath =
+            joinPath(context.rootDirectory, value);
+    }
     else if (key == "title")
     {
         context.screenTitle = value;
     }
     else if (key == "debug.collisions")
     {
-        context.debugCollisions = parseBool(value);
+        context.debugCollisions =
+            parseBoolProperty(key, value, context.debugCollisions);
     }
     else if (key == "debug.logs")
     {
-        context.debugLogs = parseBool(value);
+        context.debugLogs =
+            parseBoolProperty(key, value, context.debugLogs);
+    }
+    else if (key == "debug.console")
+    {
+        context.debugConsole =
+            parseBoolProperty(key, value, context.debugConsole);
+    }
+    else if (key == "window.mode")
+    {
+        if (value == "window" || value == "fullscreen")
+        {
+            context.windowMode = value;
+        }
+        else
+        {
+            Logger::warning(
+                "project",
+                "Invalid value for window.mode: '" + value +
+                "'. Using window"
+            );
+
+            context.windowMode = "window";
+        }
     }
     else if (key == "notes")
     {
@@ -255,7 +292,27 @@ std::string FlxContextBuilder::joinPath(
     return (std::filesystem::path(basePath) / childPath).generic_string();
 }
 
-bool FlxContextBuilder::parseBool(const std::string& value)
+bool FlxContextBuilder::parseBoolProperty(
+    const std::string& key,
+    const std::string& value,
+    bool defaultValue
+)
 {
-    return value == "true" || value == "1" || value == "yes";
+    if (value == "true")
+    {
+        return true;
+    }
+
+    if (value == "false")
+    {
+        return false;
+    }
+
+    Logger::warning(
+        "project",
+        "Invalid boolean value for " + key + ": '" + value +
+        "'. Using " + (defaultValue ? "true" : "false")
+    );
+
+    return defaultValue;
 }

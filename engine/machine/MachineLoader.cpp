@@ -777,32 +777,40 @@ namespace
 
         chip.direction =
             nodeToEnum(
-                childNode(node, { "capabilities", "direction" }),
+                childNode(node, { "direction" }),
                 chip.direction,
-                "input.capabilities.direction",
+                "input.direction",
                 { "none", "2way", "4way", "8way", "analog" }
             );
 
-        chip.buttons =
+        chip.playerButtons =
             nodeToInt(
-                childNode(node, { "capabilities", "buttons" }),
-                chip.buttons,
-                "input.capabilities.buttons",
+                childNode(node, { "buttons", "player" }),
+                chip.playerButtons,
+                "input.buttons.player",
+                0
+            );
+
+        chip.systemButtons =
+            nodeToInt(
+                childNode(node, { "buttons", "system" }),
+                chip.systemButtons,
+                "input.buttons.system",
                 0
             );
 
         chip.pointer =
             nodeToBool(
-                childNode(node, { "capabilities", "pointer" }),
+                childNode(node, { "pointer" }),
                 chip.pointer,
-                "input.capabilities.pointer"
+                "input.pointer"
             );
 
         chip.text =
             nodeToBool(
-                childNode(node, { "capabilities", "text" }),
+                childNode(node, { "text" }),
                 chip.text,
-                "input.capabilities.text"
+                "input.text"
             );
     }
 
@@ -869,9 +877,10 @@ MachineDefinition MachineLoader::defaultMachine()
     machine.audio.resourcesStreams = true;
     machine.audio.fileAudioMode = "all";
 
-    machine.input.players = 1;
+    machine.input.players = 16;
     machine.input.direction = "analog";
-    machine.input.buttons = 8;
+    machine.input.playerButtons = 16;
+    machine.input.systemButtons = 16;
     machine.input.pointer = true;
     machine.input.text = true;
 

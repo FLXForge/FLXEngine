@@ -7,6 +7,7 @@ class Logger
 {
 public:
 
+    static void setConsoleEnabled(bool enabled);
     static void setDebugEnabled(bool enabled);
 
     static void info(

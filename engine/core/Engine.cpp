@@ -7,6 +7,7 @@
 
 #include <raylib.h>
 #include <algorithm>
+#include <cmath>
 
 Engine::Engine() = default;
 
@@ -33,6 +34,60 @@ namespace
                 video
             );
         }
+    }
+
+    Rectangle renderDestination(
+        const FlxContext& context
+    )
+    {
+        if (context.windowMode != "fullscreen")
+        {
+            return Rectangle{
+                0.0f,
+                0.0f,
+                static_cast<float>(context.screenWidth * context.screenScale),
+                static_cast<float>(context.screenHeight * context.screenScale)
+            };
+        }
+
+        const float windowWidth =
+            static_cast<float>(GetScreenWidth());
+
+        const float windowHeight =
+            static_cast<float>(GetScreenHeight());
+
+        const float horizontalScale =
+            windowWidth / static_cast<float>(context.screenWidth);
+
+        const float verticalScale =
+            windowHeight / static_cast<float>(context.screenHeight);
+
+        float scale =
+            std::min(horizontalScale, verticalScale);
+
+        if (scale >= 1.0f)
+        {
+            scale =
+                std::floor(scale);
+        }
+
+        if (scale <= 0.0f)
+        {
+            scale = 1.0f;
+        }
+
+        const float width =
+            static_cast<float>(context.screenWidth) * scale;
+
+        const float height =
+            static_cast<float>(context.screenHeight) * scale;
+
+        return Rectangle{
+            (windowWidth - width) * 0.5f,
+            (windowHeight - height) * 0.5f,
+            width,
+            height
+        };
     }
 }
 
@@ -69,7 +124,13 @@ void Engine::loadProject(const std::string& flxPath)
     context =
         FlxContextBuilder::build(flxPath);
 
+    Logger::setConsoleEnabled(context.debugConsole);
     Logger::setDebugEnabled(context.debugLogs);
+    SetTraceLogLevel(
+        context.debugConsole
+        ? LOG_ALL
+        : LOG_NONE
+    );
 
     Logger::info(
         "project",
@@ -92,6 +153,8 @@ void Engine::loadProject(const std::string& flxPath)
     initVideoOutput();
     audioSystem.configure(context.machine.audio);
     audioSystem.init();
+    inputSystem.configure(context.machine.input);
+    inputSystem.loadMapping(context.inputMappingPath);
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
 
@@ -116,14 +179,39 @@ void Engine::initWindow()
     Logger::info(
         "graphics",
         "Window size: " +
-        std::to_string(context.screenWidth * context.screenScale) +
+        std::to_string(
+            context.windowMode == "fullscreen"
+            ? GetMonitorWidth(0)
+            : context.screenWidth * context.screenScale
+        ) +
         "x" +
-        std::to_string(context.screenHeight * context.screenScale)
+        std::to_string(
+            context.windowMode == "fullscreen"
+            ? GetMonitorHeight(0)
+            : context.screenHeight * context.screenScale
+        )
     );
 
+    int windowWidth =
+        context.screenWidth * context.screenScale;
+
+    int windowHeight =
+        context.screenHeight * context.screenScale;
+
+    if (context.windowMode == "fullscreen")
+    {
+        SetConfigFlags(FLAG_FULLSCREEN_MODE);
+
+        windowWidth =
+            GetMonitorWidth(0);
+
+        windowHeight =
+            GetMonitorHeight(0);
+    }
+
     InitWindow(
-        context.screenWidth * context.screenScale,
-        context.screenHeight * context.screenScale,
+        windowWidth,
+        windowHeight,
         title.c_str()
     );
 }
@@ -171,6 +259,7 @@ void Engine::initVideoOutput()
 void Engine::configureScriptEngine()
 {
     scriptEngine.setVideoChip(&context.machine.video);
+    scriptEngine.setInputSystem(&inputSystem);
     scriptEngine.setFadeSystem(&fadeSystem);
     scriptEngine.setAudioSystem(&audioSystem);
 
@@ -232,6 +321,13 @@ void Engine::update()
 
     scriptEngine.setFrameDelta(delta);
 
+    inputSystem.update(
+        delta,
+        context.screenWidth,
+        context.screenHeight,
+        renderDestination(context)
+    );
+
     world.update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
@@ -277,12 +373,7 @@ void Engine::draw()
             static_cast<float>(renderTarget.texture.width),
             static_cast<float>(-renderTarget.texture.height)
         },
-        Rectangle{
-            0.0f,
-            0.0f,
-            static_cast<float>(context.screenWidth * context.screenScale),
-            static_cast<float>(context.screenHeight * context.screenScale)
-        },
+        renderDestination(context),
         Vector2{ 0.0f, 0.0f },
         0.0f,
         WHITE

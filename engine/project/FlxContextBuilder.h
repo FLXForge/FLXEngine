@@ -26,5 +26,9 @@ private:
         const std::string& basePath,
         const std::string& childPath
     );
-    static bool parseBool(const std::string& value);
+    static bool parseBoolProperty(
+        const std::string& key,
+        const std::string& value,
+        bool defaultValue
+    );
 };

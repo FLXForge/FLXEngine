@@ -1,0 +1,2 @@
+players.1.direction.up=KEY_W,KEY_UP,JOY1_UP
+players.1.direction.down=KEY_S,KEY_DOWN,JOY1_DOWN

@@ -5,6 +5,7 @@
 #include "../project/FlxContext.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
+#include "../input/InputSystem.h"
 
 #include <raylib.h>
 #include <string>
@@ -34,6 +35,7 @@ private:
     ScriptEngine scriptEngine;
     RuntimeWorld world;
     AudioSystem audioSystem;
+    InputSystem inputSystem;
     FadeSystem fadeSystem;
     FlxContext context;
     RenderTexture2D renderTarget = {};

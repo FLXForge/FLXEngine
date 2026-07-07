@@ -18,6 +18,7 @@
 
 class FadeSystem;
 class AudioSystem;
+class InputSystem;
 struct JSRuntime;
 struct JSContext;
 
@@ -114,6 +115,9 @@ public:
     void setRuntimeFrame(uint64_t frame);
     uint64_t getRuntimeFrame() const;
 
+    void setInputSystem(InputSystem* inputSystem);
+    InputSystem* getInputSystem() const;
+
     void setFadeSystem(FadeSystem* fadeSystem);
     void fadeOn(const std::string& color);
     void fadeOff(const std::string& color);
@@ -185,6 +189,7 @@ private:
     FindObjectByIdFunction findObjectById;
     FadeSystem* fadeSystem = nullptr;
     AudioSystem* audioSystem = nullptr;
+    InputSystem* inputSystem = nullptr;
     PersistenceSystem persistenceSystem;
     bool requestedExit = false;
 };

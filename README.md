@@ -181,10 +181,32 @@ optionally, the Machine YAML used by the project.
 
 ```text
 machine=machines/standard.yml
+input.mapping=input/default.input
+window.mode=window
+debug.console=false
 ```
 
 If no Machine is declared, FLX uses an internal default Machine compatible with
 the current runtime behavior.
+
+`window.mode` can be `window` or `fullscreen`. `debug.console` controls runtime
+console output and defaults to `false`; `debug.logs` remains a separate switch
+for internal debug traces. On Windows, a build without a physical console window
+can be produced by configuring CMake with `FLX_WINDOWS_SUBSYSTEM=ON`.
+Fullscreen keeps the video chip logical resolution and scales it to the physical
+display while preserving aspect ratio.
+
+The normalized JavaScript input API uses an explicit mapping file:
+
+```text
+system.buttons.0=KEY_ESCAPE
+players.1.direction.left=KEY_A,JOY1_LEFT
+players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A
+```
+
+Scripts read this through `Input.system` and `Input.player(index)`. FLX does not
+create an implicit mapping when `input.mapping` is missing.
 
 JSON files can reference reusable project resources with FLX-root paths. The
 leading slash points to the manifest `path`, not to the operating system root:

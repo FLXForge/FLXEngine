@@ -99,7 +99,7 @@ Runtime -> Connects both
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
 function action(ship) {
-    if (Key.down(KEY_UP)) {
+    if (Input.player(1).up()) {
         accelerate(ship);
     }
 }

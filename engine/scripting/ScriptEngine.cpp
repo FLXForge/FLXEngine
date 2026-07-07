@@ -1122,6 +1122,17 @@ uint64_t ScriptEngine::getRuntimeFrame() const
     return runtimeFrame;
 }
 
+void ScriptEngine::setInputSystem(InputSystem* nextInputSystem)
+{
+    inputSystem =
+        nextInputSystem;
+}
+
+InputSystem* ScriptEngine::getInputSystem() const
+{
+    return inputSystem;
+}
+
 void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
 {
     fadeSystem = nextFadeSystem;

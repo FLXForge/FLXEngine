@@ -5,6 +5,12 @@ project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(
+    FLX_WINDOWS_SUBSYSTEM
+    "Build FlxEngine as a Windows subsystem executable without a console window"
+    OFF
+)
+
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
@@ -136,6 +142,8 @@ add_executable(FlxEngine
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/input/InputSystem.h
+    engine/input/InputSystem.cpp
     engine/tools/ColorParser.h
     engine/tools/ColorParser.cpp
     engine/tools/TextTools.h
@@ -178,6 +186,14 @@ add_executable(FlxEngine
     engine/debug/Logger.cpp
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)
+
+if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
+    set_target_properties(
+        FlxEngine
+        PROPERTIES
+        WIN32_EXECUTABLE ON
+    )
+endif()
 
 target_include_directories(
     FlxEngine

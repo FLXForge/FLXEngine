@@ -15,6 +15,7 @@ struct FlxContext
     std::string projectPath;
     std::string root;
     std::string machinePath;
+    std::string inputMappingPath;
 
     std::string screenTitle;
     int screenWidth = 640;
@@ -23,6 +24,9 @@ struct FlxContext
 
     bool debugCollisions = false;
     bool debugLogs = false;
+    bool debugConsole = false;
+
+    std::string windowMode = "window";
 
     MachineDefinition machine;
 };

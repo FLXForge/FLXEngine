@@ -60,6 +60,9 @@ path=asteroids
 root=space
 title=Asteroids
 machine=machines/standard.yml
+input.mapping=input/default.input
+window.mode=window
+debug.console=false
 debug.collisions=false
 debug.logs=false
 notes=FLX example with spawn and basic UI
@@ -77,16 +80,51 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
                 <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
+                <li><code>input.mapping</code>: properties-style input mapping used by the normalized <code>Input</code> API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
+                <li><code>window.mode</code>: window mode. Accepted values: <code>window</code>, <code>fullscreen</code>. Default: <code>window</code>. <i>[ Optional ]</i></li>
+                <li><code>debug.console</code>: enables runtime console output. Default: <code>false</code>. On Windows, removing the physical console window requires building with the Windows subsystem option. <i>[ Optional ]</i></li>
                 <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
                 <li><code>debug.logs</code>: enables internal debug logs. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
             <p>
+                <code>debug.console</code> and <code>debug.logs</code> are different.
+                <code>debug.console</code> controls whether FLX writes to the runtime
+                console. <code>debug.logs</code> controls internal debug traces, and
+                only has visible output when console output is enabled.
+            </p>
+
+            <p>
+                In <code>fullscreen</code> mode, FLX keeps the logical resolution
+                defined by the video chip and scales that output to the physical
+                display while preserving aspect ratio.
+            </p>
+
+            <p>
                 A Machine describes available capabilities through chips such as
                 video, audio and input. Screen size, background color and output
                 scale now come from the video chip, not from the <code>.flx</code>
                 manifest.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input/default.input</div>
+<pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
+system.buttons.1=KEY_ENTER,JOY1_START
+
+players.1.direction.up=KEY_W,JOY1_UP
+players.1.direction.down=KEY_S,JOY1_DOWN
+players.1.direction.left=KEY_A,JOY1_LEFT
+players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
+            </div>
+
+            <p>
+                In <code>.input</code> files, commas separate alternatives and
+                <code>+</code> joins simultaneous inputs. The mapping is validated
+                against the Input Chip. Unknown tokens, players or buttons outside
+                the chip limits are ignored with warnings.
             </p>
 
             <h2 id="flx-references">FLX JSON References</h2>
@@ -144,6 +182,25 @@ notes=FLX example with spawn and basic UI
                 they are not full-screen filters.
                 Alpha, planes and sprite restrictions are declared but not
                 enforced yet.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input chip</div>
+<pre><code>input:
+  players: 1
+  direction: 4way
+  buttons:
+    player: 1
+    system: 2
+  pointer: false
+  text: false</code></pre>
+            </div>
+
+            <p>
+                The input chip declares input capabilities only. It does not name
+                semantic actions such as start, pause or fire. Player buttons and
+                system buttons are separate budgets. If no Input Chip is declared,
+                FLX uses a permissive internal chip.
             </p>
 
             <p>

@@ -57,9 +57,10 @@ struct AudioChipDefinition
 
 struct InputChipDefinition
 {
-    int players = 1;
+    int players = 16;
     std::string direction = "analog";
-    int buttons = 8;
+    int playerButtons = 16;
+    int systemButtons = 16;
     bool pointer = true;
     bool text = true;
 };

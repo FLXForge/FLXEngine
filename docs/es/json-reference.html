@@ -61,6 +61,9 @@ path=asteroids
 root=space
 title=Asteroids
 machine=machines/standard.yml
+input.mapping=input/default.input
+window.mode=window
+debug.console=false
 debug.collisions=false
 debug.logs=false
 notes=FLX example with spawn and basic UI
@@ -76,16 +79,51 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: objeto JSON raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z cargado por el runtime. <i>[ Obligatorio ]</i></li>
                 <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
+                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API normalizada <code>Input</code>. Si se omite, no se generan controles mapeados. <i>[ Opcional ]</i></li>
+                <li><code>window.mode</code>: modo de ventana. Valores aceptados: <code>window</code>, <code>fullscreen</code>. Default: <code>window</code>. <i>[ Opcional ]</i></li>
+                <li><code>debug.console</code>: activa la salida de consola del runtime. Default: <code>false</code>. En Windows, quitar la ventana fisica de consola requiere compilar con la opcion de subsystem Windows. <i>[ Opcional ]</i></li>
                 <li><code>debug.collisions</code>: activa el dibujo de depuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiones. <i>[ Opcional ]</i></li>
                 <li><code>debug.logs</code>: activa los logs internos de depuración. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
 
             <p>
+                <code>debug.console</code> y <code>debug.logs</code> no son lo mismo.
+                <code>debug.console</code> controla si FLX escribe en la consola del
+                runtime. <code>debug.logs</code> controla las trazas internas de debug,
+                que solo son visibles si la salida de consola esta activa.
+            </p>
+
+            <p>
+                En modo <code>fullscreen</code>, FLX mantiene la resolucion logica
+                definida por el chip de video y escala esa salida a la pantalla
+                fisica conservando la proporcion.
+            </p>
+
+            <p>
                 Una Machine describe capacidades disponibles mediante chips como
                 video, audio e input. El tamano de pantalla, el color de fondo
                 y la escala de salida vienen ahora del chip de video, no del
                 manifiesto <code>.flx</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input/default.input</div>
+<pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
+system.buttons.1=KEY_ENTER,JOY1_START
+
+players.1.direction.up=KEY_W,JOY1_UP
+players.1.direction.down=KEY_S,JOY1_DOWN
+players.1.direction.left=KEY_A,JOY1_LEFT
+players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
+            </div>
+
+            <p>
+                En archivos <code>.input</code>, la coma separa alternativas y
+                <code>+</code> une entradas simultaneas. El mapping se valida
+                contra el Input Chip. Tokens, jugadores o botones fuera de los
+                limites del chip se ignoran con warnings.
             </p>
 
             <h2 id="flx-references">Referencias JSON FLX</h2>
@@ -124,6 +162,25 @@ notes=FLX example with spawn and basic UI
                 En <code>color.tone.base</code>, los colores hexadecimales pueden
                 escribirse con comillas o sin comillas, por ejemplo
                 <code>base: "#9BBC0F"</code> y <code>base: #9BBC0F</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input chip</div>
+<pre><code>input:
+  players: 1
+  direction: 4way
+  buttons:
+    player: 1
+    system: 2
+  pointer: false
+  text: false</code></pre>
+            </div>
+
+            <p>
+                El Input Chip declara solo capacidades de entrada. No nombra
+                acciones semanticas como start, pause o fire. Los botones de
+                jugador y los botones de sistema son presupuestos separados.
+                Si no se declara Input Chip, FLX usa un chip interno permisivo.
             </p>
 
             <p>

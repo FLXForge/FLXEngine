@@ -8,10 +8,12 @@ engine=0.2.0
 path=pong
 root=game
 machine=machines/pongMachine.yml
+input.mapping=controllers.input
 
 # Debug
 debug.collisions=false
 debug.logs=false
+debug.console=true
 
 # Notes
 notes=First FLX example

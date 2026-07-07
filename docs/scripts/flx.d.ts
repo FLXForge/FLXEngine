@@ -21,21 +21,6 @@ declare const RIGHT: number;
 /** Neutral movement constant. */
 declare const STOP: number;
 
-/** Keyboard key constant. */
-declare const KEY_UP: number;
-
-/** Keyboard key constant. */
-declare const KEY_DOWN: number;
-
-/** Keyboard key constant. */
-declare const KEY_LEFT: number;
-
-/** Keyboard key constant. */
-declare const KEY_RIGHT: number;
-
-/** Keyboard key constant. */
-declare const KEY_SPACE: number;
-
 /**
  * Motion configuration exposed from JSON.
  */
@@ -249,25 +234,55 @@ interface RayResult {
  */
 declare const global: Record<string, number>;
 
-/**
- * Keyboard input helper.
- */
-declare const Key: {
-    /**
-     * Returns true while the given key is pressed.
-     *
-     * @example
-     * Key.down(KEY_UP)
-     */
-    down(key: number): boolean;
+interface InputPlayerApi {
+    /** Returns true while the mapped up direction is active. */
+    up(): boolean;
 
-    /**
-     * Returns true only on the frame the given key is pressed.
-     *
-     * @example
-     * Key.pressed(KEY_SPACE)
-     */
-    pressed(key: number): boolean;
+    /** Returns true while the mapped down direction is active. */
+    down(): boolean;
+
+    /** Returns true while the mapped left direction is active. */
+    left(): boolean;
+
+    /** Returns true while the mapped right direction is active. */
+    right(): boolean;
+
+    /** Returns true while the mapped player button is held. */
+    button(buttonIndex: number): boolean;
+
+    /** Returns true on the frame the mapped player button is pressed. */
+    pressed(buttonIndex: number): boolean;
+}
+
+/**
+ * Normalized input API backed by the project's input.mapping file and the
+ * active Input Chip capabilities.
+ */
+declare const Input: {
+    system: {
+        /** Returns true while the mapped system button is held. */
+        down(buttonIndex: number): boolean;
+
+        /** Returns true on the frame the mapped system button is pressed. */
+        pressed(buttonIndex: number): boolean;
+    };
+
+    /** Returns the normalized API for a player. Player indexes start at 1. */
+    player(playerIndex: number): InputPlayerApi;
+
+    pointer: {
+        /** Pointer X coordinate in logical FLX space. */
+        x(): number;
+
+        /** Pointer Y coordinate in logical FLX space. */
+        y(): number;
+
+        /** Returns true while the mapped pointer button is held. */
+        down(buttonIndex: number): boolean;
+
+        /** Returns true on the frame the mapped pointer button is pressed. */
+        pressed(buttonIndex: number): boolean;
+    };
 };
 
 /**

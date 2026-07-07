@@ -36,7 +36,7 @@
 
             <p>
                 FLX expone constantes globales para trabajar con direcciones
-                y teclas de forma legible.
+                de forma legible.
             </p>
 
             <h3>Dirección</h3>
@@ -47,16 +47,6 @@
                 <li><code>LEFT</code>: dirección hacia la izquierda.</li>
                 <li><code>RIGHT</code>: dirección hacia la derecha.</li>
                 <li><code>STOP</code>: movimiento neutro o detenido.</li>
-            </ul>
-
-            <h3>Teclado</h3>
-
-            <ul>
-                <li><code>KEY_UP</code>: flecha superior.</li>
-                <li><code>KEY_DOWN</code>: flecha inferior.</li>
-                <li><code>KEY_LEFT</code>: flecha izquierda.</li>
-                <li><code>KEY_RIGHT</code>: flecha derecha.</li>
-                <li><code>KEY_SPACE</code>: barra espaciadora.</li>
             </ul>
 
             <hr />
@@ -549,7 +539,7 @@ fade_set(0, "black");</code></pre>
             <div class="code-card">
                 <div class="code-header">transicion segura</div>
 <pre><code>function action(title) {
-    if (Key.pressed(KEY_SPACE)) {
+    if (Input.player(1).pressed(0)) {
         title.local["leaving"] = 1;
         fade_on();
     }
@@ -627,7 +617,7 @@ fade_set(0, "black");</code></pre>
 
             <div class="code-card">
                 <div class="code-header">detach</div>
-<pre><code>if (attach_active(ball) && Key.pressed(KEY_SPACE)) {
+<pre><code>if (attach_active(ball) && Input.player(1).pressed(0)) {
     detach(ball);
     ball.angle = -45;
 }</code></pre>
@@ -657,41 +647,41 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
-            <h2>Key.down(key)</h2>
+            <h2>Input</h2>
 
             <p>
-                Devuelve <code>true</code> mientras la tecla indicada está pulsada.
+                <code>Input</code> lee controles normalizados declarados en el
+                archivo <code>input.mapping</code> del proyecto y limitados por
+                el Input Chip activo.
             </p>
 
             <div class="code-card">
-                <div class="code-header">Key.down</div>
-<pre><code>if (Key.down(KEY_UP)) {
-    move_y(tofu, UP);
+                <div class="code-header">Input</div>
+<pre><code>const EXIT = 0;
+const FIRE = 0;
+
+if (Input.system.pressed(EXIT)) {
+    exit();
 }
 
-if (Key.down(KEY_LEFT)) {
-    move_x(tofu, LEFT);
+if (Input.player(1).up()) {
+    move_y(player, UP);
+}
+
+if (Input.player(1).pressed(FIRE)) {
+    spawn(player, "laser");
 }
 </code></pre>
             </div>
 
-            <hr />
-
-            <h2>Key.pressed(key)</h2>
-
-            <p>
-                Devuelve <code>true</code> solo en el frame en el que la tecla indicada empieza a pulsarse.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.pressed</div>
-<pre><code>if (Key.pressed(KEY_SPACE)) {
-    spawn(ship, "laser");
-}
-</code></pre>
-            </div>
-
-            <hr />
+            <ul>
+                <li><code>Input.system.down(index)</code>: true mientras un boton de sistema mapeado esta pulsado.</li>
+                <li><code>Input.system.pressed(index)</code>: true en el frame en que se pulsa un boton de sistema mapeado.</li>
+                <li><code>Input.player(1).up()</code>, <code>down()</code>, <code>left()</code>, <code>right()</code>: direccion del jugador.</li>
+                <li><code>Input.player(1).button(index)</code>: true mientras un boton de jugador mapeado esta pulsado.</li>
+                <li><code>Input.player(1).pressed(index)</code>: true en el frame en que se pulsa un boton de jugador mapeado.</li>
+                <li><code>Input.pointer.x()</code>, <code>y()</code>, <code>down(index)</code>, <code>pressed(index)</code>: entrada de puntero.</li>
+            </ul>
 
             <hr />
 
@@ -753,7 +743,7 @@ if (Key.down(KEY_LEFT)) {
             <div class="code-card">
                 <div class="code-header">exit</div>
 <pre><code>function action(menu) {
-    if (key_pressed(KEY_ESCAPE)) {
+    if (Input.system.pressed(0)) {
         exit();
     }
 }</code></pre>
@@ -917,7 +907,7 @@ if (probability(1, 1000)) {
 
             <div class="code-card">
                 <div class="code-header">play_sound</div>
-<pre><code>if (Key.pressed(KEY_SPACE)) {
+<pre><code>if (Input.player(1).pressed(0)) {
     play_sound(ship, "laser");
     spawn(ship, "laser");
 }
@@ -1064,7 +1054,7 @@ rotate(ship, RIGHT);</code></pre>
 
             <div class="code-card">
                 <div class="code-header">spawn</div>
-<pre><code>if (Key.pressed(KEY_SPACE)) {
+<pre><code>if (Input.player(1).pressed(0)) {
     spawn(ship, "laser");
 }
 </code></pre>
@@ -1097,7 +1087,7 @@ rotate(ship, RIGHT);</code></pre>
                 lista <code>next</code> del estado actual.
             </p>
 
-<pre><code>if (state_active(game, "title") &amp;&amp; Key.pressed(KEY_SPACE)) {
+<pre><code>if (state_active(game, "title") &amp;&amp; Input.player(1).pressed(0)) {
     state(game, "playing");
 }
 </code></pre>

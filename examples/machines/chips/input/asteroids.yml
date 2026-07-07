@@ -1,8 +1,11 @@
 input:
   players: 1
 
-  capabilities:
-    direction: 4way
-    buttons: 1
-    pointer: false
-    text: false
+  direction: 4way
+
+  buttons:
+    player: 1
+    system: 2
+
+  pointer: false
+  text: false

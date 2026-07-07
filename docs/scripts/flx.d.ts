@@ -442,7 +442,8 @@ declare function state_active(
 ): boolean;
 
 /**
- * Returns true only during the frame in which the object entered its state.
+ * Returns true only during the first runtime frame after the object enters
+ * its current state.
  */
 declare function state_entered(object: RuntimeObject): boolean;
 

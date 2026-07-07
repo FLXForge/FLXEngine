@@ -358,8 +358,7 @@ void RuntimeWorld::spawn(
         RuntimeObject instance =
             createIndividualChild(
                 source,
-                definition,
-                true
+                definition
             );
 
         pendingObjects.push_back(instance);
@@ -410,8 +409,7 @@ void RuntimeWorld::spawn(
 
 RuntimeObject RuntimeWorld::createIndividualChild(
     const RuntimeObject& parent,
-    const ObjectDefinition& definition,
-    bool inheritParentAngle
+    const ObjectDefinition& definition
 )
 {
     RuntimeObject child =
@@ -453,12 +451,6 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.position.x - parent.position.x,
         child.position.y - parent.position.y
     };
-
-    if (inheritParentAngle)
-    {
-        child.angle =
-            parent.angle;
-    }
 
     return child;
 }
@@ -724,8 +716,7 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
         RuntimeObject child =
             createIndividualChild(
                 parent,
-                definition,
-                false
+                definition
             );
 
         std::vector<RuntimeObject> descendants;

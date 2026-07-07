@@ -58,8 +58,7 @@ private:
 
     RuntimeObject createIndividualChild(
         const RuntimeObject& parent,
-        const ObjectDefinition& definition,
-        bool inheritParentAngle
+        const ObjectDefinition& definition
     );
 
     RuntimeObject createGridChild(

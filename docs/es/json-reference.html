@@ -186,10 +186,11 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             <p>
                 El chip de audio define las capacidades sonoras de la Machine.
                 No declara sonidos concretos, canciones, instrumentos ni assets.
-                En esta version, <code>voices.sound</code> limita los efectos
-                generados simultaneos y <code>voices.overflow</code> decide que
-                ocurre cuando no queda una voz de sonido libre.
-                <code>voices.music</code> limita los canales de musica generada.
+                <code>voices.music</code> limita los canales de musica generada y
+                <code>voices.sound</code> limita los efectos generados. En modo
+                <code>reserved</code> esos presupuestos son independientes. En
+                modo <code>shared</code> forman un unico pool con
+                <code>voices.music + voices.sound</code> voces.
             </p>
 
             <div class="code-card">
@@ -228,9 +229,10 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <code>replace_oldest</code>, <code>replace_newest</code>,
                 <code>replace_lowest_priority</code> y
                 <code>steal_from_music</code>. Los efectos generados actuales usan
-                la misma prioridad. <code>steal_from_music</code> queda reservado
-                para una implementacion futura de robo real de voces; en esta
-                version las voces de sonido y musica no compiten.
+                la misma prioridad. En modo <code>shared</code>,
+                <code>steal_from_music</code> puede pausar una voz de musica para
+                reproducir un efecto y reanudar la musica cuando las voces de
+                sonido vuelven a quedar libres.
             </p>
 
             <p>

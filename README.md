@@ -221,9 +221,11 @@ leading slash points to the manifest `path`, not to the operating system root:
 Machine YAML can define video, audio and input chips. The audio chip describes
 machine sound capabilities such as voice budgets, overflow policy, synthesis
 character, fidelity and external audio resource support. Runtime support applies
-the sound voice limit before generating waves, keeps music voices separate from
-sound voices, and uses synthesis/fidelity settings to shape generated
-oscillators. File audio resources are validated but not played yet.
+voice limits before generating waves. In `reserved` mode music and sound voices
+stay separate; in `shared` mode they form a common pool and `steal_from_music`
+can temporarily pause music so a sound effect can play. Synthesis/fidelity
+settings shape generated oscillators. File audio resources are validated but not
+played yet.
 
 ---
 

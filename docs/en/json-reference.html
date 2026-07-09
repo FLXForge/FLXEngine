@@ -214,10 +214,11 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             <p>
                 The audio chip defines the sound capabilities of the Machine.
                 It does not declare concrete sounds, songs, instruments or assets.
-                In this version, <code>voices.sound</code> limits simultaneous
-                generated sound effects and <code>voices.overflow</code> decides
-                what happens when no sound voice is free. <code>voices.music</code>
-                limits generated music channels.
+                <code>voices.music</code> limits generated music channels and
+                <code>voices.sound</code> limits generated sound effects.
+                In <code>reserved</code> mode those budgets are separate. In
+                <code>shared</code> mode they form a single pool with
+                <code>voices.music + voices.sound</code> voices.
             </p>
 
             <div class="code-card">
@@ -256,9 +257,10 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <code>replace_oldest</code>, <code>replace_newest</code>,
                 <code>replace_lowest_priority</code> and
                 <code>steal_from_music</code>. Current generated sound effects
-                all use the same priority. <code>steal_from_music</code> is
-                reserved for a future real voice-stealing implementation; in this
-                version sound voices and music voices do not compete.
+                all use the same priority. In <code>shared</code> mode,
+                <code>steal_from_music</code> can pause a playing music voice so
+                a sound effect can play, then resume the music when sound voices
+                are free again.
             </p>
 
             <p>

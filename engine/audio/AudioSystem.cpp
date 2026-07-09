@@ -566,13 +566,20 @@ void AudioSystem::configure(const AudioChipDefinition& audioChip)
 
 void AudioSystem::cleanupFinished()
 {
+    const double now =
+        GetTime();
+
     activeSounds.erase(
         std::remove_if(
             activeSounds.begin(),
             activeSounds.end(),
-            [](ActiveSound& activeSound)
+            [now](ActiveSound& activeSound)
             {
-                if (IsSoundPlaying(activeSound.sound))
+                const bool durationFinished =
+                    activeSound.duration > 0.0 &&
+                    now >= activeSound.startedTime + activeSound.duration;
+
+                if (!durationFinished && IsSoundPlaying(activeSound.sound))
                 {
                     return false;
                 }
@@ -583,6 +590,8 @@ void AudioSystem::cleanupFinished()
         ),
         activeSounds.end()
     );
+
+    resumeMusicAfterSoundSteal();
 }
 
 void AudioSystem::unloadActiveSound(size_t index)
@@ -598,9 +607,21 @@ void AudioSystem::unloadActiveSound(size_t index)
     activeSounds.erase(
         activeSounds.begin() + static_cast<std::ptrdiff_t>(index)
     );
+
+    resumeMusicAfterSoundSteal();
 }
 
 bool AudioSystem::reserveSoundVoice()
+{
+    if (voicesAreShared())
+    {
+        return reserveSharedSoundVoice();
+    }
+
+    return reserveReservedSoundVoice();
+}
+
+bool AudioSystem::reserveReservedSoundVoice()
 {
     cleanupFinished();
 
@@ -609,11 +630,6 @@ bool AudioSystem::reserveSoundVoice()
 
     if (soundVoices == 0)
     {
-        if (chip.voicesOverflow == "steal_from_music" && stealMusicVoice())
-        {
-            return true;
-        }
-
         Logger::debug(
             "audio",
             "Sound ignored because audio.voices.sound is 0"
@@ -627,13 +643,9 @@ bool AudioSystem::reserveSoundVoice()
         return true;
     }
 
-    if (chip.voicesOverflow == "steal_from_music" && stealMusicVoice())
-    {
-        return true;
-    }
-
     if (
         chip.voicesOverflow == "ignore" ||
+        chip.voicesOverflow == "steal_from_music" ||
         chip.voicesOverflow == "replace_newest"
     )
     {
@@ -694,14 +706,223 @@ bool AudioSystem::reserveSoundVoice()
     return true;
 }
 
-bool AudioSystem::stealMusicVoice()
+bool AudioSystem::reserveSharedSoundVoice()
 {
+    cleanupFinished();
+
+    const int voiceCount =
+        sharedVoiceCount();
+
+    if (voiceCount == 0)
+    {
+        Logger::debug(
+            "audio",
+            "Sound ignored because shared audio voice count is 0"
+        );
+
+        return false;
+    }
+
+    const int activeVoices =
+        static_cast<int>(activeSounds.size()) +
+        activeMusicVoiceUse();
+
+    if (activeVoices < voiceCount)
+    {
+        return true;
+    }
+
+    if (chip.voicesOverflow == "steal_from_music")
+    {
+        if (stealMusicVoice())
+        {
+            return true;
+        }
+
+        Logger::debug(
+            "audio",
+            "Sound ignored because shared voices are full and no music voice can be stolen"
+        );
+
+        return false;
+    }
+
+    if (
+        chip.voicesOverflow == "ignore" ||
+        chip.voicesOverflow == "replace_newest"
+    )
+    {
+        Logger::debug(
+            "audio",
+            "Sound ignored because shared voices are full"
+        );
+
+        return false;
+    }
+
+    if (chip.voicesOverflow == "replace_oldest")
+    {
+        bool replaceMusic =
+            activeMusicVoiceUse() > 0;
+
+        uint64_t oldestOrder =
+            replaceMusic
+            ? activeMusic.startedAt
+            : std::numeric_limits<uint64_t>::max();
+
+        size_t selectedIndex = 0;
+
+        for (size_t i = 0; i < activeSounds.size(); ++i)
+        {
+            if (activeSounds[i].startedAt < oldestOrder)
+            {
+                replaceMusic = false;
+                selectedIndex = i;
+                oldestOrder = activeSounds[i].startedAt;
+            }
+        }
+
+        if (replaceMusic)
+        {
+            stopActiveMusic();
+        }
+        else if (!activeSounds.empty())
+        {
+            unloadActiveSound(selectedIndex);
+        }
+
+        return true;
+    }
+
+    if (chip.voicesOverflow == "replace_lowest_priority")
+    {
+        if (activeSounds.empty())
+        {
+            Logger::debug(
+                "audio",
+                "Sound ignored because shared voices are full"
+            );
+
+            return false;
+        }
+
+        size_t selectedIndex = 0;
+        int selectedPriority =
+            std::numeric_limits<int>::max();
+
+        uint64_t selectedOrder =
+            std::numeric_limits<uint64_t>::max();
+
+        for (size_t i = 0; i < activeSounds.size(); ++i)
+        {
+            const ActiveSound& activeSound =
+                activeSounds[i];
+
+            if (
+                activeSound.priority < selectedPriority ||
+                (
+                    activeSound.priority == selectedPriority &&
+                    activeSound.startedAt < selectedOrder
+                )
+            )
+            {
+                selectedIndex = i;
+                selectedPriority = activeSound.priority;
+                selectedOrder = activeSound.startedAt;
+            }
+        }
+
+        unloadActiveSound(selectedIndex);
+        return true;
+    }
+
     Logger::debug(
         "audio",
-        "Sound ignored because steal_from_music is not implemented yet"
+        "Sound ignored because shared voices are full"
     );
 
     return false;
+}
+
+bool AudioSystem::stealMusicVoice()
+{
+    if (
+        !activeMusic.loaded ||
+        activeMusic.paused ||
+        !IsSoundPlaying(activeMusic.sound)
+    )
+    {
+        return false;
+    }
+
+    PauseSound(activeMusic.sound);
+    activeMusic.paused = true;
+    activeMusic.pausedBySound = true;
+
+    Logger::debug(
+        "audio",
+        "Sound stole a shared music voice"
+    );
+
+    return true;
+}
+
+void AudioSystem::stopActiveMusic()
+{
+    if (!activeMusic.loaded)
+    {
+        return;
+    }
+
+    StopSound(activeMusic.sound);
+    UnloadSound(activeMusic.sound);
+
+    activeMusic = ActiveMusic{};
+}
+
+void AudioSystem::resumeMusicAfterSoundSteal()
+{
+    if (
+        activeMusic.loaded &&
+        activeMusic.pausedBySound &&
+        activeSounds.empty()
+    )
+    {
+        ResumeSound(activeMusic.sound);
+        activeMusic.paused = false;
+        activeMusic.pausedBySound = false;
+
+        Logger::debug(
+            "audio",
+            "Music resumed after shared voice release"
+        );
+    }
+}
+
+bool AudioSystem::voicesAreShared() const
+{
+    return chip.voicesMode == "shared";
+}
+
+int AudioSystem::sharedVoiceCount() const
+{
+    return
+        std::max(0, chip.voicesMusic) +
+        std::max(0, chip.voicesSound);
+}
+
+int AudioSystem::activeMusicVoiceUse() const
+{
+    if (
+        !activeMusic.loaded ||
+        activeMusic.paused ||
+        !IsSoundPlaying(activeMusic.sound)
+    )
+    {
+        return 0;
+    }
+
+    return std::max(1, activeMusic.voiceCount);
 }
 
 void AudioSystem::play(const SoundDefinition& definition)
@@ -735,6 +956,8 @@ void AudioSystem::play(const SoundDefinition& definition)
         ActiveSound{
             sound,
             nextSoundOrder++,
+            GetTime(),
+            static_cast<double>(std::max(definition.duration, 0.01f)),
             0
         }
     );
@@ -749,14 +972,29 @@ void AudioSystem::playMusic(const MusicDefinition& definition)
 
     stopMusic();
 
-    const int musicVoices =
+    int musicVoices =
         std::max(0, chip.voicesMusic);
+
+    if (voicesAreShared())
+    {
+        const int availableSharedVoices =
+            sharedVoiceCount() -
+            static_cast<int>(activeSounds.size());
+
+        musicVoices =
+            std::min(
+                musicVoices,
+                std::max(0, availableSharedVoices)
+            );
+    }
 
     if (musicVoices == 0)
     {
         Logger::warning(
             "audio",
-            "Music ignored because audio.voices.music is 0"
+            voicesAreShared()
+            ? "Music ignored because no shared audio voices are available"
+            : "Music ignored because audio.voices.music is 0"
         );
 
         return;
@@ -794,6 +1032,9 @@ void AudioSystem::playMusic(const MusicDefinition& definition)
     activeMusic.loaded = true;
     activeMusic.loop = definition.loop;
     activeMusic.paused = false;
+    activeMusic.pausedBySound = false;
+    activeMusic.startedAt = nextSoundOrder++;
+    activeMusic.voiceCount = channelCount;
 
     PlaySound(activeMusic.sound);
 
@@ -802,15 +1043,7 @@ void AudioSystem::playMusic(const MusicDefinition& definition)
 
 void AudioSystem::stopMusic()
 {
-    if (!activeMusic.loaded)
-    {
-        return;
-    }
-
-    StopSound(activeMusic.sound);
-    UnloadSound(activeMusic.sound);
-
-    activeMusic = ActiveMusic{};
+    stopActiveMusic();
 }
 
 void AudioSystem::togglePauseMusic()

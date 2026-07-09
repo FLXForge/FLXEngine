@@ -31,6 +31,8 @@ private:
     {
         Sound sound = {};
         uint64_t startedAt = 0;
+        double startedTime = 0.0;
+        double duration = 0.0;
         int priority = 0;
     };
 
@@ -40,6 +42,9 @@ private:
         bool loaded = false;
         bool loop = false;
         bool paused = false;
+        bool pausedBySound = false;
+        uint64_t startedAt = 0;
+        int voiceCount = 0;
     };
 
     Wave createWave(const SoundDefinition& definition) const;
@@ -49,8 +54,15 @@ private:
     ) const;
     void cleanupFinished();
     bool reserveSoundVoice();
+    bool reserveReservedSoundVoice();
+    bool reserveSharedSoundVoice();
     void unloadActiveSound(size_t index);
     bool stealMusicVoice();
+    void stopActiveMusic();
+    void resumeMusicAfterSoundSteal();
+    bool voicesAreShared() const;
+    int sharedVoiceCount() const;
+    int activeMusicVoiceUse() const;
 
     bool initialized = false;
     int sampleRate = 44100;

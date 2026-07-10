@@ -2,6 +2,7 @@
 
 const INIT_LIVES = 3;
 const MAX_LEVEL = 4;
+const FIRE_BUTTON = 0;
 
 let currentLevel = 0;
 let nextLevel = 0;
@@ -38,7 +39,7 @@ function reset_game(){
 
 function handle_title_start(game){
 
-    if (currentLevel == 0 && Key.pressed(KEY_SPACE)){
+    if (currentLevel == 0 && Input.player(1).pressed(FIRE_BUTTON)){
         nextLevel = 1;
         game.local["transition"] = 1;
         fade_on();

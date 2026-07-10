@@ -8,10 +8,12 @@ engine=0.2.0
 path=arkanoid
 root=game
 machine=machines/arkanoidMachine.yml
+input.mapping=controllers.input
 
 #Debug
 debug.collisions=false
 debug.logs=false
+debug.console=true
 
 #Notes
 notes=FLX example with grid spawn, levels and power ups

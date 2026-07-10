@@ -1030,11 +1030,12 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
 
                     <ul>
                         <li><code>none</code>: no hereda movimiento.</li>
-                        <li><code>creation</code>: hereda el movimiento inicial en el momento del spawn.</li>
+                        <li><code>creation</code>: hereda el angulo del parent en el momento del spawn salvo que se declare <code>motion.angle</code>.</li>
+                        <li><code>live</code>: actualmente se comporta como <code>creation</code>; la herencia continua pertenece a <code>attach.angle</code>.</li>
                     </ul>
                 </li>
                 <li><code>speed</code>: velocidad de movimiento usada por ayudas como <code>advance()</code>.</li>
-                <li><code>angle</code>: angulo de movimiento y rotacion en grados.</li>
+                <li><code>angle</code>: angulo de movimiento y rotacion en grados. Si se declara, tiene prioridad sobre el angulo heredado del parent.</li>
                 <li><code>rotationSpeed</code>: velocidad de rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
                 <li><code>acceleration</code>: aceleraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n aplicada al objeto.</li>
                 <li><code>inertia</code>: conservaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del movimiento.</li>

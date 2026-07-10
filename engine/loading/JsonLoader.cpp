@@ -650,14 +650,30 @@ namespace
 
         const auto& motion = object["motion"];
 
+        const std::string inherit =
+            TextTools::toLower(
+                motion.value("inherit", std::string("none"))
+            );
+
+        definition.inheritParentAngle =
+            inherit == "creation" ||
+            inherit == "live";
+
         definition.rotationSpeed =
             motion.value("rotationSpeed", definition.rotationSpeed);
 
         definition.speed =
             motion.value("speed", definition.speed);
 
-        definition.angle =
-            motion.value("angle", definition.angle);
+        definition.hasAngle =
+            motion.contains("angle") &&
+            motion["angle"].is_number();
+
+        if (definition.hasAngle)
+        {
+            definition.angle =
+                motion.value("angle", definition.angle);
+        }
 
         definition.acceleration =
             motion.value("acceleration", definition.acceleration);

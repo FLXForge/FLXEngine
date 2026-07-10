@@ -1050,11 +1050,12 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
 
                     <ul>
                         <li><code>none</code>: does not inherit movement.</li>
-                        <li><code>creation</code>: inherits the initial movement at spawn time.</li>
+                        <li><code>creation</code>: inherits the parent angle at spawn time unless <code>motion.angle</code> is declared.</li>
+                        <li><code>live</code>: currently behaves like <code>creation</code>; continuous inheritance belongs to <code>attach.angle</code>.</li>
                     </ul>
                 </li>
                 <li><code>speed</code>: movement speed used by helpers such as <code>advance()</code>.</li>
-                <li><code>angle</code>: movement and rotation angle in degrees.</li>
+                <li><code>angle</code>: movement and rotation angle in degrees. If declared, it has priority over inherited parent angle.</li>
                 <li><code>rotationSpeed</code>: rotation speed.</li>
                 <li><code>acceleration</code>: acceleration applied to the object.</li>
                 <li><code>inertia</code>: movement preservation factor.</li>

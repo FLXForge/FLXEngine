@@ -1,2 +1,5 @@
 players.1.direction.up=KEY_W,KEY_UP,JOY1_UP
 players.1.direction.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.direction.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.direction.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A

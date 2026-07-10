@@ -444,6 +444,12 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.origin = child.position;
     }
 
+    if (definition.inheritParentAngle && !definition.hasAngle)
+    {
+        child.angle =
+            parent.angle;
+    }
+
     child.previousPosition =
         child.position;
 
@@ -483,6 +489,12 @@ RuntimeObject RuntimeWorld::createGridChild(
 
     child.origin =
         child.position;
+
+    if (definition.inheritParentAngle && !definition.hasAngle)
+    {
+        child.angle =
+            parent.angle;
+    }
 
     child.previousPosition =
         child.position;

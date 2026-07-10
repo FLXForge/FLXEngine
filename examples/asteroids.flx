@@ -8,10 +8,12 @@ engine=0.2.0
 path=asteroids
 root=space
 machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
 
 # Debug
 debug.collisions=false
 debug.logs=false
+debug.console=true
 
 # Notes
 notes=FLX example with spawn and basic UI

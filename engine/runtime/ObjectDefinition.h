@@ -49,6 +49,8 @@ struct ObjectDefinition
 
     float speed = 120.0f;
     float angle = 0.0f;
+    bool hasAngle = false;
+    bool inheritParentAngle = false;
 
     float rotationSpeed = 0.0f;
     float acceleration = 0.0f;

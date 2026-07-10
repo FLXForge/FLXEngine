@@ -6,10 +6,11 @@
 
 // CONSTANTS
 const INIT_LIVES = 3;
+const FIRE_BUTTON = 0;
 
 function action(ui) {
     if (global["inGame"] == 0) {
-        if (Key.down(KEY_SPACE)) {
+        if (Input.player(1).pressed(FIRE_BUTTON)) {
             pause_music();
             global["score"] = 0;
             global["lives"] = INIT_LIVES;

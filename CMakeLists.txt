@@ -5,6 +5,12 @@ project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(
+    FLX_WINDOWS_SUBSYSTEM
+    "Build FlxEngine as a Windows subsystem executable without a console window"
+    OFF
+)
+
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
@@ -31,6 +37,20 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(json)
+
+FetchContent_Declare(
+    yaml_cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
+
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+FetchContent_MakeAvailable(yaml_cpp)
 
 FetchContent_Declare(
     quickjs
@@ -115,16 +135,28 @@ add_executable(FlxEngine
     engine/runtime/RuntimeHelpers.cpp
     engine/runtime/RuntimeConstants.h 
     engine/audio/SoundDefinition.h
+    engine/audio/MusicDefinition.h
+    engine/audio/NoteTools.h
+    engine/audio/NoteTools.cpp
     engine/audio/AudioSystem.h
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/input/InputSystem.h
+    engine/input/InputSystem.cpp
     engine/tools/ColorParser.h
     engine/tools/ColorParser.cpp
     engine/tools/TextTools.h
     engine/tools/TextTools.cpp
     engine/graphics/FadeSystem.h
     engine/graphics/FadeSystem.cpp
+    engine/machine/MachineDefinition.h
+    engine/machine/MachineLoader.h
+    engine/machine/MachineLoader.cpp
+    engine/machine/VideoColorProcessor.h
+    engine/machine/VideoColorProcessor.cpp
+    engine/persistence/PersistenceSystem.h
+    engine/persistence/PersistenceSystem.cpp
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
@@ -155,6 +187,14 @@ add_executable(FlxEngine
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)
 
+if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
+    set_target_properties(
+        FlxEngine
+        PROPERTIES
+        WIN32_EXECUTABLE ON
+    )
+endif()
+
 target_include_directories(
     FlxEngine
     PRIVATE
@@ -166,5 +206,6 @@ target_link_libraries(
     PRIVATE
     raylib
     nlohmann_json::nlohmann_json
+    yaml-cpp::yaml-cpp
     qjs
 )

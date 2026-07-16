@@ -1,0 +1,13 @@
+# Game data
+title=FLX Engine - Invaders Example
+name=Invaders
+version=1.0
+engine=0.2.0
+
+# Configuration
+path=invaders
+root=game
+
+# Debug
+debug.collisions=false
+debug.logs=false

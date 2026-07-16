@@ -7,9 +7,11 @@
         -space key shoot (laser spawn)
 */
 
+const FIRE_BUTTON = 0;
+
 function action(ship) {
 
-    if (Key.down(KEY_UP)) {
+    if (Input.player(1).up()) {
         accelerate(ship);
 
         if (probability(20)) {
@@ -18,15 +20,15 @@ function action(ship) {
         }
     }
 
-    if (Key.down(KEY_LEFT)) {
+    if (Input.player(1).left()) {
         rotate(ship, LEFT);
     }
 
-    if (Key.down(KEY_RIGHT)) {
+    if (Input.player(1).right()) {
         rotate(ship, RIGHT);
     }
 
-    if (Key.pressed(KEY_SPACE)) {
+    if (Input.player(1).pressed(FIRE_BUTTON)) {
         play_sound(ship, "laser");
         spawn(ship, "laser");
     }
@@ -44,6 +46,7 @@ function dead(ship) {
     } else {
         global["inGame"] = 0;
         global["lives"] = 0;
+        pause_music();
     }
     spawn(ship, "fragment");
     spawn(ship, "fragment");

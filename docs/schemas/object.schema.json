@@ -96,6 +96,10 @@
       "type": "string"
     },
 
+    "role": {
+      "type": "string"
+    },
+
     "collision": {
       "oneOf": [
         { "type": "string" },
@@ -123,6 +127,16 @@
         "oneOf": [
           { "type": "string" },
           { "$ref": "sound.schema.json" }
+        ]
+      }
+    },
+
+    "music": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "music.schema.json" }
         ]
       }
     },

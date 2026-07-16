@@ -1,0 +1,17 @@
+machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 320
+
+    color:
+      levels:
+        red: 10
+        green: 10
+        blue: 10
+      alpha: false
+
+    output:
+      scale: 3
+      smoothing: false

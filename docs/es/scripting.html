@@ -136,6 +136,27 @@ Runtime -> Conecta ambos
 
             <hr />
 
+            <h2>Input</h2>
+
+            <p>
+                Los scripts leen input mediante la API normalizada <code>Input</code>.
+                Las teclas fisicas y botones de mando se declaran en el archivo
+                <code>input.mapping</code> del proyecto, no directamente en scripts.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Input</div>
+<pre><code>if (Input.player(1).left()) {
+    move_x(player, LEFT);
+}
+
+if (Input.player(1).pressed(0)) {
+    spawn(player, "laser");
+}</code></pre>
+            </div>
+
+            <hr />
+
             <h2>Ciclo de vida</h2>
 
             <p>

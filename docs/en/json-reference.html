@@ -59,9 +59,10 @@ engine=0.2.0
 path=asteroids
 root=space
 title=Asteroids
-screen.width=640
-screen.height=320
-screen.scale=3
+machine=machines/standard.yml
+input.mapping=input/default.input
+window.mode=window
+debug.console=false
 debug.collisions=false
 debug.logs=false
 notes=FLX example with spawn and basic UI
@@ -78,13 +79,201 @@ notes=FLX example with spawn and basic UI
                 <li><code>path</code>: project content directory. <i>[ Optional ]</i></li>
                 <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
-                <li><code>screen.width</code>: internal reference width. <i>[ Optional ]</i></li>
-                <li><code>screen.height</code>: internal reference height. <i>[ Optional ]</i></li>
-                <li><code>screen.scale</code>: scale factor applied to rendering. <i>[ Optional ]</i></li>
+                <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
+                <li><code>input.mapping</code>: properties-style input mapping used by the normalized <code>Input</code> API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
+                <li><code>window.mode</code>: window mode. Accepted values: <code>window</code>, <code>fullscreen</code>. Default: <code>window</code>. <i>[ Optional ]</i></li>
+                <li><code>debug.console</code>: enables runtime console output. Default: <code>false</code>. On Windows, removing the physical console window requires building with the Windows subsystem option. <i>[ Optional ]</i></li>
                 <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
                 <li><code>debug.logs</code>: enables internal debug logs. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
+
+            <p>
+                <code>debug.console</code> and <code>debug.logs</code> are different.
+                <code>debug.console</code> controls whether FLX writes to the runtime
+                console. <code>debug.logs</code> controls internal debug traces, and
+                only has visible output when console output is enabled.
+            </p>
+
+            <p>
+                In <code>fullscreen</code> mode, FLX keeps the logical resolution
+                defined by the video chip and scales that output to the physical
+                display while preserving aspect ratio.
+            </p>
+
+            <p>
+                A Machine describes available capabilities through chips such as
+                video, audio and input. Screen size, background color and output
+                scale now come from the video chip, not from the <code>.flx</code>
+                manifest.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input/default.input</div>
+<pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
+system.buttons.1=KEY_ENTER,JOY1_START
+
+players.1.direction.up=KEY_W,JOY1_UP
+players.1.direction.down=KEY_S,JOY1_DOWN
+players.1.direction.left=KEY_A,JOY1_LEFT
+players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
+            </div>
+
+            <p>
+                In <code>.input</code> files, commas separate alternatives and
+                <code>+</code> joins simultaneous inputs. The mapping is validated
+                against the Input Chip. Unknown tokens, players or buttons outside
+                the chip limits are ignored with warnings.
+            </p>
+
+            <h2 id="flx-references">FLX JSON References</h2>
+
+            <p>
+                JSON resources can use project-root references by starting a
+                string with <code>/</code>. The leading slash is the FLX project
+                content root declared by <code>path</code> in the manifest, not
+                the operating system root.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">whole JSON</div>
+<pre><code>"shape": "/ui/title_shape"</code></pre>
+
+                <div class="code-header">top-level key inside JSON</div>
+<pre><code>"note": "/music/notes:a"</code></pre>
+            </div>
+
+            <p>
+                <code>/music/notes</code> loads
+                <code>path/music/notes.json</code>. <code>/music/notes:a</code>
+                loads the same file and returns its top-level <code>a</code>
+                entry. The <code>.json</code> extension is optional. Normal
+                strings such as <code>red</code>, <code>C4</code>,
+                <code>square</code> or <code>player</code> are not references.
+                Invalid files, invalid JSON, missing keys and attempts to escape
+                the project root are reported as errors.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">machines/standard.yml</div>
+<pre><code>machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 480
+</code></pre>
+            </div>
+
+            <p>
+                The video chip currently supports:
+                <code>screen.width</code>, <code>screen.height</code>,
+                <code>screen.color</code>, <code>color.palette</code>,
+                <code>color.levels.red</code>,
+                <code>color.levels.green</code>,
+                <code>color.levels.blue</code>,
+                <code>color.tone.base</code>,
+                <code>color.tone.levels</code>,
+                <code>color.alpha</code>, <code>planes.enabled</code>,
+                <code>objects.sprites</code>, <code>output.scale</code> and
+                <code>output.smoothing</code>.
+                Color models are applied when object definitions are loaded;
+                they are not full-screen filters.
+                Alpha, planes and sprite restrictions are declared but not
+                enforced yet.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input chip</div>
+<pre><code>input:
+  players: 1
+  direction: 4way
+  buttons:
+    player: 1
+    system: 2
+  pointer: false
+  text: false</code></pre>
+            </div>
+
+            <p>
+                The input chip declares input capabilities only. It does not name
+                semantic actions such as start, pause or fire. Player buttons and
+                system buttons are separate budgets. If no Input Chip is declared,
+                FLX uses a permissive internal chip.
+            </p>
+
+            <p>
+                In <code>color.levels</code>, each RGB channel accepts values
+                from <code>0</code> upward. A value of <code>0</code> disables
+                that channel. In <code>color.tone.base</code>, hexadecimal
+                colors may be written quoted or unquoted, for example
+                <code>base: "#9BBC0F"</code> and <code>base: #9BBC0F</code>.
+            </p>
+
+            <p>
+                The audio chip defines the sound capabilities of the Machine.
+                It does not declare concrete sounds, songs, instruments or assets.
+                <code>voices.music</code> limits generated music channels and
+                <code>voices.sound</code> limits generated sound effects.
+                In <code>reserved</code> mode those budgets are separate. In
+                <code>shared</code> mode they form a single pool with
+                <code>voices.music + voices.sound</code> voices.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">audio chip</div>
+<pre><code>audio:
+  voices:
+    music: 3
+    sound: 1
+    mode: reserved
+    overflow: replace_oldest
+
+  synthesis:
+    model: pulse
+    texture: clean
+    movement: simple
+    noise: simple
+
+  fidelity:
+    resolution: low
+    dynamics: limited
+    space: mono
+
+  resources:
+    generated: true
+    samples: false
+    streams: false
+
+  fileAudio:
+    mode: off</code></pre>
+            </div>
+
+            <p>
+                <code>voices.mode</code> accepts <code>shared</code>,
+                <code>preferred</code> and <code>reserved</code>.
+                <code>voices.overflow</code> accepts <code>ignore</code>,
+                <code>replace_oldest</code>, <code>replace_newest</code>,
+                <code>replace_lowest_priority</code> and
+                <code>steal_from_music</code>. Current generated sound effects
+                all use the same priority. In <code>shared</code> mode,
+                <code>steal_from_music</code> can pause a playing music voice so
+                a sound effect can play, then resume the music when sound voices
+                are free again.
+            </p>
+
+            <p>
+                <code>synthesis</code>, <code>fidelity</code>,
+                <code>resources</code> and <code>fileAudio</code> are validated
+                and stored in the Machine definition. Generated audio uses
+                <code>synthesis.model</code>, <code>synthesis.texture</code>,
+                <code>synthesis.movement</code>, <code>synthesis.noise</code>,
+                <code>fidelity.resolution</code> and
+                <code>fidelity.dynamics</code> to shape oscillator output.
+                File audio fields are still validation-only and do not enable
+                WAV, OGG or MP3 playback yet.
+            </p>
 
             <h2 id="root">Root Object</h2>
 
@@ -228,8 +417,33 @@ notes=FLX example with spawn and basic UI
                 <div class="code-header">sounds</div>
 <pre><code>"sounds": {
     "beep": {
-        "wave": "square",
-        "frequency": 880,
+        "kind": {
+            "source": {
+                "type": "oscillator",
+                "wave": "square"
+            },
+            "note": 880
+        },
+        "tone": {
+            "material": {
+                "brightness": 0.8,
+                "roughness": 0.1,
+                "noise": 0.0,
+                "resonance": 0.0,
+                "metal": 0.0
+            },
+            "envelope": {
+                "attack": 0.0,
+                "decay": 0.05,
+                "sustain": 0.0,
+                "release": 0.0
+            },
+            "space": {
+                "mode": "mono",
+                "width": 0.0,
+                "echo": 0.0
+            }
+        },
         "duration": 0.08,
         "volume": 0.7
     }
@@ -242,18 +456,153 @@ notes=FLX example with spawn and basic UI
             </div>
 
             <p>
+                <code>kind</code> defines the sound event. <code>kind.source</code>
+                may use <code>oscillator</code> or <code>noise</code> in this
+                implementation. <code>kind.note</code> accepts a musical note
+                string such as <code>C4</code>, a frequency number such as
+                <code>1200</code>, an object such as
+                <code>{ "frequency": 1200 }</code>, or an explicit FLX reference
+                such as <code>/music/notes:a</code>. If missing, FLX uses A4.
+            </p>
+
+            <p>
+                <code>kind.slide</code> is the total frequency change over the
+                sound duration. <code>kind.movement.type = "fall"</code> or
+                <code>"rise"</code> can map movement amount to slide when
+                <code>slide</code> is not specified. <code>"wobble"</code>
+                applies vibrato and <code>"pulse"</code> applies tremolo.
+            </p>
+
+            <p>
+                <code>tone</code> defines the character of the sound through
+                <code>material</code>, <code>envelope</code> and
+                <code>space</code>. Envelope is applied per generated sample.
+                Material brightness, roughness, noise, resonance and metal add
+                audible character. <code>space.echo</code> adds a small delay;
+                stereo width is prepared in the data model but still rendered as
+                mono by the current generator.
+            </p>
+
+            <p>
                 Supported waves are
                 <code>square</code>,
                 <code>sine</code>,
                 <code>triangle</code>,
                 <code>saw</code>
+                ,
+                <code>pulse</code>
                 and
-                <code>noise</code>.
+                <code>noise</code>. <code>source.duty</code> controls pulse
+                duty cycle from <code>0.05</code> to <code>0.95</code>.
+                <code>square</code> always uses duty <code>0.5</code>.
             </p>
 
             <p>
                 Sound declarations are data. They can be inline, referenced as a
                 JSON file, or composed with <code>like</code>.
+            </p>
+
+            <h2 id="music">Music</h2>
+
+            <p>
+                The <code>music</code> field declares generated songs owned by
+                an object. Scripts can play them with
+                <code>play_music(object, "id")</code>. Music uses the
+                <code>voices.music</code> capacity from the Audio Chip and does
+                not consume <code>voices.sound</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">music</div>
+<pre><code>"music": {
+    "theme": {
+        "tempo": 120,
+        "loop": true,
+        "channels": {
+            "lead": {
+                "instrument": {
+                    "source": {
+                        "type": "oscillator",
+                        "wave": "square"
+                    },
+                    "tone": {
+                        "material": {
+                            "brightness": 0.8,
+                            "roughness": 0.1,
+                            "noise": 0.0,
+                            "resonance": 0.2,
+                            "metal": 0.0
+                        },
+                        "envelope": {
+                            "attack": 0.0,
+                            "decay": 0.05,
+                            "sustain": 0.5,
+                            "release": 0.03
+                        },
+                        "space": {
+                            "mode": "mono",
+                            "width": 0.0,
+                            "echo": 0.0
+                        }
+                    },
+                    "play": {
+                        "legato": false,
+                        "glide": 0.0,
+                        "vibrato": 0.0
+                    },
+                    "range": {
+                        "min": "C0",
+                        "max": "B8"
+                    }
+                },
+                "volume": 0.35,
+                "length": "1/8",
+                "notes": ["C4", "E4", "G4", "C5"]
+            },
+            "bass": {
+                "wave": "triangle",
+                "volume": 0.25,
+                "length": "1/4",
+                "notes": ["C3", "-", "G2", "-"]
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <p>
+                A channel may declare <code>instrument</code> inline or as an
+                explicit reference such as
+                <code>/music/instruments:lead_square</code>. Instruments use the
+                same <code>source</code> and <code>tone</code> model as sounds,
+                plus <code>play</code> and <code>range</code>. In this first
+                implementation, <code>legato</code>, <code>glide</code>,
+                and stereo width are loaded and validated but are prepared for
+                later audible behavior. <code>play.vibrato</code> and
+                <code>tone.space.echo</code> already affect generated music.
+            </p>
+
+            <p>
+                For very simple channels, <code>wave</code> may still be declared
+                directly on the channel. FLX treats it as
+                <code>instrument.source.wave</code>.
+            </p>
+
+            <p>
+                Each channel may declare its own <code>length</code>. If omitted,
+                FLX uses <code>1/4</code>. Accepted values are
+                <code>1/1</code>, <code>1/2</code>, <code>1/4</code>,
+                <code>1/8</code> and <code>1/16</code>. At tempo 120,
+                <code>1/4</code> lasts 0.5 seconds, <code>1/8</code> lasts
+                0.25 seconds and <code>1/16</code> lasts 0.125 seconds.
+            </p>
+
+            <p>
+                <code>-</code> is silence. In a <code>noise</code> channel,
+                <code>x</code> is a noise hit. Channels keep their JSON
+                declaration order; if a song declares more channels than the
+                Audio Chip exposes as <code>voices.music</code>, the extra
+                channels are ignored with a warning.
             </p>
 
             <h2 id="states">States</h2>
@@ -385,6 +734,7 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#music">music</a>: generated music declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
             </ul>
 
@@ -447,6 +797,7 @@ notes=FLX example with spawn and basic UI
     },
 
     "group": "paddle",
+    "role": "player",
 
     "collision": {
       "type": "circle",
@@ -472,11 +823,21 @@ notes=FLX example with spawn and basic UI
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#music">music</a>: generated music declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
+                <li><code>role</code>: optional role inside the object's group. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
+
+            <p>
+                <code>group</code> classifies what kind of object it is for collisions and queries.
+                <code>role</code> refines the concrete purpose of that object inside the same group.
+                For example, Pong can use <code>group: "wall"</code> with <code>role: "top"</code>
+                or <code>role: "bottom"</code>, without creating artificial groups such as
+                <code>wall_top</code> and <code>wall_bottom</code>.
+            </p>
 
             <h2 id="attach">Attach</h2>
 
@@ -689,11 +1050,12 @@ notes=FLX example with spawn and basic UI
 
                     <ul>
                         <li><code>none</code>: does not inherit movement.</li>
-                        <li><code>creation</code>: inherits the initial movement at spawn time.</li>
+                        <li><code>creation</code>: inherits the parent angle and current velocity at spawn time. If <code>motion.angle</code> is declared, that angle has priority. If <code>motion.speed</code> is omitted and <code>motion.maxSpeed</code> exists, <code>maxSpeed</code> is used as launch speed.</li>
+                        <li><code>live</code>: currently behaves like <code>creation</code>; continuous inheritance belongs to <code>attach.angle</code>.</li>
                     </ul>
                 </li>
                 <li><code>speed</code>: movement speed used by helpers such as <code>advance()</code>.</li>
-                <li><code>angle</code>: movement and rotation angle in degrees.</li>
+                <li><code>angle</code>: movement and rotation angle in degrees. If declared, it has priority over inherited parent angle.</li>
                 <li><code>rotationSpeed</code>: rotation speed.</li>
                 <li><code>acceleration</code>: acceleration applied to the object.</li>
                 <li><code>inertia</code>: movement preservation factor.</li>

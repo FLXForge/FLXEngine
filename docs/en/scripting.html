@@ -136,6 +136,27 @@ Runtime -> Connects both
 
             <hr />
 
+            <h2>Input</h2>
+
+            <p>
+                Scripts read input through the normalized <code>Input</code> API.
+                Physical keys and gamepad buttons are declared in the project
+                <code>input.mapping</code> file, not directly in scripts.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Input</div>
+<pre><code>if (Input.player(1).left()) {
+    move_x(player, LEFT);
+}
+
+if (Input.player(1).pressed(0)) {
+    spawn(player, "laser");
+}</code></pre>
+            </div>
+
+            <hr />
+
             <h2>Lifecycle</h2>
 
             <p>

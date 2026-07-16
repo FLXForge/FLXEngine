@@ -1,0 +1,11 @@
+input:
+  players: 1
+
+  direction: 2way
+
+  buttons:
+    player: 0
+    system: 2
+
+  pointer: false
+  text: false

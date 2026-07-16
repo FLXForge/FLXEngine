@@ -5,7 +5,13 @@
 
 namespace
 {
+    bool consoleEnabled = true;
     bool debugEnabled = false;
+}
+
+void Logger::setConsoleEnabled(bool enabled)
+{
+    consoleEnabled = enabled;
 }
 
 void Logger::setDebugEnabled(bool enabled)
@@ -18,6 +24,11 @@ void Logger::info(
     const std::string& message
 )
 {
+    if (!consoleEnabled)
+    {
+        return;
+    }
+
     std::cout
         << "<<INFO:[" << category << "] >>:: "
         << message
@@ -29,6 +40,11 @@ void Logger::warning(
     const std::string& message
 )
 {
+    if (!consoleEnabled)
+    {
+        return;
+    }
+
     std::cout
         << "<<WARNING:[" << category << "] >>:: "
         << message
@@ -40,6 +56,11 @@ void Logger::error(
     const std::string& message
 )
 {
+    if (!consoleEnabled)
+    {
+        return;
+    }
+
     std::cout
         << "<<ERROR:[" << category << "] >>:: "
         << message
@@ -50,7 +71,7 @@ void Logger::debug(
     const std::string& message
 )
 {
-    if (!debugEnabled)
+    if (!consoleEnabled || !debugEnabled)
     {
         return;
     }
@@ -66,7 +87,7 @@ void Logger::debug(
     const std::string& message
 )
 {
-    if (!debugEnabled)
+    if (!consoleEnabled || !debugEnabled)
     {
         return;
     }
@@ -78,6 +99,16 @@ void Logger::debug(
 }
 
 void Logger::rayLibLog(int msgType, const char *text, va_list args) {
+    if (!consoleEnabled)
+    {
+        return;
+    }
+
+    if (msgType == LOG_DEBUG && !debugEnabled)
+    {
+        return;
+    }
+
     switch (msgType) {
         case LOG_INFO:    printf("<<INFO:[graphics] >>:: "); break;
         case LOG_ERROR:   printf("<<ERROR:[graphics] >>:: "); break;

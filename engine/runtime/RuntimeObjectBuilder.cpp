@@ -50,12 +50,14 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.boundsOverflow = definition.boundsOverflow;
 
     object.group = definition.group;
+    object.role = definition.role;
     object.collisionType = definition.collisionType;
     object.collisionActive = definition.collisionActive;
     object.collisionRadius = definition.collisionRadius;
     object.collisionWith = definition.collisionWith;
 
     object.scripts = definition.scripts;
+    object.music = definition.music;
     object.sounds = definition.sounds;
     object.children = definition.children;
     object.state = definition.initialState;

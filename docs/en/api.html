@@ -37,7 +37,7 @@
 
             <p>
                 FLX exposes global constants to work with directions
-                and keyboard keys in a readable way.
+                in a readable way.
             </p>
 
             <h3>Direction</h3>
@@ -48,16 +48,6 @@
                 <li><code>LEFT</code>: left direction.</li>
                 <li><code>RIGHT</code>: right direction.</li>
                 <li><code>STOP</code>: neutral or stopped movement.</li>
-            </ul>
-
-            <h3>Keyboard</h3>
-
-            <ul>
-                <li><code>KEY_UP</code>: up arrow.</li>
-                <li><code>KEY_DOWN</code>: down arrow.</li>
-                <li><code>KEY_LEFT</code>: left arrow.</li>
-                <li><code>KEY_RIGHT</code>: right arrow.</li>
-                <li><code>KEY_SPACE</code>: space bar.</li>
             </ul>
 
             <hr />
@@ -392,7 +382,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
 
             <p>
                 Draws one immediate screen-space pixel using logical FLX coordinates.
-                The engine applies <code>screen.scale</code> internally.
+                The engine applies the video chip output scale internally.
             </p>
 
             <p>
@@ -413,6 +403,58 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <p>
                 <code>color</code> is optional and uses white by default.
                 It accepts FLX named colors and hexadecimal color values.
+                The final color is projected through the active video chip.
+            </p>
+
+            <hr />
+
+            <h2>draw_line(x, y, x1, y1, color)</h2>
+
+            <p>
+                Draws one immediate screen-space line using logical FLX coordinates.
+                The engine applies the video chip output scale internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper. It does not create runtime
+                objects and does not collide.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">line</div>
+<pre><code>draw_line(10, 10, 40, 10);
+draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                The final color is projected through the active video chip.
+            </p>
+
+            <hr />
+
+            <h2>draw_rectangle(x, y, width, height, color)</h2>
+
+            <p>
+                Draws one immediate screen-space rectangle outline using logical
+                FLX coordinates. The engine applies the video chip output scale
+                internally.
+            </p>
+
+            <p>
+                This is an overlay drawing helper. It does not create runtime
+                objects and does not collide.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rectangle</div>
+<pre><code>draw_rectangle(8, 8, 40, 20);
+draw_rectangle(60, 8, 30, 30, "green");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> is optional and uses white by default.
+                The final color is projected through the active video chip.
             </p>
 
             <hr />
@@ -433,6 +475,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
                 and
                 <code>#000000</code>
                 are supported.
+                The final color is projected through the active video chip.
             </p>
 
             <div class="code-card">
@@ -522,7 +565,7 @@ fade_set(0, "black");</code></pre>
             <div class="code-card">
                 <div class="code-header">safe transition</div>
 <pre><code>function action(title) {
-    if (Key.pressed(KEY_SPACE)) {
+    if (Input.player(1).pressed(0)) {
         title.local["leaving"] = 1;
         fade_on();
     }
@@ -608,7 +651,7 @@ fade_set(0, "black");</code></pre>
 
             <div class="code-card">
                 <div class="code-header">detach</div>
-<pre><code>if (attach_active(ball) && Key.pressed(KEY_SPACE)) {
+<pre><code>if (attach_active(ball) && Input.player(1).pressed(0)) {
     detach(ball);
     ball.angle = -45;
 }</code></pre>
@@ -638,48 +681,41 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
-            <h2>Key.down(key)</h2>
+            <h2>Input</h2>
 
             <p>
-                Returns <code>true</code> while the specified key is being pressed.
+                <code>Input</code> reads normalized controls declared by the
+                project <code>input.mapping</code> file and constrained by the
+                active Input Chip.
             </p>
 
             <div class="code-card">
-                <div class="code-header">Key.down</div>
+                <div class="code-header">Input</div>
+<pre><code>const EXIT = 0;
+const FIRE = 0;
 
+if (Input.system.pressed(EXIT)) {
+    exit();
+}
 
-<pre><code>if (Key.down(KEY_UP)) {
+if (Input.player(1).up()) {
     move_y(player, UP);
 }
 
-if (Key.down(KEY_LEFT)) {
-    move_x(player, LEFT);
+if (Input.player(1).pressed(FIRE)) {
+    spawn(player, "laser");
 }
 </code></pre>
-
-
             </div>
 
-            <hr />
-
-            <h2>Key.pressed(key)</h2>
-
-            <p>
-                Returns <code>true</code> only on the frame
-                the specified key begins being pressed.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">Key.pressed</div>
-
-
-<pre><code>if (Key.pressed(KEY_SPACE)) {
-    spawn(ship, "laser");
-}
-</code></pre>
-
-
-            </div>
+            <ul>
+                <li><code>Input.system.down(index)</code>: true while a mapped system button is held.</li>
+                <li><code>Input.system.pressed(index)</code>: true on the frame a mapped system button is pressed.</li>
+                <li><code>Input.player(1).up()</code>, <code>down()</code>, <code>left()</code>, <code>right()</code>: player direction.</li>
+                <li><code>Input.player(1).button(index)</code>: true while a mapped player button is held.</li>
+                <li><code>Input.player(1).pressed(index)</code>: true on the frame a mapped player button is pressed.</li>
+                <li><code>Input.pointer.x()</code>, <code>y()</code>, <code>down(index)</code>, <code>pressed(index)</code>: pointer input.</li>
+            </ul>
 
             <hr />
 
@@ -736,6 +772,60 @@ if (Key.down(KEY_LEFT)) {
     }
 }</code></pre>
             </div>
+
+            <hr />
+
+            <h2>exit()</h2>
+
+            <p>
+                Requests an orderly shutdown of the current project. The runtime
+                finishes the main loop and then releases resources normally.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">exit</div>
+<pre><code>function action(menu) {
+    if (Input.system.pressed(0)) {
+        exit();
+    }
+}</code></pre>
+            </div>
+
+            <h2>save(name, key, value)</h2>
+
+            <p>
+                Stores a boolean, number or string in a binary
+                <code>saves/&lt;name&gt;.flxsave</code> file. Saving one key does
+                not remove the other keys from the same file.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">save</div>
+<pre><code>save("progress", "pong_completed", true);
+save("progress", "score", 12500);
+save("settings", "music", false);</code></pre>
+            </div>
+
+            <h2>load(name, key, defaultValue)</h2>
+
+            <p>
+                Loads a stored value. If the file does not exist, the key does
+                not exist, the file is corrupt or the stored type differs from
+                <code>defaultValue</code>, FLX returns <code>defaultValue</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">load</div>
+<pre><code>let completed = load("progress", "pong_completed", false);
+let score = load("progress", "score", 0);
+let music = load("settings", "music", true);</code></pre>
+            </div>
+
+            <p>
+                Save files are not JSON or plain text. They include a format
+                version, typed entries, light obfuscation and a simple checksum
+                to detect casual edits or corruption.
+            </p>
 
             <hr />
 
@@ -876,7 +966,7 @@ if (probability(1, 1000)) {
 
             <div class="code-card">
                 <div class="code-header">play_sound</div>
-<pre><code>if (Key.pressed(KEY_SPACE)) {
+<pre><code>if (Input.player(1).pressed(0)) {
     play_sound(ship, "laser");
     spawn(ship, "laser");
 }
@@ -889,6 +979,68 @@ if (probability(1, 1000)) {
                 <li><code>object</code>: object that owns the sound declaration.</li>
                 <li><code>id</code>: name of the sound declared in JSON.</li>
             </ul>
+
+            <hr />
+
+            <h2>play_music(object, id)</h2>
+
+            <p>
+                Plays generated music declared in the object's
+                <code>music</code>
+                block. If another song is playing, it is replaced.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_music</div>
+<pre><code>function born(game) {
+    play_music(game, "theme");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuration Used</h3>
+
+            <ul>
+                <li><code>object</code>: object that owns the music declaration.</li>
+                <li><code>id</code>: name of the song declared in JSON.</li>
+            </ul>
+
+            <p>
+                Music uses Audio Chip <code>voices.music</code>. Extra channels
+                beyond that limit are ignored with a warning.
+            </p>
+
+            <hr />
+
+            <h2>stop_music()</h2>
+
+            <p>
+                Stops the current generated music.
+            </p>
+
+            <hr />
+
+            <h2>pause_music()</h2>
+
+            <p>
+                Pauses the current music, or resumes it if it is already paused.
+            </p>
+
+            <hr />
+
+            <h2>music_active()</h2>
+
+            <p>
+                Returns <code>true</code> while generated music is active.
+            </p>
+
+            <hr />
+
+            <h2>music_paused()</h2>
+
+            <p>
+                Returns <code>true</code> when the current music is paused.
+            </p>
 
             <hr />
 
@@ -976,7 +1128,7 @@ rotate(ship, RIGHT);</code></pre>
                 <div class="code-header">spawn</div>
 
 
-<pre><code>if (Key.pressed(KEY_SPACE)) {
+<pre><code>if (Input.player(1).pressed(0)) {
     spawn(ship, "laser");
 }
 </code></pre>
@@ -1011,7 +1163,7 @@ rotate(ship, RIGHT);</code></pre>
                 the current state's <code>next</code> list.
             </p>
 
-<pre><code>if (state_active(game, "title") &amp;&amp; Key.pressed(KEY_SPACE)) {
+<pre><code>if (state_active(game, "title") &amp;&amp; Input.player(1).pressed(0)) {
     state(game, "playing");
 }
 </code></pre>
@@ -1019,7 +1171,7 @@ rotate(ship, RIGHT);</code></pre>
             <ul>
                 <li><code>state_current(object)</code>: returns the current state name.</li>
                 <li><code>state_active(object, "name")</code>: checks the current state.</li>
-                <li><code>state_entered(object)</code>: true only during the frame the object entered its current state.</li>
+                <li><code>state_entered(object)</code>: true only during the first runtime frame after the object enters its current state.</li>
                 <li><code>state_time(object)</code>: seconds elapsed since entering the current state.</li>
             </ul>
 

@@ -72,17 +72,31 @@
 
   "sounds": {
     "paddle": {
-      "wave": "square",
-      "frequency": 440,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": 440
+      },
       "duration": 0.08,
       "volume": 0.8
     },
     "lost": {
-      "waveform": "triangle",
-      "frequency": 700,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "triangle"
+        },
+        "note": 700,
+        "slide": 500,
+        "movement": {
+          "type": "rise",
+          "amount": 0.5
+        }
+      },
       "duration": 0.08,
-      "volume": 0.4,
-      "slide": 500
+      "volume": 0.4
     }
   }
 

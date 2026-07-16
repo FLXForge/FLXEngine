@@ -79,8 +79,14 @@ Objects can also declare local sounds:
 {
   "sounds": {
     "beep": {
-      "wave": "square",
-      "frequency": 880,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "pulse",
+          "duty": 0.35
+        },
+        "note": 880
+      },
       "duration": 0.08,
       "volume": 0.7
     }
@@ -88,10 +94,57 @@ Objects can also declare local sounds:
 }
 ```
 
-Scripts can play declared sounds and trigger screen fades:
+Sounds can also use a musical note instead of a raw frequency:
+
+```json
+{
+  "sounds": {
+    "coin": {
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": "C5"
+      },
+      "duration": 0.08,
+      "volume": 0.4
+    }
+  }
+}
+```
+
+Objects can declare generated music:
+
+```json
+{
+  "music": {
+    "theme": {
+      "tempo": 120,
+      "loop": true,
+      "channels": {
+        "lead": {
+          "instrument": {
+            "source": {
+              "type": "oscillator",
+              "wave": "square"
+            }
+          },
+          "volume": 0.35,
+          "length": "1/8",
+          "notes": ["C4", "E4", "G4", "C5"]
+        }
+      }
+    }
+  }
+}
+```
+
+Scripts can play declared audio and trigger screen fades:
 
 ```js
 play_sound(ship, "beep");
+play_music(game, "theme");
 
 fade_on();
 fade_off("#000000");
@@ -123,7 +176,56 @@ Every FLX project starts with a single entry point:
 MyGame.flx
 ```
 
-This file defines project metadata, runtime configuration and the root object.
+This file defines project metadata, runtime configuration, the root object and,
+optionally, the Machine YAML used by the project.
+
+```text
+machine=machines/standard.yml
+input.mapping=input/default.input
+window.mode=window
+debug.console=false
+```
+
+If no Machine is declared, FLX uses an internal default Machine compatible with
+the current runtime behavior.
+
+`window.mode` can be `window` or `fullscreen`. `debug.console` controls runtime
+console output and defaults to `false`; `debug.logs` remains a separate switch
+for internal debug traces. On Windows, a build without a physical console window
+can be produced by configuring CMake with `FLX_WINDOWS_SUBSYSTEM=ON`.
+Fullscreen keeps the video chip logical resolution and scales it to the physical
+display while preserving aspect ratio.
+
+The normalized JavaScript input API uses an explicit mapping file:
+
+```text
+system.buttons.0=KEY_ESCAPE
+players.1.direction.left=KEY_A,JOY1_LEFT
+players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A
+```
+
+Scripts read this through `Input.system` and `Input.player(index)`. FLX does not
+create an implicit mapping when `input.mapping` is missing.
+
+JSON files can reference reusable project resources with FLX-root paths. The
+leading slash points to the manifest `path`, not to the operating system root:
+
+```json
+{
+  "note": "/music/notes:a",
+  "shape": "/ui/title_shape"
+}
+```
+
+Machine YAML can define video, audio and input chips. The audio chip describes
+machine sound capabilities such as voice budgets, overflow policy, synthesis
+character, fidelity and external audio resource support. Runtime support applies
+voice limits before generating waves. In `reserved` mode music and sound voices
+stay separate; in `shared` mode they form a common pool and `steal_from_music`
+can temporarily pause music so a sound effect can play. Synthesis/fidelity
+settings shape generated oscillators. File audio resources are validated but not
+played yet.
 
 ---
 

@@ -138,7 +138,7 @@ namespace
 
         object->stateEnteredFrame =
             scriptEngine != nullptr
-            ? scriptEngine->getRuntimeFrame()
+            ? scriptEngine->getRuntimeFrame() + 1
             : 0;
 
         return JS_UNDEFINED;

@@ -224,6 +224,38 @@ namespace
         return object.collisionType == "circle" ||
             object.collisionType == "box";
     }
+
+    void applyInheritedCreationMotion(
+        RuntimeObject& child,
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition
+    )
+    {
+        if (!definition.inheritParentAngle)
+        {
+            return;
+        }
+
+        if (!definition.hasAngle)
+        {
+            child.angle =
+                parent.angle;
+        }
+
+        if (!definition.hasSpeed && definition.maxSpeed > 0.0f)
+        {
+            child.speed =
+                definition.maxSpeed;
+            child.originSpeed =
+                definition.maxSpeed;
+        }
+
+        child.velocity.x +=
+            parent.velocity.x;
+
+        child.velocity.y +=
+            parent.velocity.y;
+    }
 }
 
 RuntimeWorld::RuntimeWorld()
@@ -358,8 +390,7 @@ void RuntimeWorld::spawn(
         RuntimeObject instance =
             createIndividualChild(
                 source,
-                definition,
-                true
+                definition
             );
 
         pendingObjects.push_back(instance);
@@ -410,8 +441,7 @@ void RuntimeWorld::spawn(
 
 RuntimeObject RuntimeWorld::createIndividualChild(
     const RuntimeObject& parent,
-    const ObjectDefinition& definition,
-    bool inheritParentAngle
+    const ObjectDefinition& definition
 )
 {
     RuntimeObject child =
@@ -446,6 +476,12 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.origin = child.position;
     }
 
+    applyInheritedCreationMotion(
+        child,
+        parent,
+        definition
+    );
+
     child.previousPosition =
         child.position;
 
@@ -453,12 +489,6 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.position.x - parent.position.x,
         child.position.y - parent.position.y
     };
-
-    if (inheritParentAngle)
-    {
-        child.angle =
-            parent.angle;
-    }
 
     return child;
 }
@@ -491,6 +521,12 @@ RuntimeObject RuntimeWorld::createGridChild(
 
     child.origin =
         child.position;
+
+    applyInheritedCreationMotion(
+        child,
+        parent,
+        definition
+    );
 
     child.previousPosition =
         child.position;
@@ -724,8 +760,7 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
         RuntimeObject child =
             createIndividualChild(
                 parent,
-                definition,
-                false
+                definition
             );
 
         std::vector<RuntimeObject> descendants;

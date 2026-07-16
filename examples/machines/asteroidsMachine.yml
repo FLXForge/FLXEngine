@@ -1,0 +1,43 @@
+﻿machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 320
+
+    color:
+      levels:
+        red: 100
+        green: 100
+        blue: 100
+      alpha: false
+
+    output:
+      scale: 3
+      smoothing: false
+
+  audio:
+    voices:
+      music: 2
+      sound: 1
+      mode: reserved
+      overflow: replace_oldest
+
+    synthesis:
+      model: mixed
+      texture: rough
+      movement: dynamic
+      noise: none
+
+    fidelity:
+      resolution: low
+      dynamics: limited
+      space: mono
+
+    resources:
+      generated: true
+      samples: false
+      streams: false
+
+    fileAudio:
+      mode: off

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "children": {
+    "fleet": "invader/fleet",
+    "player": "player/player"
+  },
+
+  "behavior": {
+    "scripts": [ "game" ]
+  }
+}

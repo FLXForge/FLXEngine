@@ -3,6 +3,8 @@
 #include "../debug/Logger.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
+#include "../machine/VideoColorProcessor.h"
+#include "../tools/ColorParser.h"
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
@@ -899,6 +901,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "role",
+        JS_NewString(context, object.role.c_str())
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "layer",
         JS_NewInt32(context, object.layer)
     );
@@ -1059,6 +1068,38 @@ int ScriptEngine::getScreenScale() const
     return screenScale;
 }
 
+void ScriptEngine::setVideoChip(const VideoChipDefinition* nextVideoChip)
+{
+    videoChip =
+        nextVideoChip;
+}
+
+Color ScriptEngine::parseColor(
+    const std::string& color,
+    Color fallback
+) const
+{
+    return projectColor(
+        ColorParser::parse(
+            color,
+            fallback
+        )
+    );
+}
+
+Color ScriptEngine::projectColor(Color color) const
+{
+    if (videoChip == nullptr)
+    {
+        return color;
+    }
+
+    return VideoColorProcessor::project(
+        color,
+        *videoChip
+    );
+}
+
 void ScriptEngine::setFrameDelta(float delta)
 {
     frameDelta =
@@ -1081,6 +1122,17 @@ uint64_t ScriptEngine::getRuntimeFrame() const
     return runtimeFrame;
 }
 
+void ScriptEngine::setInputSystem(InputSystem* nextInputSystem)
+{
+    inputSystem =
+        nextInputSystem;
+}
+
+InputSystem* ScriptEngine::getInputSystem() const
+{
+    return inputSystem;
+}
+
 void ScriptEngine::setFadeSystem(FadeSystem* nextFadeSystem)
 {
     fadeSystem = nextFadeSystem;
@@ -1093,7 +1145,9 @@ void ScriptEngine::fadeOn(const std::string& color)
         return;
     }
 
-    fadeSystem->fadeOn(color);
+    fadeSystem->fadeOn(
+        parseColor(color, BLACK)
+    );
 }
 
 void ScriptEngine::fadeOff(const std::string& color)
@@ -1103,7 +1157,9 @@ void ScriptEngine::fadeOff(const std::string& color)
         return;
     }
 
-    fadeSystem->fadeOff(color);
+    fadeSystem->fadeOff(
+        parseColor(color, BLACK)
+    );
 }
 
 void ScriptEngine::fadeSet(
@@ -1116,7 +1172,10 @@ void ScriptEngine::fadeSet(
         return;
     }
 
-    fadeSystem->set(alpha, color);
+    fadeSystem->set(
+        alpha,
+        parseColor(color, BLACK)
+    );
 }
 
 bool ScriptEngine::fadeActive() const
@@ -1168,4 +1227,99 @@ void ScriptEngine::playSound(
     }
 
     audioSystem->play(it->second);
+}
+
+void ScriptEngine::playMusic(
+    RuntimeObject& source,
+    const std::string& id
+)
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    const auto it =
+        source.music.find(id);
+
+    if (it == source.music.end())
+    {
+        Logger::warning(
+            "audio",
+            "Music not found: " + id + " in " + source.runtimeId
+        );
+
+        return;
+    }
+
+    audioSystem->playMusic(it->second);
+}
+
+void ScriptEngine::stopMusic()
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    audioSystem->stopMusic();
+}
+
+void ScriptEngine::pauseMusic()
+{
+    if (audioSystem == nullptr)
+    {
+        return;
+    }
+
+    audioSystem->togglePauseMusic();
+}
+
+bool ScriptEngine::musicActive() const
+{
+    return audioSystem != nullptr && audioSystem->isMusicActive();
+}
+
+bool ScriptEngine::musicPaused() const
+{
+    return audioSystem != nullptr && audioSystem->isMusicPaused();
+}
+
+void ScriptEngine::requestExit()
+{
+    requestedExit = true;
+
+    Logger::info(
+        "runtime",
+        "Exit requested"
+    );
+}
+
+bool ScriptEngine::exitRequested() const
+{
+    return requestedExit;
+}
+
+bool ScriptEngine::saveValue(
+    const std::string& name,
+    const std::string& key,
+    const PersistedValue& value
+)
+{
+    return persistenceSystem.save(
+        name,
+        key,
+        value
+    );
+}
+
+std::optional<PersistedValue> ScriptEngine::loadValue(
+    const std::string& name,
+    const std::string& key
+)
+{
+    return persistenceSystem.load(
+        name,
+        key
+    );
 }

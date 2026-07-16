@@ -21,21 +21,6 @@ declare const RIGHT: number;
 /** Neutral movement constant. */
 declare const STOP: number;
 
-/** Keyboard key constant. */
-declare const KEY_UP: number;
-
-/** Keyboard key constant. */
-declare const KEY_DOWN: number;
-
-/** Keyboard key constant. */
-declare const KEY_LEFT: number;
-
-/** Keyboard key constant. */
-declare const KEY_RIGHT: number;
-
-/** Keyboard key constant. */
-declare const KEY_SPACE: number;
-
 /**
  * Motion configuration exposed from JSON.
  */
@@ -59,6 +44,86 @@ interface MotionConfig {
     maxSpeed: number;
 }
 
+type AudioSourceType = "oscillator" | "noise" | "impact" | "pulse";
+type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
+type AudioMovementType = "none" | "rise" | "fall" | "pulse" | "wobble" | "scatter" | "random";
+type AudioSpaceMode = "mono" | "stereo";
+type MusicLength = "1/1" | "1/2" | "1/4" | "1/8" | "1/16";
+
+interface AudioSourceConfig {
+    type?: AudioSourceType;
+    wave?: AudioWave;
+    /** Pulse duty cycle from 0.05 to 0.95. Only pulse uses it; square is fixed at 0.5. */
+    duty?: number;
+}
+
+interface AudioMovementConfig {
+    type?: AudioMovementType;
+    amount?: number;
+}
+
+type AudioNoteConfig =
+    string |
+    number |
+    {
+        frequency: number;
+    };
+
+interface AudioToneConfig {
+    material?: {
+        brightness?: number;
+        roughness?: number;
+        noise?: number;
+        resonance?: number;
+        metal?: number;
+    };
+    envelope?: {
+        attack?: number;
+        decay?: number;
+        sustain?: number;
+        release?: number;
+    };
+    space?: {
+        mode?: AudioSpaceMode;
+        width?: number;
+        echo?: number;
+    };
+}
+
+interface SoundConfig {
+    kind?: {
+        source?: AudioSourceConfig | string;
+        note?: AudioNoteConfig;
+        slide?: number;
+        movement?: AudioMovementConfig | string;
+    };
+    tone?: AudioToneConfig | string;
+    duration?: number;
+    volume?: number;
+}
+
+interface InstrumentConfig {
+    source?: AudioSourceConfig | string;
+    tone?: AudioToneConfig | string;
+    play?: {
+        legato?: boolean;
+        glide?: number;
+        vibrato?: number;
+    };
+    range?: {
+        min?: string;
+        max?: string;
+    };
+}
+
+interface MusicChannelConfig {
+    instrument?: InstrumentConfig | string;
+    wave?: AudioWave;
+    volume?: number;
+    length?: MusicLength;
+    notes: string[];
+}
+
 /**
  * Runtime representation of an object created by FLX.
  */
@@ -77,6 +142,9 @@ interface RuntimeObject {
 
     /** Collision group identifier. */
     group: string;
+
+    /** Optional role inside the collision group. */
+    role: string;
 
     /** Draw layer. Lower values are drawn first. */
     layer: number;
@@ -166,25 +234,55 @@ interface RayResult {
  */
 declare const global: Record<string, number>;
 
-/**
- * Keyboard input helper.
- */
-declare const Key: {
-    /**
-     * Returns true while the given key is pressed.
-     *
-     * @example
-     * Key.down(KEY_UP)
-     */
-    down(key: number): boolean;
+interface InputPlayerApi {
+    /** Returns true while the mapped up direction is active. */
+    up(): boolean;
 
-    /**
-     * Returns true only on the frame the given key is pressed.
-     *
-     * @example
-     * Key.pressed(KEY_SPACE)
-     */
-    pressed(key: number): boolean;
+    /** Returns true while the mapped down direction is active. */
+    down(): boolean;
+
+    /** Returns true while the mapped left direction is active. */
+    left(): boolean;
+
+    /** Returns true while the mapped right direction is active. */
+    right(): boolean;
+
+    /** Returns true while the mapped player button is held. */
+    button(buttonIndex: number): boolean;
+
+    /** Returns true on the frame the mapped player button is pressed. */
+    pressed(buttonIndex: number): boolean;
+}
+
+/**
+ * Normalized input API backed by the project's input.mapping file and the
+ * active Input Chip capabilities.
+ */
+declare const Input: {
+    system: {
+        /** Returns true while the mapped system button is held. */
+        down(buttonIndex: number): boolean;
+
+        /** Returns true on the frame the mapped system button is pressed. */
+        pressed(buttonIndex: number): boolean;
+    };
+
+    /** Returns the normalized API for a player. Player indexes start at 1. */
+    player(playerIndex: number): InputPlayerApi;
+
+    pointer: {
+        /** Pointer X coordinate in logical FLX space. */
+        x(): number;
+
+        /** Pointer Y coordinate in logical FLX space. */
+        y(): number;
+
+        /** Returns true while the mapped pointer button is held. */
+        down(buttonIndex: number): boolean;
+
+        /** Returns true on the frame the mapped pointer button is pressed. */
+        pressed(buttonIndex: number): boolean;
+    };
 };
 
 /**
@@ -359,7 +457,8 @@ declare function state_active(
 ): boolean;
 
 /**
- * Returns true only during the frame in which the object entered its state.
+ * Returns true only during the first runtime frame after the object enters
+ * its current state.
  */
 declare function state_entered(object: RuntimeObject): boolean;
 
@@ -439,6 +538,28 @@ declare function draw_pixel(
 ): void;
 
 /**
+ * Draws a screen-space line using logical screen coordinates.
+ */
+declare function draw_line(
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    color?: string
+): void;
+
+/**
+ * Draws a screen-space rectangle outline using logical screen coordinates.
+ */
+declare function draw_rectangle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color?: string
+): void;
+
+/**
  * Starts a full-screen fade from transparent to opaque.
  *
  * Default color is black and duration is currently fixed to one second.
@@ -507,6 +628,62 @@ declare function play_sound(
     object: RuntimeObject,
     id: string
 ): void;
+
+/**
+ * Plays generated music declared in the object's music map.
+ * Replaces the currently playing music, if any.
+ *
+ * @example
+ * play_music(game, "theme");
+ */
+declare function play_music(
+    object: RuntimeObject,
+    id: string
+): void;
+
+/**
+ * Stops the current generated music.
+ */
+declare function stop_music(): void;
+
+/**
+ * Pauses the current music, or resumes it if it is already paused.
+ */
+declare function pause_music(): void;
+
+/**
+ * Returns true while generated music is currently active.
+ */
+declare function music_active(): boolean;
+
+/**
+ * Returns true when the current music is paused.
+ */
+declare function music_paused(): boolean;
+
+/**
+ * Requests an orderly shutdown of the current FLX runtime.
+ */
+declare function exit(): void;
+
+/**
+ * Saves a boolean, number or string value in saves/<name>.flxsave.
+ */
+declare function save(
+    name: string,
+    key: string,
+    value: boolean | number | string
+): void;
+
+/**
+ * Loads a boolean, number or string value from saves/<name>.flxsave.
+ * Returns defaultValue when the file, key or expected type is unavailable.
+ */
+declare function load<T extends boolean | number | string>(
+    name: string,
+    key: string,
+    defaultValue: T
+): T;
 
 /**
  * Called when an object enters the world.

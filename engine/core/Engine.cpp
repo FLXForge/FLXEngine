@@ -1,10 +1,13 @@
 #include "Engine.h"
 #include "../debug/Logger.h"
 #include "../loading/JsonLoader.h"
+#include "../machine/VideoColorProcessor.h"
 #include "../project/FlxContextBuilder.h"
+#include "../tools/ColorParser.h"
 
 #include <raylib.h>
 #include <algorithm>
+#include <cmath>
 
 Engine::Engine() = default;
 
@@ -12,6 +15,80 @@ namespace
 {
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
+
+    void projectDefinitionColors(
+        ObjectDefinition& definition,
+        const VideoChipDefinition& video
+    )
+    {
+        definition.color =
+            VideoColorProcessor::project(
+                definition.color,
+                video
+            );
+
+        for (auto& child : definition.children)
+        {
+            projectDefinitionColors(
+                child.second,
+                video
+            );
+        }
+    }
+
+    Rectangle renderDestination(
+        const FlxContext& context
+    )
+    {
+        if (context.windowMode != "fullscreen")
+        {
+            return Rectangle{
+                0.0f,
+                0.0f,
+                static_cast<float>(context.screenWidth * context.screenScale),
+                static_cast<float>(context.screenHeight * context.screenScale)
+            };
+        }
+
+        const float windowWidth =
+            static_cast<float>(GetScreenWidth());
+
+        const float windowHeight =
+            static_cast<float>(GetScreenHeight());
+
+        const float horizontalScale =
+            windowWidth / static_cast<float>(context.screenWidth);
+
+        const float verticalScale =
+            windowHeight / static_cast<float>(context.screenHeight);
+
+        float scale =
+            std::min(horizontalScale, verticalScale);
+
+        if (scale >= 1.0f)
+        {
+            scale =
+                std::floor(scale);
+        }
+
+        if (scale <= 0.0f)
+        {
+            scale = 1.0f;
+        }
+
+        const float width =
+            static_cast<float>(context.screenWidth) * scale;
+
+        const float height =
+            static_cast<float>(context.screenHeight) * scale;
+
+        return Rectangle{
+            (windowWidth - width) * 0.5f,
+            (windowHeight - height) * 0.5f,
+            width,
+            height
+        };
+    }
 }
 
 void Engine::run(const std::string& flxPath)
@@ -20,9 +97,15 @@ void Engine::run(const std::string& flxPath)
 
     init(flxPath);
 
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() && !scriptEngine.exitRequested())
     {
         update();
+
+        if (scriptEngine.exitRequested())
+        {
+            break;
+        }
+
         draw();
     }
 
@@ -41,7 +124,13 @@ void Engine::loadProject(const std::string& flxPath)
     context =
         FlxContextBuilder::build(flxPath);
 
+    Logger::setConsoleEnabled(context.debugConsole);
     Logger::setDebugEnabled(context.debugLogs);
+    SetTraceLogLevel(
+        context.debugConsole
+        ? LOG_ALL
+        : LOG_NONE
+    );
 
     Logger::info(
         "project",
@@ -61,12 +150,21 @@ void Engine::loadProject(const std::string& flxPath)
     );
 
     initWindow();
+    initVideoOutput();
+    audioSystem.configure(context.machine.audio);
     audioSystem.init();
-    scriptEngine.setScreenScale(context.screenScale);
+    inputSystem.configure(context.machine.input);
+    inputSystem.loadMapping(context.inputMappingPath);
+    scriptEngine.setScreenScale(1);
     configureScriptEngine();
 
-    const ObjectDefinition rootDefinition =
+    ObjectDefinition rootDefinition =
         JsonLoader::loadObjectDefinition(rootPath);
+
+    projectDefinitionColors(
+        rootDefinition,
+        context.machine.video
+    );
 
     world.load(rootDefinition, scriptEngine);
 }
@@ -78,15 +176,90 @@ void Engine::initWindow()
         ? "Flx"
         : context.screenTitle;
 
+    Logger::info(
+        "graphics",
+        "Window size: " +
+        std::to_string(
+            context.windowMode == "fullscreen"
+            ? GetMonitorWidth(0)
+            : context.screenWidth * context.screenScale
+        ) +
+        "x" +
+        std::to_string(
+            context.windowMode == "fullscreen"
+            ? GetMonitorHeight(0)
+            : context.screenHeight * context.screenScale
+        )
+    );
+
+    int windowWidth =
+        context.screenWidth * context.screenScale;
+
+    int windowHeight =
+        context.screenHeight * context.screenScale;
+
+    if (context.windowMode == "fullscreen")
+    {
+        SetConfigFlags(FLAG_FULLSCREEN_MODE);
+
+        windowWidth =
+            GetMonitorWidth(0);
+
+        windowHeight =
+            GetMonitorHeight(0);
+    }
+
     InitWindow(
-        context.screenWidth * context.screenScale,
-        context.screenHeight * context.screenScale,
+        windowWidth,
+        windowHeight,
         title.c_str()
+    );
+}
+
+void Engine::initVideoOutput()
+{
+    backgroundColor =
+        ColorParser::parse(
+            context.machine.video.clearColor,
+            BLACK
+        );
+
+    backgroundColor =
+        VideoColorProcessor::project(
+            backgroundColor,
+            context.machine.video
+        );
+
+    Logger::info(
+        "graphics",
+        "Logical screen: " +
+        std::to_string(context.screenWidth) +
+        "x" +
+        std::to_string(context.screenHeight) +
+        " scale " +
+        std::to_string(context.screenScale)
+    );
+
+    renderTarget =
+        LoadRenderTexture(
+            context.screenWidth,
+            context.screenHeight
+        );
+
+    renderTargetLoaded = true;
+
+    SetTextureFilter(
+        renderTarget.texture,
+        context.machine.video.smoothing
+        ? TEXTURE_FILTER_BILINEAR
+        : TEXTURE_FILTER_POINT
     );
 }
 
 void Engine::configureScriptEngine()
 {
+    scriptEngine.setVideoChip(&context.machine.video);
+    scriptEngine.setInputSystem(&inputSystem);
     scriptEngine.setFadeSystem(&fadeSystem);
     scriptEngine.setAudioSystem(&audioSystem);
 
@@ -148,6 +321,13 @@ void Engine::update()
 
     scriptEngine.setFrameDelta(delta);
 
+    inputSystem.update(
+        delta,
+        context.screenWidth,
+        context.screenHeight,
+        renderDestination(context)
+    );
+
     world.update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
@@ -161,13 +341,13 @@ void Engine::update()
 
 void Engine::draw()
 {
-    BeginDrawing();
+    BeginTextureMode(renderTarget);
 
-    ClearBackground(BLACK);
+    ClearBackground(backgroundColor);
 
     world.draw(
         scriptEngine,
-        context.screenScale,
+        1,
         static_cast<float>(context.screenWidth),
         static_cast<float>(context.screenHeight),
         context.debugCollisions
@@ -176,7 +356,27 @@ void Engine::draw()
     fadeSystem.draw(
         context.screenWidth,
         context.screenHeight,
-        context.screenScale
+        1
+    );
+
+    EndTextureMode();
+
+    BeginDrawing();
+
+    ClearBackground(backgroundColor);
+
+    DrawTexturePro(
+        renderTarget.texture,
+        Rectangle{
+            0.0f,
+            0.0f,
+            static_cast<float>(renderTarget.texture.width),
+            static_cast<float>(-renderTarget.texture.height)
+        },
+        renderDestination(context),
+        Vector2{ 0.0f, 0.0f },
+        0.0f,
+        WHITE
     );
 
     EndDrawing();
@@ -184,8 +384,20 @@ void Engine::draw()
 
 void Engine::shutdown()
 {
+    shutdownVideoOutput();
     audioSystem.shutdown();
     CloseWindow();
+}
+
+void Engine::shutdownVideoOutput()
+{
+    if (!renderTargetLoaded)
+    {
+        return;
+    }
+
+    UnloadRenderTexture(renderTarget);
+    renderTargetLoaded = false;
 }
 
 RuntimeObject* Engine::find(const std::string& name)

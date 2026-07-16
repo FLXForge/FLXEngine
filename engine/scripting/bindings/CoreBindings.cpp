@@ -8,6 +8,7 @@
 #include <quickjs.h>
 #include <raylib.h>
 
+#include <optional>
 #include <string>
 
 namespace
@@ -336,6 +337,250 @@ namespace
             )
         );
     }
+
+    bool jsValueToPersistedValue(
+        JSContext* context,
+        JSValueConst value,
+        PersistedValue& persisted
+    )
+    {
+        if (JS_IsBool(value))
+        {
+            persisted.type =
+                PersistedValue::Type::Boolean;
+            persisted.booleanValue =
+                JS_ToBool(context, value) != 0;
+
+            return true;
+        }
+
+        if (JS_IsNumber(value))
+        {
+            persisted.type =
+                PersistedValue::Type::Number;
+
+            return JS_ToFloat64(
+                context,
+                &persisted.numberValue,
+                value
+            ) == 0;
+        }
+
+        if (JS_IsString(value))
+        {
+            const char* text =
+                JS_ToCString(context, value);
+
+            if (text == nullptr)
+            {
+                return false;
+            }
+
+            persisted.type =
+                PersistedValue::Type::String;
+            persisted.stringValue =
+                text;
+
+            JS_FreeCString(context, text);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    JSValue persistedValueToJs(
+        JSContext* context,
+        const PersistedValue& value
+    )
+    {
+        if (value.type == PersistedValue::Type::Boolean)
+        {
+            return JS_NewBool(
+                context,
+                value.booleanValue
+            );
+        }
+
+        if (value.type == PersistedValue::Type::String)
+        {
+            return JS_NewString(
+                context,
+                value.stringValue.c_str()
+            );
+        }
+
+        return JS_NewFloat64(
+            context,
+            value.numberValue
+        );
+    }
+
+    JSValue jsExit(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine != nullptr)
+        {
+            scriptEngine->requestExit();
+        }
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsSave(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 3)
+        {
+            return JS_UNDEFINED;
+        }
+
+        const char* name =
+            JS_ToCString(context, argv[0]);
+        const char* key =
+            JS_ToCString(context, argv[1]);
+
+        PersistedValue value;
+
+        const bool validValue =
+            jsValueToPersistedValue(
+                context,
+                argv[2],
+                value
+            );
+
+        if (name == nullptr || key == nullptr || !validValue)
+        {
+            Logger::warning(
+                "save",
+                "save() supports only boolean, number and string values"
+            );
+
+            if (name != nullptr)
+            {
+                JS_FreeCString(context, name);
+            }
+
+            if (key != nullptr)
+            {
+                JS_FreeCString(context, key);
+            }
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->saveValue(
+            name,
+            key,
+            value
+        );
+
+        JS_FreeCString(context, name);
+        JS_FreeCString(context, key);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsLoad(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr || argc < 3)
+        {
+            return JS_UNDEFINED;
+        }
+
+        const char* name =
+            JS_ToCString(context, argv[0]);
+        const char* key =
+            JS_ToCString(context, argv[1]);
+
+        PersistedValue defaultValue;
+
+        const bool validDefault =
+            jsValueToPersistedValue(
+                context,
+                argv[2],
+                defaultValue
+            );
+
+        if (name == nullptr || key == nullptr || !validDefault)
+        {
+            Logger::warning(
+                "save",
+                "load() requires a boolean, number or string default value"
+            );
+
+            if (name != nullptr)
+            {
+                JS_FreeCString(context, name);
+            }
+
+            if (key != nullptr)
+            {
+                JS_FreeCString(context, key);
+            }
+
+            return validDefault
+                ? persistedValueToJs(context, defaultValue)
+                : JS_UNDEFINED;
+        }
+
+        std::optional<PersistedValue> loaded =
+            scriptEngine->loadValue(
+                name,
+                key
+            );
+
+        JS_FreeCString(context, name);
+        JS_FreeCString(context, key);
+
+        if (!loaded.has_value())
+        {
+            return persistedValueToJs(
+                context,
+                defaultValue
+            );
+        }
+
+        if (loaded->type != defaultValue.type)
+        {
+            Logger::warning(
+                "save",
+                "load() type mismatch; returning default value"
+            );
+
+            return persistedValueToJs(
+                context,
+                defaultValue
+            );
+        }
+
+        return persistedValueToJs(
+            context,
+            loaded.value()
+        );
+    }
 }
 
 void CoreBindings::registerAll(JSContext* context)
@@ -401,6 +646,27 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "ray",
         JS_NewCFunction(context, jsRay, "ray", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "exit",
+        JS_NewCFunction(context, jsExit, "exit", 0)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "save",
+        JS_NewCFunction(context, jsSave, "save", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "load",
+        JS_NewCFunction(context, jsLoad, "load", 3)
     );
 
     JS_FreeValue(context, global);

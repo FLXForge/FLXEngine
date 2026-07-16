@@ -10,6 +10,10 @@ public:
     static FlxContext build(const std::string& path);
 
 private:
+    static void loadMachine(FlxContext& context);
+    static void applyMachineScreenDefaults(FlxContext& context);
+    static void logResolvedContext(const FlxContext& context);
+
     static void assign(
         FlxContext& context,
         const std::string& key,
@@ -22,5 +26,9 @@ private:
         const std::string& basePath,
         const std::string& childPath
     );
-    static bool parseBool(const std::string& value);
+    static bool parseBoolProperty(
+        const std::string& key,
+        const std::string& value,
+        bool defaultValue
+    );
 };

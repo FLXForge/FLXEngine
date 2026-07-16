@@ -5,11 +5,11 @@
 */
 
 function action(player) {
-    if (Key.down(KEY_UP)) {
+    if (Input.player(1).up()) {
         move_y(player, UP);
     }
 
-    if (Key.down(KEY_DOWN)) {
+    if (Input.player(1).down()) {
         move_y(player, DOWN);
     }
 }

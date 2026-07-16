@@ -5,30 +5,146 @@
   "type": "object",
   "additionalProperties": true,
 
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [ "oscillator", "noise", "impact", "pulse" ],
+          "default": "oscillator"
+        },
+        "wave": {
+          "type": "string",
+          "enum": [ "sine", "square", "triangle", "saw", "pulse", "noise" ],
+          "default": "square"
+        },
+        "duty": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.95,
+          "default": 0.5
+        }
+      }
+    },
+
+    "note": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "frequency": { "type": "number" }
+          },
+          "required": [ "frequency" ]
+        }
+      ]
+    },
+
+    "movement": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [ "none", "rise", "fall", "pulse", "wobble", "scatter", "random" ],
+          "default": "none"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0
+        }
+      }
+    },
+
+    "tone": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "material": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "brightness": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.5 },
+            "roughness": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "noise": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "resonance": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "metal": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+          }
+        },
+        "envelope": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "attack": { "type": "number", "minimum": 0, "default": 0 },
+            "decay": { "type": "number", "minimum": 0, "default": 0.05 },
+            "sustain": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "release": { "type": "number", "minimum": 0, "default": 0 }
+          }
+        },
+        "space": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [ "mono", "stereo" ],
+              "default": "mono"
+            },
+            "width": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "echo": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+          }
+        }
+      }
+    }
+  },
+
   "properties": {
     "like": {
       "type": "string"
     },
 
-    "wave": {
-      "type": "string",
-      "enum": [
-        "square",
-        "sine",
-        "triangle",
-        "saw",
-        "noise"
-      ],
-      "default": "square"
+    "kind": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "source": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/$defs/source" }
+          ]
+        },
+        "note": {
+          "$ref": "#/$defs/note"
+        },
+        "slide": {
+          "type": "number",
+          "default": 0
+        },
+        "movement": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/$defs/movement" }
+          ]
+        }
+      }
     },
 
-    "frequency": {
-      "type": "number",
-      "default": 440
+    "tone": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "#/$defs/tone" }
+      ]
     },
 
     "duration": {
       "type": "number",
+      "exclusiveMinimum": 0,
       "default": 0.1
     },
 
@@ -36,7 +152,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "default": 1
+      "default": 0.4
     }
   }
 }

@@ -5,7 +5,9 @@
 #include "../project/FlxContext.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
+#include "../input/InputSystem.h"
 
+#include <raylib.h>
 #include <string>
 
 class Engine
@@ -25,12 +27,18 @@ private:
 
     void loadProject(const std::string& flxPath);
     void initWindow();
+    void initVideoOutput();
     void configureScriptEngine();
+    void shutdownVideoOutput();
     float safeFrameDelta() const;
 private:
     ScriptEngine scriptEngine;
     RuntimeWorld world;
     AudioSystem audioSystem;
+    InputSystem inputSystem;
     FadeSystem fadeSystem;
     FlxContext context;
+    RenderTexture2D renderTarget = {};
+    bool renderTargetLoaded = false;
+    Color backgroundColor = BLACK;
 };

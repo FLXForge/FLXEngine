@@ -2,6 +2,7 @@
 
 #include <raylib.h>
 
+#include "../audio/MusicDefinition.h"
 #include "../audio/SoundDefinition.h"
 
 #include <string>
@@ -47,7 +48,10 @@ struct ObjectDefinition
     std::vector<Vector2> points;
 
     float speed = 120.0f;
+    bool hasSpeed = false;
     float angle = 0.0f;
+    bool hasAngle = false;
+    bool inheritParentAngle = false;
 
     float rotationSpeed = 0.0f;
     float acceleration = 0.0f;
@@ -58,12 +62,14 @@ struct ObjectDefinition
     bool boundsOverflow = false;
 
     std::string group;
+    std::string role;
     std::string collisionType = "none";
     bool collisionActive = false;
     float collisionRadius = 0.0f;
     std::vector<std::string> collisionWith;
 
     std::vector<std::string> scripts;
+    std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
 

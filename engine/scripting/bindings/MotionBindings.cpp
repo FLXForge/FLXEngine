@@ -169,8 +169,17 @@ namespace
             const double radians =
                 (angle - 90.0) * DEG2RAD;
 
-            x += std::cos(radians) * speed * delta;
-            y += std::sin(radians) * speed * delta;
+            x +=
+                (
+                    std::cos(radians) * speed +
+                    velocityX
+                ) * delta;
+
+            y +=
+                (
+                    std::sin(radians) * speed +
+                    velocityY
+                ) * delta;
         }
 
         JS_SetPropertyStr(context, self, "x", JS_NewFloat64(context, x));

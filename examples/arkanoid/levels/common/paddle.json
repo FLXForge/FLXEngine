@@ -50,11 +50,20 @@
 
   "sounds": {
     "pop": {
-      "waveform": "square",
-      "frequency": 900,
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": 900,
+        "slide": 300,
+        "movement": {
+          "type": "rise",
+          "amount": 0.35
+        }
+      },
       "duration": 0.06,
-      "volume": 0.35,
-      "slide": 300
+      "volume": 0.35
     }
   }
 

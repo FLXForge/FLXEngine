@@ -1,0 +1,39 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 300,
+    "y": 450
+  },
+
+  "shape": {
+    "type": "triangle",
+    "mode": "fill",
+    "color": "white",
+    "size": {
+      "width": 24,
+      "height": 8
+    }
+  },
+
+  "motion": {
+    "speed": 90
+  },
+
+  "group": "player",
+
+  "children": {
+    "laser": {
+      "like": "laser",
+      "spawn": "manual",
+      "offset": {
+        "x": 11,
+        "y": -10
+      }
+    }
+  },
+
+  "behavior": {
+    "scripts": [ "player" ]
+  }
+}

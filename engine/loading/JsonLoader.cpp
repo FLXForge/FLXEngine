@@ -662,8 +662,15 @@ namespace
         definition.rotationSpeed =
             motion.value("rotationSpeed", definition.rotationSpeed);
 
-        definition.speed =
-            motion.value("speed", definition.speed);
+        definition.hasSpeed =
+            motion.contains("speed") &&
+            motion["speed"].is_number();
+
+        if (definition.hasSpeed)
+        {
+            definition.speed =
+                motion.value("speed", definition.speed);
+        }
 
         definition.hasAngle =
             motion.contains("angle") &&

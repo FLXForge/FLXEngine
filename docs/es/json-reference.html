@@ -1030,7 +1030,7 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
 
                     <ul>
                         <li><code>none</code>: no hereda movimiento.</li>
-                        <li><code>creation</code>: hereda el angulo del parent en el momento del spawn salvo que se declare <code>motion.angle</code>.</li>
+                        <li><code>creation</code>: hereda el angulo y la velocidad actual del parent en el momento del spawn. Si se declara <code>motion.angle</code>, ese angulo tiene prioridad. Si se omite <code>motion.speed</code> y existe <code>motion.maxSpeed</code>, <code>maxSpeed</code> se usa como velocidad de salida.</li>
                         <li><code>live</code>: actualmente se comporta como <code>creation</code>; la herencia continua pertenece a <code>attach.angle</code>.</li>
                     </ul>
                 </li>

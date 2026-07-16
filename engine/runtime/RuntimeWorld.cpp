@@ -224,6 +224,38 @@ namespace
         return object.collisionType == "circle" ||
             object.collisionType == "box";
     }
+
+    void applyInheritedCreationMotion(
+        RuntimeObject& child,
+        const RuntimeObject& parent,
+        const ObjectDefinition& definition
+    )
+    {
+        if (!definition.inheritParentAngle)
+        {
+            return;
+        }
+
+        if (!definition.hasAngle)
+        {
+            child.angle =
+                parent.angle;
+        }
+
+        if (!definition.hasSpeed && definition.maxSpeed > 0.0f)
+        {
+            child.speed =
+                definition.maxSpeed;
+            child.originSpeed =
+                definition.maxSpeed;
+        }
+
+        child.velocity.x +=
+            parent.velocity.x;
+
+        child.velocity.y +=
+            parent.velocity.y;
+    }
 }
 
 RuntimeWorld::RuntimeWorld()
@@ -444,11 +476,11 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.origin = child.position;
     }
 
-    if (definition.inheritParentAngle && !definition.hasAngle)
-    {
-        child.angle =
-            parent.angle;
-    }
+    applyInheritedCreationMotion(
+        child,
+        parent,
+        definition
+    );
 
     child.previousPosition =
         child.position;
@@ -490,11 +522,11 @@ RuntimeObject RuntimeWorld::createGridChild(
     child.origin =
         child.position;
 
-    if (definition.inheritParentAngle && !definition.hasAngle)
-    {
-        child.angle =
-            parent.angle;
-    }
+    applyInheritedCreationMotion(
+        child,
+        parent,
+        definition
+    );
 
     child.previousPosition =
         child.position;

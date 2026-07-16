@@ -48,6 +48,7 @@ struct ObjectDefinition
     std::vector<Vector2> points;
 
     float speed = 120.0f;
+    bool hasSpeed = false;
     float angle = 0.0f;
     bool hasAngle = false;
     bool inheritParentAngle = false;

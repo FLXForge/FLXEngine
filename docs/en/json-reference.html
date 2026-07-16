@@ -1050,7 +1050,7 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
 
                     <ul>
                         <li><code>none</code>: does not inherit movement.</li>
-                        <li><code>creation</code>: inherits the parent angle at spawn time unless <code>motion.angle</code> is declared.</li>
+                        <li><code>creation</code>: inherits the parent angle and current velocity at spawn time. If <code>motion.angle</code> is declared, that angle has priority. If <code>motion.speed</code> is omitted and <code>motion.maxSpeed</code> exists, <code>maxSpeed</code> is used as launch speed.</li>
                         <li><code>live</code>: currently behaves like <code>creation</code>; continuous inheritance belongs to <code>attach.angle</code>.</li>
                     </ul>
                 </li>

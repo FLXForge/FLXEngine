@@ -122,6 +122,15 @@ add_executable(FlxEngine
 
     engine/core/Engine.h
     engine/core/Engine.cpp
+    engine/compiler/CompiledProject.h
+    engine/compiler/CompiledProjectBinary.h
+    engine/compiler/CompiledProjectBinary.cpp
+    engine/compiler/Diagnostics.h
+    engine/compiler/Diagnostics.cpp
+    engine/compiler/ResourceRegistry.h
+    engine/compiler/ResourceRegistry.cpp
+    engine/compiler/ProjectCompiler.h
+    engine/compiler/ProjectCompiler.cpp
 
     engine/runtime/RuntimeObject.h
     engine/runtime/RuntimeObject.cpp 
@@ -208,4 +217,41 @@ target_link_libraries(
     nlohmann_json::nlohmann_json
     yaml-cpp::yaml-cpp
     qjs
+)
+
+enable_testing()
+
+get_target_property(FLX_TEST_SOURCES FlxEngine SOURCES)
+list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp FLXEngine.h)
+
+add_executable(
+    flx-tests
+    tests/ProjectCompilerTests.cpp
+    ${FLX_TEST_SOURCES}
+)
+
+target_compile_definitions(
+    flx-tests
+    PRIVATE
+    FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_include_directories(
+    flx-tests
+    PRIVATE
+    ${quickjs_SOURCE_DIR}
+)
+
+target_link_libraries(
+    flx-tests
+    PRIVATE
+    raylib
+    nlohmann_json::nlohmann_json
+    yaml-cpp::yaml-cpp
+    qjs
+)
+
+add_test(
+    NAME flx-tests
+    COMMAND flx-tests
 )

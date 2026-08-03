@@ -30,6 +30,10 @@ public:
 
     void eval(const std::string& code);
     void loadScript(const std::string& path);
+    void loadScript(
+        const std::string& id,
+        const std::string& code
+    );
 
     void callScriptFunction(
         const std::string& script,
@@ -58,7 +62,7 @@ public:
     using SpawnObjectFunction =
         std::function<void(
             RuntimeObject& source,
-            const ObjectDefinition& definition
+            const std::string& resourceId
             )>;
 
     using RayCastFunction =
@@ -79,7 +83,7 @@ public:
 
     void spawnObject(
         RuntimeObject& source,
-        const ObjectDefinition& definition
+        const std::string& resourceId
     );
 
     void setRayCastFunction(RayCastFunction function);

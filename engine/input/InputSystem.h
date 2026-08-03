@@ -13,6 +13,10 @@ class InputSystem
 public:
     void configure(const InputChipDefinition& inputChip);
     void loadMapping(const std::string& path);
+    void loadMappingContent(
+        const std::string& sourceName,
+        const std::string& content
+    );
     void update(
         float delta,
         int screenWidth,

@@ -2215,14 +2215,20 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 
     if (!loadJson(objectPath, data))
     {
-        return ObjectDefinition{};
+        throw std::runtime_error(
+            "JSON object could not be loaded: " +
+            genericPathString(objectPath)
+        );
     }
 
     Json resolved;
 
     if (!resolveLike(objectPath, data, resolved))
     {
-        return ObjectDefinition{};
+        throw std::runtime_error(
+            "JSON object could not be resolved: " +
+            genericPathString(objectPath)
+        );
     }
 
     return parseDefinition(

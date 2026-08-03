@@ -2,7 +2,6 @@
 #include "RuntimeObjectBuilder.h"
 #include "../collision/CollisionSystem.h"
 #include "../debug/Logger.h"
-#include "../loading/JsonLoader.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
@@ -264,7 +263,7 @@ RuntimeWorld::RuntimeWorld()
 }
 
 void RuntimeWorld::load(
-    const ObjectDefinition& rootDefinition,
+    const CompiledProject& project,
     ScriptEngine& scriptEngine
 )
 {
@@ -272,9 +271,23 @@ void RuntimeWorld::load(
     pendingObjects.clear();
     nextRuntimeId = 1;
     frameIndex = 0;
+    resources = &project.resources;
+
+    const ObjectDefinition* rootDefinition =
+        &project.rootDefinition;
+
+    if (rootDefinition == nullptr)
+    {
+        Logger::error(
+            "runtime",
+            "Compiled root resource not found: " + project.rootId
+        );
+
+        return;
+    }
 
     RuntimeObject root =
-        createRuntimeObject(rootDefinition, "");
+        createRuntimeObject(*rootDefinition, "");
 
     objects.push_back(
         std::move(root)
@@ -369,10 +382,33 @@ void RuntimeWorld::draw(
 
 void RuntimeWorld::spawn(
     RuntimeObject& source,
-    const ObjectDefinition& definition,
+    const std::string& resourceId,
     ScriptEngine& scriptEngine
 )
 {
+    if (resources == nullptr)
+    {
+        Logger::error(
+            "spawn",
+            "Resource registry is not available"
+        );
+
+        return;
+    }
+
+    const ObjectDefinition* definition =
+        resources->findObject(resourceId);
+
+    if (definition == nullptr)
+    {
+        Logger::error(
+            "spawn",
+            "Compiled child resource not found: " + resourceId
+        );
+
+        return;
+    }
+
     const size_t firstQueuedIndex =
         pendingObjects.size();
 
@@ -380,7 +416,7 @@ void RuntimeWorld::spawn(
     {
         instantiateGridChildren(
             source,
-            definition.id,
+            definition->id,
             "",
             pendingObjects
         );
@@ -390,7 +426,7 @@ void RuntimeWorld::spawn(
         RuntimeObject instance =
             createIndividualChild(
                 source,
-                definition
+                *definition
             );
 
         pendingObjects.push_back(instance);
@@ -427,7 +463,7 @@ void RuntimeWorld::spawn(
     {
         Logger::warning(
             "spawn",
-            "No instances queued for child: " + definition.id
+            "No instances queued for child: " + definition->id
         );
 
         return;
@@ -435,7 +471,7 @@ void RuntimeWorld::spawn(
 
     Logger::debug(
         "spawn",
-        "Queued child: " + definition.id
+        "Queued child: " + definition->id
     );
 }
 
@@ -723,10 +759,13 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
     const std::string& parentId
 )
 {
+    const std::string runtimeId =
+        createRuntimeId(definition.id);
+
     RuntimeObject object =
         RuntimeObjectBuilder::build(
         definition,
-        createRuntimeId(definition.id),
+        runtimeId,
         parentId
     );
 
@@ -744,15 +783,32 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
     std::vector<RuntimeObject>& target
 )
 {
-    const auto children =
-        parent.children;
-
-    for (const auto& pair : children)
+    if (resources == nullptr)
     {
-        const ObjectDefinition& definition =
-            pair.second;
+        Logger::error(
+            "creation",
+            "Resource registry is not available"
+        );
 
-        if (definition.spawnMode != "auto")
+        return;
+    }
+
+    for (const auto& pair : parent.childResources)
+    {
+        const ObjectDefinition* definition =
+            resources->findObject(pair.second);
+
+        if (definition == nullptr)
+        {
+            Logger::error(
+                "creation",
+                "Compiled child resource not found: " + pair.second
+            );
+
+            continue;
+        }
+
+        if (definition->spawnMode != "auto")
         {
             continue;
         }
@@ -760,7 +816,7 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
         RuntimeObject child =
             createIndividualChild(
                 parent,
-                definition
+                *definition
             );
 
         std::vector<RuntimeObject> descendants;
@@ -789,6 +845,16 @@ void RuntimeWorld::instantiateGridChildren(
     std::vector<RuntimeObject>& target
 )
 {
+    if (resources == nullptr)
+    {
+        Logger::error(
+            "creation",
+            "Resource registry is not available"
+        );
+
+        return;
+    }
+
     if (!validGridCreation(parent))
     {
         return;
@@ -816,9 +882,9 @@ void RuntimeWorld::instantiateGridChildren(
             }
 
             const auto it =
-                parent.children.find(childId);
+                parent.childResources.find(childId);
 
-            if (it == parent.children.end())
+            if (it == parent.childResources.end())
             {
                 Logger::warning(
                     "creation",
@@ -829,12 +895,23 @@ void RuntimeWorld::instantiateGridChildren(
                 continue;
             }
 
-            const ObjectDefinition& definition =
-                it->second;
+            const ObjectDefinition* definition =
+                resources->findObject(it->second);
+
+            if (definition == nullptr)
+            {
+                Logger::error(
+                    "creation",
+                    "Compiled grid child resource not found: " +
+                    it->second
+                );
+
+                continue;
+            }
 
             if (
                 !requestedSpawnMode.empty() &&
-                definition.spawnMode != requestedSpawnMode
+                definition->spawnMode != requestedSpawnMode
                 )
             {
                 continue;
@@ -843,7 +920,7 @@ void RuntimeWorld::instantiateGridChildren(
             RuntimeObject child =
                 createGridChild(
                     parent,
-                    definition,
+                    *definition,
                     row,
                     column
                 );
@@ -956,20 +1033,35 @@ void RuntimeWorld::loadScriptsForObject(
     ScriptEngine& scriptEngine
 )
 {
-    object.resolvedScriptPaths.clear();
-
-    for (const auto& script : object.scripts)
+    for (const auto& scriptPath : object.resolvedScriptPaths)
     {
-        const std::string scriptPath =
-            JsonLoader::resolveReferencedPath(
-                object.sourcePath,
-                script,
-                ".js"
+        if (resources == nullptr)
+        {
+            Logger::error(
+                "script",
+                "Resource registry is not available"
             );
 
-        object.resolvedScriptPaths.push_back(scriptPath);
+            continue;
+        }
 
-        scriptEngine.loadScript(scriptPath);
+        const ScriptResource* script =
+            resources->findScript(scriptPath);
+
+        if (script == nullptr)
+        {
+            Logger::error(
+                "script",
+                "Compiled script resource not found: " + scriptPath
+            );
+
+            continue;
+        }
+
+        scriptEngine.loadScript(
+            script->id,
+            script->code
+        );
     }
 }
 

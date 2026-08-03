@@ -1,7 +1,6 @@
 #include "SpawnBindings.h"
 #include "BindingHelpers.h"
 #include "../../debug/Logger.h"
-#include "../../runtime/ObjectDefinition.h"
 #include "../../runtime/RuntimeObject.h"
 
 #include <quickjs.h>
@@ -61,10 +60,10 @@ namespace
             return JS_UNDEFINED;
         }
 
-        auto it =
-            source->children.find(spawnName);
+        const auto it =
+            source->childResources.find(spawnName);
 
-        if (it == source->children.end())
+        if (it == source->childResources.end())
         {
             Logger::warning(
                 "spawn",
@@ -79,17 +78,14 @@ namespace
             return JS_UNDEFINED;
         }
 
-        const ObjectDefinition& definition =
-            it->second;
-
         Logger::debug(
             "spawn",
-            "Child ready: " + definition.id
+            "Child ready: " + std::string(spawnName)
         );
 
         scriptEngine->spawnObject(
             *source,
-            definition
+            it->second
         );
 
         JS_FreeCString(context, spawnName);

@@ -1,0 +1,41 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  version-check:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate VERSION was manually increased
+        shell: pwsh
+        run: |
+          git fetch origin main
+
+          $ProposedVersion = (Get-Content VERSION -Raw).Trim()
+          $BaseVersion = (git show origin/main:VERSION).Trim()
+
+          if ($ProposedVersion -notmatch '^\d+\.\d+\.\d+$' -or $BaseVersion -notmatch '^\d+\.\d+\.\d+$') {
+            Write-Error "VERSION must use semantic X.Y.Z format."
+            exit 1
+          }
+
+          $ProposedParts = $ProposedVersion.Split('.') | ForEach-Object { [int]$_ }
+          $BaseParts = $BaseVersion.Split('.') | ForEach-Object { [int]$_ }
+
+          $IsGreater =
+            ($ProposedParts[0] -gt $BaseParts[0]) -or
+            ($ProposedParts[0] -eq $BaseParts[0] -and $ProposedParts[1] -gt $BaseParts[1]) -or
+            ($ProposedParts[0] -eq $BaseParts[0] -and $ProposedParts[1] -eq $BaseParts[1] -and $ProposedParts[2] -gt $BaseParts[2])
+
+          if (-not $IsGreater) {
+            Write-Error "VERSION must be manually updated before merging into main. Current main version: $BaseVersion Proposed version: $ProposedVersion"
+            exit 1
+          }

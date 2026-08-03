@@ -7,8 +7,64 @@
 
 #include <iostream>
 
+namespace
+{
+    void appendDiagnostics(
+        Diagnostics& destination,
+        const Diagnostics& source
+    )
+    {
+        for (const Diagnostic& diagnostic : source.all())
+        {
+            switch (diagnostic.severity)
+            {
+            case DiagnosticSeverity::Error:
+                destination.error(
+                    diagnostic.message,
+                    diagnostic.file,
+                    diagnostic.field
+                );
+                break;
+            case DiagnosticSeverity::Warning:
+                destination.warning(
+                    diagnostic.message,
+                    diagnostic.file,
+                    diagnostic.field
+                );
+                break;
+            case DiagnosticSeverity::Info:
+            default:
+                destination.info(
+                    diagnostic.message,
+                    diagnostic.file,
+                    diagnostic.field
+                );
+                break;
+            }
+        }
+    }
+}
+
 int CompileCommand::execute(const CliArguments& arguments) const
 {
+    if (!arguments.output.has_value())
+    {
+        Diagnostics diagnostics;
+        diagnostics.error("compile requires --output=<path>");
+
+        DiagnosticPrinter::printDiagnostics(
+            diagnostics,
+            arguments.format,
+            "compile",
+            CliExitCode::InvalidArguments,
+            false,
+            std::cout,
+            std::cerr
+        );
+
+        return static_cast<int>(CliExitCode::InvalidArguments);
+    }
+
     ProjectResolver resolver;
     ProjectResolutionResult resolution =
         resolver.resolve(arguments.target);
@@ -32,7 +88,7 @@ int CompileCommand::execute(const CliArguments& arguments) const
     CompilationResult result =
         compiler.compile(resolution.manifestPath.generic_string());
 
-    if (arguments.format == CliOutputFormat::Text || !result.success)
+    if (!result.success)
     {
         DiagnosticPrinter::printDiagnostics(
             result.diagnostics,
@@ -54,14 +110,21 @@ int CompileCommand::execute(const CliArguments& arguments) const
     const std::string output =
         arguments.output->generic_string();
 
-    if (!CompiledProjectWriter::write(
+    const bool writeSuccess =
+        CompiledProjectWriter::write(
         output,
         result.project,
         writeDiagnostics
-    ))
+    );
+
+    Diagnostics diagnostics;
+    appendDiagnostics(diagnostics, result.diagnostics);
+    appendDiagnostics(diagnostics, writeDiagnostics);
+
+    if (!writeSuccess)
     {
         DiagnosticPrinter::printDiagnostics(
-            writeDiagnostics,
+            diagnostics,
             arguments.format,
             "compile",
             CliExitCode::CompilationError,
@@ -78,7 +141,8 @@ int CompileCommand::execute(const CliArguments& arguments) const
         "Compiled project written: " + output,
         arguments.format,
         std::cout,
-        result.diagnostics
+        std::cerr,
+        diagnostics
     );
 
     return static_cast<int>(CliExitCode::Success);

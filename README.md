@@ -256,6 +256,11 @@ flx [command] [options] [target]
 The default command is `run` and the default target is the current directory, so
 `flx`, `flx .` and `flx run .` are equivalent. Use `flx --help` for available
 commands and `flx --version` for the semantic FLX version read from `VERSION`.
+In text output, human diagnostics always go to stderr, including info messages;
+stdout is reserved for command results.
+Structured JSON output is currently supported only by `compile` and `validate`.
+Runtime JSON output for `run` and `run-compiled` is planned for a later step,
+once the engine returns a structured runtime result and owns its streams.
 
 ---
 

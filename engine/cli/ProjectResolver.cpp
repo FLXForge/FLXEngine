@@ -4,6 +4,7 @@
 #include <cctype>
 #include <filesystem>
 #include <string>
+#include <system_error>
 #include <vector>
 
 namespace
@@ -34,6 +35,35 @@ namespace
     {
         return equalsIgnoreCase(path.extension().string(), ".flx");
     }
+
+    void addFilesystemError(
+        ProjectResolutionResult& result,
+        const std::filesystem::path& path,
+        const std::error_code& error
+    )
+    {
+        result.success = false;
+        result.exitCode = CliExitCode::ProjectResolutionError;
+        result.diagnostics.error(
+            "Filesystem error while resolving project: " + error.message(),
+            path.generic_string()
+        );
+    }
+
+    bool hasFilesystemError(
+        ProjectResolutionResult& result,
+        const std::filesystem::path& path,
+        const std::error_code& error
+    )
+    {
+        if (!error)
+        {
+            return false;
+        }
+
+        addFilesystemError(result, path, error);
+        return true;
+    }
 }
 
 ProjectResolutionResult ProjectResolver::resolve(
@@ -41,8 +71,27 @@ ProjectResolutionResult ProjectResolver::resolve(
 ) const
 {
     ProjectResolutionResult result;
+    std::error_code error;
 
-    if (std::filesystem::is_regular_file(target))
+    error.clear();
+    const bool exists =
+        std::filesystem::exists(target, error);
+
+    if (hasFilesystemError(result, target, error))
+    {
+        return result;
+    }
+
+    error.clear();
+    const bool isFile =
+        std::filesystem::is_regular_file(target, error);
+
+    if (hasFilesystemError(result, target, error))
+    {
+        return result;
+    }
+
+    if (isFile)
     {
         if (!isFlxFile(target))
         {
@@ -59,7 +108,7 @@ ProjectResolutionResult ProjectResolver::resolve(
         return result;
     }
 
-    if (!std::filesystem::exists(target))
+    if (!exists)
     {
         result.diagnostics.error(
             "Project target was not found",
@@ -68,7 +117,16 @@ ProjectResolutionResult ProjectResolver::resolve(
         return result;
     }
 
-    if (!std::filesystem::is_directory(target))
+    error.clear();
+    const bool isDirectory =
+        std::filesystem::is_directory(target, error);
+
+    if (hasFilesystemError(result, target, error))
+    {
+        return result;
+    }
+
+    if (!isDirectory)
     {
         result.diagnostics.error(
             "Project target is not a .flx file or directory",
@@ -80,7 +138,31 @@ ProjectResolutionResult ProjectResolver::resolve(
     const std::filesystem::path projectManifest =
         target / "project.flx";
 
-    if (std::filesystem::is_regular_file(projectManifest))
+    error.clear();
+    const bool projectManifestExists =
+        std::filesystem::exists(projectManifest, error);
+
+    if (hasFilesystemError(result, projectManifest, error))
+    {
+        return result;
+    }
+
+    if (!projectManifestExists)
+    {
+        error.clear();
+    }
+
+    error.clear();
+    const bool hasProjectManifest =
+        projectManifestExists &&
+        std::filesystem::is_regular_file(projectManifest, error);
+
+    if (hasFilesystemError(result, projectManifest, error))
+    {
+        return result;
+    }
+
+    if (hasProjectManifest)
     {
         result.success = true;
         result.exitCode = CliExitCode::Success;
@@ -90,12 +172,44 @@ ProjectResolutionResult ProjectResolver::resolve(
 
     std::vector<std::filesystem::path> manifests;
 
-    for (const std::filesystem::directory_entry& entry :
-        std::filesystem::directory_iterator(target))
+    error.clear();
+    std::filesystem::directory_iterator iterator(
+        target,
+        error
+    );
+
+    if (hasFilesystemError(result, target, error))
     {
-        if (entry.is_regular_file() && isFlxFile(entry.path()))
+        return result;
+    }
+
+    const std::filesystem::directory_iterator end;
+
+    while (iterator != end)
+    {
+        const std::filesystem::directory_entry entry =
+            *iterator;
+
+        error.clear();
+        const bool entryIsFile =
+            entry.is_regular_file(error);
+
+        if (hasFilesystemError(result, entry.path(), error))
+        {
+            return result;
+        }
+
+        if (entryIsFile && isFlxFile(entry.path()))
         {
             manifests.push_back(entry.path());
+        }
+
+        error.clear();
+        iterator.increment(error);
+
+        if (hasFilesystemError(result, target, error))
+        {
+            return result;
         }
     }
 

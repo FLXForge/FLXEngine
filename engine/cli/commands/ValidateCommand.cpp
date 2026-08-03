@@ -31,7 +31,7 @@ int ValidateCommand::execute(const CliArguments& arguments) const
     CompilationResult result =
         compiler.compile(resolution.manifestPath.generic_string());
 
-    if (arguments.format == CliOutputFormat::Text || !result.success)
+    if (!result.success)
     {
         DiagnosticPrinter::printDiagnostics(
             result.diagnostics,
@@ -54,6 +54,7 @@ int ValidateCommand::execute(const CliArguments& arguments) const
         "Project is valid: " + resolution.manifestPath.generic_string(),
         arguments.format,
         std::cout,
+        std::cerr,
         result.diagnostics
     );
 

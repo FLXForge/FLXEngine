@@ -9,6 +9,24 @@
 
 int RunCommand::execute(const CliArguments& arguments) const
 {
+    if (arguments.format == CliOutputFormat::Json)
+    {
+        Diagnostics diagnostics;
+        diagnostics.error("--format=json is not supported for run yet");
+
+        DiagnosticPrinter::printDiagnostics(
+            diagnostics,
+            CliOutputFormat::Text,
+            "run",
+            CliExitCode::InvalidArguments,
+            false,
+            std::cout,
+            std::cerr
+        );
+
+        return static_cast<int>(CliExitCode::InvalidArguments);
+    }
+
     ProjectResolver resolver;
     ProjectResolutionResult resolution =
         resolver.resolve(arguments.target);

@@ -1,8 +1,8 @@
 #include "DiagnosticPrinter.h"
 
+#include <nlohmann/json.hpp>
+
 #include <ostream>
-#include <sstream>
-#include <vector>
 
 namespace
 {
@@ -20,36 +20,26 @@ namespace
         }
     }
 
-    std::string escapeJson(const std::string& text)
+    nlohmann::json diagnosticsToJson(const Diagnostics& diagnostics)
     {
-        std::ostringstream output;
+        nlohmann::json items =
+            nlohmann::json::array();
 
-        for (const char character : text)
+        for (const Diagnostic& diagnostic : diagnostics.all())
         {
-            switch (character)
-            {
-            case '\\':
-                output << "\\\\";
-                break;
-            case '"':
-                output << "\\\"";
-                break;
-            case '\n':
-                output << "\\n";
-                break;
-            case '\r':
-                output << "\\r";
-                break;
-            case '\t':
-                output << "\\t";
-                break;
-            default:
-                output << character;
-                break;
-            }
+            // Diagnostic does not expose stable diagnostic codes yet. Add them
+            // here when Diagnostics grows that field.
+            items.push_back(
+                {
+                    { "severity", severityName(diagnostic.severity) },
+                    { "file", diagnostic.file },
+                    { "field", diagnostic.field },
+                    { "message", diagnostic.message }
+                }
+            );
         }
 
-        return output.str();
+        return items;
     }
 
     void printTextDiagnostic(
@@ -74,37 +64,8 @@ namespace
         stream << diagnostic.message << "\n";
     }
 
-    void printJsonDiagnostics(
-        const Diagnostics& diagnostics,
-        std::ostream& output
-    )
-    {
-        output << "\"diagnostics\":[";
-
-        const std::vector<Diagnostic>& all =
-            diagnostics.all();
-
-        for (std::size_t i = 0; i < all.size(); ++i)
-        {
-            const Diagnostic& diagnostic =
-                all[i];
-
-            if (i > 0)
-            {
-                output << ",";
-            }
-
-            output
-                << "{"
-                << "\"severity\":\"" << severityName(diagnostic.severity) << "\","
-                << "\"file\":\"" << escapeJson(diagnostic.file) << "\","
-                << "\"field\":\"" << escapeJson(diagnostic.field) << "\","
-                << "\"message\":\"" << escapeJson(diagnostic.message) << "\""
-                << "}";
-        }
-
-        output << "]";
-    }
+    // Human diagnostics always go to stderr, including severity "info".
+    // Stdout remains reserved for requested results and JSON output.
 }
 
 void DiagnosticPrinter::printDiagnostics(
@@ -119,13 +80,15 @@ void DiagnosticPrinter::printDiagnostics(
 {
     if (format == CliOutputFormat::Json)
     {
-        output
-            << "{"
-            << "\"success\":" << (success ? "true" : "false") << ","
-            << "\"command\":\"" << escapeJson(command) << "\","
-            << "\"exitCode\":" << static_cast<int>(exitCode) << ",";
-        printJsonDiagnostics(diagnostics, output);
-        output << "}\n";
+        nlohmann::json payload =
+            {
+                { "success", success },
+                { "command", command },
+                { "exitCode", static_cast<int>(exitCode) },
+                { "diagnostics", diagnosticsToJson(diagnostics) }
+            };
+
+        output << payload.dump() << "\n";
         return;
     }
 
@@ -140,20 +103,28 @@ void DiagnosticPrinter::printResult(
     const std::string& message,
     CliOutputFormat format,
     std::ostream& output,
+    std::ostream& error,
     const Diagnostics& diagnostics
 )
 {
     if (format == CliOutputFormat::Json)
     {
-        output
-            << "{"
-            << "\"success\":true,"
-            << "\"command\":\"" << escapeJson(command) << "\","
-            << "\"exitCode\":0,"
-            << "\"message\":\"" << escapeJson(message) << "\",";
-        printJsonDiagnostics(diagnostics, output);
-        output << "}\n";
+        nlohmann::json payload =
+            {
+                { "success", true },
+                { "command", command },
+                { "exitCode", 0 },
+                { "diagnostics", diagnosticsToJson(diagnostics) },
+                { "message", message }
+            };
+
+        output << payload.dump() << "\n";
         return;
+    }
+
+    for (const Diagnostic& diagnostic : diagnostics.all())
+    {
+        printTextDiagnostic(diagnostic, error);
     }
 
     output << message << "\n";

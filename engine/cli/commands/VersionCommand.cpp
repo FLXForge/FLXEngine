@@ -1,5 +1,6 @@
 #include "VersionCommand.h"
 
+#include "../CliExitCode.h"
 #include "FlxVersion.h"
 
 #include <iostream>
@@ -7,5 +8,5 @@
 int VersionCommand::execute() const
 {
     std::cout << FlxVersion::Text << "\n";
-    return 0;
+    return static_cast<int>(CliExitCode::Success);
 }

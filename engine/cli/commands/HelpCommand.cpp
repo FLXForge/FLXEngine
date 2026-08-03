@@ -1,5 +1,7 @@
 #include "HelpCommand.h"
 
+#include "../CliExitCode.h"
+
 #include <iostream>
 
 namespace
@@ -23,7 +25,7 @@ namespace
             << "  --version, -v\n"
             << "  --frames=<number>\n"
             << "  --output=<path>\n"
-            << "  --format=<text|json>\n"
+            << "  --format=<text|json>    Only for compile and validate\n"
             << "\n"
             << "Examples:\n"
             << "  flx\n"
@@ -42,7 +44,9 @@ namespace
             << "\n"
             << "Options:\n"
             << "  --frames=<number>    Limit runtime frames\n"
-            << "  --format=<text|json>\n";
+            << "\n"
+            << "JSON runtime output is pending until Engine returns a RuntimeResult "
+            << "and can control its streams.\n";
     }
 
     void printCompileHelp()
@@ -65,7 +69,9 @@ namespace
             << "\n"
             << "Options:\n"
             << "  --frames=<number>    Limit runtime frames\n"
-            << "  --format=<text|json>\n";
+            << "\n"
+            << "JSON runtime output is pending until Engine returns a RuntimeResult "
+            << "and can control its streams.\n";
     }
 
     void printValidateHelp()
@@ -77,6 +83,15 @@ namespace
             << "Options:\n"
             << "  --format=<text|json>\n";
     }
+
+    void printVersionHelp()
+    {
+        std::cout
+            << "Usage:\n"
+            << "  flx version\n"
+            << "  flx --version\n"
+            << "  flx -v\n";
+    }
 }
 
 int HelpCommand::execute(const CliArguments& arguments) const
@@ -84,7 +99,7 @@ int HelpCommand::execute(const CliArguments& arguments) const
     if (!arguments.helpCommand.has_value())
     {
         printGeneralHelp();
-        return 0;
+        return static_cast<int>(CliExitCode::Success);
     }
 
     switch (*arguments.helpCommand)
@@ -101,10 +116,13 @@ int HelpCommand::execute(const CliArguments& arguments) const
     case CliCommand::Validate:
         printValidateHelp();
         break;
+    case CliCommand::Version:
+        printVersionHelp();
+        break;
     default:
         printGeneralHelp();
         break;
     }
 
-    return 0;
+    return static_cast<int>(CliExitCode::Success);
 }

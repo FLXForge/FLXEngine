@@ -1,6 +1,5 @@
 #include "CliParser.h"
 
-#include <algorithm>
 #include <charconv>
 #include <cctype>
 #include <filesystem>
@@ -80,34 +79,48 @@ namespace
             value == "help";
     }
 
-    CliCommand commandFromString(const std::string& value)
+    bool commandFromString(
+        const std::string& value,
+        CliCommand& command
+    )
     {
+        if (value == "run")
+        {
+            command = CliCommand::Run;
+            return true;
+        }
+
         if (value == "compile")
         {
-            return CliCommand::Compile;
+            command = CliCommand::Compile;
+            return true;
         }
 
         if (value == "run-compiled")
         {
-            return CliCommand::RunCompiled;
+            command = CliCommand::RunCompiled;
+            return true;
         }
 
         if (value == "validate")
         {
-            return CliCommand::Validate;
+            command = CliCommand::Validate;
+            return true;
         }
 
         if (value == "version")
         {
-            return CliCommand::Version;
+            command = CliCommand::Version;
+            return true;
         }
 
         if (value == "help")
         {
-            return CliCommand::Help;
+            command = CliCommand::Help;
+            return true;
         }
 
-        return CliCommand::Run;
+        return false;
     }
 
     std::string commandName(CliCommand command)
@@ -147,7 +160,7 @@ namespace
 
         if (option == "--format")
         {
-            return true;
+            return command == CliCommand::Compile || command == CliCommand::Validate;
         }
 
         return false;
@@ -177,22 +190,44 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
     std::size_t index = 0;
     const std::string& first = tokens[index];
     bool explicitTargetSet = false;
+    bool formatSet = false;
 
     if (first == "--version" || first == "-v")
     {
         result.arguments.command = CliCommand::Version;
+        if (tokens.size() > 1)
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("--version does not accept additional arguments");
+        }
+
         return result;
     }
 
     if (first == "--help" || first == "-h")
     {
         result.arguments.command = CliCommand::Help;
+        if (tokens.size() > 1)
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("--help does not accept additional arguments. Use 'flx help <command>'.");
+        }
+
         return result;
     }
 
     if (isKnownCommand(first))
     {
-        result.arguments.command = commandFromString(first);
+        if (!commandFromString(first, result.arguments.command))
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("Unknown command: " + first);
+            return result;
+        }
+
         ++index;
     }
     else if (
@@ -219,10 +254,43 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
     {
         const std::string& helpTarget = tokens[index];
 
-        if (isKnownCommand(helpTarget) && helpTarget != "help" && helpTarget != "version")
+        if (!isKnownCommand(helpTarget))
         {
-            result.arguments.helpCommand = commandFromString(helpTarget);
-            ++index;
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error(
+                "Unknown command for help: " + helpTarget + "\nRun 'flx --help' for usage information."
+            );
+            return result;
+        }
+
+        if (helpTarget == "help")
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("help does not provide command-specific help for itself");
+            return result;
+        }
+
+        CliCommand helpCommand = CliCommand::Run;
+
+        if (!commandFromString(helpTarget, helpCommand))
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("Unknown command for help: " + helpTarget);
+            return result;
+        }
+
+        result.arguments.helpCommand = helpCommand;
+        ++index;
+
+        if (index < tokens.size())
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("help accepts only one optional command");
+            return result;
         }
     }
 
@@ -234,19 +302,43 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         const std::string token =
             tokens[index];
 
+        if (
+            result.arguments.command == CliCommand::Version &&
+            token != "--help" &&
+            token != "-h"
+        )
+        {
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("version does not accept options or targets");
+            return result;
+        }
+
         if (token == "--help" || token == "-h")
         {
-            result.arguments.helpCommand = result.arguments.command;
+            if (index + 1 < tokens.size())
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error("--help does not accept trailing arguments");
+                return result;
+            }
+
+            const CliCommand commandToDescribe =
+                result.arguments.command;
+
             result.arguments.command = CliCommand::Help;
+            result.arguments.helpCommand = commandToDescribe;
             ++index;
             continue;
         }
 
         if (token == "--version" || token == "-v")
         {
-            result.arguments.command = CliCommand::Version;
-            ++index;
-            continue;
+            result.success = false;
+            result.exitCode = CliExitCode::InvalidArguments;
+            result.diagnostics.error("--version is only valid without additional arguments");
+            return result;
         }
 
         if (token.rfind("--frames=", 0) == 0)
@@ -260,6 +352,14 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             }
 
             int frames = 0;
+
+            if (result.arguments.maxFrames.has_value())
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error("--frames cannot be specified more than once");
+                return result;
+            }
 
             if (!parsePositiveInt(token.substr(9), frames))
             {
@@ -326,7 +426,11 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
                 return result;
             }
 
-            if (index + 1 >= tokens.size() || tokens[index + 1].empty())
+            if (
+                index + 1 >= tokens.size() ||
+                tokens[index + 1].empty() ||
+                tokens[index + 1][0] == '-'
+            )
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
@@ -341,6 +445,22 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
 
         if (token.rfind("--format=", 0) == 0)
         {
+            if (!optionAllowed(result.arguments.command, "--format"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error("--format is only valid for compile and validate");
+                return result;
+            }
+
+            if (formatSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error("--format cannot be specified more than once");
+                return result;
+            }
+
             const std::string format =
                 token.substr(9);
 
@@ -360,6 +480,7 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
                 return result;
             }
 
+            formatSet = true;
             ++index;
             continue;
         }
@@ -383,6 +504,14 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         result.arguments.target = token;
         targetSet = true;
         ++index;
+    }
+
+    if (result.arguments.command == CliCommand::Version && targetSet)
+    {
+        result.success = false;
+        result.exitCode = CliExitCode::InvalidArguments;
+        result.diagnostics.error("version does not accept a target");
+        return result;
     }
 
     if (result.arguments.command == CliCommand::Compile && !result.arguments.output.has_value())

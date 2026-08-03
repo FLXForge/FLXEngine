@@ -1,15 +1,26 @@
 #include "../engine/compiler/ProjectCompiler.h"
 #include "../engine/compiler/CompiledProjectBinary.h"
 #include "../engine/cli/CliParser.h"
+#include "../engine/cli/DiagnosticPrinter.h"
 #include "../engine/cli/ProjectResolver.h"
+#include "../engine/cli/commands/CompileCommand.h"
+#include "../engine/cli/commands/HelpCommand.h"
+#include "../engine/cli/commands/RunCommand.h"
+#include "../engine/cli/commands/RunCompiledCommand.h"
+#include "../engine/cli/commands/ValidateCommand.h"
+#include "../engine/cli/commands/VersionCommand.h"
 #include "../engine/runtime/RuntimeWorld.h"
 #include "../engine/scripting/ScriptEngine.h"
+
+#include <nlohmann/json.hpp>
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <streambuf>
 #include <vector>
 
 namespace
@@ -53,6 +64,60 @@ namespace
             throw std::runtime_error(message);
         }
     }
+
+    std::size_t countOccurrences(
+        const std::string& text,
+        const std::string& needle
+    )
+    {
+        if (needle.empty())
+        {
+            return 0;
+        }
+
+        std::size_t count = 0;
+        std::size_t position = 0;
+
+        while ((position = text.find(needle, position)) != std::string::npos)
+        {
+            ++count;
+            position += needle.size();
+        }
+
+        return count;
+    }
+
+    std::string readFirstLine(const std::filesystem::path& path)
+    {
+        std::ifstream file(path);
+        std::string line;
+        std::getline(file, line);
+        return line;
+    }
+
+    class StreamCapture
+    {
+    public:
+        StreamCapture()
+            :
+            oldOutput(std::cout.rdbuf(output.rdbuf())),
+            oldError(std::cerr.rdbuf(error.rdbuf()))
+        {
+        }
+
+        ~StreamCapture()
+        {
+            std::cout.rdbuf(oldOutput);
+            std::cerr.rdbuf(oldError);
+        }
+
+        std::ostringstream output;
+        std::ostringstream error;
+
+    private:
+        std::streambuf* oldOutput = nullptr;
+        std::streambuf* oldError = nullptr;
+    };
 
     CompilationResult compile(const std::filesystem::path& path)
     {
@@ -803,6 +868,18 @@ namespace
 
         require(result.success, "validate should parse");
         require(result.arguments.command == CliCommand::Validate, "validate command should be selected");
+
+        result =
+            parseArguments({ "validate", "--format=json", "." });
+
+        require(result.success, "validate should accept json format");
+        require(result.arguments.format == CliOutputFormat::Json, "validate json format should parse");
+
+        result =
+            parseArguments({ "compile", "--format=json", "--output=game.flxc", "." });
+
+        require(result.success, "compile should accept json format");
+        require(result.arguments.format == CliOutputFormat::Json, "compile json format should parse");
     }
 
     void testCliParserHelpAndVersion()
@@ -839,11 +916,25 @@ namespace
         require(result.arguments.helpCommand == CliCommand::Run, "help run should select run help");
 
         result =
+            parseArguments({ "help", "version" });
+
+        require(result.success, "help version should parse");
+        require(result.arguments.command == CliCommand::Help, "help version should select help");
+        require(result.arguments.helpCommand == CliCommand::Version, "help version should select version help");
+
+        result =
             parseArguments({ "run", "--help" });
 
         require(result.success, "run --help should parse");
         require(result.arguments.command == CliCommand::Help, "run --help should select help");
         require(result.arguments.helpCommand == CliCommand::Run, "run --help should select run help");
+
+        result =
+            parseArguments({ "version", "--help" });
+
+        require(result.success, "version --help should parse");
+        require(result.arguments.command == CliCommand::Help, "version --help should select help");
+        require(result.arguments.helpCommand == CliCommand::Version, "version --help should select version help");
     }
 
     void testCliParserInvalidArguments()
@@ -878,6 +969,91 @@ namespace
             parseArguments({ "compile", "--output=a.flxc", "--output=b.flxc", "." });
 
         require(!result.success, "duplicate output should fail");
+
+        result =
+            parseArguments({ "--version", "." });
+
+        require(!result.success, "--version with extra arguments should fail");
+
+        result =
+            parseArguments({ "-v", "--format=json" });
+
+        require(!result.success, "-v with extra arguments should fail");
+
+        result =
+            parseArguments({ "version", "." });
+
+        require(!result.success, "version with target should fail");
+
+        result =
+            parseArguments({ "version", "--format=json" });
+
+        require(!result.success, "version with format should fail");
+
+        result =
+            parseArguments({ "--help", "run" });
+
+        require(!result.success, "--help with trailing arguments should fail");
+
+        result =
+            parseArguments({ "-h", "run" });
+
+        require(!result.success, "-h with trailing arguments should fail");
+
+        result =
+            parseArguments({ "help", "missing" });
+
+        require(!result.success, "help with unknown command should fail");
+
+        result =
+            parseArguments({ "help", "run", "extra" });
+
+        require(!result.success, "help with extra arguments should fail");
+
+        result =
+            parseArguments({ "compile", "-o", "--format=json", "." });
+
+        require(!result.success, "-o should not consume another option as output path");
+
+        result =
+            parseArguments({ "run", "--frames=10", "--frames=20", "." });
+
+        require(!result.success, "duplicate frames should fail");
+
+        result =
+            parseArguments({ "validate", "--format=text", "--format=json", "." });
+
+        require(!result.success, "duplicate format should fail");
+
+        result =
+            parseArguments({ "run", "--version" });
+
+        require(!result.success, "run --version should fail instead of changing command");
+
+        result =
+            parseArguments({ "run", ".", "--version" });
+
+        require(!result.success, "run target --version should fail instead of changing command");
+
+        result =
+            parseArguments({ "run", "--format=json", "." });
+
+        require(!result.success, "run should reject json format");
+
+        result =
+            parseArguments({ "run-compiled", "--format=json", "game.flxc" });
+
+        require(!result.success, "run-compiled should reject json format");
+
+        result =
+            parseArguments({ "help", "--format=json" });
+
+        require(!result.success, "help should reject format");
+
+        result =
+            parseArguments({ "--format=json" });
+
+        require(!result.success, "default run should reject json format");
     }
 
     void testCliProjectResolver()
@@ -889,6 +1065,7 @@ namespace
         std::filesystem::create_directories(root);
 
         writeFile(root / "direct.flx", "name=Direct\npath=game\nroot=root\n");
+        writeFile(root / "notes.txt", "not a project\n");
 
         ProjectResolver resolver;
         ProjectResolutionResult result =
@@ -897,17 +1074,31 @@ namespace
         require(result.success, "direct .flx should resolve");
         require(result.manifestPath.filename() == "direct.flx", "direct .flx should be returned");
 
+        result =
+            resolver.resolve(root / "notes.txt");
+
+        require(!result.success, "direct non .flx file should fail");
+
+        writeFile(root / "upper.FLX", "name=Upper\npath=game\nroot=root\n");
+
+        result =
+            resolver.resolve(root / "upper.FLX");
+
+        require(result.success, "direct .FLX should resolve");
+        require(result.manifestPath.filename() == "upper.FLX", "direct .FLX should be returned");
+
         const std::filesystem::path projectDir =
             root / "project_dir";
 
         std::filesystem::create_directories(projectDir);
         writeFile(projectDir / "project.flx", "name=Project\npath=game\nroot=root\n");
+        writeFile(projectDir / "other.flx", "name=Other\npath=game\nroot=root\n");
 
         result =
             resolver.resolve(projectDir);
 
         require(result.success, "directory with project.flx should resolve");
-        require(result.manifestPath.filename() == "project.flx", "project.flx should be preferred");
+        require(result.manifestPath.filename() == "project.flx", "project.flx should be preferred over other .flx files");
 
         const std::filesystem::path singleDir =
             root / "single_dir";
@@ -920,6 +1111,18 @@ namespace
 
         require(result.success, "directory with one .flx should resolve");
         require(result.manifestPath.filename() == "single.flx", "single .flx should be selected");
+
+        const std::filesystem::path upperSingleDir =
+            root / "upper_single_dir";
+
+        std::filesystem::create_directories(upperSingleDir);
+        writeFile(upperSingleDir / "single.FLX", "name=UpperSingle\npath=game\nroot=root\n");
+
+        result =
+            resolver.resolve(upperSingleDir);
+
+        require(result.success, "directory with one .FLX should resolve");
+        require(result.manifestPath.filename() == "single.FLX", "single .FLX should be selected");
 
         const std::filesystem::path emptyDir =
             root / "empty_dir";
@@ -947,6 +1150,497 @@ namespace
             resolver.resolve(root / "missing");
 
         require(!result.success, "missing target should fail");
+    }
+
+    void testDiagnosticPrinterTextDiagnostics()
+    {
+        Diagnostics diagnostics;
+        diagnostics.error(
+            "Invalid child",
+            "game/root.json",
+            "children.ship"
+        );
+
+        std::ostringstream output;
+        std::ostringstream error;
+
+        DiagnosticPrinter::printDiagnostics(
+            diagnostics,
+            CliOutputFormat::Text,
+            "validate",
+            CliExitCode::CompilationError,
+            false,
+            output,
+            error
+        );
+
+        require(output.str().empty(), "text diagnostics should not write to stdout");
+        require(
+            error.str() == "error: game/root.json [children.ship]: Invalid child\n",
+            "text diagnostics should include severity, file and field on stderr"
+        );
+
+        Diagnostics info;
+        info.info("Plain diagnostic");
+
+        output.str("");
+        output.clear();
+        error.str("");
+        error.clear();
+
+        DiagnosticPrinter::printDiagnostics(
+            info,
+            CliOutputFormat::Text,
+            "validate",
+            CliExitCode::Success,
+            true,
+            output,
+            error
+        );
+
+        require(output.str().empty(), "text info diagnostics should not write to stdout");
+        require(
+            error.str() == "info: Plain diagnostic\n",
+            "text diagnostics without file should still be written to stderr"
+        );
+    }
+
+    void testDiagnosticPrinterTextResultWithWarning()
+    {
+        Diagnostics diagnostics;
+        diagnostics.warning(
+            "Machine uses defaults",
+            "project.flx",
+            "machine"
+        );
+
+        std::ostringstream output;
+        std::ostringstream error;
+
+        DiagnosticPrinter::printResult(
+            "compile",
+            "Compiled project written: game.flxc",
+            CliOutputFormat::Text,
+            output,
+            error,
+            diagnostics
+        );
+
+        require(
+            output.str() == "Compiled project written: game.flxc\n",
+            "text result message should be written to stdout"
+        );
+        require(
+            error.str() == "warning: project.flx [machine]: Machine uses defaults\n",
+            "text result diagnostics should be written to stderr"
+        );
+    }
+
+    void testDiagnosticPrinterJsonSuccessAndFailure()
+    {
+        Diagnostics successDiagnostics;
+        successDiagnostics.warning("Careful");
+
+        std::ostringstream output;
+        std::ostringstream error;
+
+        DiagnosticPrinter::printResult(
+            "validate",
+            "Project is valid: game.flx",
+            CliOutputFormat::Json,
+            output,
+            error,
+            successDiagnostics
+        );
+
+        require(error.str().empty(), "json result should not write to stderr");
+
+        nlohmann::json payload =
+            nlohmann::json::parse(output.str());
+
+        require(payload["success"] == true, "json result should report success");
+        require(payload["command"] == "validate", "json result should include command");
+        require(payload["exitCode"] == 0, "json result should include exit code");
+        require(payload["message"] == "Project is valid: game.flx", "json result should include message");
+        require(payload["diagnostics"].size() == 1, "json result should include diagnostics");
+        require(payload["diagnostics"][0]["severity"] == "warning", "json result should include diagnostic severity");
+
+        Diagnostics failureDiagnostics;
+        failureDiagnostics.error(
+            "Missing root",
+            "game.flx",
+            "root"
+        );
+
+        output.str("");
+        output.clear();
+        error.str("");
+        error.clear();
+
+        DiagnosticPrinter::printDiagnostics(
+            failureDiagnostics,
+            CliOutputFormat::Json,
+            "compile",
+            CliExitCode::CompilationError,
+            false,
+            output,
+            error
+        );
+
+        require(error.str().empty(), "json diagnostics should not write to stderr");
+
+        payload =
+            nlohmann::json::parse(output.str());
+
+        require(payload["success"] == false, "json diagnostics should report failure");
+        require(payload["command"] == "compile", "json diagnostics should include command");
+        require(
+            payload["exitCode"] == static_cast<int>(CliExitCode::CompilationError),
+            "json diagnostics should include exit code"
+        );
+        require(payload.find("message") == payload.end(), "json diagnostics should not include result message");
+        require(payload["diagnostics"].size() == 1, "json diagnostics should include errors");
+        require(payload["diagnostics"][0]["file"] == "game.flx", "json diagnostics should include file");
+        require(payload["diagnostics"][0]["field"] == "root", "json diagnostics should include field");
+    }
+
+    void testDiagnosticPrinterJsonEscapingAndMultipleDiagnostics()
+    {
+        const std::string escapedText =
+            std::string("quotes \" slash / backslash \\ newline \n carriage \r tab \t backspace ") +
+            std::string(1, '\b') +
+            " formfeed " +
+            std::string(1, '\f') +
+            " control " +
+            std::string(1, static_cast<char>(1));
+
+        const std::string escapedFile =
+            std::string("file\"\\/") +
+            "\n\r\t" +
+            std::string(1, '\b') +
+            std::string(1, '\f') +
+            std::string(1, static_cast<char>(1)) +
+            ".json";
+
+        Diagnostics diagnostics;
+        diagnostics.info(
+            escapedText,
+            escapedFile,
+            "field"
+        );
+        const std::string utf8Text =
+            "Texto UTF-8: español, acento á, universo 宇宙";
+
+        diagnostics.warning(utf8Text);
+
+        std::ostringstream output;
+        std::ostringstream error;
+
+        DiagnosticPrinter::printDiagnostics(
+            diagnostics,
+            CliOutputFormat::Json,
+            "validate",
+            CliExitCode::Success,
+            true,
+            output,
+            error
+        );
+
+        require(error.str().empty(), "json escaping should not write to stderr");
+
+        nlohmann::json payload =
+            nlohmann::json::parse(output.str());
+
+        require(payload["diagnostics"].size() == 2, "json should include multiple diagnostics");
+        require(
+            payload["diagnostics"][0]["message"].get<std::string>() == escapedText,
+            "json should preserve escaped control characters"
+        );
+        require(
+            payload["diagnostics"][0]["file"].get<std::string>() == escapedFile,
+            "json should preserve escaped file characters"
+        );
+        require(
+            payload["diagnostics"][1]["message"].get<std::string>() == utf8Text,
+            "json should preserve UTF-8 text"
+        );
+    }
+
+    void testValidateCommandSuccessOutputContract()
+    {
+        CliArguments arguments;
+        arguments.command = CliCommand::Validate;
+        arguments.target = createMinimalProject("validate_command_success");
+
+        StreamCapture capture;
+        const int exitCode =
+            ValidateCommand().execute(arguments);
+
+        require(exitCode == static_cast<int>(CliExitCode::Success), "validate command should succeed");
+        require(
+            capture.output.str().find("Project is valid: ") == 0,
+            "validate success message should be written to stdout"
+        );
+        require(
+            capture.error.str().find("info: ") != std::string::npos,
+            "validate success diagnostics should be written to stderr"
+        );
+        require(
+            countOccurrences(capture.error.str(), "Project compiled") == 1,
+            "validate success diagnostics should not be duplicated"
+        );
+    }
+
+    void testCompileCommandSuccessOutputContract()
+    {
+        const std::filesystem::path manifest =
+            createMinimalProject("compile_command_success");
+
+        const std::filesystem::path output =
+            testRoot() / "compile_command_success" / "game.flxc";
+
+        CliArguments arguments;
+        arguments.command = CliCommand::Compile;
+        arguments.target = manifest;
+        arguments.output = output;
+
+        StreamCapture capture;
+        const int exitCode =
+            CompileCommand().execute(arguments);
+
+        require(exitCode == static_cast<int>(CliExitCode::Success), "compile command should succeed");
+        require(
+            capture.output.str() == "Compiled project written: " + output.generic_string() + "\n",
+            "compile success message should be written to stdout"
+        );
+        require(
+            countOccurrences(capture.error.str(), "Project compiled") == 1,
+            "compile success diagnostics should not be duplicated"
+        );
+        require(std::filesystem::exists(output), "compile command should write compiled output");
+    }
+
+    void testCompileCommandMissingOutputDirect()
+    {
+        CliArguments arguments;
+        arguments.command = CliCommand::Compile;
+        arguments.target = createMinimalProject("compile_missing_output");
+
+        StreamCapture capture;
+        const int exitCode =
+            CompileCommand().execute(arguments);
+
+        require(
+            exitCode == static_cast<int>(CliExitCode::InvalidArguments),
+            "compile command without output should return invalid arguments"
+        );
+        require(capture.output.str().empty(), "compile missing output should not write stdout");
+        require(
+            capture.error.str().find("compile requires --output=<path>") != std::string::npos,
+            "compile missing output should report clear error"
+        );
+    }
+
+    void testValidateAndCompileJsonOutput()
+    {
+        CliArguments validateArguments;
+        validateArguments.command = CliCommand::Validate;
+        validateArguments.target = createMinimalProject("validate_json_output");
+        validateArguments.format = CliOutputFormat::Json;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                ValidateCommand().execute(validateArguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "validate json should succeed");
+            require(capture.error.str().empty(), "validate json should keep stderr empty");
+
+            const nlohmann::json payload =
+                nlohmann::json::parse(capture.output.str());
+
+            require(payload["success"] == true, "validate json should report success");
+            require(payload["command"] == "validate", "validate json should include command");
+            require(payload["message"].get<std::string>().find("Project is valid: ") == 0, "validate json should include message");
+        }
+
+        const std::filesystem::path manifest =
+            createMinimalProject("compile_json_output");
+        const std::filesystem::path output =
+            testRoot() / "compile_json_output" / "game.flxc";
+
+        CliArguments compileArguments;
+        compileArguments.command = CliCommand::Compile;
+        compileArguments.target = manifest;
+        compileArguments.output = output;
+        compileArguments.format = CliOutputFormat::Json;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                CompileCommand().execute(compileArguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "compile json should succeed");
+            require(capture.error.str().empty(), "compile json should keep stderr empty");
+
+            const nlohmann::json payload =
+                nlohmann::json::parse(capture.output.str());
+
+            require(payload["success"] == true, "compile json should report success");
+            require(payload["command"] == "compile", "compile json should include command");
+            require(payload["message"] == "Compiled project written: " + output.generic_string(), "compile json should include message");
+        }
+    }
+
+    void testRunCommandsRejectJsonFormat()
+    {
+        CliArguments runArguments;
+        runArguments.command = CliCommand::Run;
+        runArguments.format = CliOutputFormat::Json;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                RunCommand().execute(runArguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::InvalidArguments), "run command should reject json format");
+            require(capture.output.str().empty(), "run json rejection should keep stdout empty");
+            require(capture.error.str().find("--format=json is not supported for run yet") != std::string::npos, "run json rejection should explain error");
+        }
+
+        CliArguments runCompiledArguments;
+        runCompiledArguments.command = CliCommand::RunCompiled;
+        runCompiledArguments.target = "game.flxc";
+        runCompiledArguments.format = CliOutputFormat::Json;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                RunCompiledCommand().execute(runCompiledArguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::InvalidArguments), "run-compiled command should reject json format");
+            require(capture.output.str().empty(), "run-compiled json rejection should keep stdout empty");
+            require(capture.error.str().find("--format=json is not supported for run-compiled yet") != std::string::npos, "run-compiled json rejection should explain error");
+        }
+    }
+
+    void testHelpVersionAndVersionOutput()
+    {
+        CliArguments helpArguments;
+        helpArguments.command = CliCommand::Help;
+        helpArguments.helpCommand = CliCommand::Version;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                HelpCommand().execute(helpArguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "help version should succeed");
+            require(capture.error.str().empty(), "help version should not write stderr");
+            require(capture.output.str().find("flx version") != std::string::npos, "help version should describe version command");
+            require(capture.output.str().find("--format") == std::string::npos, "help version should not announce format");
+        }
+
+        const std::string expectedVersion =
+            readFirstLine(std::filesystem::path(FLX_SOURCE_DIR) / "VERSION");
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                VersionCommand().execute();
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "version command should succeed");
+            require(capture.error.str().empty(), "version command should not write stderr");
+            require(capture.output.str() == expectedVersion + "\n", "version command should write exact version");
+        }
+    }
+
+    void testRunCompiledExtensionAndCommandExitCodes()
+    {
+        const std::filesystem::path upperCompiled =
+            testRoot() / "run_compiled_extension" / "GAME.FLXC";
+
+        writeBinary(
+            upperCompiled,
+            { 'F', 'L', 'X', 'C', 99, 0, 0, 0 }
+        );
+
+        CliArguments runCompiledArguments;
+        runCompiledArguments.command = CliCommand::RunCompiled;
+        runCompiledArguments.target = upperCompiled;
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                RunCompiledCommand().execute(runCompiledArguments);
+
+            require(
+                exitCode == static_cast<int>(CliExitCode::InvalidCompiledProject),
+                "run-compiled should accept .FLXC and then validate file content"
+            );
+            require(capture.output.str().empty(), "invalid compiled project should keep stdout empty");
+            require(!capture.error.str().empty(), "invalid compiled project should write diagnostics");
+        }
+
+        runCompiledArguments.target =
+            testRoot() / "run_compiled_extension" / "game.txt";
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                RunCompiledCommand().execute(runCompiledArguments);
+
+            require(
+                exitCode == static_cast<int>(CliExitCode::InvalidArguments),
+                "run-compiled should reject non .flxc extension"
+            );
+        }
+
+        CliArguments validateArguments;
+        validateArguments.command = CliCommand::Validate;
+        validateArguments.target = testRoot() / "missing_validate_project";
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                ValidateCommand().execute(validateArguments);
+
+            require(
+                exitCode == static_cast<int>(CliExitCode::ProjectResolutionError),
+                "validate resolution failure should preserve exit code"
+            );
+        }
+
+        CliArguments compileArguments;
+        compileArguments.command = CliCommand::Compile;
+        compileArguments.target = testRoot() / "missing_compile_project";
+        compileArguments.output = testRoot() / "missing_compile_project.flxc";
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                CompileCommand().execute(compileArguments);
+
+            require(
+                exitCode == static_cast<int>(CliExitCode::ProjectResolutionError),
+                "compile resolution failure should preserve exit code"
+            );
+        }
+
+        CliArguments runArguments;
+        runArguments.command = CliCommand::Run;
+        runArguments.target = testRoot() / "missing_run_project";
+
+        {
+            StreamCapture capture;
+            const int exitCode =
+                RunCommand().execute(runArguments);
+
+            require(
+                exitCode == static_cast<int>(CliExitCode::ProjectResolutionError),
+                "run resolution failure should preserve exit code"
+            );
+        }
     }
 }
 
@@ -977,7 +1671,18 @@ int main()
         { "CLI parser commands", testCliParserCommands },
         { "CLI parser help and version", testCliParserHelpAndVersion },
         { "CLI parser invalid arguments", testCliParserInvalidArguments },
-        { "CLI project resolver", testCliProjectResolver }
+        { "CLI project resolver", testCliProjectResolver },
+        { "DiagnosticPrinter text diagnostics", testDiagnosticPrinterTextDiagnostics },
+        { "DiagnosticPrinter text result with warning", testDiagnosticPrinterTextResultWithWarning },
+        { "DiagnosticPrinter JSON success and failure", testDiagnosticPrinterJsonSuccessAndFailure },
+        { "DiagnosticPrinter JSON escaping and multiple diagnostics", testDiagnosticPrinterJsonEscapingAndMultipleDiagnostics },
+        { "ValidateCommand success output contract", testValidateCommandSuccessOutputContract },
+        { "CompileCommand success output contract", testCompileCommandSuccessOutputContract },
+        { "CompileCommand missing output direct", testCompileCommandMissingOutputDirect },
+        { "Validate and compile JSON output", testValidateAndCompileJsonOutput },
+        { "Run commands reject JSON format", testRunCommandsRejectJsonFormat },
+        { "Help version and version output", testHelpVersionAndVersionOutput },
+        { "RunCompiled extension and command exit codes", testRunCompiledExtensionAndCommandExitCodes }
     };
 
     for (const auto& test : tests)

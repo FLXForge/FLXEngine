@@ -5,12 +5,56 @@
 #include "../DiagnosticPrinter.h"
 #include "../CliExitCode.h"
 
+#include <cctype>
 #include <filesystem>
 #include <iostream>
 
+namespace
+{
+    bool equalsIgnoreCase(
+        const std::string& left,
+        const std::string& right
+    )
+    {
+        if (left.size() != right.size())
+        {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < left.size(); ++i)
+        {
+            if (std::tolower(static_cast<unsigned char>(left[i])) !=
+                std::tolower(static_cast<unsigned char>(right[i])))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 int RunCompiledCommand::execute(const CliArguments& arguments) const
 {
-    if (arguments.target.extension() != ".flxc")
+    if (arguments.format == CliOutputFormat::Json)
+    {
+        Diagnostics diagnostics;
+        diagnostics.error("--format=json is not supported for run-compiled yet");
+
+        DiagnosticPrinter::printDiagnostics(
+            diagnostics,
+            CliOutputFormat::Text,
+            "run-compiled",
+            CliExitCode::InvalidArguments,
+            false,
+            std::cout,
+            std::cerr
+        );
+
+        return static_cast<int>(CliExitCode::InvalidArguments);
+    }
+
+    if (!equalsIgnoreCase(arguments.target.extension().string(), ".flxc"))
     {
         Diagnostics diagnostics;
         diagnostics.error(

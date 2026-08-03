@@ -25,6 +25,7 @@ public:
         const std::string& message,
         CliOutputFormat format,
         std::ostream& output,
+        std::ostream& error,
         const Diagnostics& diagnostics
     );
 };

@@ -1,13 +1,31 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FLX_VERSION)
+string(STRIP "${FLX_VERSION}" FLX_VERSION)
+
+if(NOT FLX_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "VERSION must contain only a semantic version in X.Y.Z format")
+endif()
+
+string(REPLACE "." ";" FLX_VERSION_PARTS "${FLX_VERSION}")
+list(GET FLX_VERSION_PARTS 0 FLX_VERSION_MAJOR)
+list(GET FLX_VERSION_PARTS 1 FLX_VERSION_MINOR)
+list(GET FLX_VERSION_PARTS 2 FLX_VERSION_PATCH)
+
+project(FLX VERSION ${FLX_VERSION} LANGUAGES C CXX)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FlxVersion.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/FlxVersion.h"
+    @ONLY
+)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(
     FLX_WINDOWS_SUBSYSTEM
-    "Build FlxEngine as a Windows subsystem executable without a console window"
+    "Build flx as a Windows subsystem executable without a console window"
     OFF
 )
 
@@ -116,9 +134,31 @@ if(M_LIBRARIES)
     target_link_libraries(qjs PUBLIC ${M_LIBRARIES})
 endif()
 
-add_executable(FlxEngine
+add_executable(flx
     FLXEngine.cpp
-    FLXEngine.h
+
+    engine/cli/CliApplication.h
+    engine/cli/CliApplication.cpp
+    engine/cli/CliArguments.h
+    engine/cli/CliExitCode.h
+    engine/cli/CliParser.h
+    engine/cli/CliParser.cpp
+    engine/cli/DiagnosticPrinter.h
+    engine/cli/DiagnosticPrinter.cpp
+    engine/cli/ProjectResolver.h
+    engine/cli/ProjectResolver.cpp
+    engine/cli/commands/CompileCommand.h
+    engine/cli/commands/CompileCommand.cpp
+    engine/cli/commands/HelpCommand.h
+    engine/cli/commands/HelpCommand.cpp
+    engine/cli/commands/RunCommand.h
+    engine/cli/commands/RunCommand.cpp
+    engine/cli/commands/RunCompiledCommand.h
+    engine/cli/commands/RunCompiledCommand.cpp
+    engine/cli/commands/ValidateCommand.h
+    engine/cli/commands/ValidateCommand.cpp
+    engine/cli/commands/VersionCommand.h
+    engine/cli/commands/VersionCommand.cpp
 
     engine/core/Engine.h
     engine/core/Engine.cpp
@@ -198,20 +238,21 @@ add_executable(FlxEngine
 
 if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
     set_target_properties(
-        FlxEngine
+        flx
         PROPERTIES
         WIN32_EXECUTABLE ON
     )
 endif()
 
 target_include_directories(
-    FlxEngine
+    flx
     PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
     ${quickjs_SOURCE_DIR}
 )
 
 target_link_libraries(
-    FlxEngine
+    flx
     PRIVATE
     raylib
     nlohmann_json::nlohmann_json
@@ -221,8 +262,8 @@ target_link_libraries(
 
 enable_testing()
 
-get_target_property(FLX_TEST_SOURCES FlxEngine SOURCES)
-list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp FLXEngine.h)
+get_target_property(FLX_TEST_SOURCES flx SOURCES)
+list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp)
 
 add_executable(
     flx-tests
@@ -234,11 +275,13 @@ target_compile_definitions(
     flx-tests
     PRIVATE
     FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    FLX_VERSION_TEXT="${FLX_VERSION}"
 )
 
 target_include_directories(
     flx-tests
     PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
     ${quickjs_SOURCE_DIR}
 )
 
@@ -254,4 +297,39 @@ target_link_libraries(
 add_test(
     NAME flx-tests
     COMMAND flx-tests
+)
+
+add_test(
+    NAME cli-version
+    COMMAND $<TARGET_FILE:flx> --version
+)
+
+set_tests_properties(
+    cli-version
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "^${FLX_VERSION}"
+)
+
+add_test(
+    NAME cli-help
+    COMMAND $<TARGET_FILE:flx> --help
+)
+
+set_tests_properties(
+    cli-help
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "Usage:"
+)
+
+add_test(
+    NAME cli-validate-pong
+    COMMAND $<TARGET_FILE:flx> validate "${CMAKE_CURRENT_SOURCE_DIR}/examples/pong.flx"
+)
+
+add_test(
+    NAME cli-invalid-command
+    COMMAND
+        ${CMAKE_COMMAND}
+        -DFLX_CLI=$<TARGET_FILE:flx>
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunCliInvalidCommandTest.cmake"
 )

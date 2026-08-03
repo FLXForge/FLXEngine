@@ -6,7 +6,7 @@ towards an in-memory compilation step.
 ## Current Flow
 
 ```text
-CLI project.flx path
+flx CLI project.flx path
 -> ProjectCompiler
 -> FlxContextBuilder
 -> MachineLoader
@@ -30,7 +30,8 @@ Compiled .flxc file
 
 ## Responsibilities
 
-- CLI: receives the `project.flx` path and asks `ProjectCompiler` to compile it.
+- CLI: parses `flx [command] [options] [target]`, resolves the project manifest
+  deterministically and asks `ProjectCompiler` to compile it.
 - ProjectCompiler: creates the effective in-memory project, discovers the descriptive resource graph and validates script paths. It does not run the game.
 - FlxContextBuilder: reads project properties, resolves project-relative paths, loads the Machine and applies screen defaults/overrides.
 - MachineLoader: loads YAML Machine and chip definitions, including external chip files.
@@ -95,10 +96,10 @@ live runtime state. Source paths are kept only as relative diagnostic names.
 Current commands:
 
 ```text
-FlxEngine.exe compile examples/pong.flx -o pong.flxc
-FlxEngine.exe run-compiled pong.flxc
-FlxEngine.exe run examples/pong.flx
-FlxEngine.exe examples/pong.flx
+flx compile --output=pong.flxc examples/pong.flx
+flx run-compiled pong.flxc
+flx run examples/pong.flx
+flx examples/pong.flx
 ```
 
 ## Smoke Execution
@@ -106,7 +107,7 @@ FlxEngine.exe examples/pong.flx
 The runner accepts an optional bounded-frame mode:
 
 ```text
-FlxEngine.exe examples/pong.flx --frames=10
+flx run --frames=10 examples/pong.flx
 ```
 
 This compiles the project, starts the normal runtime, executes a fixed number of

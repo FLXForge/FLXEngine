@@ -1,5 +1,7 @@
 #include "../engine/compiler/ProjectCompiler.h"
 #include "../engine/compiler/CompiledProjectBinary.h"
+#include "../engine/cli/CliParser.h"
+#include "../engine/cli/ProjectResolver.h"
 #include "../engine/runtime/RuntimeWorld.h"
 #include "../engine/scripting/ScriptEngine.h"
 
@@ -56,6 +58,26 @@ namespace
     {
         ProjectCompiler compiler;
         return compiler.compile(path.generic_string());
+    }
+
+    CliParseResult parseArguments(const std::vector<std::string>& arguments)
+    {
+        std::vector<std::string> values;
+        values.emplace_back("flx");
+        values.insert(values.end(), arguments.begin(), arguments.end());
+
+        std::vector<char*> argv;
+
+        for (std::string& value : values)
+        {
+            argv.push_back(value.data());
+        }
+
+        CliParser parser;
+        return parser.parse(
+            static_cast<int>(argv.size()),
+            argv.data()
+        );
     }
 
     std::filesystem::path createMinimalProject(const std::string& name)
@@ -715,6 +737,217 @@ namespace
             );
         }
     }
+
+    void testCliParserDefaults()
+    {
+        CliParseResult result =
+            parseArguments({});
+
+        require(result.success, "empty CLI should parse");
+        require(result.arguments.command == CliCommand::Run, "empty CLI should default to run");
+        require(result.arguments.target == ".", "empty CLI should default target to current directory");
+
+        result =
+            parseArguments({ "." });
+
+        require(result.success, "directory target should parse");
+        require(result.arguments.command == CliCommand::Run, "directory target should imply run");
+        require(result.arguments.target == ".", "directory target should be preserved");
+
+        result =
+            parseArguments({ "project.flx" });
+
+        require(result.success, ".flx target should parse");
+        require(result.arguments.command == CliCommand::Run, ".flx target should imply run");
+        require(result.arguments.target == "project.flx", ".flx target should be preserved");
+
+        result =
+            parseArguments({ "run" });
+
+        require(result.success, "run without target should parse");
+        require(result.arguments.command == CliCommand::Run, "run command should parse");
+        require(result.arguments.target == ".", "run should default target to current directory");
+    }
+
+    void testCliParserCommands()
+    {
+        CliParseResult result =
+            parseArguments({ "run", "--frames=10", "." });
+
+        require(result.success, "run with frames should parse");
+        require(result.arguments.command == CliCommand::Run, "run command should be selected");
+        require(result.arguments.maxFrames == 10, "frames should parse");
+
+        result =
+            parseArguments({ "compile", "--output=game.flxc", "." });
+
+        require(result.success, "compile with output should parse");
+        require(result.arguments.command == CliCommand::Compile, "compile command should be selected");
+        require(result.arguments.output->generic_string() == "game.flxc", "compile output should parse");
+
+        result =
+            parseArguments({ "compile", "-o", "game.flxc", "." });
+
+        require(result.success, "compile with -o should parse");
+        require(result.arguments.output->generic_string() == "game.flxc", "-o output should parse");
+
+        result =
+            parseArguments({ "run-compiled", "game.flxc" });
+
+        require(result.success, "run-compiled should parse");
+        require(result.arguments.command == CliCommand::RunCompiled, "run-compiled command should be selected");
+        require(result.arguments.target == "game.flxc", "run-compiled target should parse");
+
+        result =
+            parseArguments({ "validate", "." });
+
+        require(result.success, "validate should parse");
+        require(result.arguments.command == CliCommand::Validate, "validate command should be selected");
+    }
+
+    void testCliParserHelpAndVersion()
+    {
+        CliParseResult result =
+            parseArguments({ "--version" });
+
+        require(result.success, "--version should parse");
+        require(result.arguments.command == CliCommand::Version, "--version should select version");
+
+        result =
+            parseArguments({ "-v" });
+
+        require(result.success, "-v should parse");
+        require(result.arguments.command == CliCommand::Version, "-v should select version");
+
+        result =
+            parseArguments({ "version" });
+
+        require(result.success, "version command should parse");
+        require(result.arguments.command == CliCommand::Version, "version command should be selected");
+
+        result =
+            parseArguments({ "--help" });
+
+        require(result.success, "--help should parse");
+        require(result.arguments.command == CliCommand::Help, "--help should select help");
+
+        result =
+            parseArguments({ "help", "run" });
+
+        require(result.success, "help run should parse");
+        require(result.arguments.command == CliCommand::Help, "help command should be selected");
+        require(result.arguments.helpCommand == CliCommand::Run, "help run should select run help");
+
+        result =
+            parseArguments({ "run", "--help" });
+
+        require(result.success, "run --help should parse");
+        require(result.arguments.command == CliCommand::Help, "run --help should select help");
+        require(result.arguments.helpCommand == CliCommand::Run, "run --help should select run help");
+    }
+
+    void testCliParserInvalidArguments()
+    {
+        CliParseResult result =
+            parseArguments({ "unknown" });
+
+        require(!result.success, "unknown command should fail");
+        require(result.exitCode == CliExitCode::InvalidArguments, "unknown command should return invalid arguments");
+
+        result =
+            parseArguments({ "run", "--frames=abc", "." });
+
+        require(!result.success, "non numeric frames should fail");
+
+        result =
+            parseArguments({ "run", "--frames=0", "." });
+
+        require(!result.success, "zero frames should fail");
+
+        result =
+            parseArguments({ "run", "--frames=-1", "." });
+
+        require(!result.success, "negative frames should fail");
+
+        result =
+            parseArguments({ "compile", "." });
+
+        require(!result.success, "compile without output should fail");
+
+        result =
+            parseArguments({ "compile", "--output=a.flxc", "--output=b.flxc", "." });
+
+        require(!result.success, "duplicate output should fail");
+    }
+
+    void testCliProjectResolver()
+    {
+        const std::filesystem::path root =
+            testRoot() / "cli_resolver";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root);
+
+        writeFile(root / "direct.flx", "name=Direct\npath=game\nroot=root\n");
+
+        ProjectResolver resolver;
+        ProjectResolutionResult result =
+            resolver.resolve(root / "direct.flx");
+
+        require(result.success, "direct .flx should resolve");
+        require(result.manifestPath.filename() == "direct.flx", "direct .flx should be returned");
+
+        const std::filesystem::path projectDir =
+            root / "project_dir";
+
+        std::filesystem::create_directories(projectDir);
+        writeFile(projectDir / "project.flx", "name=Project\npath=game\nroot=root\n");
+
+        result =
+            resolver.resolve(projectDir);
+
+        require(result.success, "directory with project.flx should resolve");
+        require(result.manifestPath.filename() == "project.flx", "project.flx should be preferred");
+
+        const std::filesystem::path singleDir =
+            root / "single_dir";
+
+        std::filesystem::create_directories(singleDir);
+        writeFile(singleDir / "single.flx", "name=Single\npath=game\nroot=root\n");
+
+        result =
+            resolver.resolve(singleDir);
+
+        require(result.success, "directory with one .flx should resolve");
+        require(result.manifestPath.filename() == "single.flx", "single .flx should be selected");
+
+        const std::filesystem::path emptyDir =
+            root / "empty_dir";
+
+        std::filesystem::create_directories(emptyDir);
+
+        result =
+            resolver.resolve(emptyDir);
+
+        require(!result.success, "directory without .flx should fail");
+
+        const std::filesystem::path ambiguousDir =
+            root / "ambiguous_dir";
+
+        std::filesystem::create_directories(ambiguousDir);
+        writeFile(ambiguousDir / "a.flx", "name=A\npath=game\nroot=root\n");
+        writeFile(ambiguousDir / "b.flx", "name=B\npath=game\nroot=root\n");
+
+        result =
+            resolver.resolve(ambiguousDir);
+
+        require(!result.success, "directory with multiple .flx files should fail");
+
+        result =
+            resolver.resolve(root / "missing");
+
+        require(!result.success, "missing target should fail");
+    }
 }
 
 int main()
@@ -739,7 +972,12 @@ int main()
         { "invalid compiled magic", testInvalidCompiledMagic },
         { "invalid compiled version", testInvalidCompiledVersion },
         { "truncated compiled project", testTruncatedCompiledProject },
-        { "known examples", testKnownExamples }
+        { "known examples", testKnownExamples },
+        { "CLI parser defaults", testCliParserDefaults },
+        { "CLI parser commands", testCliParserCommands },
+        { "CLI parser help and version", testCliParserHelpAndVersion },
+        { "CLI parser invalid arguments", testCliParserInvalidArguments },
+        { "CLI project resolver", testCliProjectResolver }
     };
 
     for (const auto& test : tests)

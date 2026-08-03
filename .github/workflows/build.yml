@@ -25,8 +25,18 @@ jobs:
         working-directory: build
         run: ctest -C Release --output-on-failure
 
+      - name: Run CLI smoke tests
+        shell: pwsh
+        run: |
+          build/Release/flx.exe --version
+          build/Release/flx.exe --help
+          build/Release/flx.exe validate examples/pong.flx
+          build/Release/flx.exe compile --output=build/pong.flxc examples/pong.flx
+          build/Release/flx.exe run --frames=10 examples/pong.flx
+          build/Release/flx.exe run-compiled --frames=10 build/pong.flxc
+
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
-          name: FlxEngine-exe-windows-x64
-          path: build/Release/FlxEngine.exe
+          name: flx-exe-windows-x64
+          path: build/Release/flx.exe

@@ -235,8 +235,8 @@ FLX can produce a temporary compiled project file for testing the future build
 pipeline:
 
 ```text
-FlxEngine.exe compile examples/pong.flx -o pong.flxc
-FlxEngine.exe run-compiled pong.flxc
+flx compile --output=pong.flxc examples/pong.flx
+flx run-compiled pong.flxc
 ```
 
 The compiled file is binary and versioned. It contains the effective project
@@ -244,6 +244,18 @@ context, Machine, object registry, declarative sounds/music and embedded
 JavaScript source. It is not the final packaging system yet: there is no
 compression, cache, bytecode, atlas, sprite compiler or standalone game
 executable in this step.
+
+## CLI
+
+The executable is `flx.exe` and the command form is:
+
+```text
+flx [command] [options] [target]
+```
+
+The default command is `run` and the default target is the current directory, so
+`flx`, `flx .` and `flx run .` are equivalent. Use `flx --help` for available
+commands and `flx --version` for the semantic FLX version read from `VERSION`.
 
 ---
 

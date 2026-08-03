@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../compiler/CompiledProject.h"
 #include "../runtime/RuntimeWorld.h"
 #include "../scripting/ScriptEngine.h"
 #include "../project/FlxContext.h"
@@ -8,6 +9,7 @@
 #include "../input/InputSystem.h"
 
 #include <raylib.h>
+#include <memory>
 #include <string>
 
 class Engine
@@ -16,24 +18,24 @@ public:
 
     Engine();
 
-    void run(const std::string& flxPath);
+    void run(const CompiledProject& project, int maxFrames = -1);
     RuntimeObject* find(const std::string& name);
 private:
 
-    void init(const std::string& flxPath);
+    void init(const CompiledProject& project);
     void update();
     void draw();
     void shutdown();
 
-    void loadProject(const std::string& flxPath);
+    void loadProject(const CompiledProject& project);
     void initWindow();
     void initVideoOutput();
     void configureScriptEngine();
     void shutdownVideoOutput();
     float safeFrameDelta() const;
 private:
+    std::unique_ptr<RuntimeWorld> world;
     ScriptEngine scriptEngine;
-    RuntimeWorld world;
     AudioSystem audioSystem;
     InputSystem inputSystem;
     FadeSystem fadeSystem;

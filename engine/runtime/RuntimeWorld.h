@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../compiler/CompiledProject.h"
 #include "ObjectDefinition.h"
 #include "RayCastResult.h"
 #include "RuntimeObject.h"
@@ -16,7 +17,7 @@ public:
     RuntimeWorld();
 
     void load(
-        const ObjectDefinition& rootDefinition,
+        const CompiledProject& project,
         ScriptEngine& scriptEngine
     );
 
@@ -37,7 +38,7 @@ public:
 
     void spawn(
         RuntimeObject& source,
-        const ObjectDefinition& definition,
+        const std::string& resourceId,
         ScriptEngine& scriptEngine
     );
 
@@ -132,6 +133,7 @@ private:
 
     int nextRuntimeId;
     uint64_t frameIndex = 0;
+    const ResourceRegistry* resources = nullptr;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
 };

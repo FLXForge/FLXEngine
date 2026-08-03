@@ -16,11 +16,16 @@ struct FlxContext
     std::string root;
     std::string machinePath;
     std::string inputMappingPath;
+    std::string inputMappingSourceName;
+    std::string inputMappingContent;
 
     std::string screenTitle;
     int screenWidth = 640;
     int screenHeight = 480;
     int screenScale = 1;
+    bool screenWidthOverride = false;
+    bool screenHeightOverride = false;
+    bool screenScaleOverride = false;
 
     bool debugCollisions = false;
     bool debugLogs = false;

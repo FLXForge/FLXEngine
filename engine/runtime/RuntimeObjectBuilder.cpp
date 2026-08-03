@@ -6,11 +6,14 @@ RuntimeObject RuntimeObjectBuilder::build(
     const std::string& parentId
 )
 {
+    const std::string objectName =
+        definition.id;
+
     RuntimeObject object(
-        definition.id,
-        definition.origin,
-        definition.size,
-        definition.color
+        objectName,
+        Vector2{ 0.0f, 0.0f },
+        Vector2{ 0.0f, 0.0f },
+        WHITE
     );
 
     object.runtimeId = runtimeId;
@@ -18,6 +21,11 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.originalParentId = parentId;
     object.sourcePath = definition.sourcePath;
     object.hasOrigin = definition.hasOrigin;
+    object.origin = definition.origin;
+    object.position = definition.origin;
+    object.previousPosition = definition.origin;
+    object.size = definition.size;
+    object.color = definition.color;
     object.visible = definition.visible;
     object.layer = definition.layer;
     object.attached = definition.attachOnCreate;
@@ -25,11 +33,6 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.attachFollowX = definition.attachFollowX;
     object.attachFollowY = definition.attachFollowY;
     object.attachFollowAngle = definition.attachFollowAngle;
-
-    if (!definition.hasVisual)
-    {
-        object.visible = false;
-    }
 
     object.shapeMode = definition.shapeMode;
     object.shapeType = definition.shapeType;
@@ -57,9 +60,11 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.collisionWith = definition.collisionWith;
 
     object.scripts = definition.scripts;
+    object.resolvedScriptPaths = definition.resolvedScriptPaths;
     object.music = definition.music;
     object.sounds = definition.sounds;
     object.children = definition.children;
+    object.childResources = definition.childResources;
     object.state = definition.initialState;
     object.stateTransitions = definition.stateTransitions;
     object.creationMode = definition.creationMode;

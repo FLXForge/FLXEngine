@@ -229,6 +229,24 @@ played yet.
 
 ---
 
+## Compiled Projects
+
+FLX can produce a temporary compiled project file for testing the future build
+pipeline:
+
+```text
+FlxEngine.exe compile examples/pong.flx -o pong.flxc
+FlxEngine.exe run-compiled pong.flxc
+```
+
+The compiled file is binary and versioned. It contains the effective project
+context, Machine, object registry, declarative sounds/music and embedded
+JavaScript source. It is not the final packaging system yet: there is no
+compression, cache, bytecode, atlas, sprite compiler or standalone game
+executable in this step.
+
+---
+
 ## Current Status
 
 FLX Engine is currently under active development.

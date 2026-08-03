@@ -26,6 +26,7 @@ public:
     std::unordered_map<std::string, double> local;
 
     std::unordered_map<std::string, ObjectDefinition> children;
+    std::unordered_map<std::string, std::string> childResources;
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, RuntimeTimer> timers;

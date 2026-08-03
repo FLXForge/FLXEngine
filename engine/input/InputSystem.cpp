@@ -181,6 +181,64 @@ void InputSystem::loadMapping(const std::string& path)
     );
 }
 
+void InputSystem::loadMappingContent(
+    const std::string& sourceName,
+    const std::string& content
+)
+{
+    systemButtons.clear();
+    players.clear();
+
+    if (content.empty())
+    {
+        Logger::warning(
+            "input",
+            "No input mapping defined. Normalized Input API will not receive mapped controls."
+        );
+
+        return;
+    }
+
+    std::stringstream stream(content);
+    std::string line;
+    int lineNumber = 0;
+
+    while (std::getline(stream, line))
+    {
+        ++lineNumber;
+        line = trim(line);
+
+        if (line.empty() || line[0] == '#')
+        {
+            continue;
+        }
+
+        const size_t separator =
+            line.find('=');
+
+        if (separator == std::string::npos)
+        {
+            Logger::warning(
+                "input",
+                "Ignoring invalid mapping line " + std::to_string(lineNumber)
+            );
+
+            continue;
+        }
+
+        parseLine(
+            trim(line.substr(0, separator)),
+            trim(line.substr(separator + 1)),
+            lineNumber
+        );
+    }
+
+    Logger::debug(
+        "input",
+        "Loaded input mapping: " + sourceName
+    );
+}
+
 void InputSystem::update(
     float delta,
     int screenWidth,

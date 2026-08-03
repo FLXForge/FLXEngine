@@ -1,40 +1,21 @@
 #include "Engine.h"
 #include "../debug/Logger.h"
-#include "../loading/JsonLoader.h"
 #include "../machine/VideoColorProcessor.h"
-#include "../project/FlxContextBuilder.h"
 #include "../tools/ColorParser.h"
 
 #include <raylib.h>
 #include <algorithm>
 #include <cmath>
 
-Engine::Engine() = default;
+Engine::Engine()
+    : world(std::make_unique<RuntimeWorld>())
+{
+}
 
 namespace
 {
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
-
-    void projectDefinitionColors(
-        ObjectDefinition& definition,
-        const VideoChipDefinition& video
-    )
-    {
-        definition.color =
-            VideoColorProcessor::project(
-                definition.color,
-                video
-            );
-
-        for (auto& child : definition.children)
-        {
-            projectDefinitionColors(
-                child.second,
-                video
-            );
-        }
-    }
 
     Rectangle renderDestination(
         const FlxContext& context
@@ -91,11 +72,13 @@ namespace
     }
 }
 
-void Engine::run(const std::string& flxPath)
+void Engine::run(const CompiledProject& project, int maxFrames)
 {
     SetTraceLogCallback(Logger::rayLibLog);
 
-    init(flxPath);
+    init(project);
+
+    int frameCount = 0;
 
     while (!WindowShouldClose() && !scriptEngine.exitRequested())
     {
@@ -107,22 +90,29 @@ void Engine::run(const std::string& flxPath)
         }
 
         draw();
+
+        ++frameCount;
+
+        if (maxFrames >= 0 && frameCount >= maxFrames)
+        {
+            break;
+        }
     }
 
     shutdown();
 }
 
-void Engine::init(const std::string& flxPath)
+void Engine::init(const CompiledProject& project)
 {
-    loadProject(flxPath);
+    loadProject(project);
 
     SetTargetFPS(60);
 }
 
-void Engine::loadProject(const std::string& flxPath)
+void Engine::loadProject(const CompiledProject& project)
 {
     context =
-        FlxContextBuilder::build(flxPath);
+        project.context;
 
     Logger::setConsoleEnabled(context.debugConsole);
     Logger::setDebugEnabled(context.debugLogs);
@@ -137,16 +127,9 @@ void Engine::loadProject(const std::string& flxPath)
         "Loaded project: " + context.name
     );
 
-    const std::string rootPath =
-        JsonLoader::resolveProjectPath(
-            context.projectPath,
-            context.root,
-            ".json"
-        );
-
     Logger::info(
         "project",
-        "Loaded root: " + rootPath
+        "Loaded root: " + project.rootPath
     );
 
     initWindow();
@@ -154,19 +137,22 @@ void Engine::loadProject(const std::string& flxPath)
     audioSystem.configure(context.machine.audio);
     audioSystem.init();
     inputSystem.configure(context.machine.input);
-    inputSystem.loadMapping(context.inputMappingPath);
+
+    if (!context.inputMappingContent.empty())
+    {
+        inputSystem.loadMappingContent(
+            context.inputMappingSourceName,
+            context.inputMappingContent
+        );
+    }
+    else
+    {
+        inputSystem.loadMapping(context.inputMappingPath);
+    }
+
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
-
-    ObjectDefinition rootDefinition =
-        JsonLoader::loadObjectDefinition(rootPath);
-
-    projectDefinitionColors(
-        rootDefinition,
-        context.machine.video
-    );
-
-    world.load(rootDefinition, scriptEngine);
+    world->load(project, scriptEngine);
 }
 
 void Engine::initWindow()
@@ -266,26 +252,26 @@ void Engine::configureScriptEngine()
     scriptEngine.setFindObjectFunction(
         [this](const std::string& name)
         {
-            return world.findByName(name);
+            return world->findByName(name);
         }
     );
 
     scriptEngine.setFindObjectByIdFunction(
         [this](const std::string& id)
         {
-            return world.findByRuntimeId(id);
+            return world->findByRuntimeId(id);
         }
     );
 
     scriptEngine.setSpawnObjectFunction(
         [this](
             RuntimeObject& source,
-            const ObjectDefinition& definition
+            const std::string& resourceId
             )
         {
-            world.spawn(
+            world->spawn(
                 source,
-                definition,
+                resourceId,
                 scriptEngine
             );
         }
@@ -298,7 +284,7 @@ void Engine::configureScriptEngine()
             float distance
             )
         {
-            return world.rayCast(
+            return world->rayCast(
                 source,
                 angle,
                 distance
@@ -309,7 +295,7 @@ void Engine::configureScriptEngine()
     scriptEngine.setKeepOnlyFunction(
         [this](const std::string& runtimeId)
         {
-            world.keepOnly(runtimeId);
+            world->keepOnly(runtimeId);
         }
     );
 }
@@ -328,7 +314,7 @@ void Engine::update()
         renderDestination(context)
     );
 
-    world.update(
+    world->update(
         scriptEngine,
         static_cast<float>(context.screenWidth),
         static_cast<float>(context.screenHeight),
@@ -345,7 +331,7 @@ void Engine::draw()
 
     ClearBackground(backgroundColor);
 
-    world.draw(
+    world->draw(
         scriptEngine,
         1,
         static_cast<float>(context.screenWidth),
@@ -402,7 +388,7 @@ void Engine::shutdownVideoOutput()
 
 RuntimeObject* Engine::find(const std::string& name)
 {
-    return world.findByName(name);
+    return world->findByName(name);
 }
 
 float Engine::safeFrameDelta() const

@@ -82,14 +82,23 @@ void FlxContextBuilder::loadMachine(FlxContext& context)
 
 void FlxContextBuilder::applyMachineScreenDefaults(FlxContext& context)
 {
-    context.screenWidth =
-        context.machine.video.screenWidth;
+    if (!context.screenWidthOverride)
+    {
+        context.screenWidth =
+            context.machine.video.screenWidth;
+    }
 
-    context.screenHeight =
-        context.machine.video.screenHeight;
+    if (!context.screenHeightOverride)
+    {
+        context.screenHeight =
+            context.machine.video.screenHeight;
+    }
 
-    context.screenScale =
-        context.machine.video.outputScale;
+    if (!context.screenScaleOverride)
+    {
+        context.screenScale =
+            context.machine.video.outputScale;
+    }
 }
 
 void FlxContextBuilder::logResolvedContext(const FlxContext& context)
@@ -214,6 +223,24 @@ void FlxContextBuilder::assign(
     else if (key == "title")
     {
         context.screenTitle = value;
+    }
+    else if (key == "screen.width")
+    {
+        context.screenWidth =
+            std::stoi(value);
+        context.screenWidthOverride = true;
+    }
+    else if (key == "screen.height")
+    {
+        context.screenHeight =
+            std::stoi(value);
+        context.screenHeightOverride = true;
+    }
+    else if (key == "screen.scale")
+    {
+        context.screenScale =
+            std::stoi(value);
+        context.screenScaleOverride = true;
     }
     else if (key == "debug.collisions")
     {

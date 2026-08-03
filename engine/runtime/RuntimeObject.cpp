@@ -301,28 +301,28 @@ RuntimeObject::RuntimeObject(
     Vector2 size,
     Color color
 )
+    : name(name),
+      runtimeId(name),
+      parentId(""),
+      originalParentId(""),
+      sourcePath(""),
+      visible(true),
+      alive(true),
+      deadCalled(false),
+      origin(origin),
+      position(origin),
+      previousPosition(origin),
+      size(size),
+      color(color)
 {
-    this->name = name;
-    this->runtimeId = name;
-    this->parentId = "";
-    this->originalParentId = "";
-    this->sourcePath = "";
-    this->origin = origin;
     this->hasOrigin = false;
-    this->position = origin;
-    this->previousPosition = origin;
-    this->size = size;
     this->originalOffset = Vector2{ 0.0f, 0.0f };
-    this->color = color;
     this->shapeMode = "fill";
     this->radius = 0.0f;
     this->speed = 120.0f;
     this->angle = 0.0f;
     this->originSpeed = speed;
     this->group = "";
-    this->visible = true;
-    this->alive = true;
-    this->deadCalled = false;
     this->attached = false;
     this->layer = 0;
     this->attachFollowX = false;

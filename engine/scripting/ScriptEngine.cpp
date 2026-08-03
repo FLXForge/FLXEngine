@@ -369,6 +369,43 @@ void ScriptEngine::loadScript(const std::string& path)
     Logger::debug("script", "Loaded script: " + path);
 }
 
+void ScriptEngine::loadScript(
+    const std::string& id,
+    const std::string& code
+)
+{
+    if (loadedScripts.contains(id))
+    {
+        return;
+    }
+
+    const std::string scriptKey =
+        toJsStringLiteral(id);
+
+    const std::string wrapped =
+        "globalThis.Flx = globalThis.Flx || {};"
+        "Flx.scripts = Flx.scripts || {};"
+        "Flx.scripts[" + scriptKey + "] = (function(){"
+        + code +
+        " return {"
+        "born: typeof born === 'function' ? born : undefined,"
+        "action: typeof action === 'function' ? action : undefined,"
+        "motion: typeof motion === 'function' ? motion : undefined,"
+        "collision: typeof collision === 'function' ? collision : undefined,"
+        "draw: typeof draw === 'function' ? draw : undefined,"
+        "dead: typeof dead === 'function' ? dead : undefined"
+        "};"
+        "})();";
+
+    eval(wrapped);
+
+    cacheScriptModule(id);
+
+    loadedScripts.insert(id);
+
+    Logger::debug("script", "Loaded script: " + id);
+}
+
 void ScriptEngine::cacheScriptModule(const std::string& path)
 {
     JSValue global =
@@ -530,7 +567,7 @@ void ScriptEngine::setSpawnObjectFunction(
 
 void ScriptEngine::spawnObject(
     RuntimeObject& source,
-    const ObjectDefinition& definition
+    const std::string& resourceId
 )
 {
     if (!spawnObjectFunction)
@@ -540,7 +577,7 @@ void ScriptEngine::spawnObject(
 
     spawnObjectFunction(
         source,
-        definition
+        resourceId
     );
 }
 

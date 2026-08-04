@@ -206,7 +206,7 @@ namespace
         require(ship->group == "player", "REF-009 internal child should load selected member only");
     }
 
-    void testRef009InternalReferenceMissingMemberCurrent()
+    void testRef009InternalReferenceMissingMember()
     {
         const ReferenceProject project =
             createReferenceProject("ref009_internal_missing_current");
@@ -223,9 +223,17 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(result.success, "REF-009 current behavior: missing internal child member does not fail compilation");
-        require(findChild(result.project.rootDefinition, "ship") == nullptr, "REF-009 current behavior: missing internal child is skipped");
-        require(!result.diagnostics.hasErrors(), "REF-009 current behavior: missing internal member is not surfaced as compiler diagnostic");
+        require(!result.success, "REF-009 missing internal child member should fail compilation");
+        require(result.diagnostics.hasErrors(), "REF-009 missing internal member should produce diagnostics");
+
+        const std::string text =
+            diagnosticsText(result.diagnostics);
+
+        require(text.find("FLX reference key not found") != std::string::npos, "REF-009 diagnostic should explain missing member");
+        require(text.find("/catalog/objects:missing") != std::string::npos, "REF-009 diagnostic should include declared reference");
+        require(text.find("children.ship") != std::string::npos, "REF-009 diagnostic should include declaring field");
+        require(text.find("objects.json") != std::string::npos, "REF-009 diagnostic should include effective JSON path");
+        require(text.find("missing") != std::string::npos, "REF-009 diagnostic should include missing member");
     }
 
     void testRef006RelativeScriptDirect()
@@ -249,7 +257,7 @@ namespace
         require(containsScript(result, "world/scripts/root.js"), "REF-006 direct relative script should resolve from declaring file");
     }
 
-    void testRef005AbsoluteLogicalScriptCurrent()
+    void testRef005AbsoluteLogicalScript()
     {
         const ReferenceProject project =
             createReferenceProject("ref005_absolute_script_current");
@@ -266,8 +274,8 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(!result.success, "REF-005 current behavior: absolute logical script references are not resolved from path");
-        require(result.diagnostics.hasErrors(), "REF-005 current behavior: absolute logical script produces compiler diagnostics");
+        require(result.success, "REF-005 absolute logical script references should resolve from path");
+        require(containsScript(result, "world/scripts/root.js"), "REF-005 absolute logical script should be embedded");
     }
 
     void testRef007InheritedScriptUsesBaseFile()
@@ -295,7 +303,7 @@ namespace
         require(containsScript(result, "world/base/base.js"), "REF-007 inherited script should resolve from base file");
     }
 
-    void testRef008OverriddenScriptCurrent()
+    void testRef008OverriddenScript()
     {
         const ReferenceProject project =
             createReferenceProject("ref008_overridden_script_current");
@@ -322,9 +330,9 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(!result.success, "REF-008 current behavior: overridden script is still resolved from base source");
-        require(result.diagnostics.hasErrors(), "REF-008 current behavior: overridden script reports missing script");
-        require(!containsScript(result, "world/consumer/consumer.js"), "REF-008 current behavior: consumer script is not reached");
+        require(result.success, "REF-008 overridden script should resolve from consumer file");
+        require(containsScript(result, "world/consumer/consumer.js"), "REF-008 overridden script should be embedded from consumer directory");
+        require(!containsScript(result, "world/base/consumer.js"), "REF-008 overridden script should not resolve from base directory");
     }
 
     void testRef007InheritedChild()
@@ -357,7 +365,7 @@ namespace
         require(enemy->group == "enemy", "REF-007 inherited child should resolve from base file");
     }
 
-    void testRef008OverriddenChildCurrent()
+    void testRef008OverriddenChild()
     {
         const ReferenceProject project =
             createReferenceProject("ref008_overridden_child_current");
@@ -388,8 +396,13 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(result.success, "REF-008 current behavior: overridden child with consumer-relative path does not fail compilation");
-        require(findChild(result.project.rootDefinition, "item") == nullptr, "REF-008 current behavior: overridden child is skipped after resolving from the wrong base");
+        require(result.success, "REF-008 overridden child should compile");
+
+        const ObjectDefinition* item =
+            findChild(result.project.rootDefinition, "item");
+
+        require(item != nullptr, "REF-008 overridden child should exist");
+        require(item->group == "consumer", "REF-008 overridden child should resolve from consumer file");
     }
 
     void testRef012LikeChain()
@@ -417,6 +430,39 @@ namespace
         require(!result.project.rootDefinition.visible, "REF-012 chain should inherit base properties");
         require(result.project.rootDefinition.group == "level", "REF-012 chain should allow intermediate override");
         require(result.project.rootDefinition.role == "root", "REF-012 chain should allow final override");
+    }
+
+    void testRef010LikeCycle()
+    {
+        const ReferenceProject project =
+            createReferenceProject("ref010_like_cycle");
+
+        writeFile(
+            project.world / "root.json",
+            "{ \"like\": \"a\" }\n"
+        );
+        writeFile(
+            project.world / "a.json",
+            "{ \"like\": \"b\" }\n"
+        );
+        writeFile(
+            project.world / "b.json",
+            "{ \"like\": \"a\" }\n"
+        );
+
+        const CompilationResult result =
+            compile(project.manifest);
+
+        require(!result.success, "REF-010 like cycle should fail compilation");
+        require(result.diagnostics.hasErrors(), "REF-010 like cycle should produce diagnostics");
+
+        const std::string text =
+            diagnosticsText(result.diagnostics);
+
+        require(text.find("Resource reference cycle detected") != std::string::npos, "REF-010 diagnostic should explain the cycle");
+        require(text.find("Chain:") != std::string::npos, "REF-010 diagnostic should include known reference chain");
+        require(text.find("a.json") != std::string::npos, "REF-010 diagnostic should include cycle participant");
+        require(text.find("b.json") != std::string::npos, "REF-010 diagnostic should include cycle participant");
     }
 
     void testRef006DifferentDirectoryReferences()
@@ -488,7 +534,7 @@ namespace
         require(secondMarker != nullptr && secondMarker->group == "second", "REF-014 second compilation should use second project root");
     }
 
-    void testRef015MissingReferenceCurrent()
+    void testRef015MissingReference()
     {
         const ReferenceProject project =
             createReferenceProject("ref015_missing_reference_current");
@@ -501,12 +547,18 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(result.success, "REF-015 current behavior: missing child reference does not fail compilation");
-        require(findChild(result.project.rootDefinition, "missing") == nullptr, "REF-015 current behavior: missing child is skipped");
-        require(!result.diagnostics.hasErrors(), "REF-015 current behavior: missing child reference is not a compiler diagnostic");
+        require(!result.success, "REF-015 missing child reference should fail compilation");
+        require(result.diagnostics.hasErrors(), "REF-015 missing child reference should produce diagnostics");
+
+        const std::string text =
+            diagnosticsText(result.diagnostics);
+
+        require(text.find("missing/object") != std::string::npos, "REF-015 diagnostic should include declared child reference");
+        require(text.find("children.missing") != std::string::npos, "REF-015 diagnostic should include child field");
+        require(text.find("missing/object.json") != std::string::npos, "REF-015 diagnostic should include effective searched path");
     }
 
-    void testRef015DiagnosticsCurrent()
+    void testRef015Diagnostics()
     {
         const ReferenceProject project =
             createReferenceProject("ref015_diagnostics_current");
@@ -519,15 +571,15 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(!result.success, "REF-015 current behavior: missing direct script fails compilation");
-        require(result.diagnostics.hasErrors(), "REF-015 current behavior: missing direct script is a compiler diagnostic");
+        require(!result.success, "REF-015 missing direct script should fail compilation");
+        require(result.diagnostics.hasErrors(), "REF-015 missing direct script should be a compiler diagnostic");
 
         const std::string text =
             diagnosticsText(result.diagnostics);
 
-        require(text.find("missing-script") != std::string::npos, "REF-015 current behavior: diagnostic includes effective searched path");
-        require(text.find("root.json") == std::string::npos, "REF-015 current behavior: diagnostic does not preserve declaring JSON file");
-        require(text.find("[") == std::string::npos, "REF-015 current behavior: diagnostic does not preserve structured reference field");
+        require(text.find("missing-script") != std::string::npos, "REF-015 diagnostic should include declared script reference");
+        require(text.find("root.json") != std::string::npos, "REF-015 diagnostic should preserve declaring JSON file");
+        require(text.find("behavior.scripts") != std::string::npos, "REF-015 diagnostic should preserve structured reference field");
     }
 
     void testRef011ResourceIdCollisionCurrentNotReproduced()
@@ -559,14 +611,8 @@ namespace
     void testPendingContractSummary()
     {
         const std::vector<std::string> pending = {
-            "REF-005 script references starting with '/' are not resolved from project path.",
-            "REF-008 overwritten scripts after like use the base source path instead of the consumer source path.",
-            "REF-008 overwritten children after like use the base source path instead of the consumer source path.",
-            "REF-009 missing internal members are logged and skipped, not returned as compiler diagnostics.",
-            "REF-010 like cycles are not safely characterized here because current recursive resolution may not terminate safely.",
-            "REF-011 ResourceId collision diagnostics are not implemented; no deterministic collision was reproduced with the current id model.",
-            "REF-015 missing child references are logged and skipped, not returned as compiler diagnostics.",
-            "REF-015 diagnostics do not preserve declared reference, declaring file and effective path as structured data."
+            "REF-011 ResourceId collision checks are implemented, but no deterministic source-level collision was reproduced with the current id model.",
+            "Diagnostics details remain encoded in the message because Diagnostics has no structured details field yet."
         };
 
         require(!pending.empty(), "pending contract summary should document known failures");
@@ -587,18 +633,19 @@ int main()
         { "REF-002 relative object reference", testRef002RelativeObjectReference },
         { "REF-005 absolute logical object reference", testRef005AbsoluteLogicalObjectReference },
         { "REF-009 internal reference valid", testRef009InternalReferenceValid },
-        { "REF-009 current missing internal member", testRef009InternalReferenceMissingMemberCurrent },
+        { "REF-009 missing internal member", testRef009InternalReferenceMissingMember },
         { "REF-006 relative script direct", testRef006RelativeScriptDirect },
-        { "REF-005 current absolute logical script", testRef005AbsoluteLogicalScriptCurrent },
+        { "REF-005 absolute logical script", testRef005AbsoluteLogicalScript },
         { "REF-007 inherited script uses base file", testRef007InheritedScriptUsesBaseFile },
-        { "REF-008 current overridden script", testRef008OverriddenScriptCurrent },
+        { "REF-008 overridden script", testRef008OverriddenScript },
         { "REF-007 inherited child", testRef007InheritedChild },
-        { "REF-008 current overridden child", testRef008OverriddenChildCurrent },
+        { "REF-008 overridden child", testRef008OverriddenChild },
         { "REF-012 like chain", testRef012LikeChain },
+        { "REF-010 like cycle", testRef010LikeCycle },
         { "REF-006 different directory references", testRef006DifferentDirectoryReferences },
         { "REF-014 consecutive compilations", testRef014ConsecutiveCompilationsDoNotReusePreviousRoot },
-        { "REF-015 current missing reference", testRef015MissingReferenceCurrent },
-        { "REF-015 current diagnostics", testRef015DiagnosticsCurrent },
+        { "REF-015 missing reference", testRef015MissingReference },
+        { "REF-015 diagnostics", testRef015Diagnostics },
         { "REF-011 current ResourceId collision characterization", testRef011ResourceIdCollisionCurrentNotReproduced },
         { "Pending reference contract summary", testPendingContractSummary }
     };

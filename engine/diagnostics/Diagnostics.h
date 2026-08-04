@@ -49,6 +49,11 @@ enum class DiagnosticCode
     ResourceErrorUnclassified,
     ResourceUnexpectedInternalError,
     ResourceDeprecatedFunctionality,
+    MissingReferencedResource,
+    MissingInternalResourceMember,
+    ResourceReferenceCycle,
+    ResourceIdCollision,
+    ReferencedScriptNotFound,
 
     MachineInformationUnclassified,
     MachineWarningUnclassified,

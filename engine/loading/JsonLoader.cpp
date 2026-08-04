@@ -23,10 +23,17 @@ namespace
         bool ok = false;
         Json data;
         std::filesystem::path sourceFile;
+        std::filesystem::path resolvedPath;
+        std::string member;
     };
 
-    std::filesystem::path projectJsonRoot;
-    std::unordered_map<std::string, Json> jsonCache;
+    struct JsonLoadSession
+    {
+        std::filesystem::path projectJsonRoot;
+        std::unordered_map<std::string, Json> jsonCache;
+        Diagnostics* diagnostics = nullptr;
+        std::vector<std::string> likeStack;
+    };
 
     std::string ensureExtension(
         const std::string& path,
@@ -87,6 +94,42 @@ namespace
         ).lexically_normal();
     }
 
+    std::filesystem::path resolveReferencedPath(
+        const JsonLoadSession& session,
+        const std::filesystem::path& sourceFile,
+        const std::string& reference,
+        const std::string& extension
+    )
+    {
+        if (!reference.empty() && reference.front() == '/')
+        {
+            std::string normalized =
+                reference;
+
+            while (!normalized.empty() && normalized.front() == '/')
+            {
+                normalized.erase(normalized.begin());
+            }
+
+            std::replace(
+                normalized.begin(),
+                normalized.end(),
+                '\\',
+                '/'
+            );
+
+            return (
+                std::filesystem::absolute(session.projectJsonRoot) /
+                normalizedRelativePath(normalized, extension)
+            ).lexically_normal();
+        }
+
+        return (
+            sourceFile.parent_path() /
+            normalizedRelativePath(reference, extension)
+        ).lexically_normal();
+    }
+
     bool isFlxReference(
         const std::string& value
     )
@@ -131,7 +174,54 @@ namespace
         return true;
     }
 
+    void addReferenceError(
+        JsonLoadSession& session,
+        DiagnosticCode code,
+        const std::string& message,
+        const std::filesystem::path& declaringFile,
+        const std::string& field,
+        const std::string& reference,
+        const std::filesystem::path& resolvedPath,
+        const std::string& member = ""
+    )
+    {
+        std::string details =
+            message +
+            "\nReference: " +
+            reference;
+
+        if (!resolvedPath.empty())
+        {
+            details +=
+                "\nResolved path: " +
+                genericPathString(resolvedPath);
+        }
+
+        if (!member.empty())
+        {
+            details +=
+                "\nMember: " +
+                member;
+        }
+
+        if (session.diagnostics != nullptr)
+        {
+            session.diagnostics->error(
+                code,
+                details,
+                genericPathString(declaringFile),
+                field
+            );
+        }
+
+        Logger::error(
+            "json",
+            details
+        );
+    }
+
     bool loadJsonCached(
+        JsonLoadSession& session,
         const std::filesystem::path& path,
         Json& data
     )
@@ -143,9 +233,9 @@ namespace
             normalized.generic_string();
 
         const auto found =
-            jsonCache.find(key);
+            session.jsonCache.find(key);
 
-        if (found != jsonCache.end())
+        if (found != session.jsonCache.end())
         {
             data = found->second;
             return true;
@@ -156,7 +246,7 @@ namespace
             return false;
         }
 
-        jsonCache[key] = data;
+        session.jsonCache[key] = data;
 
         return true;
     }
@@ -209,10 +299,11 @@ namespace
     }
 
     std::filesystem::path resolveFlxReferencePath(
+        JsonLoadSession& session,
         const std::string& path
     )
     {
-        if (projectJsonRoot.empty())
+        if (session.projectJsonRoot.empty())
         {
             Logger::error(
                 "json",
@@ -261,7 +352,7 @@ namespace
         }
 
         const std::filesystem::path root =
-            std::filesystem::absolute(projectJsonRoot).lexically_normal();
+            std::filesystem::absolute(session.projectJsonRoot).lexically_normal();
         const std::filesystem::path resolved =
             std::filesystem::absolute(root / relative).lexically_normal();
 
@@ -303,16 +394,22 @@ namespace
     }
 
     bool resolveLike(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         const Json& object,
-        Json& resolved
+        Json& resolved,
+        const std::string& field
     );
 
     ResolvedJsonReference resolveJsonReference(
-        const std::string& reference
+        JsonLoadSession& session,
+        const std::string& reference,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
     );
 
     bool resolveBlockReference(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         Json& object,
         const std::string& key
@@ -329,7 +426,12 @@ namespace
         if (isFlxReference(reference))
         {
             ResolvedJsonReference resolvedReference =
-                resolveJsonReference(reference);
+                resolveJsonReference(
+                    session,
+                    reference,
+                    currentFile,
+                    key
+                );
 
             if (!resolvedReference.ok)
             {
@@ -368,7 +470,7 @@ namespace
 
         Json resolvedBlock;
 
-        if (!resolveLike(blockPath, block, resolvedBlock))
+        if (!resolveLike(session, blockPath, block, resolvedBlock, key))
         {
             return false;
         }
@@ -386,6 +488,7 @@ namespace
     }
 
     bool resolveBlockReferences(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         Json& object
     )
@@ -402,7 +505,7 @@ namespace
 
         for (const auto& key : blockKeys)
         {
-            if (!resolveBlockReference(currentFile, object, key))
+            if (!resolveBlockReference(session, currentFile, object, key))
             {
                 return false;
             }
@@ -412,9 +515,11 @@ namespace
     }
 
     bool resolveLike(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         const Json& object,
-        Json& resolved
+        Json& resolved,
+        const std::string& field
     )
     {
         if (!object.is_object())
@@ -426,7 +531,29 @@ namespace
         {
             resolved = object;
             resolved["__sourceFile"] = genericPathString(currentFile);
-            return resolveBlockReferences(currentFile, resolved);
+
+            if (object.contains("behavior"))
+            {
+                resolved["__behaviorSourceFile"] =
+                    genericPathString(currentFile);
+            }
+
+            if (object.contains("children") && object["children"].is_object())
+            {
+                Json childSourceFiles =
+                    Json::object();
+
+                for (auto it = object["children"].begin(); it != object["children"].end(); ++it)
+                {
+                    childSourceFiles[it.key()] =
+                        genericPathString(currentFile);
+                }
+
+                resolved["__childSourceFiles"] =
+                    childSourceFiles;
+            }
+
+            return resolveBlockReferences(session, currentFile, resolved);
         }
 
         const std::string likeReference =
@@ -435,7 +562,12 @@ namespace
         if (isFlxReference(likeReference))
         {
             ResolvedJsonReference resolvedReference =
-                resolveJsonReference(likeReference);
+                resolveJsonReference(
+                    session,
+                    likeReference,
+                    currentFile,
+                    field.empty() ? "like" : field + ".like"
+                );
 
             if (!resolvedReference.ok || !resolvedReference.data.is_object())
             {
@@ -452,6 +584,36 @@ namespace
 
             override.erase("like");
 
+            if (override.contains("behavior"))
+            {
+                override["__behaviorSourceFile"] =
+                    genericPathString(currentFile);
+            }
+
+            if (override.contains("children") && override["children"].is_object())
+            {
+                Json childSourceFiles =
+                    Json::object();
+
+                if (
+                    resolvedReference.data.contains("__childSourceFiles") &&
+                    resolvedReference.data["__childSourceFiles"].is_object()
+                )
+                {
+                    childSourceFiles =
+                        resolvedReference.data["__childSourceFiles"];
+                }
+
+                for (auto it = override["children"].begin(); it != override["children"].end(); ++it)
+                {
+                    childSourceFiles[it.key()] =
+                        genericPathString(currentFile);
+                }
+
+                override["__childSourceFiles"] =
+                    childSourceFiles;
+            }
+
             mergeJson(resolvedReference.data, override);
 
             resolved =
@@ -460,6 +622,7 @@ namespace
                 genericPathString(resolvedReference.sourceFile);
 
             return resolveBlockReferences(
+                session,
                 resolvedReference.sourceFile,
                 resolved
             );
@@ -471,13 +634,61 @@ namespace
                 likeReference
             );
 
+        const std::string baseKey =
+            std::filesystem::absolute(basePath).lexically_normal().generic_string();
+
+        if (
+            std::find(
+                session.likeStack.begin(),
+                session.likeStack.end(),
+                baseKey
+            ) != session.likeStack.end()
+        )
+        {
+            std::string chain;
+
+            for (const std::string& entry : session.likeStack)
+            {
+                if (!chain.empty())
+                {
+                    chain += " -> ";
+                }
+
+                chain += entry;
+            }
+
+            if (!chain.empty())
+            {
+                chain += " -> ";
+            }
+
+            chain += baseKey;
+
+            addReferenceError(
+                session,
+                DiagnosticCode::ResourceReferenceCycle,
+                "Resource reference cycle detected.\nChain: " + chain,
+                currentFile,
+                field.empty() ? "like" : field + ".like",
+                likeReference,
+                basePath
+            );
+
+            return false;
+        }
+
         Json base;
 
         if (!loadJson(basePath, base))
         {
-            Logger::error(
-                "json",
-                "Like target could not be loaded: " + genericPathString(basePath)
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "Like target could not be loaded.",
+                currentFile,
+                field.empty() ? "like" : field + ".like",
+                likeReference,
+                basePath
             );
 
             return false;
@@ -485,7 +696,14 @@ namespace
 
         Json resolvedBase;
 
-        if (!resolveLike(basePath, base, resolvedBase))
+        session.likeStack.push_back(baseKey);
+
+        const bool baseResolved =
+            resolveLike(session, basePath, base, resolvedBase, field);
+
+        session.likeStack.pop_back();
+
+        if (!baseResolved)
         {
             return false;
         }
@@ -495,12 +713,42 @@ namespace
 
         override.erase("like");
 
+        if (override.contains("behavior"))
+        {
+            override["__behaviorSourceFile"] =
+                genericPathString(currentFile);
+        }
+
+        if (override.contains("children") && override["children"].is_object())
+        {
+            Json childSourceFiles =
+                Json::object();
+
+            if (
+                resolvedBase.contains("__childSourceFiles") &&
+                resolvedBase["__childSourceFiles"].is_object()
+            )
+            {
+                childSourceFiles =
+                    resolvedBase["__childSourceFiles"];
+            }
+
+            for (auto it = override["children"].begin(); it != override["children"].end(); ++it)
+            {
+                childSourceFiles[it.key()] =
+                    genericPathString(currentFile);
+            }
+
+            override["__childSourceFiles"] =
+                childSourceFiles;
+        }
+
         mergeJson(resolvedBase, override);
 
         resolved = resolvedBase;
         resolved["__sourceFile"] = genericPathString(basePath);
 
-        return resolveBlockReferences(currentFile, resolved);
+        return resolveBlockReferences(session, currentFile, resolved);
     }
 
     bool hasShape(const Json& object)
@@ -757,6 +1005,8 @@ namespace
         }
 
         const auto& behavior = object["behavior"];
+        const std::string behaviorSourceFile =
+            object.value("__behaviorSourceFile", definition.sourcePath);
 
         if (!behavior.contains("scripts") || !behavior["scripts"].is_array())
         {
@@ -767,6 +1017,9 @@ namespace
         {
             definition.scripts.push_back(
                 script.get<std::string>()
+            );
+            definition.scriptSourcePaths.push_back(
+                behaviorSourceFile
             );
         }
     }
@@ -967,8 +1220,10 @@ namespace
     }
 
     Json normalizeSoundValue(
+        JsonLoadSession& session,
         const Json& value,
-        const std::filesystem::path& currentFile
+        const std::filesystem::path& currentFile,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -979,7 +1234,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 if (!resolvedReference.ok)
                 {
@@ -1009,7 +1269,7 @@ namespace
 
             Json resolvedSound;
 
-            if (!resolveLike(soundPath, soundData, resolvedSound))
+            if (!resolveLike(session, soundPath, soundData, resolvedSound, field))
             {
                 return Json{};
             }
@@ -1026,7 +1286,7 @@ namespace
         {
             Json resolvedSound;
 
-            if (!resolveLike(currentFile, value, resolvedSound))
+            if (!resolveLike(session, currentFile, value, resolvedSound, field))
             {
                 return Json{};
             }
@@ -1043,7 +1303,10 @@ namespace
     }
 
     ResolvedJsonReference resolveJsonReference(
-        const std::string& reference
+        JsonLoadSession& session,
+        const std::string& reference,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
     )
     {
         if (!isFlxReference(reference))
@@ -1084,20 +1347,37 @@ namespace
         }
 
         const std::filesystem::path referencePath =
-            resolveFlxReferencePath(path);
+            resolveFlxReferencePath(session, path);
 
         if (referencePath.empty())
         {
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "FLX reference could not be resolved.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
+            );
+
             return {};
         }
 
         Json data;
 
-        if (!loadJsonCached(referencePath, data))
+        if (!loadJsonCached(session, referencePath, data))
         {
-            Logger::error(
-                "json",
-                "FLX reference file not found or invalid: " + reference
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "FLX reference file not found or invalid.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
             );
 
             return {};
@@ -1105,7 +1385,7 @@ namespace
 
         Json resolved;
 
-        if (!resolveLike(referencePath, data, resolved))
+        if (!resolveLike(session, referencePath, data, resolved, field))
         {
             return {};
         }
@@ -1115,15 +1395,23 @@ namespace
             return ResolvedJsonReference{
                 true,
                 resolved,
-                referencePath
+                referencePath,
+                referencePath,
+                ""
             };
         }
 
         if (!resolved.contains(key))
         {
-            Logger::error(
-                "json",
-                "FLX reference key not found: " + reference
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingInternalResourceMember,
+                "FLX reference key not found.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
             );
 
             return {};
@@ -1132,13 +1420,17 @@ namespace
         return ResolvedJsonReference{
             true,
             resolved[key],
-            referencePath
+            referencePath,
+            referencePath,
+            key
         };
     }
 
     Json resolveJsonValue(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
-        const Json& value
+        const Json& value,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -1149,7 +1441,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 return resolvedReference.ok
                     ? resolvedReference.data
@@ -1161,7 +1458,7 @@ namespace
         {
             Json resolved;
 
-            if (!resolveLike(currentFile, value, resolved))
+            if (!resolveLike(session, currentFile, value, resolved, field))
             {
                 return Json{};
             }
@@ -1217,6 +1514,7 @@ namespace
     }
 
     AudioSourceDefinition parseAudioSource(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1224,7 +1522,7 @@ namespace
     {
         AudioSourceDefinition source;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1272,6 +1570,7 @@ namespace
     }
 
     AudioToneDefinition parseAudioTone(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1279,7 +1578,7 @@ namespace
     {
         AudioToneDefinition tone;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1386,13 +1685,14 @@ namespace
     }
 
     float parseAudioNote(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
     )
     {
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (data.is_number())
         {
@@ -1425,6 +1725,7 @@ namespace
     }
 
     AudioMovementDefinition parseAudioMovement(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1432,7 +1733,7 @@ namespace
     {
         AudioMovementDefinition movement;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1474,6 +1775,7 @@ namespace
     }
 
     InstrumentDefinition parseInstrument(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1481,7 +1783,7 @@ namespace
     {
         InstrumentDefinition instrument;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1492,6 +1794,7 @@ namespace
         {
             instrument.source =
                 parseAudioSource(
+                    session,
                     data["source"],
                     currentFile,
                     label + ".source"
@@ -1502,6 +1805,7 @@ namespace
         {
             instrument.tone =
                 parseAudioTone(
+                    session,
                     data["tone"],
                     currentFile,
                     label + ".tone"
@@ -1546,6 +1850,7 @@ namespace
     }
 
     void parseSounds(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -1563,8 +1868,10 @@ namespace
         {
             const Json data =
                 normalizeSoundValue(
+                    session,
                     it.value(),
-                    currentFile
+                    currentFile,
+                    "sounds." + it.key()
                 );
 
             if (!data.is_object())
@@ -1582,7 +1889,12 @@ namespace
             if (data.contains("kind"))
             {
                 const Json kindData =
-                    resolveJsonValue(currentFile, data["kind"]);
+                    resolveJsonValue(
+                        session,
+                        currentFile,
+                        data["kind"],
+                        "sounds." + it.key() + ".kind"
+                    );
 
                 if (kindData.is_object())
                 {
@@ -1590,6 +1902,7 @@ namespace
                     {
                         sound.kind.source =
                             parseAudioSource(
+                                session,
                                 kindData["source"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind.source"
@@ -1600,6 +1913,7 @@ namespace
                     {
                         sound.kind.noteFrequency =
                             parseAudioNote(
+                                session,
                                 kindData["note"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind.note"
@@ -1613,6 +1927,7 @@ namespace
                     {
                         sound.kind.movement =
                             parseAudioMovement(
+                                session,
                                 kindData["movement"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind"
@@ -1632,6 +1947,7 @@ namespace
             {
                 sound.tone =
                     parseAudioTone(
+                        session,
                         data["tone"],
                         currentFile,
                         "sound '" + it.key() + "'.tone"
@@ -1663,8 +1979,10 @@ namespace
     }
 
     Json normalizeMusicValue(
+        JsonLoadSession& session,
         const Json& value,
-        const std::filesystem::path& currentFile
+        const std::filesystem::path& currentFile,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -1675,7 +1993,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 if (!resolvedReference.ok)
                 {
@@ -1705,7 +2028,7 @@ namespace
 
             Json resolvedMusic;
 
-            if (!resolveLike(musicPath, musicData, resolvedMusic))
+            if (!resolveLike(session, musicPath, musicData, resolvedMusic, field))
             {
                 return Json{};
             }
@@ -1722,7 +2045,7 @@ namespace
         {
             Json resolvedMusic;
 
-            if (!resolveLike(currentFile, value, resolvedMusic))
+            if (!resolveLike(session, currentFile, value, resolvedMusic, field))
             {
                 return Json{};
             }
@@ -1739,6 +2062,7 @@ namespace
     }
 
     void parseMusic(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -1767,8 +2091,10 @@ namespace
         {
             const Json data =
                 normalizeMusicValue(
+                    session,
                     it.value(),
-                    currentFile
+                    currentFile,
+                    "music." + it.key()
                 );
 
             if (!data.is_object())
@@ -1829,6 +2155,7 @@ namespace
                 {
                     channel.instrument =
                         parseInstrument(
+                            session,
                             channelData["instrument"],
                             currentFile,
                             "music '" + it.key() +
@@ -2012,6 +2339,7 @@ namespace
     }
 
     ObjectDefinition parseDefinition(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
@@ -2030,6 +2358,7 @@ namespace
     }
 
     void parseChildren(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -2052,6 +2381,17 @@ namespace
         }
 
         const auto& children = object["children"];
+        Json childSourceFiles =
+            Json::object();
+
+        if (
+            object.contains("__childSourceFiles") &&
+            object["__childSourceFiles"].is_object()
+        )
+        {
+            childSourceFiles =
+                object["__childSourceFiles"];
+        }
 
         for (auto it = children.begin(); it != children.end(); ++it)
         {
@@ -2069,28 +2409,39 @@ namespace
             }
 
             Json resolvedChild;
+            const std::filesystem::path childSourceFile =
+                childSourceFiles.contains(it.key())
+                ? std::filesystem::path(childSourceFiles[it.key()].get<std::string>())
+                : currentFile;
 
-            if (!resolveLike(currentFile, childData, resolvedChild))
+            if (!resolveLike(
+                session,
+                childSourceFile,
+                childData,
+                resolvedChild,
+                "children." + it.key()
+            ))
             {
-                Logger::warning(
-                    "json",
-                    "Skipping child '" + it.key() +
-                    "' because it could not be resolved"
+                throw std::runtime_error(
+                    "Child reference could not be resolved: " +
+                    it.key()
                 );
-
-                continue;
             }
 
             definition.children[it.key()] =
                 parseDefinition(
+                    session,
                     resolvedChild,
-                    currentFile,
+                    childSourceFile,
                     it.key()
                 );
+            definition.childSourcePaths[it.key()] =
+                genericPathString(childSourceFile);
         }
     }
 
     ObjectDefinition parseDefinition(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
@@ -2153,10 +2504,10 @@ namespace
         parseBehavior(object, definition);
         parseCreation(object, definition);
         parseCollision(object, definition);
-        parseSounds(object, sourceFile, definition);
-        parseMusic(object, sourceFile, definition);
+        parseSounds(session, object, sourceFile, definition);
+        parseMusic(session, object, sourceFile, definition);
         parseStates(object, definition);
-        parseChildren(object, sourceFile, definition);
+        parseChildren(session, object, sourceFile, definition);
 
         return definition;
     }
@@ -2171,15 +2522,8 @@ std::string JsonLoader::resolveProjectPath(
     const std::filesystem::path normalizedRoot =
         std::filesystem::absolute(projectPath).lexically_normal();
 
-    if (projectJsonRoot != normalizedRoot)
-    {
-        projectJsonRoot =
-            normalizedRoot;
-        jsonCache.clear();
-    }
-
     const std::filesystem::path resolved =
-        projectJsonRoot /
+        normalizedRoot /
         normalizedRelativePath(path, extension);
 
     return genericPathString(resolved);
@@ -2202,14 +2546,27 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
     const std::string& path
 )
 {
+    Diagnostics diagnostics;
+    return loadObjectDefinition(
+        path,
+        std::filesystem::path(path).parent_path().generic_string(),
+        diagnostics
+    );
+}
+
+ObjectDefinition JsonLoader::loadObjectDefinition(
+    const std::string& path,
+    const std::string& projectRoot,
+    Diagnostics& diagnostics
+)
+{
     const std::filesystem::path objectPath(path);
 
-    if (projectJsonRoot.empty())
-    {
-        projectJsonRoot =
-            std::filesystem::absolute(objectPath.parent_path()).lexically_normal();
-        jsonCache.clear();
-    }
+    JsonLoadSession session;
+    session.projectJsonRoot =
+        std::filesystem::absolute(projectRoot).lexically_normal();
+    session.diagnostics =
+        &diagnostics;
 
     Json data;
 
@@ -2223,7 +2580,23 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 
     Json resolved;
 
-    if (!resolveLike(objectPath, data, resolved))
+    const std::string rootKey =
+        std::filesystem::absolute(objectPath).lexically_normal().generic_string();
+
+    session.likeStack.push_back(rootKey);
+
+    const bool resolvedOk =
+        resolveLike(
+            session,
+            objectPath,
+            data,
+            resolved,
+            ""
+        );
+
+    session.likeStack.pop_back();
+
+    if (!resolvedOk)
     {
         throw std::runtime_error(
             "JSON object could not be resolved: " +
@@ -2232,6 +2605,7 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
     }
 
     return parseDefinition(
+        session,
         resolved,
         objectPath,
         objectPath.stem().generic_string()

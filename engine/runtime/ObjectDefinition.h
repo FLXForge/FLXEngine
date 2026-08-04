@@ -69,11 +69,13 @@ struct ObjectDefinition
     std::vector<std::string> collisionWith;
 
     std::vector<std::string> scripts;
+    std::vector<std::string> scriptSourcePaths;
     std::vector<std::string> resolvedScriptPaths;
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, ObjectDefinition> children;
     std::unordered_map<std::string, std::string> childResources;
+    std::unordered_map<std::string, std::string> childSourcePaths;
 
     std::string initialState;
     std::unordered_map<std::string, std::vector<std::string>> stateTransitions;

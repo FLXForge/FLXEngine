@@ -29,7 +29,8 @@ private:
         ResourceRegistry& registry,
         Diagnostics& diagnostics,
         std::unordered_set<ResourceId>& compiling,
-        const std::filesystem::path& projectRoot
+        const std::filesystem::path& projectRoot,
+        const std::filesystem::path& worldRoot
     );
 
     static void resolveScripts(
@@ -37,7 +38,8 @@ private:
         ResourceRegistry& registry,
         Diagnostics& diagnostics,
         const std::string& sourcePath,
-        const std::filesystem::path& projectRoot
+        const std::filesystem::path& projectRoot,
+        const std::filesystem::path& worldRoot
     );
 
     static std::string relativeSourceName(

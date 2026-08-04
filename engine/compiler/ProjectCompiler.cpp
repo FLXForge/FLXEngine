@@ -67,7 +67,11 @@ CompilationResult ProjectCompiler::compile(
         }
 
         ObjectDefinition rootDefinition =
-            JsonLoader::loadObjectDefinition(result.project.rootPath);
+            JsonLoader::loadObjectDefinition(
+                result.project.rootPath,
+                result.project.context.projectPath,
+                result.diagnostics
+            );
 
         result.project.rootId =
             makeResourceId(
@@ -85,7 +89,8 @@ CompilationResult ProjectCompiler::compile(
                 result.project.resources,
                 result.diagnostics,
                 compiling,
-                result.project.context.rootDirectory
+                result.project.context.rootDirectory,
+                result.project.context.projectPath
             );
     }
     catch (const std::exception& exception)
@@ -165,7 +170,8 @@ ObjectDefinition ProjectCompiler::compileDefinition(
     ResourceRegistry& registry,
     Diagnostics& diagnostics,
     std::unordered_set<ResourceId>& compiling,
-    const std::filesystem::path& projectRoot
+    const std::filesystem::path& projectRoot,
+    const std::filesystem::path& worldRoot
 )
 {
     const ResourceId id =
@@ -213,7 +219,8 @@ ObjectDefinition ProjectCompiler::compileDefinition(
         registry,
         diagnostics,
         definition.sourcePath,
-        projectRoot
+        projectRoot,
+        worldRoot
     );
 
     compiled.sourcePath =
@@ -233,7 +240,8 @@ ObjectDefinition ProjectCompiler::compileDefinition(
                 registry,
                 diagnostics,
                 compiling,
-                projectRoot
+                projectRoot,
+                worldRoot
             );
 
         const ResourceId childResourceId =
@@ -252,10 +260,15 @@ ObjectDefinition ProjectCompiler::compileDefinition(
 
     compiling.erase(id);
 
-    registry.addObject(
-        id,
-        compiled
-    );
+    if (!registry.addObject(id, compiled))
+    {
+        diagnostics.error(
+            DiagnosticCode::ResourceIdCollision,
+            "Resource id collision detected",
+            compiled.sourcePath,
+            id
+        );
+    }
 
     return compiled;
 }
@@ -265,16 +278,30 @@ void ProjectCompiler::resolveScripts(
     ResourceRegistry& registry,
     Diagnostics& diagnostics,
     const std::string& sourcePath,
-    const std::filesystem::path& projectRoot
+    const std::filesystem::path& projectRoot,
+    const std::filesystem::path& worldRoot
 )
 {
     definition.resolvedScriptPaths.clear();
 
-    for (const std::string& script : definition.scripts)
+    for (std::size_t i = 0; i < definition.scripts.size(); ++i)
     {
+        const std::string& script =
+            definition.scripts[i];
+        const std::string scriptSourcePath =
+            i < definition.scriptSourcePaths.size()
+            ? definition.scriptSourcePaths[i]
+            : sourcePath;
+
         const std::string scriptPath =
-            JsonLoader::resolveReferencedPath(
-                sourcePath,
+            !script.empty() && script.front() == '/'
+            ? JsonLoader::resolveProjectPath(
+                worldRoot.generic_string(),
+                script.substr(1),
+                ".js"
+            )
+            : JsonLoader::resolveReferencedPath(
+                scriptSourcePath,
                 script,
                 ".js"
             );
@@ -282,10 +309,11 @@ void ProjectCompiler::resolveScripts(
         if (!std::filesystem::exists(scriptPath))
         {
             diagnostics.error(
-                DiagnosticCode::ResourceErrorUnclassified,
-                "Script does not exist",
-                scriptPath,
-                definition.id
+                DiagnosticCode::ReferencedScriptNotFound,
+                "Script does not exist\nReference: " + script +
+                "\nResolved path: " + scriptPath,
+                scriptSourcePath,
+                "behavior.scripts"
             );
 
             continue;
@@ -302,10 +330,33 @@ void ProjectCompiler::resolveScripts(
         resource.code =
             readTextFile(scriptPath);
 
-        registry.addScript(
-            resource.id,
-            resource
-        );
+        const ScriptResource* existing =
+            registry.findScript(resource.id);
+
+        if (existing != nullptr)
+        {
+            if (
+                existing->sourceName != resource.sourceName ||
+                existing->code != resource.code
+            )
+            {
+                diagnostics.error(
+                    DiagnosticCode::ResourceIdCollision,
+                    "Script resource id collision detected",
+                    scriptSourcePath,
+                    resource.id
+                );
+            }
+        }
+        else if (!registry.addScript(resource.id, resource))
+        {
+            diagnostics.error(
+                DiagnosticCode::ResourceIdCollision,
+                "Script resource id collision detected",
+                scriptSourcePath,
+                resource.id
+            );
+        }
 
         definition.resolvedScriptPaths.push_back(resource.id);
     }

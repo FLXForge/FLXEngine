@@ -31,6 +31,11 @@ namespace
             { DiagnosticCode::ResourceErrorUnclassified, "FLX-RESOURCE-00002", "ResourceErrorUnclassified", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Unclassified resource error." },
             { DiagnosticCode::ResourceUnexpectedInternalError, "FLX-RESOURCE-00003", "ResourceUnexpectedInternalError", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Unexpected internal resource error." },
             { DiagnosticCode::ResourceDeprecatedFunctionality, "FLX-RESOURCE-00004", "ResourceDeprecatedFunctionality", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Deprecated resource functionality." },
+            { DiagnosticCode::MissingReferencedResource, "FLX-RESOURCE-00010", "MissingReferencedResource", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Referenced resource could not be found." },
+            { DiagnosticCode::MissingInternalResourceMember, "FLX-RESOURCE-00011", "MissingInternalResourceMember", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Referenced internal resource member could not be found." },
+            { DiagnosticCode::ResourceReferenceCycle, "FLX-RESOURCE-00012", "ResourceReferenceCycle", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Resource reference cycle detected." },
+            { DiagnosticCode::ResourceIdCollision, "FLX-RESOURCE-00013", "ResourceIdCollision", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Resource id collision detected." },
+            { DiagnosticCode::ReferencedScriptNotFound, "FLX-RESOURCE-00014", "ReferencedScriptNotFound", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Referenced script could not be found." },
 
             { DiagnosticCode::MachineInformationUnclassified, "FLX-MACHINE-00000", "MachineInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::MACHINE, "Unclassified informational machine diagnostic." },
             { DiagnosticCode::MachineWarningUnclassified, "FLX-MACHINE-00001", "MachineWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::MACHINE, "Unclassified machine warning." },

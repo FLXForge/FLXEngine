@@ -39,7 +39,9 @@ int RunCompiledCommand::execute(const CliArguments& arguments) const
     if (arguments.format == CliOutputFormat::Json)
     {
         Diagnostics diagnostics;
-        diagnostics.error("--format=json is not supported for run-compiled yet");
+        diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
+            "--format=json is not supported for run-compiled yet");
 
         DiagnosticPrinter::printDiagnostics(
             diagnostics,
@@ -58,6 +60,7 @@ int RunCompiledCommand::execute(const CliArguments& arguments) const
     {
         Diagnostics diagnostics;
         diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
             "run-compiled requires a .flxc target",
             arguments.target.generic_string()
         );

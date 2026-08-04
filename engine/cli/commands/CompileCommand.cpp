@@ -7,50 +7,14 @@
 
 #include <iostream>
 
-namespace
-{
-    void appendDiagnostics(
-        Diagnostics& destination,
-        const Diagnostics& source
-    )
-    {
-        for (const Diagnostic& diagnostic : source.all())
-        {
-            switch (diagnostic.severity)
-            {
-            case DiagnosticSeverity::Error:
-                destination.error(
-                    diagnostic.message,
-                    diagnostic.file,
-                    diagnostic.field
-                );
-                break;
-            case DiagnosticSeverity::Warning:
-                destination.warning(
-                    diagnostic.message,
-                    diagnostic.file,
-                    diagnostic.field
-                );
-                break;
-            case DiagnosticSeverity::Info:
-            default:
-                destination.info(
-                    diagnostic.message,
-                    diagnostic.file,
-                    diagnostic.field
-                );
-                break;
-            }
-        }
-    }
-}
-
 int CompileCommand::execute(const CliArguments& arguments) const
 {
     if (!arguments.output.has_value())
     {
         Diagnostics diagnostics;
-        diagnostics.error("compile requires --output=<path>");
+        diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
+            "compile requires --output=<path>");
 
         DiagnosticPrinter::printDiagnostics(
             diagnostics,
@@ -118,8 +82,8 @@ int CompileCommand::execute(const CliArguments& arguments) const
     );
 
     Diagnostics diagnostics;
-    appendDiagnostics(diagnostics, result.diagnostics);
-    appendDiagnostics(diagnostics, writeDiagnostics);
+    diagnostics.append(result.diagnostics);
+    diagnostics.append(writeDiagnostics);
 
     if (!writeSuccess)
     {

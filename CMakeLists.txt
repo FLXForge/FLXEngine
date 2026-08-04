@@ -165,8 +165,8 @@ add_executable(flx
     engine/compiler/CompiledProject.h
     engine/compiler/CompiledProjectBinary.h
     engine/compiler/CompiledProjectBinary.cpp
-    engine/compiler/Diagnostics.h
-    engine/compiler/Diagnostics.cpp
+    engine/diagnostics/Diagnostics.h
+    engine/diagnostics/Diagnostics.cpp
     engine/compiler/ResourceRegistry.h
     engine/compiler/ResourceRegistry.cpp
     engine/compiler/ProjectCompiler.h
@@ -265,39 +265,76 @@ enable_testing()
 get_target_property(FLX_TEST_SOURCES flx SOURCES)
 list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp)
 
-add_executable(
-    flx-tests
-    tests/ProjectCompilerTests.cpp
+add_library(
+    flx-test-engine
+    STATIC
     ${FLX_TEST_SOURCES}
 )
 
-target_compile_definitions(
-    flx-tests
-    PRIVATE
-    FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
-    FLX_VERSION_TEXT="${FLX_VERSION}"
-)
-
 target_include_directories(
-    flx-tests
-    PRIVATE
+    flx-test-engine
+    PUBLIC
     "${CMAKE_CURRENT_BINARY_DIR}/generated"
     ${quickjs_SOURCE_DIR}
 )
 
 target_link_libraries(
-    flx-tests
-    PRIVATE
+    flx-test-engine
+    PUBLIC
     raylib
     nlohmann_json::nlohmann_json
     yaml-cpp::yaml-cpp
     qjs
 )
 
-add_test(
-    NAME flx-tests
-    COMMAND flx-tests
+add_library(
+    flx-test-support
+    STATIC
+    tests/support/TestSupport.h
+    tests/support/TestSupport.cpp
 )
+
+target_compile_definitions(
+    flx-test-support
+    PUBLIC
+    FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    FLX_VERSION_TEXT="${FLX_VERSION}"
+)
+
+target_link_libraries(
+    flx-test-support
+    PUBLIC
+    flx-test-engine
+)
+
+function(add_flx_test_suite target_name)
+    add_executable(
+        ${target_name}
+        ${ARGN}
+    )
+
+    target_link_libraries(
+        ${target_name}
+        PRIVATE
+        flx-test-support
+    )
+
+    add_test(
+        NAME ${target_name}
+        COMMAND ${target_name}
+    )
+endfunction()
+
+add_flx_test_suite(flx-cli-parser-tests tests/cli/CliParserTests.cpp)
+add_flx_test_suite(flx-cli-command-tests tests/cli/CliCommandTests.cpp)
+add_flx_test_suite(flx-cli-project-resolver-tests tests/cli/ProjectResolverTests.cpp)
+add_flx_test_suite(flx-cli-diagnostic-printer-tests tests/cli/DiagnosticPrinterTests.cpp)
+add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
+add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTests.cpp)
+add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGraphTests.cpp)
+add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)
+add_flx_test_suite(flx-runtime-compiled-tests tests/runtime/CompiledRuntimeTests.cpp)
+add_flx_test_suite(flx-example-smoke-tests tests/examples/ExampleSmokeTests.cpp)
 
 add_test(
     NAME cli-version

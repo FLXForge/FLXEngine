@@ -2,7 +2,7 @@
 
 #include "CliArguments.h"
 #include "CliExitCode.h"
-#include "../compiler/Diagnostics.h"
+#include "../diagnostics/Diagnostics.h"
 
 struct CliParseResult
 {

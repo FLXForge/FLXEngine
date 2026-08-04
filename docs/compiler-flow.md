@@ -56,7 +56,7 @@ Compiled .flxc file
 - Script source loading: `ProjectCompiler`; runtime evaluates embedded script source from `ResourceRegistry`.
 - Input mapping loading: `ProjectCompiler`; runtime parses embedded mapping text when available.
 - Defaults: Machine defaults in `MachineLoader`; project screen defaults/overrides in `FlxContextBuilder`; object defaults in `ObjectDefinition`.
-- Validation: currently split between loaders and schemas; compiler diagnostics wrap fatal load failures.
+- Validation: currently split between loaders and schemas; compiler diagnostics wrap fatal load failures and always carry a stable FLX diagnostic code.
 - RuntimeObject creation: `RuntimeObjectBuilder` and `RuntimeWorld`.
 
 ## Boundary

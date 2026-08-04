@@ -18,6 +18,7 @@ CompilationResult ProjectCompiler::compile(
     if (!std::filesystem::exists(projectPath))
     {
         result.diagnostics.error(
+            DiagnosticCode::CompErrorUnclassified,
             "Project file does not exist",
             projectPath
         );
@@ -38,6 +39,7 @@ CompilationResult ProjectCompiler::compile(
         if (result.project.context.root.empty())
         {
             result.diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
                 "Project root is not defined",
                 projectPath,
                 "root"
@@ -56,6 +58,7 @@ CompilationResult ProjectCompiler::compile(
         if (!std::filesystem::exists(result.project.rootPath))
         {
             result.diagnostics.error(
+                DiagnosticCode::ResourceErrorUnclassified,
                 "Root JSON does not exist",
                 result.project.rootPath
             );
@@ -88,6 +91,7 @@ CompilationResult ProjectCompiler::compile(
     catch (const std::exception& exception)
     {
         result.diagnostics.error(
+            DiagnosticCode::CompErrorUnclassified,
             exception.what(),
             projectPath
         );
@@ -101,6 +105,7 @@ CompilationResult ProjectCompiler::compile(
     if (result.success)
     {
         result.diagnostics.info(
+            DiagnosticCode::CompInformationUnclassified,
             "Project compiled",
             projectPath
         );
@@ -183,6 +188,7 @@ ObjectDefinition ProjectCompiler::compileDefinition(
     if (compiling.find(id) != compiling.end())
     {
         diagnostics.error(
+            DiagnosticCode::ResourceErrorUnclassified,
             "Resource cycle detected while compiling object graph",
             definition.sourcePath,
             id
@@ -276,6 +282,7 @@ void ProjectCompiler::resolveScripts(
         if (!std::filesystem::exists(scriptPath))
         {
             diagnostics.error(
+                DiagnosticCode::ResourceErrorUnclassified,
                 "Script does not exist",
                 scriptPath,
                 definition.id
@@ -361,6 +368,7 @@ void ProjectCompiler::compileInputMapping(
     if (!std::filesystem::exists(context.inputMappingPath))
     {
         diagnostics.error(
+            DiagnosticCode::ResourceErrorUnclassified,
             "Input mapping does not exist",
             context.inputMappingPath
         );

@@ -802,6 +802,7 @@ bool CompiledProjectWriter::write(
     if (!file.is_open())
     {
         diagnostics.error(
+            DiagnosticCode::BinaryErrorUnclassified,
             "Compiled project file could not be created",
             path
         );
@@ -849,6 +850,7 @@ bool CompiledProjectWriter::write(
     if (!file)
     {
         diagnostics.error(
+            DiagnosticCode::BinaryErrorUnclassified,
             "Compiled project file could not be written",
             path
         );
@@ -870,6 +872,7 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
     if (!file.is_open())
     {
         result.diagnostics.error(
+            DiagnosticCode::BinaryErrorUnclassified,
             "Compiled project file could not be opened",
             path
         );
@@ -884,6 +887,7 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
         if (reader.value<uint32_t>() != Magic)
         {
             result.diagnostics.error(
+                DiagnosticCode::BinaryErrorUnclassified,
                 "Invalid compiled project magic",
                 path
             );
@@ -897,6 +901,7 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
         if (version != FormatVersion)
         {
             result.diagnostics.error(
+                DiagnosticCode::BinaryErrorUnclassified,
                 "Unsupported compiled project version",
                 path,
                 std::to_string(version)
@@ -959,6 +964,7 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
     catch (const std::exception& exception)
     {
         result.diagnostics.error(
+            DiagnosticCode::BinaryErrorUnclassified,
             exception.what(),
             path
         );
@@ -970,6 +976,7 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
         result.project.resources.findObject(result.project.rootId) == nullptr)
     {
         result.diagnostics.error(
+            DiagnosticCode::BinaryErrorUnclassified,
             "Compiled project root resource is missing",
             path
         );

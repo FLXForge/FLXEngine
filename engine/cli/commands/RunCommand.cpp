@@ -12,7 +12,9 @@ int RunCommand::execute(const CliArguments& arguments) const
     if (arguments.format == CliOutputFormat::Json)
     {
         Diagnostics diagnostics;
-        diagnostics.error("--format=json is not supported for run yet");
+        diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
+            "--format=json is not supported for run yet");
 
         DiagnosticPrinter::printDiagnostics(
             diagnostics,

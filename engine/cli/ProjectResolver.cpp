@@ -45,6 +45,7 @@ namespace
         result.success = false;
         result.exitCode = CliExitCode::ProjectResolutionError;
         result.diagnostics.error(
+            DiagnosticCode::ProjectErrorUnclassified,
             "Filesystem error while resolving project: " + error.message(),
             path.generic_string()
         );
@@ -96,6 +97,7 @@ ProjectResolutionResult ProjectResolver::resolve(
         if (!isFlxFile(target))
         {
             result.diagnostics.error(
+                DiagnosticCode::ProjectErrorUnclassified,
                 "Project target is a file, but it is not a .flx manifest",
                 target.generic_string()
             );
@@ -111,6 +113,7 @@ ProjectResolutionResult ProjectResolver::resolve(
     if (!exists)
     {
         result.diagnostics.error(
+            DiagnosticCode::ProjectErrorUnclassified,
             "Project target was not found",
             target.generic_string()
         );
@@ -129,6 +132,7 @@ ProjectResolutionResult ProjectResolver::resolve(
     if (!isDirectory)
     {
         result.diagnostics.error(
+            DiagnosticCode::ProjectErrorUnclassified,
             "Project target is not a .flx file or directory",
             target.generic_string()
         );
@@ -218,6 +222,7 @@ ProjectResolutionResult ProjectResolver::resolve(
     if (manifests.empty())
     {
         result.diagnostics.error(
+            DiagnosticCode::ProjectErrorUnclassified,
             "No .flx project manifest was found in directory",
             target.generic_string()
         );
@@ -235,6 +240,7 @@ ProjectResolutionResult ProjectResolver::resolve(
         }
 
         result.diagnostics.error(
+            DiagnosticCode::ProjectErrorUnclassified,
             message,
             target.generic_string()
         );

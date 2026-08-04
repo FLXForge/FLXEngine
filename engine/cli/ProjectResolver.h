@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CliExitCode.h"
-#include "../compiler/Diagnostics.h"
+#include "../diagnostics/Diagnostics.h"
 
 #include <filesystem>
 

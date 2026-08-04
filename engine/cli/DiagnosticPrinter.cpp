@@ -27,16 +27,28 @@ namespace
 
         for (const Diagnostic& diagnostic : diagnostics.all())
         {
-            // Diagnostic does not expose stable diagnostic codes yet. Add them
-            // here when Diagnostics grows that field.
-            items.push_back(
+            nlohmann::json item =
                 {
                     { "severity", severityName(diagnostic.severity) },
+                    { "code", diagnosticCodeText(diagnostic.code) },
+                    { "identifier", diagnostic.identifier },
                     { "file", diagnostic.file },
                     { "field", diagnostic.field },
                     { "message", diagnostic.message }
-                }
-            );
+                };
+
+            if (diagnostic.range.has_value())
+            {
+                item["range"] =
+                    {
+                        { "startLine", diagnostic.range->start.line },
+                        { "startColumn", diagnostic.range->start.column },
+                        { "endLine", diagnostic.range->end.line },
+                        { "endColumn", diagnostic.range->end.column }
+                    };
+            }
+
+            items.push_back(item);
         }
 
         return items;
@@ -47,7 +59,10 @@ namespace
         std::ostream& stream
     )
     {
-        stream << severityName(diagnostic.severity) << ": ";
+        stream
+            << severityName(diagnostic.severity) << " "
+            << diagnosticCodeText(diagnostic.code) << " "
+            << diagnostic.identifier << ": ";
 
         if (!diagnostic.file.empty())
         {

@@ -199,7 +199,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("--version does not accept additional arguments");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "--version does not accept additional arguments");
         }
 
         return result;
@@ -212,7 +214,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("--help does not accept additional arguments. Use 'flx help <command>'.");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "--help does not accept additional arguments. Use 'flx help <command>'.");
         }
 
         return result;
@@ -224,7 +228,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("Unknown command: " + first);
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "Unknown command: " + first);
             return result;
         }
 
@@ -245,6 +251,7 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         result.success = false;
         result.exitCode = CliExitCode::InvalidArguments;
         result.diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
             "Unknown command: " + first + "\nRun 'flx --help' for usage information."
         );
         return result;
@@ -259,6 +266,7 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
             result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
                 "Unknown command for help: " + helpTarget + "\nRun 'flx --help' for usage information."
             );
             return result;
@@ -268,7 +276,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("help does not provide command-specific help for itself");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "help does not provide command-specific help for itself");
             return result;
         }
 
@@ -278,7 +288,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("Unknown command for help: " + helpTarget);
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "Unknown command for help: " + helpTarget);
             return result;
         }
 
@@ -289,7 +301,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("help accepts only one optional command");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "help accepts only one optional command");
             return result;
         }
     }
@@ -310,7 +324,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("version does not accept options or targets");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "version does not accept options or targets");
             return result;
         }
 
@@ -320,7 +336,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--help does not accept trailing arguments");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--help does not accept trailing arguments");
                 return result;
             }
 
@@ -337,7 +355,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("--version is only valid without additional arguments");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "--version is only valid without additional arguments");
             return result;
         }
 
@@ -347,7 +367,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--frames is not valid for " + commandName(result.arguments.command));
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--frames is not valid for " + commandName(result.arguments.command));
                 return result;
             }
 
@@ -357,7 +379,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--frames cannot be specified more than once");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--frames cannot be specified more than once");
                 return result;
             }
 
@@ -365,7 +389,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--frames must be a positive integer");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--frames must be a positive integer");
                 return result;
             }
 
@@ -380,7 +406,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output is only valid for compile");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output is only valid for compile");
                 return result;
             }
 
@@ -388,7 +416,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output cannot be specified more than once");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output cannot be specified more than once");
                 return result;
             }
 
@@ -399,7 +429,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output requires a path");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output requires a path");
                 return result;
             }
 
@@ -414,7 +446,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output is only valid for compile");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output is only valid for compile");
                 return result;
             }
 
@@ -422,7 +456,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output cannot be specified more than once");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output cannot be specified more than once");
                 return result;
             }
 
@@ -434,7 +470,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--output requires a path");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--output requires a path");
                 return result;
             }
 
@@ -449,7 +487,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--format is only valid for compile and validate");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--format is only valid for compile and validate");
                 return result;
             }
 
@@ -457,7 +497,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--format cannot be specified more than once");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--format cannot be specified more than once");
                 return result;
             }
 
@@ -476,7 +518,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
-                result.diagnostics.error("--format must be text or json");
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--format must be text or json");
                 return result;
             }
 
@@ -489,7 +533,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("Unknown option: " + token);
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "Unknown option: " + token);
             return result;
         }
 
@@ -497,7 +543,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
         {
             result.success = false;
             result.exitCode = CliExitCode::InvalidArguments;
-            result.diagnostics.error("Only one target can be specified");
+            result.diagnostics.error(
+                DiagnosticCode::CliErrorUnclassified,
+                "Only one target can be specified");
             return result;
         }
 
@@ -510,7 +558,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
     {
         result.success = false;
         result.exitCode = CliExitCode::InvalidArguments;
-        result.diagnostics.error("version does not accept a target");
+        result.diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
+            "version does not accept a target");
         return result;
     }
 
@@ -518,7 +568,9 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
     {
         result.success = false;
         result.exitCode = CliExitCode::InvalidArguments;
-        result.diagnostics.error("compile requires --output=<path>");
+        result.diagnostics.error(
+            DiagnosticCode::CliErrorUnclassified,
+            "compile requires --output=<path>");
         return result;
     }
 

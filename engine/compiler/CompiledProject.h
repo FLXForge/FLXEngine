@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Diagnostics.h"
+#include "../diagnostics/Diagnostics.h"
 #include "ResourceRegistry.h"
 #include "../project/FlxContext.h"
 #include "../runtime/ObjectDefinition.h"

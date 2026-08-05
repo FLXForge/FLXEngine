@@ -42,20 +42,30 @@ namespace
         return project;
     }
 
+    const ObjectDefinition& rootObject(const CompilationResult& result)
+    {
+        const ObjectDefinition* root =
+            result.project.resources.findObject(result.project.rootId);
+
+        require(root != nullptr, "root should exist in registry");
+        return *root;
+    }
+
     const ObjectDefinition* findChild(
+        const CompilationResult& result,
         const ObjectDefinition& object,
         const std::string& id
     )
     {
         const auto it =
-            object.children.find(id);
+            object.childResources.find(id);
 
-        if (it == object.children.end())
+        if (it == object.childResources.end())
         {
             return nullptr;
         }
 
-        return &it->second;
+        return result.project.resources.findObject(it->second);
     }
 
     bool containsScript(
@@ -117,7 +127,7 @@ namespace
         require(result.success, "REF-002 inline object should compile");
 
         const ObjectDefinition* ship =
-            findChild(result.project.rootDefinition, "ship");
+            findChild(result, rootObject(result), "ship");
 
         require(ship != nullptr, "REF-002 inline child should exist");
         require(ship->shapeType == "circle", "REF-002 inline child shape should be parsed");
@@ -144,7 +154,7 @@ namespace
         require(result.success, "REF-002 relative object reference should compile");
 
         const ObjectDefinition* ship =
-            findChild(result.project.rootDefinition, "ship");
+            findChild(result, rootObject(result), "ship");
 
         require(ship != nullptr, "REF-002 relative child should exist");
         require(ship->size.x == 12.0f, "REF-002 relative child size should be parsed");
@@ -171,7 +181,7 @@ namespace
         require(result.success, "REF-005 absolute logical object reference should compile");
 
         const ObjectDefinition* ship =
-            findChild(result.project.rootDefinition, "ship");
+            findChild(result, rootObject(result), "ship");
 
         require(ship != nullptr, "REF-005 absolute logical child should exist");
         require(ship->group == "player", "REF-005 absolute logical child should use world path root");
@@ -200,7 +210,7 @@ namespace
         require(result.success, "REF-009 internal reference with valid key should compile");
 
         const ObjectDefinition* ship =
-            findChild(result.project.rootDefinition, "ship");
+            findChild(result, rootObject(result), "ship");
 
         require(ship != nullptr, "REF-009 internal child should exist");
         require(ship->group == "player", "REF-009 internal child should load selected member only");
@@ -359,7 +369,7 @@ namespace
         require(result.success, "REF-007 inherited child should compile");
 
         const ObjectDefinition* enemy =
-            findChild(result.project.rootDefinition, "enemy");
+            findChild(result, rootObject(result), "enemy");
 
         require(enemy != nullptr, "REF-007 inherited child should exist");
         require(enemy->group == "enemy", "REF-007 inherited child should resolve from base file");
@@ -399,7 +409,7 @@ namespace
         require(result.success, "REF-008 overridden child should compile");
 
         const ObjectDefinition* item =
-            findChild(result.project.rootDefinition, "item");
+            findChild(result, rootObject(result), "item");
 
         require(item != nullptr, "REF-008 overridden child should exist");
         require(item->group == "consumer", "REF-008 overridden child should resolve from consumer file");
@@ -427,9 +437,9 @@ namespace
             compile(project.manifest);
 
         require(result.success, "REF-012 chain of like should compile");
-        require(!result.project.rootDefinition.visible, "REF-012 chain should inherit base properties");
-        require(result.project.rootDefinition.group == "level", "REF-012 chain should allow intermediate override");
-        require(result.project.rootDefinition.role == "root", "REF-012 chain should allow final override");
+        require(!rootObject(result).visible, "REF-012 chain should inherit base properties");
+        require(rootObject(result).group == "level", "REF-012 chain should allow intermediate override");
+        require(rootObject(result).role == "root", "REF-012 chain should allow final override");
     }
 
     void testRef010LikeCycle()
@@ -489,7 +499,7 @@ namespace
             compile(project.manifest);
 
         require(result.success, "REF-006 references from different directories should compile");
-        require(findChild(result.project.rootDefinition, "enemy") != nullptr, "REF-006 cross-directory relative reference should resolve");
+        require(findChild(result, rootObject(result), "enemy") != nullptr, "REF-006 cross-directory relative reference should resolve");
     }
 
     void testRef014ConsecutiveCompilationsDoNotReusePreviousRoot()
@@ -526,9 +536,9 @@ namespace
         require(secondResult.success, "REF-014 second compilation should succeed");
 
         const ObjectDefinition* firstMarker =
-            findChild(firstResult.project.rootDefinition, "marker");
+            findChild(firstResult, rootObject(firstResult), "marker");
         const ObjectDefinition* secondMarker =
-            findChild(secondResult.project.rootDefinition, "marker");
+            findChild(secondResult, rootObject(secondResult), "marker");
 
         require(firstMarker != nullptr && firstMarker->group == "first", "REF-014 first compilation should use first project root");
         require(secondMarker != nullptr && secondMarker->group == "second", "REF-014 second compilation should use second project root");

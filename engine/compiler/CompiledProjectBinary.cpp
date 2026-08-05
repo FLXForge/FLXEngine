@@ -16,7 +16,7 @@ namespace
         0x43584C46;
 
     constexpr uint32_t FormatVersion =
-        1;
+        2;
 
     constexpr uint32_t MaxStringSize =
         32u * 1024u * 1024u;
@@ -549,17 +549,6 @@ namespace
             writeSound(writer, object.sounds.at(key));
         }
 
-        const auto childKeys =
-            sortedKeys(object.children);
-
-        writer.value(static_cast<uint32_t>(childKeys.size()));
-
-        for (const std::string& key : childKeys)
-        {
-            writer.string(key);
-            writeObject(writer, object.children.at(key));
-        }
-
         const auto childResourceKeys =
             sortedKeys(object.childResources);
 
@@ -677,18 +666,6 @@ namespace
                 readSound(reader);
         }
 
-        const uint32_t childCount =
-            reader.value<uint32_t>();
-
-        for (uint32_t i = 0; i < childCount; ++i)
-        {
-            const std::string key =
-                reader.string();
-
-            object.children[key] =
-                readObject(reader);
-        }
-
         const uint32_t childResourceCount =
             reader.value<uint32_t>();
 
@@ -761,6 +738,78 @@ namespace
         context.machine = readMachine(reader);
         return context;
     }
+
+    bool validateCompiledProject(
+        const CompiledProject& project,
+        Diagnostics& diagnostics,
+        const std::string& file
+    )
+    {
+        if (project.rootId.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::BinaryErrorUnclassified,
+                "Compiled project root id is empty",
+                file,
+                "rootId"
+            );
+        }
+        else if (project.resources.findObject(project.rootId) == nullptr)
+        {
+            diagnostics.error(
+                DiagnosticCode::BinaryErrorUnclassified,
+                "Compiled project root resource is missing",
+                file,
+                "rootId"
+            );
+        }
+
+        for (const auto& objectPair : project.resources.allObjects())
+        {
+            const ResourceId& objectId =
+                objectPair.first;
+            const ObjectDefinition& object =
+                objectPair.second;
+
+            if (!object.children.empty())
+            {
+                diagnostics.error(
+                    DiagnosticCode::BinaryErrorUnclassified,
+                    "Compiled object still contains embedded children",
+                    file,
+                    objectId
+                );
+            }
+
+            for (const auto& childPair : object.childResources)
+            {
+                if (project.resources.findObject(childPair.second) == nullptr)
+                {
+                    diagnostics.error(
+                        DiagnosticCode::BinaryErrorUnclassified,
+                        "Compiled child resource points to a missing object",
+                        file,
+                        objectId + ".childResources." + childPair.first
+                    );
+                }
+            }
+
+            for (const std::string& scriptId : object.resolvedScriptPaths)
+            {
+                if (project.resources.findScript(scriptId) == nullptr)
+                {
+                    diagnostics.error(
+                        DiagnosticCode::BinaryErrorUnclassified,
+                        "Compiled object script points to a missing script",
+                        file,
+                        objectId + ".resolvedScriptPaths"
+                    );
+                }
+            }
+        }
+
+        return !diagnostics.hasErrors();
+    }
 }
 
 bool CompiledProjectWriter::write(
@@ -770,6 +819,11 @@ bool CompiledProjectWriter::write(
 )
 {
     const std::filesystem::path outputPath(path);
+
+    if (!validateCompiledProject(project, diagnostics, path))
+    {
+        return false;
+    }
 
     if (!outputPath.parent_path().empty())
     {
@@ -796,7 +850,6 @@ bool CompiledProjectWriter::write(
     writer.string(std::string(FlxVersion::Text));
     writeContext(writer, project.context);
     writer.string(project.rootId);
-    writeObject(writer, project.rootDefinition);
 
     const auto objectKeys =
         sortedKeys(project.resources.allObjects());
@@ -899,9 +952,6 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
         result.project.rootId =
             reader.string();
 
-        result.project.rootDefinition =
-            readObject(reader);
-
         const uint32_t objectCount =
             reader.value<uint32_t>();
 
@@ -910,10 +960,18 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
             const ResourceId id =
                 reader.string();
 
-            result.project.resources.addObject(
+            if (!result.project.resources.addObject(
                 id,
                 readObject(reader)
-            );
+            ))
+            {
+                result.diagnostics.error(
+                    DiagnosticCode::BinaryErrorUnclassified,
+                    "Duplicate object resource in compiled project",
+                    path,
+                    id
+                );
+            }
         }
 
         const uint32_t scriptCount =
@@ -929,10 +987,18 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
             script.sourceName = reader.string();
             script.code = reader.string();
 
-            result.project.resources.addScript(
+            if (!result.project.resources.addScript(
                 key,
                 script
-            );
+            ))
+            {
+                result.diagnostics.error(
+                    DiagnosticCode::BinaryErrorUnclassified,
+                    "Duplicate script resource in compiled project",
+                    path,
+                    key
+                );
+            }
         }
     }
     catch (const std::exception& exception)
@@ -946,15 +1012,8 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
         return result;
     }
 
-    if (result.project.rootId.empty() ||
-        result.project.resources.findObject(result.project.rootId) == nullptr)
+    if (!validateCompiledProject(result.project, result.diagnostics, path))
     {
-        result.diagnostics.error(
-            DiagnosticCode::BinaryErrorUnclassified,
-            "Compiled project root resource is missing",
-            path
-        );
-
         return result;
     }
 

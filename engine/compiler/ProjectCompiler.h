@@ -68,4 +68,10 @@ private:
         const std::filesystem::path& manifestDirectory,
         Diagnostics& diagnostics
     );
+
+    static void validateCompiledProject(
+        const CompiledProject& project,
+        Diagnostics& diagnostics,
+        const std::string& source
+    );
 };

@@ -10,6 +10,14 @@ using namespace flx::test;
 
 namespace
 {
+    const ObjectDefinition& rootObject(const CompiledProject& project)
+    {
+        const ObjectDefinition* root =
+            project.resources.findObject(project.rootId);
+
+        require(root != nullptr, "root should exist in registry");
+        return *root;
+    }
 
     void testGraphWithAutoAndManualChildren()
     {
@@ -41,8 +49,9 @@ namespace
 
         require(result.success, "graph with children should compile");
         require(result.project.resources.objectCount() == 3, "root and two children should be registered");
-        require(result.project.rootDefinition.childResources.count("ship") == 1, "auto child should have resource id");
-        require(result.project.rootDefinition.childResources.count("laser") == 1, "manual child should have resource id");
+        require(rootObject(result.project).children.empty(), "compiled root should not keep embedded children");
+        require(rootObject(result.project).childResources.count("ship") == 1, "auto child should have resource id");
+        require(rootObject(result.project).childResources.count("laser") == 1, "manual child should have resource id");
     }
 
     void testGraphWithGridChildren()
@@ -79,7 +88,7 @@ namespace
 
         require(result.success, "grid graph should compile");
         require(result.project.resources.objectCount() == 2, "grid child should be registered");
-        require(result.project.rootDefinition.childResources.count("brick") == 1, "grid child should have resource id");
+        require(rootObject(result.project).childResources.count("brick") == 1, "grid child should have resource id");
     }
 
     void testGraphWithLike()
@@ -112,7 +121,7 @@ namespace
 
         require(result.success, "like graph should compile");
         const std::string childId =
-            result.project.rootDefinition.childResources.at("brick");
+            rootObject(result.project).childResources.at("brick");
         const ObjectDefinition* child =
             result.project.resources.findObject(childId);
 
@@ -150,8 +159,8 @@ namespace
             compile(root / "game.flx");
 
         require(result.success, "valid FLX reference should compile");
-        require(result.project.rootDefinition.shapeType == "circle", "referenced shape should resolve");
-        require(result.project.rootDefinition.radius == 3.0f, "referenced radius should resolve");
+        require(rootObject(result.project).shapeType == "circle", "referenced shape should resolve");
+        require(rootObject(result.project).radius == 3.0f, "referenced radius should resolve");
     }
 
     void testInvalidFlxReference()

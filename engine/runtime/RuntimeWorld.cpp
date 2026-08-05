@@ -49,6 +49,78 @@ namespace
         ) / 2.0f;
     }
 
+    bool validateCompiledRuntimeProject(const CompiledProject& project)
+    {
+        if (project.rootId.empty())
+        {
+            Logger::error(
+                "runtime",
+                "Compiled project root id is empty"
+            );
+
+            return false;
+        }
+
+        if (project.resources.findObject(project.rootId) == nullptr)
+        {
+            Logger::error(
+                "runtime",
+                "Compiled root resource not found: " + project.rootId
+            );
+
+            return false;
+        }
+
+        for (const auto& objectPair : project.resources.allObjects())
+        {
+            const std::string& objectId =
+                objectPair.first;
+            const ObjectDefinition& object =
+                objectPair.second;
+
+            if (!object.children.empty())
+            {
+                Logger::error(
+                    "runtime",
+                    "Compiled object contains embedded children: " + objectId
+                );
+
+                return false;
+            }
+
+            for (const auto& childPair : object.childResources)
+            {
+                if (project.resources.findObject(childPair.second) == nullptr)
+                {
+                    Logger::error(
+                        "runtime",
+                        "Compiled child resource not found: " +
+                        objectId + "." + childPair.first +
+                        " -> " + childPair.second
+                    );
+
+                    return false;
+                }
+            }
+
+            for (const std::string& scriptId : object.resolvedScriptPaths)
+            {
+                if (project.resources.findScript(scriptId) == nullptr)
+                {
+                    Logger::error(
+                        "runtime",
+                        "Compiled script resource not found: " +
+                        objectId + " -> " + scriptId
+                    );
+
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     bool rayHitsCircle(
         Vector2 origin,
         Vector2 direction,
@@ -273,8 +345,15 @@ void RuntimeWorld::load(
     frameIndex = 0;
     resources = &project.resources;
 
+    if (!validateCompiledRuntimeProject(project))
+    {
+        return;
+    }
+
     const ObjectDefinition* rootDefinition =
-        &project.rootDefinition;
+        resources == nullptr
+        ? nullptr
+        : resources->findObject(project.rootId);
 
     if (rootDefinition == nullptr)
     {

@@ -86,8 +86,8 @@ namespace
             );
 
             require(
-                !result.project.rootDefinition.id.empty(),
-                "known example should produce root definition: " + example
+                result.project.resources.findObject(result.project.rootId) != nullptr,
+                "known example should register root definition: " + example
             );
         }
     }

@@ -10,6 +10,14 @@ using namespace flx::test;
 
 namespace
 {
+    const ObjectDefinition& rootObject(const CompiledProject& project)
+    {
+        const ObjectDefinition* root =
+            project.resources.findObject(project.rootId);
+
+        require(root != nullptr, "root should exist in registry");
+        return *root;
+    }
 
     void testMinimalProject()
     {
@@ -18,10 +26,11 @@ namespace
 
         require(result.success, "minimal project should compile");
         require(!result.diagnostics.hasErrors(), "minimal project should not have errors");
-        require(result.project.rootDefinition.id == "root", "root id should be root");
         require(!result.project.rootId.empty(), "root resource id should be defined");
         require(result.project.resources.objectCount() == 1, "minimal project should register root only");
         require(result.project.resources.findObject(result.project.rootId) != nullptr, "root should be in registry");
+        require(rootObject(result.project).id == "root", "root id should be root");
+        require(rootObject(result.project).children.empty(), "compiled root should not keep embedded children");
     }
 
     void testDefaultMachine()

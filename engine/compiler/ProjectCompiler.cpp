@@ -95,16 +95,21 @@ CompilationResult ProjectCompiler::compile(
 
         std::unordered_set<ResourceId> compiling;
 
-        result.project.rootDefinition =
-            compileDefinition(
-                rootDefinition,
-                result.project.context.machine.video,
-                result.project.resources,
-                result.diagnostics,
-                compiling,
-                manifestDirectory,
-                worldRoot
-            );
+        compileDefinition(
+            rootDefinition,
+            result.project.context.machine.video,
+            result.project.resources,
+            result.diagnostics,
+            compiling,
+            manifestDirectory,
+            worldRoot
+        );
+
+        validateCompiledProject(
+            result.project,
+            result.diagnostics,
+            projectPath
+        );
     }
     catch (const std::exception& exception)
     {
@@ -335,9 +340,9 @@ ObjectDefinition ProjectCompiler::compileDefinition(
         compiled.childResources[child.first] =
             childResourceId;
 
-        compiled.children[child.first] =
-            compiledChild;
     }
+
+    compiled.children.clear();
 
     compiling.erase(id);
 
@@ -525,5 +530,75 @@ void ProjectCompiler::compileInputMapping(
 
     context.inputMappingContent =
         readTextFile(resolvedPath.generic_string());
+}
+
+void ProjectCompiler::validateCompiledProject(
+    const CompiledProject& project,
+    Diagnostics& diagnostics,
+    const std::string& source
+)
+{
+    if (project.rootId.empty())
+    {
+        diagnostics.error(
+            DiagnosticCode::CompErrorUnclassified,
+            "Compiled project root id is empty",
+            source,
+            "rootId"
+        );
+    }
+    else if (project.resources.findObject(project.rootId) == nullptr)
+    {
+        diagnostics.error(
+            DiagnosticCode::CompErrorUnclassified,
+            "Compiled project root resource is missing",
+            source,
+            "rootId"
+        );
+    }
+
+    for (const auto& objectPair : project.resources.allObjects())
+    {
+        const ResourceId& objectId =
+            objectPair.first;
+        const ObjectDefinition& object =
+            objectPair.second;
+
+        if (!object.children.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled object still contains embedded children",
+                source,
+                objectId
+            );
+        }
+
+        for (const auto& childPair : object.childResources)
+        {
+            if (project.resources.findObject(childPair.second) == nullptr)
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled child resource points to a missing object",
+                    source,
+                    objectId + ".childResources." + childPair.first
+                );
+            }
+        }
+
+        for (const std::string& scriptId : object.resolvedScriptPaths)
+        {
+            if (project.resources.findScript(scriptId) == nullptr)
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled object script points to a missing script",
+                    source,
+                    objectId + ".resolvedScriptPaths"
+                );
+            }
+        }
+    }
 }
 

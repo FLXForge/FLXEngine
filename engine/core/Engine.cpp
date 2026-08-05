@@ -17,6 +17,21 @@ namespace
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
 
+    int effectiveOutputScale(
+        const FlxContext& context,
+        const RunOptions& options
+    )
+    {
+        return options.scaleOverride.value_or(
+            context.machine.video.outputScale
+        );
+    }
+
+    bool fullscreenRequested(const RunOptions& options)
+    {
+        return options.windowMode == WindowMode::Fullscreen;
+    }
+
     Rectangle renderDestination(
         const FlxContext& context,
         const RunOptions& options
@@ -29,9 +44,9 @@ namespace
             context.machine.video.screenHeight;
 
         const int screenScale =
-            context.machine.video.outputScale;
+            effectiveOutputScale(context, options);
 
-        if (options.windowMode != "fullscreen")
+        if (!fullscreenRequested(options))
         {
             return Rectangle{
                 0.0f,
@@ -84,13 +99,19 @@ namespace
 
 void Engine::run(const CompiledProject& project, int maxFrames)
 {
-    run(project, RunOptions{}, maxFrames);
+    RunOptions options;
+
+    if (maxFrames >= 0)
+    {
+        options.maxFrames = maxFrames;
+    }
+
+    run(project, options);
 }
 
 void Engine::run(
     const CompiledProject& project,
-    const RunOptions& options,
-    int maxFrames
+    const RunOptions& options
 )
 {
     SetTraceLogCallback(Logger::rayLibLog);
@@ -98,6 +119,8 @@ void Engine::run(
     init(project, options);
 
     int frameCount = 0;
+    const int maxFrames =
+        options.maxFrames.value_or(-1);
 
     while (!WindowShouldClose() && !scriptEngine.exitRequested())
     {
@@ -182,19 +205,19 @@ void Engine::initWindow()
         context.machine.video.screenHeight;
 
     const int screenScale =
-        context.machine.video.outputScale;
+        effectiveOutputScale(context, runOptions);
 
     Logger::info(
         "graphics",
         "Window size: " +
         std::to_string(
-            runOptions.windowMode == "fullscreen"
+            fullscreenRequested(runOptions)
             ? GetMonitorWidth(0)
             : screenWidth * screenScale
         ) +
         "x" +
         std::to_string(
-            runOptions.windowMode == "fullscreen"
+            fullscreenRequested(runOptions)
             ? GetMonitorHeight(0)
             : screenHeight * screenScale
         )
@@ -206,7 +229,7 @@ void Engine::initWindow()
     int windowHeight =
         screenHeight * screenScale;
 
-    if (runOptions.windowMode == "fullscreen")
+    if (fullscreenRequested(runOptions))
     {
         SetConfigFlags(FLAG_FULLSCREEN_MODE);
 
@@ -245,7 +268,7 @@ void Engine::initVideoOutput()
         "x" +
         std::to_string(context.machine.video.screenHeight) +
         " scale " +
-        std::to_string(context.machine.video.outputScale)
+        std::to_string(effectiveOutputScale(context, runOptions))
     );
 
     renderTarget =

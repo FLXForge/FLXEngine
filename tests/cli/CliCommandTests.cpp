@@ -207,6 +207,66 @@ namespace
         }
     }
 
+    void testRuntimeOptionsHelpContract()
+    {
+        {
+            CliArguments arguments;
+            arguments.command = CliCommand::Help;
+
+            StreamCapture capture;
+            const int exitCode =
+                HelpCommand().execute(arguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "general help should succeed");
+            require(capture.output.str().find("--window-mode=<window|fullscreen>") != std::string::npos, "general help should announce window mode");
+            require(capture.output.str().find("--scale=<number>") != std::string::npos, "general help should announce scale");
+            require(capture.output.str().find("--debug-collisions[=<true|false>]") != std::string::npos, "general help should announce debug collisions");
+            require(capture.output.str().find("embedded") == std::string::npos, "help should not announce embedded mode");
+        }
+
+        {
+            CliArguments arguments;
+            arguments.command = CliCommand::Help;
+            arguments.helpCommand = CliCommand::Run;
+
+            StreamCapture capture;
+            const int exitCode =
+                HelpCommand().execute(arguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "run help should succeed");
+            require(capture.output.str().find("--window-mode=<window|fullscreen>") != std::string::npos, "run help should announce window mode");
+            require(capture.output.str().find("--scale=<number>") != std::string::npos, "run help should announce scale");
+            require(capture.output.str().find("--format") == std::string::npos, "run help should not announce format");
+        }
+
+        {
+            CliArguments arguments;
+            arguments.command = CliCommand::Help;
+            arguments.helpCommand = CliCommand::RunCompiled;
+
+            StreamCapture capture;
+            const int exitCode =
+                HelpCommand().execute(arguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "run-compiled help should succeed");
+            require(capture.output.str().find("--debug-logs[=<true|false>]") != std::string::npos, "run-compiled help should announce debug logs");
+            require(capture.output.str().find("--format") == std::string::npos, "run-compiled help should not announce format");
+        }
+
+        {
+            CliArguments arguments;
+            arguments.command = CliCommand::Help;
+            arguments.helpCommand = CliCommand::Compile;
+
+            StreamCapture capture;
+            const int exitCode =
+                HelpCommand().execute(arguments);
+
+            require(exitCode == static_cast<int>(CliExitCode::Success), "compile help should succeed");
+            require(capture.output.str().find("--window-mode") == std::string::npos, "compile help should not announce runtime options");
+        }
+    }
+
     void testRunCompiledExtensionAndCommandExitCodes()
     {
         const std::filesystem::path upperCompiled =
@@ -314,6 +374,8 @@ int main()
         { "Run commands reject JSON format", testRunCommandsRejectJsonFormat },
 
         { "Help version and version output", testHelpVersionAndVersionOutput },
+
+        { "Runtime options help contract", testRuntimeOptionsHelpContract },
 
         { "RunCompiled extension and command exit codes", testRunCompiledExtensionAndCommandExitCodes }
 

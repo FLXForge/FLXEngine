@@ -19,11 +19,7 @@ public:
     Engine();
 
     void run(const CompiledProject& project, int maxFrames = -1);
-    void run(
-        const CompiledProject& project,
-        const RunOptions& options,
-        int maxFrames = -1
-    );
+    void run(const CompiledProject& project, const RunOptions& options);
     RuntimeObject* find(const std::string& name);
 private:
 

@@ -68,6 +68,26 @@ namespace
         return true;
     }
 
+    bool parseBoolean(
+        const std::string& text,
+        bool& value
+    )
+    {
+        if (text == "true")
+        {
+            value = true;
+            return true;
+        }
+
+        if (text == "false")
+        {
+            value = false;
+            return true;
+        }
+
+        return false;
+    }
+
     bool isKnownCommand(const std::string& value)
     {
         return
@@ -148,7 +168,14 @@ namespace
         const std::string& option
     )
     {
-        if (option == "--frames")
+        if (
+            option == "--frames" ||
+            option == "--window-mode" ||
+            option == "--scale" ||
+            option == "--debug-logs" ||
+            option == "--debug-console" ||
+            option == "--debug-collisions"
+        )
         {
             return command == CliCommand::Run || command == CliCommand::RunCompiled;
         }
@@ -191,6 +218,11 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
     const std::string& first = tokens[index];
     bool explicitTargetSet = false;
     bool formatSet = false;
+    bool windowModeSet = false;
+    bool scaleSet = false;
+    bool debugLogsSet = false;
+    bool debugConsoleSet = false;
+    bool debugCollisionsSet = false;
 
     if (first == "--version" || first == "-v")
     {
@@ -375,7 +407,7 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
 
             int frames = 0;
 
-            if (result.arguments.maxFrames.has_value())
+            if (result.arguments.runOptions.maxFrames.has_value())
             {
                 result.success = false;
                 result.exitCode = CliExitCode::InvalidArguments;
@@ -395,8 +427,230 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
                 return result;
             }
 
-            result.arguments.maxFrames = frames;
+            result.arguments.runOptions.maxFrames = frames;
             ++index;
+            continue;
+        }
+
+        if (token.rfind("--window-mode=", 0) == 0)
+        {
+            if (!optionAllowed(result.arguments.command, "--window-mode"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--window-mode is only valid for run and run-compiled");
+                return result;
+            }
+
+            if (windowModeSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--window-mode cannot be specified more than once");
+                return result;
+            }
+
+            const std::string mode =
+                token.substr(14);
+
+            if (mode == "window")
+            {
+                result.arguments.runOptions.windowMode =
+                    WindowMode::Window;
+            }
+            else if (mode == "fullscreen")
+            {
+                result.arguments.runOptions.windowMode =
+                    WindowMode::Fullscreen;
+            }
+            else
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--window-mode must be window or fullscreen");
+                return result;
+            }
+
+            windowModeSet = true;
+            ++index;
+            continue;
+        }
+
+        if (token.rfind("--scale=", 0) == 0)
+        {
+            if (!optionAllowed(result.arguments.command, "--scale"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--scale is only valid for run and run-compiled");
+                return result;
+            }
+
+            if (scaleSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--scale cannot be specified more than once");
+                return result;
+            }
+
+            int scale = 0;
+
+            if (!parsePositiveInt(token.substr(8), scale))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--scale must be a positive integer");
+                return result;
+            }
+
+            result.arguments.runOptions.scaleOverride = scale;
+            scaleSet = true;
+            ++index;
+            continue;
+        }
+
+        if (
+            token == "--debug-logs" ||
+            token.rfind("--debug-logs=", 0) == 0
+        )
+        {
+            if (!optionAllowed(result.arguments.command, "--debug-logs"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-logs is only valid for run and run-compiled");
+                return result;
+            }
+
+            if (debugLogsSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-logs cannot be specified more than once");
+                return result;
+            }
+
+            bool enabled = true;
+
+            if (token.rfind("--debug-logs=", 0) == 0 &&
+                !parseBoolean(token.substr(13), enabled))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-logs must be true or false");
+                return result;
+            }
+
+            result.arguments.runOptions.debugLogs = enabled;
+            debugLogsSet = true;
+            ++index;
+            continue;
+        }
+
+        if (
+            token == "--debug-console" ||
+            token.rfind("--debug-console=", 0) == 0
+        )
+        {
+            if (!optionAllowed(result.arguments.command, "--debug-console"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-console is only valid for run and run-compiled");
+                return result;
+            }
+
+            if (debugConsoleSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-console cannot be specified more than once");
+                return result;
+            }
+
+            bool enabled = true;
+
+            if (token.rfind("--debug-console=", 0) == 0 &&
+                !parseBoolean(token.substr(16), enabled))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-console must be true or false");
+                return result;
+            }
+
+            result.arguments.runOptions.debugConsole = enabled;
+            debugConsoleSet = true;
+            ++index;
+            continue;
+        }
+
+        if (
+            token == "--debug-collisions" ||
+            token.rfind("--debug-collisions=", 0) == 0
+        )
+        {
+            if (!optionAllowed(result.arguments.command, "--debug-collisions"))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-collisions is only valid for run and run-compiled");
+                return result;
+            }
+
+            if (debugCollisionsSet)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-collisions cannot be specified more than once");
+                return result;
+            }
+
+            bool enabled = true;
+
+            if (token.rfind("--debug-collisions=", 0) == 0 &&
+                !parseBoolean(token.substr(19), enabled))
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(
+                    DiagnosticCode::CliErrorUnclassified,
+                    "--debug-collisions must be true or false");
+                return result;
+            }
+
+            result.arguments.runOptions.debugCollisions = enabled;
+            ++index;
+            debugCollisionsSet = true;
             continue;
         }
 

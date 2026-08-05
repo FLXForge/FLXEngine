@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../core/RunOptions.h"
+
 #include <filesystem>
 #include <optional>
 
@@ -24,7 +26,7 @@ struct CliArguments
     CliCommand command = CliCommand::Run;
     std::filesystem::path target = ".";
     std::optional<std::filesystem::path> output;
-    std::optional<int> maxFrames;
+    RunOptions runOptions;
     CliOutputFormat format = CliOutputFormat::Text;
     std::optional<CliCommand> helpCommand;
 };

@@ -114,3 +114,13 @@ flx run --frames=10 examples/pong.flx
 This compiles the project, starts the normal runtime, executes a fixed number of
 frames and shuts down cleanly. It is intended for smoke tests where a graphical
 environment is available.
+
+Runtime-only options can be passed to both source and compiled execution:
+
+```text
+flx run --window-mode=fullscreen --scale=3 examples/pong.flx
+flx run-compiled --debug-collisions pong.flxc
+```
+
+These options override effective execution settings only for that launch. They
+do not mutate the Machine and are not stored in `.flxc`.

@@ -68,10 +68,7 @@ int RunCommand::execute(const CliArguments& arguments) const
     }
 
     Engine engine;
-    engine.run(
-        result.project,
-        arguments.maxFrames.value_or(-1)
-    );
+    engine.run(result.project, arguments.runOptions);
 
     return static_cast<int>(CliExitCode::Success);
 }

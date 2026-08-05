@@ -49,7 +49,7 @@ namespace
 
         require(result.success, "run with frames should parse");
         require(result.arguments.command == CliCommand::Run, "run command should be selected");
-        require(result.arguments.maxFrames == 10, "frames should parse");
+        require(result.arguments.runOptions.maxFrames == 10, "frames should parse");
 
         result =
             parseArguments({ "compile", "--output=game.flxc", "." });
@@ -88,6 +88,47 @@ namespace
 
         require(result.success, "compile should accept json format");
         require(result.arguments.format == CliOutputFormat::Json, "compile json format should parse");
+    }
+
+    void testCliParserRuntimeOptions()
+    {
+        CliParseResult result =
+            parseArguments({
+                "run",
+                "--frames=10",
+                "--window-mode=fullscreen",
+                "--scale=3",
+                "--debug-logs",
+                "--debug-console=false",
+                "--debug-collisions=true",
+                "."
+            });
+
+        require(result.success, "run should accept runtime options");
+        require(result.arguments.runOptions.maxFrames == 10, "frames should parse into run options");
+        require(result.arguments.runOptions.windowMode == WindowMode::Fullscreen, "fullscreen should parse");
+        require(result.arguments.runOptions.scaleOverride == 3, "scale override should parse");
+        require(result.arguments.runOptions.debugLogs, "debug logs flag without value should mean true");
+        require(!result.arguments.runOptions.debugConsole, "debug console false should parse");
+        require(result.arguments.runOptions.debugCollisions, "debug collisions true should parse");
+
+        result =
+            parseArguments({
+                "run-compiled",
+                "--window-mode=window",
+                "--scale=2",
+                "--debug-logs=false",
+                "--debug-console",
+                "--debug-collisions=false",
+                "game.flxc"
+            });
+
+        require(result.success, "run-compiled should accept runtime options");
+        require(result.arguments.runOptions.windowMode == WindowMode::Window, "window mode should parse");
+        require(result.arguments.runOptions.scaleOverride == 2, "run-compiled scale should parse");
+        require(!result.arguments.runOptions.debugLogs, "debug logs false should parse");
+        require(result.arguments.runOptions.debugConsole, "debug console flag should mean true");
+        require(!result.arguments.runOptions.debugCollisions, "debug collisions false should parse");
     }
 
     void testCliParserHelpAndVersion()
@@ -262,6 +303,56 @@ namespace
             parseArguments({ "--format=json" });
 
         require(!result.success, "default run should reject json format");
+
+        result =
+            parseArguments({ "run", "--window-mode=embedded", "." });
+
+        require(!result.success, "invalid window mode should fail");
+
+        result =
+            parseArguments({ "run", "--window-mode=window", "--window-mode=fullscreen", "." });
+
+        require(!result.success, "duplicate window mode should fail");
+
+        result =
+            parseArguments({ "run", "--scale=0", "." });
+
+        require(!result.success, "invalid scale should fail");
+
+        result =
+            parseArguments({ "run", "--scale=2", "--scale=3", "." });
+
+        require(!result.success, "duplicate scale should fail");
+
+        result =
+            parseArguments({ "run", "--debug-logs=maybe", "." });
+
+        require(!result.success, "invalid debug logs boolean should fail");
+
+        result =
+            parseArguments({ "run", "--debug-console", "--debug-console=false", "." });
+
+        require(!result.success, "duplicate debug console should fail");
+
+        result =
+            parseArguments({ "run", "--debug-collisions=", "." });
+
+        require(!result.success, "empty debug collisions boolean should fail");
+
+        result =
+            parseArguments({ "compile", "--output=game.flxc", "--scale=2", "." });
+
+        require(!result.success, "compile should reject runtime scale");
+
+        result =
+            parseArguments({ "validate", "--debug-logs", "." });
+
+        require(!result.success, "validate should reject runtime debug logs");
+
+        result =
+            parseArguments({ "help", "run", "--debug-logs" });
+
+        require(!result.success, "help should reject runtime options");
     }
 
 }
@@ -275,6 +366,8 @@ int main()
         { "CLI parser defaults", testCliParserDefaults },
 
         { "CLI parser commands", testCliParserCommands },
+
+        { "CLI parser runtime options", testCliParserRuntimeOptions },
 
         { "CLI parser help and version", testCliParserHelpAndVersion },
 

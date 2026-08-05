@@ -190,7 +190,8 @@ the current runtime behavior.
 Runtime options such as window mode, console visibility and debug drawing are
 not project manifest fields. They belong to the CLI or host execution layer.
 Screen size, background color and default output scale come from the Machine
-video chip.
+video chip. For example, `--scale` overrides the Machine output scale only for
+the current execution.
 
 The normalized JavaScript input API uses an explicit mapping file:
 
@@ -258,6 +259,15 @@ identifier, for example `FLX-COMP-00000 CompInformationUnclassified`.
 Structured JSON output is currently supported only by `compile` and `validate`.
 Runtime JSON output for `run` and `run-compiled` is planned for a later step,
 once the engine returns a structured runtime result and owns its streams.
+
+Runtime-only options are accepted by `run` and `run-compiled`:
+
+```text
+flx run --window-mode=fullscreen --scale=3 examples/pong.flx
+flx run-compiled --debug-logs --debug-collisions game.flxc
+```
+
+These options are not written to `.flx` or `.flxc`; they describe one launch.
 
 ---
 

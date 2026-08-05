@@ -3,11 +3,7 @@
 
   "spawn": "manual",
 
-  "states": {
-    "initial": "intro"
-  },
-
-    "behavior": {
-      "scripts": [ "gameover" ]
-    }
+  "behavior": {
+    "scripts": [ "gameover" ]
   }
+}

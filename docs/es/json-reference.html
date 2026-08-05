@@ -38,7 +38,7 @@
             </p>
 
             <ul>
-                <li><code>.flx</code>: define metadatos del proyecto y configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del runtime.</li>
+                <li><code>.flx</code>: define metadatos del proyecto y puntos de entrada de compilacion.</li>
                 <li><code>object</code>: define un objeto que puede contener otros elementos.</li>
                 <li><code>object</code>: define objetos que pueden representarse visualmente.</li>
             </ul>
@@ -49,7 +49,9 @@
 
             <p>
                 El archivo <code>.flx</code> es un manifiesto de estilo properties.
-                Apunta al objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z y contiene la configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del runtime.
+                Apunta al objeto raiz, a la Machine y al mapping de input.
+                Las opciones de runtime, como debug o pantalla completa,
+                pertenecen al CLI o al entorno de ejecucion, no al manifiesto.
             </p>
 
             <div class="code-card">
@@ -62,10 +64,6 @@ root=space
 title=Asteroids
 machine=machines/standard.yml
 input.mapping=input/default.input
-window.mode=window
-debug.console=false
-debug.collisions=false
-debug.logs=false
 notes=FLX example with spawn and basic UI
 </code></pre>
             </div>
@@ -73,31 +71,24 @@ notes=FLX example with spawn and basic UI
             <h3>Campos</h3>
 
             <ul>
-                                <li><code>version</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>name</code>: nombre del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>version</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>engine</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n objetivo de FLX. <i>[ Opcional ]</i></li>
                 <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
-                <li><code>root</code>: objeto JSON raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z cargado por el runtime. <i>[ Obligatorio ]</i></li>
+                <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
                 <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
                 <li><code>input.mapping</code>: mapping de input tipo properties usado por la API normalizada <code>Input</code>. Si se omite, no se generan controles mapeados. <i>[ Opcional ]</i></li>
-                <li><code>window.mode</code>: modo de ventana. Valores aceptados: <code>window</code>, <code>fullscreen</code>. Default: <code>window</code>. <i>[ Opcional ]</i></li>
-                <li><code>debug.console</code>: activa la salida de consola del runtime. Default: <code>false</code>. En Windows, quitar la ventana fisica de consola requiere compilar con la opcion de subsystem Windows. <i>[ Opcional ]</i></li>
-                <li><code>debug.collisions</code>: activa el dibujo de depuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiones. <i>[ Opcional ]</i></li>
-                <li><code>debug.logs</code>: activa los logs internos de depuración. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
 
             <p>
-                <code>debug.console</code> y <code>debug.logs</code> no son lo mismo.
-                <code>debug.console</code> controla si FLX escribe en la consola del
-                runtime. <code>debug.logs</code> controla las trazas internas de debug,
-                que solo son visibles si la salida de consola esta activa.
-            </p>
-
-            <p>
-                En modo <code>fullscreen</code>, FLX mantiene la resolucion logica
-                definida por el chip de video y escala esa salida a la pantalla
-                fisica conservando la proporcion.
+                El parser del manifiesto rechaza campos de runtime eliminados
+                como <code>screen.width</code>, <code>screen.height</code>,
+                <code>screen.scale</code>, <code>window.mode</code> y
+                <code>debug.*</code>. Tamano de pantalla y escala vienen del
+                chip de video. Las opciones de debug/ventana pertenecen a la
+                capa de ejecucion.
             </p>
 
             <p>

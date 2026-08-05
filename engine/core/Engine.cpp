@@ -18,16 +18,26 @@ namespace
         1.0f / 30.0f;
 
     Rectangle renderDestination(
-        const FlxContext& context
+        const FlxContext& context,
+        const RunOptions& options
     )
     {
-        if (context.windowMode != "fullscreen")
+        const int screenWidth =
+            context.machine.video.screenWidth;
+
+        const int screenHeight =
+            context.machine.video.screenHeight;
+
+        const int screenScale =
+            context.machine.video.outputScale;
+
+        if (options.windowMode != "fullscreen")
         {
             return Rectangle{
                 0.0f,
                 0.0f,
-                static_cast<float>(context.screenWidth * context.screenScale),
-                static_cast<float>(context.screenHeight * context.screenScale)
+                static_cast<float>(screenWidth * screenScale),
+                static_cast<float>(screenHeight * screenScale)
             };
         }
 
@@ -38,10 +48,10 @@ namespace
             static_cast<float>(GetScreenHeight());
 
         const float horizontalScale =
-            windowWidth / static_cast<float>(context.screenWidth);
+            windowWidth / static_cast<float>(screenWidth);
 
         const float verticalScale =
-            windowHeight / static_cast<float>(context.screenHeight);
+            windowHeight / static_cast<float>(screenHeight);
 
         float scale =
             std::min(horizontalScale, verticalScale);
@@ -58,10 +68,10 @@ namespace
         }
 
         const float width =
-            static_cast<float>(context.screenWidth) * scale;
+            static_cast<float>(screenWidth) * scale;
 
         const float height =
-            static_cast<float>(context.screenHeight) * scale;
+            static_cast<float>(screenHeight) * scale;
 
         return Rectangle{
             (windowWidth - width) * 0.5f,
@@ -74,9 +84,18 @@ namespace
 
 void Engine::run(const CompiledProject& project, int maxFrames)
 {
+    run(project, RunOptions{}, maxFrames);
+}
+
+void Engine::run(
+    const CompiledProject& project,
+    const RunOptions& options,
+    int maxFrames
+)
+{
     SetTraceLogCallback(Logger::rayLibLog);
 
-    init(project);
+    init(project, options);
 
     int frameCount = 0;
 
@@ -102,22 +121,25 @@ void Engine::run(const CompiledProject& project, int maxFrames)
     shutdown();
 }
 
-void Engine::init(const CompiledProject& project)
+void Engine::init(const CompiledProject& project, const RunOptions& options)
 {
-    loadProject(project);
+    loadProject(project, options);
 
     SetTargetFPS(60);
 }
 
-void Engine::loadProject(const CompiledProject& project)
+void Engine::loadProject(const CompiledProject& project, const RunOptions& options)
 {
     context =
         project.context;
 
-    Logger::setConsoleEnabled(context.debugConsole);
-    Logger::setDebugEnabled(context.debugLogs);
+    runOptions =
+        options;
+
+    Logger::setConsoleEnabled(runOptions.debugConsole);
+    Logger::setDebugEnabled(runOptions.debugLogs);
     SetTraceLogLevel(
-        context.debugConsole
+        runOptions.debugConsole
         ? LOG_ALL
         : LOG_NONE
     );
@@ -125,11 +147,6 @@ void Engine::loadProject(const CompiledProject& project)
     Logger::info(
         "project",
         "Loaded project: " + context.name
-    );
-
-    Logger::info(
-        "project",
-        "Loaded root: " + project.rootPath
     );
 
     initWindow();
@@ -145,10 +162,6 @@ void Engine::loadProject(const CompiledProject& project)
             context.inputMappingContent
         );
     }
-    else
-    {
-        inputSystem.loadMapping(context.inputMappingPath);
-    }
 
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
@@ -158,33 +171,42 @@ void Engine::loadProject(const CompiledProject& project)
 void Engine::initWindow()
 {
     const std::string title =
-        context.screenTitle.empty()
+        context.title.empty()
         ? "Flx"
-        : context.screenTitle;
+        : context.title;
+
+    const int screenWidth =
+        context.machine.video.screenWidth;
+
+    const int screenHeight =
+        context.machine.video.screenHeight;
+
+    const int screenScale =
+        context.machine.video.outputScale;
 
     Logger::info(
         "graphics",
         "Window size: " +
         std::to_string(
-            context.windowMode == "fullscreen"
+            runOptions.windowMode == "fullscreen"
             ? GetMonitorWidth(0)
-            : context.screenWidth * context.screenScale
+            : screenWidth * screenScale
         ) +
         "x" +
         std::to_string(
-            context.windowMode == "fullscreen"
+            runOptions.windowMode == "fullscreen"
             ? GetMonitorHeight(0)
-            : context.screenHeight * context.screenScale
+            : screenHeight * screenScale
         )
     );
 
     int windowWidth =
-        context.screenWidth * context.screenScale;
+        screenWidth * screenScale;
 
     int windowHeight =
-        context.screenHeight * context.screenScale;
+        screenHeight * screenScale;
 
-    if (context.windowMode == "fullscreen")
+    if (runOptions.windowMode == "fullscreen")
     {
         SetConfigFlags(FLAG_FULLSCREEN_MODE);
 
@@ -219,17 +241,17 @@ void Engine::initVideoOutput()
     Logger::info(
         "graphics",
         "Logical screen: " +
-        std::to_string(context.screenWidth) +
+        std::to_string(context.machine.video.screenWidth) +
         "x" +
-        std::to_string(context.screenHeight) +
+        std::to_string(context.machine.video.screenHeight) +
         " scale " +
-        std::to_string(context.screenScale)
+        std::to_string(context.machine.video.outputScale)
     );
 
     renderTarget =
         LoadRenderTexture(
-            context.screenWidth,
-            context.screenHeight
+            context.machine.video.screenWidth,
+            context.machine.video.screenHeight
         );
 
     renderTargetLoaded = true;
@@ -309,15 +331,15 @@ void Engine::update()
 
     inputSystem.update(
         delta,
-        context.screenWidth,
-        context.screenHeight,
-        renderDestination(context)
+        context.machine.video.screenWidth,
+        context.machine.video.screenHeight,
+        renderDestination(context, runOptions)
     );
 
     world->update(
         scriptEngine,
-        static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight),
+        static_cast<float>(context.machine.video.screenWidth),
+        static_cast<float>(context.machine.video.screenHeight),
         delta
     );
 
@@ -334,14 +356,14 @@ void Engine::draw()
     world->draw(
         scriptEngine,
         1,
-        static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight),
-        context.debugCollisions
+        static_cast<float>(context.machine.video.screenWidth),
+        static_cast<float>(context.machine.video.screenHeight),
+        runOptions.debugCollisions
     );
 
     fadeSystem.draw(
-        context.screenWidth,
-        context.screenHeight,
+        context.machine.video.screenWidth,
+        context.machine.video.screenHeight,
         1
     );
 
@@ -359,7 +381,7 @@ void Engine::draw()
             static_cast<float>(renderTarget.texture.width),
             static_cast<float>(-renderTarget.texture.height)
         },
-        renderDestination(context),
+        renderDestination(context, runOptions),
         Vector2{ 0.0f, 0.0f },
         0.0f,
         WHITE

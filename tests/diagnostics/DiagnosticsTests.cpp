@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 45, "registry should include generic codes and implemented resource reference codes");
+        require(codes.size() == 50, "registry should include generic codes and implemented project/resource codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -77,6 +77,10 @@ namespace
         require(
             diagnosticIdentifier(DiagnosticCode::BuildDeprecatedFunctionality) == std::string("BuildDeprecatedFunctionality"),
             "BUILD deprecated identifier should be domain-qualified"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::InvalidProjectManifestSyntax) == std::string("FLX-PROJECT-00011"),
+            "invalid manifest syntax should use concrete project code"
         );
         require(
             diagnosticCodeText(DiagnosticCode::MissingReferencedResource) == std::string("FLX-RESOURCE-00010"),

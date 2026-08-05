@@ -30,12 +30,11 @@ namespace
             compile(createMinimalProject("default_machine"));
 
         require(result.success, "project without machine should compile");
-        require(result.project.context.machinePath.empty(), "machine path should be empty");
-        require(result.project.context.screenWidth == 640, "default screen width should be 640");
-        require(result.project.context.screenHeight == 480, "default screen height should be 480");
+        require(result.project.context.machine.video.screenWidth == 640, "default machine width should be 640");
+        require(result.project.context.machine.video.screenHeight == 480, "default machine height should be 480");
     }
 
-    void testExternalMachineAndScreenOverride()
+    void testExternalMachine()
     {
         const std::filesystem::path root =
             testRoot() / "external_machine";
@@ -60,7 +59,6 @@ namespace
             "path=game\n"
             "root=root\n"
             "machine=machine.yml\n"
-            "screen.width=222\n"
         );
 
         writeFile(root / "game" / "root.json", "{}\n");
@@ -70,9 +68,67 @@ namespace
 
         require(result.success, "project with external machine should compile");
         require(result.project.context.machine.video.screenWidth == 111, "machine width should load");
-        require(result.project.context.screenWidth == 222, "flx screen width should override machine");
-        require(result.project.context.screenHeight == 77, "screen height should come from machine");
-        require(result.project.context.screenScale == 2, "screen scale should come from machine");
+        require(result.project.context.machine.video.screenHeight == 77, "machine height should load");
+        require(result.project.context.machine.video.outputScale == 2, "machine scale should load");
+    }
+
+    void testInputMappingIsCompiledFromManifestDirectory()
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_mapping_compile";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+        std::filesystem::create_directories(root / "input");
+
+        writeFile(
+            root / "game.flx",
+            "name=InputMapping\n"
+            "path=game\n"
+            "root=root\n"
+            "input.mapping=input/default.input\n"
+        );
+
+        writeFile(root / "game" / "root.json", "{}\n");
+        writeFile(root / "input" / "default.input", "system.buttons.0=KEY_ESCAPE\n");
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "project with input mapping should compile");
+        require(
+            result.project.context.inputMappingSourceName == "input/default.input",
+            "input mapping source should be relative to manifest directory"
+        );
+        require(
+            result.project.context.inputMappingContent.find("system.buttons.0=KEY_ESCAPE") != std::string::npos,
+            "input mapping content should be embedded"
+        );
+    }
+
+    void testRemovedScreenFieldFails()
+    {
+        const std::filesystem::path root =
+            testRoot() / "removed_screen_field";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=RemovedScreen\n"
+            "path=game\n"
+            "root=root\n"
+            "screen.width=222\n"
+        );
+
+        writeFile(root / "game" / "root.json", "{}\n");
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(!result.success, "removed screen field should fail");
+        require(result.diagnostics.hasErrors(), "removed screen field should report error");
     }
 
     void testMissingProject()
@@ -82,6 +138,10 @@ namespace
 
         require(!result.success, "missing project should fail");
         require(result.diagnostics.hasErrors(), "missing project should report errors");
+        require(
+            result.diagnostics.all().front().code == DiagnosticCode::ProjectManifestCouldNotBeOpened,
+            "missing project should be reported by manifest loader"
+        );
     }
 
     void testMissingRootJson()
@@ -145,7 +205,11 @@ int main()
 
         { "default machine", testDefaultMachine },
 
-        { "external machine and screen override", testExternalMachineAndScreenOverride },
+        { "external machine", testExternalMachine },
+
+        { "input mapping is compiled from manifest directory", testInputMappingIsCompiledFromManifestDirectory },
+
+        { "removed screen field fails", testRemovedScreenFieldFails },
 
         { "missing project", testMissingProject },
 

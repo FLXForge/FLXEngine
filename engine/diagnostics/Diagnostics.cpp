@@ -19,6 +19,11 @@ namespace
             { DiagnosticCode::ProjectErrorUnclassified, "FLX-PROJECT-00002", "ProjectErrorUnclassified", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Unclassified project error." },
             { DiagnosticCode::ProjectUnexpectedInternalError, "FLX-PROJECT-00003", "ProjectUnexpectedInternalError", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Unexpected internal project error." },
             { DiagnosticCode::ProjectDeprecatedFunctionality, "FLX-PROJECT-00004", "ProjectDeprecatedFunctionality", DiagnosticSeverity::Warning, DiagnosticDomain::PROJECT, "Deprecated project functionality." },
+            { DiagnosticCode::ProjectManifestCouldNotBeOpened, "FLX-PROJECT-00010", "ProjectManifestCouldNotBeOpened", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Project manifest could not be opened." },
+            { DiagnosticCode::InvalidProjectManifestSyntax, "FLX-PROJECT-00011", "InvalidProjectManifestSyntax", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Project manifest line has invalid syntax." },
+            { DiagnosticCode::UnknownProjectManifestField, "FLX-PROJECT-00012", "UnknownProjectManifestField", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Project manifest contains an unknown field." },
+            { DiagnosticCode::DuplicateProjectManifestField, "FLX-PROJECT-00013", "DuplicateProjectManifestField", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Project manifest contains a duplicate field." },
+            { DiagnosticCode::MissingProjectRoot, "FLX-PROJECT-00014", "MissingProjectRoot", DiagnosticSeverity::Error, DiagnosticDomain::PROJECT, "Project manifest root field is missing or empty." },
 
             { DiagnosticCode::CompInformationUnclassified, "FLX-COMP-00000", "CompInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::COMP, "Unclassified informational compiler diagnostic." },
             { DiagnosticCode::CompWarningUnclassified, "FLX-COMP-00001", "CompWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::COMP, "Unclassified compiler warning." },

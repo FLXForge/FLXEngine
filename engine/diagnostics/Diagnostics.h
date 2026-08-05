@@ -37,6 +37,11 @@ enum class DiagnosticCode
     ProjectErrorUnclassified,
     ProjectUnexpectedInternalError,
     ProjectDeprecatedFunctionality,
+    ProjectManifestCouldNotBeOpened,
+    InvalidProjectManifestSyntax,
+    UnknownProjectManifestField,
+    DuplicateProjectManifestField,
+    MissingProjectRoot,
 
     CompInformationUnclassified,
     CompWarningUnclassified,

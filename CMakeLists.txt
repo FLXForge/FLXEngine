@@ -23,6 +23,10 @@ configure_file(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+endif()
+
 option(
     FLX_WINDOWS_SUBSYSTEM
     "Build flx as a Windows subsystem executable without a console window"
@@ -162,6 +166,7 @@ add_executable(flx
 
     engine/core/Engine.h
     engine/core/Engine.cpp
+    engine/core/RunOptions.h
     engine/compiler/CompiledProject.h
     engine/compiler/CompiledProjectBinary.h
     engine/compiler/CompiledProjectBinary.cpp
@@ -209,8 +214,9 @@ add_executable(flx
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
-    engine/project/FlxContextBuilder.h
-    engine/project/FlxContextBuilder.cpp
+    engine/project/ProjectManifest.h
+    engine/project/ProjectManifestLoader.h
+    engine/project/ProjectManifestLoader.cpp
     engine/scripting/ScriptEngine.h
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h
@@ -329,6 +335,7 @@ add_flx_test_suite(flx-cli-parser-tests tests/cli/CliParserTests.cpp)
 add_flx_test_suite(flx-cli-command-tests tests/cli/CliCommandTests.cpp)
 add_flx_test_suite(flx-cli-project-resolver-tests tests/cli/ProjectResolverTests.cpp)
 add_flx_test_suite(flx-cli-diagnostic-printer-tests tests/cli/DiagnosticPrinterTests.cpp)
+add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests.cpp)
 add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
 add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTests.cpp)

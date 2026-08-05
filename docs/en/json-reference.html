@@ -37,7 +37,7 @@
             </p>
 
             <ul>
-                <li><code>.flx</code>: defines project metadata and runtime configuration.</li>
+                <li><code>.flx</code>: defines project metadata and compilation entry points.</li>
                 <li><code>object</code>: defines an object that may contain other elements.</li>
                 <li><code>object</code>: defines objects that can be rendered visually.</li>
             </ul>
@@ -48,7 +48,9 @@
 
             <p>
                 The <code>.flx</code> file is a properties-style manifest.
-                It points to the root object and contains runtime configuration.
+                It points to the root object, Machine and input mapping.
+                Runtime options such as debug flags or fullscreen mode belong
+                to the CLI or host environment, not to the project manifest.
             </p>
 
             <div class="code-card">
@@ -61,10 +63,6 @@ root=space
 title=Asteroids
 machine=machines/standard.yml
 input.mapping=input/default.input
-window.mode=window
-debug.console=false
-debug.collisions=false
-debug.logs=false
 notes=FLX example with spawn and basic UI
 </code></pre>
 
@@ -77,28 +75,20 @@ notes=FLX example with spawn and basic UI
                 <li><code>version</code>: project version. <i>[ Optional ]</i></li>
                 <li><code>engine</code>: target FLX version. <i>[ Optional ]</i></li>
                 <li><code>path</code>: project content directory. <i>[ Optional ]</i></li>
-                <li><code>root</code>: root JSON object loaded by the runtime. <i>[ Required ]</i></li>
+                <li><code>root</code>: root JSON object compiled as the world entry point. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
                 <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
                 <li><code>input.mapping</code>: properties-style input mapping used by the normalized <code>Input</code> API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
-                <li><code>window.mode</code>: window mode. Accepted values: <code>window</code>, <code>fullscreen</code>. Default: <code>window</code>. <i>[ Optional ]</i></li>
-                <li><code>debug.console</code>: enables runtime console output. Default: <code>false</code>. On Windows, removing the physical console window requires building with the Windows subsystem option. <i>[ Optional ]</i></li>
-                <li><code>debug.collisions</code>: enables collision debug drawing. <i>[ Optional ]</i></li>
-                <li><code>debug.logs</code>: enables internal debug logs. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
             <p>
-                <code>debug.console</code> and <code>debug.logs</code> are different.
-                <code>debug.console</code> controls whether FLX writes to the runtime
-                console. <code>debug.logs</code> controls internal debug traces, and
-                only has visible output when console output is enabled.
-            </p>
-
-            <p>
-                In <code>fullscreen</code> mode, FLX keeps the logical resolution
-                defined by the video chip and scales that output to the physical
-                display while preserving aspect ratio.
+                The manifest parser rejects removed runtime fields such as
+                <code>screen.width</code>, <code>screen.height</code>,
+                <code>screen.scale</code>, <code>window.mode</code> and
+                <code>debug.*</code>. Screen size and output scale come from the
+                video chip. Runtime debug/window options are provided by the
+                execution layer.
             </p>
 
             <p>

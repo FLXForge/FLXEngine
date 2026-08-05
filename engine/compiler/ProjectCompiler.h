@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <string>
 
+struct ProjectManifest;
+
 class ProjectCompiler
 {
 public:
@@ -49,8 +51,21 @@ private:
 
     static std::string readTextFile(const std::string& path);
 
+    static std::filesystem::path resolveFrom(
+        const std::filesystem::path& basePath,
+        const std::string& value
+    );
+
+    static FlxContext makeCompiledContext(
+        const ProjectManifest& manifest,
+        const std::filesystem::path& manifestDirectory,
+        Diagnostics& diagnostics
+    );
+
     static void compileInputMapping(
         FlxContext& context,
+        const std::string& inputMappingPath,
+        const std::filesystem::path& manifestDirectory,
         Diagnostics& diagnostics
     );
 };

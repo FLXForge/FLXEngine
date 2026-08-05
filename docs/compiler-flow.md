@@ -8,7 +8,7 @@ towards an in-memory compilation step.
 ```text
 flx CLI project.flx path
 -> ProjectCompiler
--> FlxContextBuilder
+-> ProjectManifestLoader
 -> MachineLoader
 -> JsonLoader
 -> CompiledProject + ResourceRegistry
@@ -32,12 +32,12 @@ Compiled .flxc file
 
 - CLI: parses `flx [command] [options] [target]`, resolves the project manifest
   deterministically and asks `ProjectCompiler` to compile it.
-- ProjectCompiler: creates the effective in-memory project, discovers the descriptive resource graph and validates script paths. It does not run the game.
-- FlxContextBuilder: reads project properties, resolves project-relative paths, loads the Machine and applies screen defaults/overrides.
+- ProjectManifestLoader: parses the `.flx` key/value manifest into `ProjectManifest` plus diagnostics. It does not load Machine, input mapping, JSON or runtime systems.
+- ProjectCompiler: resolves manifest paths, loads Machine and input mapping, creates the effective in-memory project, discovers the descriptive resource graph and validates script paths. It does not run the game.
 - MachineLoader: loads YAML Machine and chip definitions, including external chip files.
 - JsonLoader: loads JSON objects, resolves `like`, block references, FLX-root references and child definitions.
 - ObjectDefinition: represents resolved source object declarations.
-- CompiledProject: stores the effective `FlxContext`, root JSON path, root resource id and `ResourceRegistry`.
+- CompiledProject: stores the effective compiled context, root resource id and `ResourceRegistry`.
 - ResourceRegistry: stores compiled `ObjectDefinition` entries by stable logical resource id. Children and manual spawns point to resource ids instead of asking the runtime to load JSON.
 - ScriptResource: stores JavaScript source code by resource id. QuickJS bytecode is not generated yet.
 - Engine: starts runtime systems from `CompiledProject`; it no longer opens `project.flx`.
@@ -46,8 +46,8 @@ Compiled .flxc file
 
 ## Where Things Happen Today
 
-- Loading: `FlxContextBuilder`, `MachineLoader` and `JsonLoader`.
-- Path resolution: project paths in `FlxContextBuilder`; JSON and FLX references in `JsonLoader`.
+- Loading: `ProjectManifestLoader`, `MachineLoader` and `JsonLoader`.
+- Path resolution: manifest paths in `ProjectCompiler`; JSON and FLX references in `JsonLoader`.
 - References: `JsonLoader`.
 - `like` inheritance and object merge: `JsonLoader`.
 - Resource graph discovery: `ProjectCompiler`.
@@ -55,7 +55,7 @@ Compiled .flxc file
 - Script path resolution: `ProjectCompiler`.
 - Script source loading: `ProjectCompiler`; runtime evaluates embedded script source from `ResourceRegistry`.
 - Input mapping loading: `ProjectCompiler`; runtime parses embedded mapping text when available.
-- Defaults: Machine defaults in `MachineLoader`; project screen defaults/overrides in `FlxContextBuilder`; object defaults in `ObjectDefinition`.
+- Defaults: Machine defaults in `MachineLoader`; object defaults in `ObjectDefinition`. Screen size and scale come from the effective Machine.
 - Validation: currently split between loaders and schemas; compiler diagnostics wrap fatal load failures and always carry a stable FLX diagnostic code.
 - RuntimeObject creation: `RuntimeObjectBuilder` and `RuntimeWorld`.
 
@@ -82,8 +82,9 @@ versioned internal format with:
 
 - FLX magic;
 - format version;
-- engine compatibility string;
-- effective runtime context;
+- producer engine version;
+- project engine requirement;
+- effective compiled context;
 - effective Machine definition;
 - root resource id;
 - resource registry;

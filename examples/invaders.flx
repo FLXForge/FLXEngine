@@ -7,7 +7,3 @@ engine=0.2.0
 # Configuration
 path=invaders
 root=game
-
-# Debug
-debug.collisions=false
-debug.logs=false

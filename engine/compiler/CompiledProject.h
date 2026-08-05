@@ -13,7 +13,6 @@ struct CompiledProject
     ResourceRegistry resources;
     ResourceId rootId;
     ObjectDefinition rootDefinition;
-    std::string rootPath;
 };
 
 struct CompilationResult

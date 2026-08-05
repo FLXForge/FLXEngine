@@ -176,25 +176,21 @@ Every FLX project starts with a single entry point:
 MyGame.flx
 ```
 
-This file defines project metadata, runtime configuration, the root object and,
-optionally, the Machine YAML used by the project.
+This file defines project metadata, the root object and, optionally, the
+Machine YAML and input mapping used by the project.
 
 ```text
 machine=machines/standard.yml
 input.mapping=input/default.input
-window.mode=window
-debug.console=false
 ```
 
 If no Machine is declared, FLX uses an internal default Machine compatible with
 the current runtime behavior.
 
-`window.mode` can be `window` or `fullscreen`. `debug.console` controls runtime
-console output and defaults to `false`; `debug.logs` remains a separate switch
-for internal debug traces. On Windows, a build without a physical console window
-can be produced by configuring CMake with `FLX_WINDOWS_SUBSYSTEM=ON`.
-Fullscreen keeps the video chip logical resolution and scales it to the physical
-display while preserving aspect ratio.
+Runtime options such as window mode, console visibility and debug drawing are
+not project manifest fields. They belong to the CLI or host execution layer.
+Screen size, background color and default output scale come from the Machine
+video chip.
 
 The normalized JavaScript input API uses an explicit mapping file:
 

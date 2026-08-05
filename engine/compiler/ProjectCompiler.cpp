@@ -1,7 +1,8 @@
 #include "ProjectCompiler.h"
 #include "../loading/JsonLoader.h"
+#include "../machine/MachineLoader.h"
 #include "../machine/VideoColorProcessor.h"
-#include "../project/FlxContextBuilder.h"
+#include "../project/ProjectManifestLoader.h"
 
 #include <filesystem>
 #include <fstream>
@@ -15,52 +16,64 @@ CompilationResult ProjectCompiler::compile(
 {
     CompilationResult result;
 
-    if (!std::filesystem::exists(projectPath))
-    {
-        result.diagnostics.error(
-            DiagnosticCode::CompErrorUnclassified,
-            "Project file does not exist",
-            projectPath
-        );
-
-        return result;
-    }
-
     try
     {
-        result.project.context =
-            FlxContextBuilder::build(projectPath);
+        const std::filesystem::path manifestPath =
+            std::filesystem::path(projectPath);
 
-        compileInputMapping(
-            result.project.context,
-            result.diagnostics
-        );
+        const std::filesystem::path manifestDirectory =
+            manifestPath.parent_path().empty()
+            ? std::filesystem::path(".")
+            : manifestPath.parent_path();
 
-        if (result.project.context.root.empty())
+        ProjectManifestResult manifestResult =
+            ProjectManifestLoader::load(projectPath);
+
+        result.diagnostics.append(manifestResult.diagnostics);
+
+        if (!manifestResult.success)
         {
-            result.diagnostics.error(
-                DiagnosticCode::CompErrorUnclassified,
-                "Project root is not defined",
-                projectPath,
-                "root"
-            );
-
             return result;
         }
 
-        result.project.rootPath =
+        result.project.context =
+            makeCompiledContext(
+                manifestResult.manifest,
+                manifestDirectory,
+                result.diagnostics
+            );
+
+        compileInputMapping(
+            result.project.context,
+            manifestResult.manifest.inputMapping,
+            manifestDirectory,
+            result.diagnostics
+        );
+
+        if (result.diagnostics.hasErrors())
+        {
+            return result;
+        }
+
+        const std::filesystem::path worldRoot =
+            resolveFrom(
+                manifestDirectory,
+                manifestResult.manifest.path
+            );
+
+        const std::string rootPath =
             JsonLoader::resolveProjectPath(
-                result.project.context.projectPath,
-                result.project.context.root,
+                worldRoot.generic_string(),
+                manifestResult.manifest.root,
                 ".json"
             );
 
-        if (!std::filesystem::exists(result.project.rootPath))
+        if (!std::filesystem::exists(rootPath))
         {
             result.diagnostics.error(
                 DiagnosticCode::ResourceErrorUnclassified,
                 "Root JSON does not exist",
-                result.project.rootPath
+                rootPath
             );
 
             return result;
@@ -68,16 +81,16 @@ CompilationResult ProjectCompiler::compile(
 
         ObjectDefinition rootDefinition =
             JsonLoader::loadObjectDefinition(
-                result.project.rootPath,
-                result.project.context.projectPath,
+                rootPath,
+                worldRoot.generic_string(),
                 result.diagnostics
             );
 
         result.project.rootId =
             makeResourceId(
                 rootDefinition,
-                result.project.rootPath,
-                result.project.context.rootDirectory
+                rootPath,
+                manifestDirectory
             );
 
         std::unordered_set<ResourceId> compiling;
@@ -89,8 +102,8 @@ CompilationResult ProjectCompiler::compile(
                 result.project.resources,
                 result.diagnostics,
                 compiling,
-                result.project.context.rootDirectory,
-                result.project.context.projectPath
+                manifestDirectory,
+                worldRoot
             );
     }
     catch (const std::exception& exception)
@@ -117,6 +130,74 @@ CompilationResult ProjectCompiler::compile(
     }
 
     return result;
+}
+
+std::filesystem::path ProjectCompiler::resolveFrom(
+    const std::filesystem::path& basePath,
+    const std::string& value
+)
+{
+    if (value.empty() || value == ".")
+    {
+        return basePath.lexically_normal();
+    }
+
+    const std::filesystem::path path(value);
+
+    if (path.is_absolute())
+    {
+        return path.lexically_normal();
+    }
+
+    return (basePath / path).lexically_normal();
+}
+
+FlxContext ProjectCompiler::makeCompiledContext(
+    const ProjectManifest& manifest,
+    const std::filesystem::path& manifestDirectory,
+    Diagnostics& diagnostics
+)
+{
+    FlxContext context;
+    context.name = manifest.metadata.name;
+    context.version = manifest.metadata.version;
+    context.notes = manifest.metadata.notes;
+    context.title = manifest.title;
+    context.engineRequirement = manifest.engineRequirement;
+
+    if (manifest.machine.empty())
+    {
+        context.machine =
+            MachineLoader::defaultMachine();
+    }
+    else
+    {
+        const std::filesystem::path machinePath =
+            resolveFrom(
+                manifestDirectory,
+                manifest.machine
+            );
+
+        if (!std::filesystem::exists(machinePath))
+        {
+            diagnostics.error(
+                DiagnosticCode::MachineErrorUnclassified,
+                "Machine file does not exist",
+                machinePath.generic_string(),
+                "machine"
+            );
+
+            context.machine =
+                MachineLoader::defaultMachine();
+        }
+        else
+        {
+            context.machine =
+                MachineLoader::load(machinePath.generic_string());
+        }
+    }
+
+    return context;
 }
 
 void ProjectCompiler::projectDefinitionColors(
@@ -408,20 +489,29 @@ std::string ProjectCompiler::readTextFile(const std::string& path)
 
 void ProjectCompiler::compileInputMapping(
     FlxContext& context,
+    const std::string& inputMappingPath,
+    const std::filesystem::path& manifestDirectory,
     Diagnostics& diagnostics
 )
 {
-    if (context.inputMappingPath.empty())
+    if (inputMappingPath.empty())
     {
         return;
     }
 
-    if (!std::filesystem::exists(context.inputMappingPath))
+    const std::filesystem::path resolvedPath =
+        resolveFrom(
+            manifestDirectory,
+            inputMappingPath
+        );
+
+    if (!std::filesystem::exists(resolvedPath))
     {
         diagnostics.error(
             DiagnosticCode::ResourceErrorUnclassified,
             "Input mapping does not exist",
-            context.inputMappingPath
+            resolvedPath.generic_string(),
+            "input.mapping"
         );
 
         return;
@@ -429,11 +519,11 @@ void ProjectCompiler::compileInputMapping(
 
     context.inputMappingSourceName =
         relativeSourceName(
-            context.inputMappingPath,
-            context.rootDirectory
+            resolvedPath.generic_string(),
+            manifestDirectory
         );
 
     context.inputMappingContent =
-        readTextFile(context.inputMappingPath);
+        readTextFile(resolvedPath.generic_string());
 }
 

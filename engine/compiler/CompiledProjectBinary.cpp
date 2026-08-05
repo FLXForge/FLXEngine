@@ -1,4 +1,5 @@
 #include "CompiledProjectBinary.h"
+#include "FlxVersion.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -739,20 +740,9 @@ namespace
     {
         writer.string(context.name);
         writer.string(context.version);
-        writer.string(context.engineVersion);
+        writer.string(context.engineRequirement);
         writer.string(context.notes);
-        writer.string(context.root);
-        writer.string(context.screenTitle);
-        writer.value(context.screenWidth);
-        writer.value(context.screenHeight);
-        writer.value(context.screenScale);
-        writer.value(context.screenWidthOverride);
-        writer.value(context.screenHeightOverride);
-        writer.value(context.screenScaleOverride);
-        writer.value(context.debugCollisions);
-        writer.value(context.debugLogs);
-        writer.value(context.debugConsole);
-        writer.string(context.windowMode);
+        writer.string(context.title);
         writer.string(context.inputMappingSourceName);
         writer.string(context.inputMappingContent);
         writeMachine(writer, context.machine);
@@ -763,20 +753,9 @@ namespace
         FlxContext context;
         context.name = reader.string();
         context.version = reader.string();
-        context.engineVersion = reader.string();
+        context.engineRequirement = reader.string();
         context.notes = reader.string();
-        context.root = reader.string();
-        context.screenTitle = reader.string();
-        context.screenWidth = reader.value<int>();
-        context.screenHeight = reader.value<int>();
-        context.screenScale = reader.value<int>();
-        context.screenWidthOverride = reader.value<bool>();
-        context.screenHeightOverride = reader.value<bool>();
-        context.screenScaleOverride = reader.value<bool>();
-        context.debugCollisions = reader.value<bool>();
-        context.debugLogs = reader.value<bool>();
-        context.debugConsole = reader.value<bool>();
-        context.windowMode = reader.string();
+        context.title = reader.string();
         context.inputMappingSourceName = reader.string();
         context.inputMappingContent = reader.string();
         context.machine = readMachine(reader);
@@ -814,10 +793,9 @@ bool CompiledProjectWriter::write(
 
     writer.value(Magic);
     writer.value(FormatVersion);
-    writer.string("0.2.0");
+    writer.string(std::string(FlxVersion::Text));
     writeContext(writer, project.context);
     writer.string(project.rootId);
-    writer.string(project.rootPath.empty() ? "" : std::filesystem::path(project.rootPath).filename().generic_string());
     writeObject(writer, project.rootDefinition);
 
     const auto objectKeys =
@@ -910,19 +888,15 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
             return result;
         }
 
-        const std::string engineVersion =
+        const std::string producerVersion =
             reader.string();
 
         result.project.context =
             readContext(reader);
 
-        result.project.context.engineVersion =
-            engineVersion;
+        (void)producerVersion;
 
         result.project.rootId =
-            reader.string();
-
-        result.project.rootPath =
             reader.string();
 
         result.project.rootDefinition =

@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 50, "registry should include generic codes and implemented project/resource codes");
+        require(codes.size() == 59, "registry should include generic codes and implemented project/resource/binary codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;

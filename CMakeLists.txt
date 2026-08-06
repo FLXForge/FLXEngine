@@ -170,6 +170,16 @@ add_executable(flx
     engine/compiler/CompiledProject.h
     engine/compiler/CompiledProjectBinary.h
     engine/compiler/CompiledProjectBinary.cpp
+    engine/compiler/CompiledProjectValidator.h
+    engine/compiler/CompiledProjectValidator.cpp
+    engine/compiler/binary/BinaryException.h
+    engine/compiler/binary/BinaryLimits.h
+    engine/compiler/binary/BinaryReader.h
+    engine/compiler/binary/BinaryReader.cpp
+    engine/compiler/binary/BinaryWriter.h
+    engine/compiler/binary/BinaryWriter.cpp
+    engine/compiler/binary/CompiledProjectCodec.h
+    engine/compiler/binary/CompiledProjectCodec.cpp
     engine/diagnostics/Diagnostics.h
     engine/diagnostics/Diagnostics.cpp
     engine/compiler/ResourceRegistry.h

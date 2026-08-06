@@ -69,9 +69,4 @@ private:
         Diagnostics& diagnostics
     );
 
-    static void validateCompiledProject(
-        const CompiledProject& project,
-        Diagnostics& diagnostics,
-        const std::string& source
-    );
 };

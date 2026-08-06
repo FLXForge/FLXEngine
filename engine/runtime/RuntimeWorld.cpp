@@ -1,5 +1,6 @@
 #include "RuntimeWorld.h"
 #include "RuntimeObjectBuilder.h"
+#include "../compiler/CompiledProjectValidator.h"
 #include "../collision/CollisionSystem.h"
 #include "../debug/Logger.h"
 #include "../scripting/ScriptEngine.h"
@@ -47,78 +48,6 @@ namespace
             object.size.x,
             object.size.y
         ) / 2.0f;
-    }
-
-    bool validateCompiledRuntimeProject(const CompiledProject& project)
-    {
-        if (project.rootId.empty())
-        {
-            Logger::error(
-                "runtime",
-                "Compiled project root id is empty"
-            );
-
-            return false;
-        }
-
-        if (project.resources.findObject(project.rootId) == nullptr)
-        {
-            Logger::error(
-                "runtime",
-                "Compiled root resource not found: " + project.rootId
-            );
-
-            return false;
-        }
-
-        for (const auto& objectPair : project.resources.allObjects())
-        {
-            const std::string& objectId =
-                objectPair.first;
-            const ObjectDefinition& object =
-                objectPair.second;
-
-            if (!object.children.empty())
-            {
-                Logger::error(
-                    "runtime",
-                    "Compiled object contains embedded children: " + objectId
-                );
-
-                return false;
-            }
-
-            for (const auto& childPair : object.childResources)
-            {
-                if (project.resources.findObject(childPair.second) == nullptr)
-                {
-                    Logger::error(
-                        "runtime",
-                        "Compiled child resource not found: " +
-                        objectId + "." + childPair.first +
-                        " -> " + childPair.second
-                    );
-
-                    return false;
-                }
-            }
-
-            for (const std::string& scriptId : object.resolvedScriptPaths)
-            {
-                if (project.resources.findScript(scriptId) == nullptr)
-                {
-                    Logger::error(
-                        "runtime",
-                        "Compiled script resource not found: " +
-                        objectId + " -> " + scriptId
-                    );
-
-                    return false;
-                }
-            }
-        }
-
-        return true;
     }
 
     bool rayHitsCircle(
@@ -345,8 +274,23 @@ void RuntimeWorld::load(
     frameIndex = 0;
     resources = &project.resources;
 
-    if (!validateCompiledRuntimeProject(project))
+    Diagnostics validationDiagnostics;
+
+    if (!CompiledProjectValidator::validate(
+        project,
+        validationDiagnostics,
+        DiagnosticCode::RuntimeErrorUnclassified,
+        "runtime"
+    ))
     {
+        for (const Diagnostic& diagnostic : validationDiagnostics.all())
+        {
+            Logger::error(
+                "runtime",
+                diagnostic.message + ": " + diagnostic.field
+            );
+        }
+
         return;
     }
 

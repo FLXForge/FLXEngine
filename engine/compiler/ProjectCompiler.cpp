@@ -1,4 +1,5 @@
 #include "ProjectCompiler.h"
+#include "CompiledProjectValidator.h"
 #include "../loading/JsonLoader.h"
 #include "../machine/MachineLoader.h"
 #include "../machine/VideoColorProcessor.h"
@@ -105,9 +106,10 @@ CompilationResult ProjectCompiler::compile(
             worldRoot
         );
 
-        validateCompiledProject(
+        CompiledProjectValidator::validate(
             result.project,
             result.diagnostics,
+            DiagnosticCode::CompErrorUnclassified,
             projectPath
         );
     }
@@ -530,75 +532,5 @@ void ProjectCompiler::compileInputMapping(
 
     context.inputMappingContent =
         readTextFile(resolvedPath.generic_string());
-}
-
-void ProjectCompiler::validateCompiledProject(
-    const CompiledProject& project,
-    Diagnostics& diagnostics,
-    const std::string& source
-)
-{
-    if (project.rootId.empty())
-    {
-        diagnostics.error(
-            DiagnosticCode::CompErrorUnclassified,
-            "Compiled project root id is empty",
-            source,
-            "rootId"
-        );
-    }
-    else if (project.resources.findObject(project.rootId) == nullptr)
-    {
-        diagnostics.error(
-            DiagnosticCode::CompErrorUnclassified,
-            "Compiled project root resource is missing",
-            source,
-            "rootId"
-        );
-    }
-
-    for (const auto& objectPair : project.resources.allObjects())
-    {
-        const ResourceId& objectId =
-            objectPair.first;
-        const ObjectDefinition& object =
-            objectPair.second;
-
-        if (!object.children.empty())
-        {
-            diagnostics.error(
-                DiagnosticCode::CompErrorUnclassified,
-                "Compiled object still contains embedded children",
-                source,
-                objectId
-            );
-        }
-
-        for (const auto& childPair : object.childResources)
-        {
-            if (project.resources.findObject(childPair.second) == nullptr)
-            {
-                diagnostics.error(
-                    DiagnosticCode::CompErrorUnclassified,
-                    "Compiled child resource points to a missing object",
-                    source,
-                    objectId + ".childResources." + childPair.first
-                );
-            }
-        }
-
-        for (const std::string& scriptId : object.resolvedScriptPaths)
-        {
-            if (project.resources.findScript(scriptId) == nullptr)
-            {
-                diagnostics.error(
-                    DiagnosticCode::CompErrorUnclassified,
-                    "Compiled object script points to a missing script",
-                    source,
-                    objectId + ".resolvedScriptPaths"
-                );
-            }
-        }
-    }
 }
 

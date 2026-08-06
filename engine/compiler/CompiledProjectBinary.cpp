@@ -142,6 +142,40 @@ bool CompiledProjectWriter::write(
         return false;
     }
 
+    std::error_code temporarySizeError;
+    const uintmax_t temporarySize =
+        std::filesystem::file_size(
+            temporaryPath,
+            temporarySizeError
+        );
+
+    if (temporarySizeError)
+    {
+        diagnostics.error(
+            DiagnosticCode::CompiledProjectWriteFailed,
+            "Temporary compiled project file size could not be inspected: " +
+            temporarySizeError.message(),
+            temporaryPath.generic_string(),
+            "file"
+        );
+
+        removeFileIfExists(temporaryPath);
+        return false;
+    }
+
+    if (temporarySize > flx::binary::MaxBinaryFileSize)
+    {
+        diagnostics.error(
+            DiagnosticCode::CompiledProjectLimitExceeded,
+            "Compiled project file exceeds the maximum binary size",
+            temporaryPath.generic_string(),
+            "file"
+        );
+
+        removeFileIfExists(temporaryPath);
+        return false;
+    }
+
     bool hadExistingOutput =
         false;
 

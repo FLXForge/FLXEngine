@@ -564,6 +564,41 @@ namespace
         require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "physical size limit should use limit diagnostic");
     }
 
+    void testWriterPhysicalFileSizeLimitKeepsExistingOutput()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        project.context.name =
+            std::string(flx::binary::MaxStringSize, 'a');
+
+        project.context.version =
+            std::string(flx::binary::MaxStringSize, 'b');
+
+        const std::filesystem::path output =
+            testRoot() / "writer_physical_size_limit" / "game.flxc";
+
+        writeBinary(
+            output,
+            { 'o', 'l', 'd' }
+        );
+
+        Diagnostics diagnostics;
+
+        require(
+            !CompiledProjectWriter::write(
+                output.generic_string(),
+                project,
+                diagnostics
+            ),
+            "writer should reject temporary file above physical size limit"
+        );
+
+        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "writer physical size limit should use limit diagnostic");
+        require(readBinaryFile(output) == std::vector<unsigned char>({ 'o', 'l', 'd' }), "physical size failure should keep existing output intact");
+        require(!std::filesystem::exists(output.string() + ".tmp"), "physical size failure should remove temporary file");
+    }
+
     void testInvalidBool()
     {
         const std::filesystem::path path =
@@ -1189,6 +1224,8 @@ int main()
         { "total element budget exceeded", testTotalElementBudgetExceeded },
 
         { "physical file size limit exceeded", testPhysicalFileSizeLimitExceeded },
+
+        { "writer physical file size limit keeps existing output", testWriterPhysicalFileSizeLimitKeepsExistingOutput },
 
         { "invalid bool", testInvalidBool },
 

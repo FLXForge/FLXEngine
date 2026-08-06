@@ -120,7 +120,7 @@ namespace flx::binary
         {
             throw BinaryException(
                 DiagnosticCode::CompiledProjectLimitExceeded,
-                "Compiled project decoded element budget exceeded",
+                "Compiled project element budget exceeded",
                 field
             );
         }
@@ -139,7 +139,7 @@ namespace flx::binary
         {
             throw BinaryException(
                 DiagnosticCode::CompiledProjectLimitExceeded,
-                "Compiled project decoded string budget exceeded",
+                "Compiled project string budget exceeded",
                 field
             );
         }

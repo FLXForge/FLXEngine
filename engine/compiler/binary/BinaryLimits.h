@@ -14,7 +14,7 @@ namespace flx::binary
         50000u;
 
     constexpr uint32_t MaxTotalDecodedStringBytes =
-        16u * 1024u * 1024u;
+        96u * 1024u * 1024u;
 
     constexpr uint32_t MaxResourceCount =
         100000u;

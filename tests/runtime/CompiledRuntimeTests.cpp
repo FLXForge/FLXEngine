@@ -49,10 +49,13 @@ namespace
         RuntimeWorld world;
         ScriptEngine scriptEngine;
 
-        world.load(
+        RuntimeLoadResult loadResult =
+            world.load(
             result.project,
             scriptEngine
         );
+
+        require(loadResult.success, "runtime should load compiled project");
 
         RuntimeObject* runtimeRoot =
             world.findByName("root");
@@ -123,10 +126,13 @@ namespace
         RuntimeWorld world;
         ScriptEngine scriptEngine;
 
-        world.load(
+        RuntimeLoadResult loadResult =
+            world.load(
             loaded.project,
             scriptEngine
         );
+
+        require(loadResult.success, "runtime should load compiled script project");
 
         RuntimeObject* runtimeRoot =
             world.findByName("root");

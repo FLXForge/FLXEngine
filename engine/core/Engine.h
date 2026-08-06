@@ -3,6 +3,7 @@
 #include "../compiler/CompiledProject.h"
 #include "../runtime/RuntimeWorld.h"
 #include "../scripting/ScriptEngine.h"
+#include "../core/EngineResult.h"
 #include "../core/RunOptions.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
@@ -18,19 +19,18 @@ public:
 
     Engine();
 
-    void run(const CompiledProject& project, int maxFrames = -1);
-    void run(const CompiledProject& project, const RunOptions& options);
-    RuntimeObject* find(const std::string& name);
+    EngineResult run(const CompiledProject& project, const RunOptions& options);
 private:
 
-    void init(const CompiledProject& project, const RunOptions& options);
+    bool init(const CompiledProject& project, const RunOptions& options, EngineResult& result);
     void update();
     void draw();
     void shutdown();
 
-    void loadProject(const CompiledProject& project, const RunOptions& options);
-    void initWindow();
-    void initVideoOutput();
+    bool loadProject(const CompiledProject& project, const RunOptions& options, EngineResult& result);
+    bool validateVideoOutput(EngineResult& result) const;
+    bool initWindow(EngineResult& result);
+    bool initVideoOutput(EngineResult& result);
     void configureScriptEngine();
     void shutdownVideoOutput();
     float safeFrameDelta() const;
@@ -44,5 +44,8 @@ private:
     RunOptions runOptions;
     RenderTexture2D renderTarget = {};
     bool renderTargetLoaded = false;
+    bool windowInitialized = false;
+    bool audioInitialized = false;
+    bool hasRun = false;
     Color backgroundColor = BLACK;
 };

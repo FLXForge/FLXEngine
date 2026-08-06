@@ -1185,12 +1185,13 @@ namespace
 
         RuntimeWorld world;
         ScriptEngine scriptEngine;
-        world.load(
+        RuntimeLoadResult loadResult =
+            world.load(
             project,
             scriptEngine
         );
 
-        require(hasDiagnosticCode(world.loadDiagnostics(), DiagnosticCode::CompiledProjectIdentityMismatch), "runtime should use identity mismatch diagnostic");
+        require(hasDiagnosticCode(loadResult.diagnostics, DiagnosticCode::CompiledProjectIdentityMismatch), "runtime should use identity mismatch diagnostic");
     }
 
 }

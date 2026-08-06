@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 66, "registry should include generic codes and implemented project/resource/binary codes");
+        require(codes.size() == 71, "registry should include generic codes and implemented project/resource/binary/runtime codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -101,6 +101,14 @@ namespace
         require(
             diagnosticCodeText(DiagnosticCode::InvalidCompiledProjectValue) == std::string("FLX-BINARY-00020"),
             "invalid compiled project value should use concrete binary code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::EngineAlreadyRun) == std::string("FLX-RUNTIME-00010"),
+            "engine already run should use concrete runtime code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::RuntimeWorldLoadFailed) == std::string("FLX-RUNTIME-00014"),
+            "runtime world load failure should use concrete runtime code"
         );
     }
 

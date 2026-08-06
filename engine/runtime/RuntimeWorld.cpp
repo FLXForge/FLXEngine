@@ -263,25 +263,26 @@ RuntimeWorld::RuntimeWorld()
     nextRuntimeId = 1;
 }
 
-void RuntimeWorld::load(
+RuntimeLoadResult RuntimeWorld::load(
     const CompiledProject& project,
     ScriptEngine& scriptEngine
 )
 {
+    RuntimeLoadResult result;
+
     objects.clear();
     pendingObjects.clear();
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
-    lastLoadDiagnostics = Diagnostics();
 
     if (!CompiledProjectValidator::validate(
         project,
-        lastLoadDiagnostics,
+        result.diagnostics,
         "runtime"
     ))
     {
-        for (const Diagnostic& diagnostic : lastLoadDiagnostics.all())
+        for (const Diagnostic& diagnostic : result.diagnostics.all())
         {
             Logger::error(
                 "runtime",
@@ -289,7 +290,7 @@ void RuntimeWorld::load(
             );
         }
 
-        return;
+        return result;
     }
 
     const ObjectDefinition* rootDefinition =
@@ -299,12 +300,19 @@ void RuntimeWorld::load(
 
     if (rootDefinition == nullptr)
     {
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Compiled root resource not found",
+            "runtime",
+            project.rootId
+        );
+
         Logger::error(
             "runtime",
             "Compiled root resource not found: " + project.rootId
         );
 
-        return;
+        return result;
     }
 
     RuntimeObject root =
@@ -327,11 +335,11 @@ void RuntimeWorld::load(
         loadScriptsForObject(object, scriptEngine);
         bornObject(object, scriptEngine);
     }
-}
 
-const Diagnostics& RuntimeWorld::loadDiagnostics() const
-{
-    return lastLoadDiagnostics;
+    result.success =
+        !result.diagnostics.hasErrors();
+
+    return result;
 }
 
 void RuntimeWorld::update(

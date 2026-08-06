@@ -166,6 +166,7 @@ add_executable(flx
 
     engine/core/Engine.h
     engine/core/Engine.cpp
+    engine/core/EngineResult.h
     engine/core/RunOptions.h
     engine/compiler/CompiledProject.h
     engine/compiler/CompiledProjectBinary.h
@@ -352,6 +353,7 @@ add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTest
 add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGraphTests.cpp)
 add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)
 add_flx_test_suite(flx-runtime-compiled-tests tests/runtime/CompiledRuntimeTests.cpp)
+add_flx_test_suite(flx-engine-host-tests tests/runtime/EngineHostTests.cpp)
 add_flx_test_suite(flx-example-smoke-tests tests/examples/ExampleSmokeTests.cpp)
 
 add_test(

@@ -93,6 +93,11 @@ enum class DiagnosticCode
     RuntimeErrorUnclassified,
     RuntimeUnexpectedInternalError,
     RuntimeDeprecatedFunctionality,
+    EngineAlreadyRun,
+    InvalidVideoOutputConfiguration,
+    WindowInitializationFailed,
+    RenderTargetInitializationFailed,
+    RuntimeWorldLoadFailed,
 
     BuildInformationUnclassified,
     BuildWarningUnclassified,

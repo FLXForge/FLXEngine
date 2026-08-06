@@ -75,6 +75,11 @@ namespace
             { DiagnosticCode::RuntimeErrorUnclassified, "FLX-RUNTIME-00002", "RuntimeErrorUnclassified", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Unclassified runtime error." },
             { DiagnosticCode::RuntimeUnexpectedInternalError, "FLX-RUNTIME-00003", "RuntimeUnexpectedInternalError", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Unexpected internal runtime error." },
             { DiagnosticCode::RuntimeDeprecatedFunctionality, "FLX-RUNTIME-00004", "RuntimeDeprecatedFunctionality", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Deprecated runtime functionality." },
+            { DiagnosticCode::EngineAlreadyRun, "FLX-RUNTIME-00010", "EngineAlreadyRun", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Engine instance was asked to run more than once." },
+            { DiagnosticCode::InvalidVideoOutputConfiguration, "FLX-RUNTIME-00011", "InvalidVideoOutputConfiguration", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Video output configuration is invalid." },
+            { DiagnosticCode::WindowInitializationFailed, "FLX-RUNTIME-00012", "WindowInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Window could not be initialized." },
+            { DiagnosticCode::RenderTargetInitializationFailed, "FLX-RUNTIME-00013", "RenderTargetInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Render target could not be initialized." },
+            { DiagnosticCode::RuntimeWorldLoadFailed, "FLX-RUNTIME-00014", "RuntimeWorldLoadFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime world could not be loaded." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

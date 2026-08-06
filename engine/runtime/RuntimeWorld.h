@@ -11,12 +11,18 @@
 
 class ScriptEngine;
 
+struct RuntimeLoadResult
+{
+    bool success = false;
+    Diagnostics diagnostics;
+};
+
 class RuntimeWorld
 {
 public:
     RuntimeWorld();
 
-    void load(
+    RuntimeLoadResult load(
         const CompiledProject& project,
         ScriptEngine& scriptEngine
     );
@@ -45,7 +51,6 @@ public:
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
     void keepOnly(const std::string& runtimeId);
-    const Diagnostics& loadDiagnostics() const;
     RayCastResult rayCast(
         const RuntimeObject& source,
         float angle,
@@ -135,7 +140,6 @@ private:
     int nextRuntimeId;
     uint64_t frameIndex = 0;
     const ResourceRegistry* resources = nullptr;
-    Diagnostics lastLoadDiagnostics;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
 };

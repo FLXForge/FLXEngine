@@ -97,7 +97,23 @@ int RunCompiledCommand::execute(const CliArguments& arguments) const
     }
 
     Engine engine;
-    engine.run(result.project, arguments.runOptions);
+    EngineResult engineResult =
+        engine.run(result.project, arguments.runOptions);
+
+    DiagnosticPrinter::printDiagnostics(
+        engineResult.diagnostics,
+        arguments.format,
+        "run-compiled",
+        engineResult.success ? CliExitCode::Success : CliExitCode::RuntimeInitializationError,
+        engineResult.success,
+        std::cout,
+        std::cerr
+    );
+
+    if (!engineResult.success)
+    {
+        return static_cast<int>(CliExitCode::RuntimeInitializationError);
+    }
 
     return static_cast<int>(CliExitCode::Success);
 }

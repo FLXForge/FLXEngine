@@ -6,6 +6,7 @@
 #include <raylib.h>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 Engine::Engine()
     : world(std::make_unique<RuntimeWorld>())
@@ -16,6 +17,9 @@ namespace
 {
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
+
+    constexpr int HostTargetFps =
+        60;
 
     int effectiveOutputScale(
         const FlxContext& context,
@@ -97,28 +101,36 @@ namespace
     }
 }
 
-void Engine::run(const CompiledProject& project, int maxFrames)
-{
-    RunOptions options;
-
-    if (maxFrames >= 0)
-    {
-        options.maxFrames = maxFrames;
-    }
-
-    run(project, options);
-}
-
-void Engine::run(
+EngineResult Engine::run(
     const CompiledProject& project,
     const RunOptions& options
 )
 {
+    EngineResult result;
+
+    if (hasRun)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::EngineAlreadyRun,
+            "Engine instance can only run one project",
+            "engine"
+        );
+
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return result;
+    }
+
+    hasRun = true;
     SetTraceLogCallback(Logger::rayLibLog);
 
-    init(project, options);
+    if (!init(project, options, result))
+    {
+        shutdown();
+        return result;
+    }
 
-    int frameCount = 0;
     const int maxFrames =
         options.maxFrames.value_or(-1);
 
@@ -133,25 +145,61 @@ void Engine::run(
 
         draw();
 
-        ++frameCount;
+        ++result.framesExecuted;
 
-        if (maxFrames >= 0 && frameCount >= maxFrames)
+        if (maxFrames >= 0 && result.framesExecuted >= maxFrames)
         {
+            result.exitReason =
+                EngineExitReason::FrameLimitReached;
+
             break;
         }
     }
 
+    if (scriptEngine.exitRequested())
+    {
+        result.exitReason =
+            EngineExitReason::ScriptRequestedExit;
+    }
+    else if (result.exitReason != EngineExitReason::FrameLimitReached)
+    {
+        result.exitReason =
+            EngineExitReason::WindowClosed;
+    }
+
+    result.success =
+        !result.diagnostics.hasErrors();
+
     shutdown();
+
+    return result;
 }
 
-void Engine::init(const CompiledProject& project, const RunOptions& options)
+bool Engine::init(
+    const CompiledProject& project,
+    const RunOptions& options,
+    EngineResult& result
+)
 {
-    loadProject(project, options);
+    if (!loadProject(
+        project,
+        options,
+        result
+    ))
+    {
+        return false;
+    }
 
-    SetTargetFPS(60);
+    SetTargetFPS(HostTargetFps);
+
+    return true;
 }
 
-void Engine::loadProject(const CompiledProject& project, const RunOptions& options)
+bool Engine::loadProject(
+    const CompiledProject& project,
+    const RunOptions& options,
+    EngineResult& result
+)
 {
     context =
         project.context;
@@ -172,10 +220,33 @@ void Engine::loadProject(const CompiledProject& project, const RunOptions& optio
         "Loaded project: " + context.name
     );
 
-    initWindow();
-    initVideoOutput();
+    if (!validateVideoOutput(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return false;
+    }
+
+    if (!initWindow(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return false;
+    }
+
+    if (!initVideoOutput(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return false;
+    }
+
     audioSystem.configure(context.machine.audio);
     audioSystem.init();
+    audioInitialized = true;
     inputSystem.configure(context.machine.input);
 
     if (!context.inputMappingContent.empty())
@@ -188,10 +259,101 @@ void Engine::loadProject(const CompiledProject& project, const RunOptions& optio
 
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
-    world->load(project, scriptEngine);
+
+    RuntimeLoadResult loadResult =
+        world->load(project, scriptEngine);
+
+    result.diagnostics.append(loadResult.diagnostics);
+
+    if (!loadResult.success)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Runtime world could not be loaded",
+            "engine",
+            "runtime"
+        );
+
+        result.exitReason =
+            EngineExitReason::RuntimeLoadFailed;
+
+        return false;
+    }
+
+    return true;
 }
 
-void Engine::initWindow()
+bool Engine::validateVideoOutput(EngineResult& result) const
+{
+    const int screenWidth =
+        context.machine.video.screenWidth;
+
+    const int screenHeight =
+        context.machine.video.screenHeight;
+
+    const int screenScale =
+        effectiveOutputScale(context, runOptions);
+
+    if (screenWidth <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video screen width must be greater than zero",
+            "engine",
+            "video.screen.width"
+        );
+    }
+
+    if (screenHeight <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video screen height must be greater than zero",
+            "engine",
+            "video.screen.height"
+        );
+    }
+
+    if (screenScale <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video output scale must be greater than zero",
+            "engine",
+            "video.output.scale"
+        );
+    }
+
+    if (!result.diagnostics.hasErrors())
+    {
+        const int maxInt =
+            std::numeric_limits<int>::max();
+
+        if (screenWidth > maxInt / screenScale)
+        {
+            result.diagnostics.error(
+                DiagnosticCode::InvalidVideoOutputConfiguration,
+                "Window width overflows integer range",
+                "engine",
+                "video.screen.width"
+            );
+        }
+
+        if (screenHeight > maxInt / screenScale)
+        {
+            result.diagnostics.error(
+                DiagnosticCode::InvalidVideoOutputConfiguration,
+                "Window height overflows integer range",
+                "engine",
+                "video.screen.height"
+            );
+        }
+    }
+
+    return !result.diagnostics.hasErrors();
+}
+
+bool Engine::initWindow(EngineResult& result)
 {
     const std::string title =
         context.title.empty()
@@ -245,9 +407,25 @@ void Engine::initWindow()
         windowHeight,
         title.c_str()
     );
+
+    if (!IsWindowReady())
+    {
+        result.diagnostics.error(
+            DiagnosticCode::WindowInitializationFailed,
+            "Window could not be initialized",
+            "engine",
+            "window"
+        );
+
+        return false;
+    }
+
+    windowInitialized = true;
+
+    return true;
 }
 
-void Engine::initVideoOutput()
+bool Engine::initVideoOutput(EngineResult& result)
 {
     backgroundColor =
         ColorParser::parse(
@@ -277,6 +455,18 @@ void Engine::initVideoOutput()
             context.machine.video.screenHeight
         );
 
+    if (renderTarget.id == 0 || renderTarget.texture.id == 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::RenderTargetInitializationFailed,
+            "Render target could not be initialized",
+            "engine",
+            "renderTarget"
+        );
+
+        return false;
+    }
+
     renderTargetLoaded = true;
 
     SetTextureFilter(
@@ -285,6 +475,8 @@ void Engine::initVideoOutput()
         ? TEXTURE_FILTER_BILINEAR
         : TEXTURE_FILTER_POINT
     );
+
+    return true;
 }
 
 void Engine::configureScriptEngine()
@@ -416,8 +608,22 @@ void Engine::draw()
 void Engine::shutdown()
 {
     shutdownVideoOutput();
-    audioSystem.shutdown();
-    CloseWindow();
+
+    if (audioInitialized)
+    {
+        audioSystem.shutdown();
+        audioInitialized = false;
+    }
+
+    if (windowInitialized)
+    {
+        CloseWindow();
+        windowInitialized = false;
+    }
+
+    Logger::setDebugEnabled(false);
+    Logger::setConsoleEnabled(false);
+    SetTraceLogLevel(LOG_INFO);
 }
 
 void Engine::shutdownVideoOutput()
@@ -429,11 +635,6 @@ void Engine::shutdownVideoOutput()
 
     UnloadRenderTexture(renderTarget);
     renderTargetLoaded = false;
-}
-
-RuntimeObject* Engine::find(const std::string& name)
-{
-    return world->findByName(name);
 }
 
 float Engine::safeFrameDelta() const

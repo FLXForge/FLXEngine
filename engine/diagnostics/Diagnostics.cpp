@@ -30,6 +30,11 @@ namespace
             { DiagnosticCode::CompErrorUnclassified, "FLX-COMP-00002", "CompErrorUnclassified", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Unclassified compiler error." },
             { DiagnosticCode::CompUnexpectedInternalError, "FLX-COMP-00003", "CompUnexpectedInternalError", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Unexpected internal compiler error." },
             { DiagnosticCode::CompDeprecatedFunctionality, "FLX-COMP-00004", "CompDeprecatedFunctionality", DiagnosticSeverity::Warning, DiagnosticDomain::COMP, "Deprecated compiler functionality." },
+            { DiagnosticCode::CompiledProjectMissingRoot, "FLX-COMP-00010", "CompiledProjectMissingRoot", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project root id or root resource is missing." },
+            { DiagnosticCode::CompiledProjectEmbeddedChildren, "FLX-COMP-00011", "CompiledProjectEmbeddedChildren", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project object still contains embedded children." },
+            { DiagnosticCode::CompiledProjectMissingChildResource, "FLX-COMP-00012", "CompiledProjectMissingChildResource", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project child resource points to a missing object." },
+            { DiagnosticCode::CompiledProjectMissingScriptResource, "FLX-COMP-00013", "CompiledProjectMissingScriptResource", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project script reference points to a missing script." },
+            { DiagnosticCode::CompiledProjectIdentityMismatch, "FLX-COMP-00014", "CompiledProjectIdentityMismatch", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project registry key does not match the stored resource id." },
 
             { DiagnosticCode::ResourceInformationUnclassified, "FLX-RESOURCE-00000", "ResourceInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::RESOURCE, "Unclassified informational resource diagnostic." },
             { DiagnosticCode::ResourceWarningUnclassified, "FLX-RESOURCE-00001", "ResourceWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Unclassified resource warning." },
@@ -62,6 +67,8 @@ namespace
             { DiagnosticCode::CompiledProjectLimitExceeded, "FLX-BINARY-00016", "CompiledProjectLimitExceeded", DiagnosticSeverity::Error, DiagnosticDomain::BINARY, "Compiled project file exceeds a binary format limit." },
             { DiagnosticCode::DuplicateCompiledResource, "FLX-BINARY-00017", "DuplicateCompiledResource", DiagnosticSeverity::Error, DiagnosticDomain::BINARY, "Compiled project contains a duplicate resource." },
             { DiagnosticCode::TrailingCompiledProjectData, "FLX-BINARY-00018", "TrailingCompiledProjectData", DiagnosticSeverity::Error, DiagnosticDomain::BINARY, "Compiled project contains trailing data." },
+            { DiagnosticCode::DuplicateCompiledEntry, "FLX-BINARY-00019", "DuplicateCompiledEntry", DiagnosticSeverity::Error, DiagnosticDomain::BINARY, "Compiled project contains a duplicate entry inside a resource." },
+            { DiagnosticCode::InvalidCompiledProjectValue, "FLX-BINARY-00020", "InvalidCompiledProjectValue", DiagnosticSeverity::Error, DiagnosticDomain::BINARY, "Compiled project contains an invalid binary value." },
 
             { DiagnosticCode::RuntimeInformationUnclassified, "FLX-RUNTIME-00000", "RuntimeInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::RUNTIME, "Unclassified informational runtime diagnostic." },
             { DiagnosticCode::RuntimeWarningUnclassified, "FLX-RUNTIME-00001", "RuntimeWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Unclassified runtime warning." },

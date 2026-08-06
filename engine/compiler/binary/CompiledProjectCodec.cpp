@@ -591,8 +591,19 @@ namespace flx::binary
                 const std::string key =
                     reader.readString("object.music.id");
 
-                object.music[key] =
-                    readMusic(reader);
+                auto inserted =
+                    object.music.insert(
+                        { key, readMusic(reader) }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate music entry in compiled object",
+                        "object.music." + key
+                    );
+                }
             }
 
             const uint32_t soundCount =
@@ -606,8 +617,19 @@ namespace flx::binary
                 const std::string key =
                     reader.readString("object.sounds.id");
 
-                object.sounds[key] =
-                    readSound(reader);
+                auto inserted =
+                    object.sounds.insert(
+                        { key, readSound(reader) }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate sound entry in compiled object",
+                        "object.sounds." + key
+                    );
+                }
             }
 
             const uint32_t childResourceCount =
@@ -621,8 +643,22 @@ namespace flx::binary
                 const std::string key =
                     reader.readString("object.childResources.id");
 
-                object.childResources[key] =
+                const std::string resourceId =
                     reader.readString("object.childResources.resourceId");
+
+                auto inserted =
+                    object.childResources.insert(
+                        { key, resourceId }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate child resource entry in compiled object",
+                        "object.childResources." + key
+                    );
+                }
             }
 
             object.initialState = reader.readString("object.states.initial");
@@ -638,8 +674,19 @@ namespace flx::binary
                 const std::string key =
                     reader.readString("object.states.id");
 
-                object.stateTransitions[key] =
-                    readStringVector(reader);
+                auto inserted =
+                    object.stateTransitions.insert(
+                        { key, readStringVector(reader) }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate state transition entry in compiled object",
+                        "object.states." + key
+                    );
+                }
             }
 
             object.creationMode = reader.readString("object.creation.mode");
@@ -715,6 +762,7 @@ namespace flx::binary
 
         for (const std::string& key : objectKeys)
         {
+            writer.accountResource("resources.objects");
             writer.writeString(key);
             writeObject(writer, project.resources.allObjects().at(key));
         }
@@ -730,6 +778,7 @@ namespace flx::binary
 
         for (const std::string& key : scriptKeys)
         {
+            writer.accountResource("resources.scripts");
             const ScriptResource& script =
                 project.resources.allScripts().at(key);
 
@@ -782,8 +831,18 @@ namespace flx::binary
 
         for (uint32_t i = 0; i < objectCount; ++i)
         {
+            reader.accountResource("resources.objects");
             const ResourceId id =
                 reader.readString("resources.objects.id");
+
+            if (decoded.project.resources.hasObject(id))
+            {
+                throw BinaryException(
+                    DiagnosticCode::DuplicateCompiledResource,
+                    "Duplicate object resource in compiled project",
+                    id
+                );
+            }
 
             if (!decoded.project.resources.addObject(
                 id,
@@ -806,8 +865,18 @@ namespace flx::binary
 
         for (uint32_t i = 0; i < scriptCount; ++i)
         {
+            reader.accountResource("resources.scripts");
             const ResourceId key =
                 reader.readString("resources.scripts.id");
+
+            if (decoded.project.resources.hasScript(key))
+            {
+                throw BinaryException(
+                    DiagnosticCode::DuplicateCompiledResource,
+                    "Duplicate script resource in compiled project",
+                    key
+                );
+            }
 
             ScriptResource script;
             script.id = reader.readString("resources.scripts.resourceId");

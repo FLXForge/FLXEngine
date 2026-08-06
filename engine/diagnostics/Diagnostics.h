@@ -48,6 +48,11 @@ enum class DiagnosticCode
     CompErrorUnclassified,
     CompUnexpectedInternalError,
     CompDeprecatedFunctionality,
+    CompiledProjectMissingRoot,
+    CompiledProjectEmbeddedChildren,
+    CompiledProjectMissingChildResource,
+    CompiledProjectMissingScriptResource,
+    CompiledProjectIdentityMismatch,
 
     ResourceInformationUnclassified,
     ResourceWarningUnclassified,
@@ -80,6 +85,8 @@ enum class DiagnosticCode
     CompiledProjectLimitExceeded,
     DuplicateCompiledResource,
     TrailingCompiledProjectData,
+    DuplicateCompiledEntry,
+    InvalidCompiledProjectValue,
 
     RuntimeInformationUnclassified,
     RuntimeWarningUnclassified,

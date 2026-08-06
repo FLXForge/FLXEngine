@@ -109,7 +109,6 @@ CompilationResult ProjectCompiler::compile(
         CompiledProjectValidator::validate(
             result.project,
             result.diagnostics,
-            DiagnosticCode::CompErrorUnclassified,
             projectPath
         );
     }

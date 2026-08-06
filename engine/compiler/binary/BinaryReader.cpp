@@ -69,7 +69,7 @@ namespace flx::binary
         }
 
         throw BinaryException(
-            DiagnosticCode::BinaryErrorUnclassified,
+            DiagnosticCode::InvalidCompiledProjectValue,
             "Invalid compiled project boolean value",
             field
         );
@@ -78,10 +78,21 @@ namespace flx::binary
     std::string BinaryReader::readString(const std::string& field)
     {
         const uint32_t size =
-            readCount(
-                MaxStringSize,
+            readU32(field);
+
+        if (size > MaxStringSize)
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project string limit exceeded",
                 field
             );
+        }
+
+        accountStringBytes(
+            size,
+            field
+        );
 
         std::string value(size, '\0');
 
@@ -114,7 +125,20 @@ namespace flx::binary
             );
         }
 
+        accountElements(
+            value,
+            field
+        );
+
         return value;
+    }
+
+    void BinaryReader::accountResource(const std::string& field)
+    {
+        accountElements(
+            1,
+            field
+        );
     }
 
     bool BinaryReader::hasTrailingData()
@@ -127,6 +151,44 @@ namespace flx::binary
         }
 
         return true;
+    }
+
+    void BinaryReader::accountElements(
+        uint32_t count,
+        const std::string& field
+    )
+    {
+        if (count > MaxTotalDecodedElements ||
+            totalElements > MaxTotalDecodedElements - count)
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project decoded element budget exceeded",
+                field
+            );
+        }
+
+        totalElements +=
+            count;
+    }
+
+    void BinaryReader::accountStringBytes(
+        uint32_t count,
+        const std::string& field
+    )
+    {
+        if (count > MaxTotalDecodedStringBytes ||
+            totalStringBytes > MaxTotalDecodedStringBytes - count)
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project decoded string budget exceeded",
+                field
+            );
+        }
+
+        totalStringBytes +=
+            count;
     }
 
     void BinaryReader::readBytes(

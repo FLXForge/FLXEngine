@@ -24,9 +24,18 @@ namespace flx::binary
             uint32_t limit,
             const std::string& field
         );
+        void accountResource(const std::string& field);
         bool hasTrailingData();
 
     private:
+        void accountElements(
+            uint32_t count,
+            const std::string& field
+        );
+        void accountStringBytes(
+            uint32_t count,
+            const std::string& field
+        );
         void readBytes(
             void* data,
             size_t size,
@@ -34,5 +43,7 @@ namespace flx::binary
         );
 
         std::istream& input;
+        uint32_t totalElements = 0;
+        uint32_t totalStringBytes = 0;
     };
 }

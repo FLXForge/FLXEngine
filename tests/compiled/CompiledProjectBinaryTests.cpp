@@ -1,6 +1,8 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProjectBinary.h"
 #include "../../engine/compiler/binary/BinaryLimits.h"
+#include "../../engine/runtime/RuntimeWorld.h"
+#include "../../engine/scripting/ScriptEngine.h"
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
@@ -57,6 +59,47 @@ namespace
             to.end(),
             it
         );
+    }
+
+    void replaceNthAscii(
+        std::vector<unsigned char>& bytes,
+        const std::string& from,
+        const std::string& to,
+        int occurrence
+    )
+    {
+        require(from.size() == to.size(), "replacement must keep binary size");
+        require(occurrence > 0, "occurrence must be positive");
+
+        auto searchFrom =
+            bytes.begin();
+
+        for (int i = 1; i <= occurrence; ++i)
+        {
+            auto it =
+                std::search(
+                    searchFrom,
+                    bytes.end(),
+                    from.begin(),
+                    from.end()
+                );
+
+            require(it != bytes.end(), "binary text occurrence should exist");
+
+            if (i == occurrence)
+            {
+                std::copy(
+                    to.begin(),
+                    to.end(),
+                    it
+                );
+
+                return;
+            }
+
+            searchFrom =
+                it + static_cast<std::ptrdiff_t>(from.size());
+        }
     }
 
     void replaceAllAscii(
@@ -179,6 +222,63 @@ namespace
                 return diagnostic.code == code;
             }
         );
+    }
+
+    CompiledProject makeSingleObjectProject()
+    {
+        CompiledProject project;
+        project.rootId = "root";
+
+        ObjectDefinition root;
+        root.id = "root";
+
+        require(
+            project.resources.addObject(
+                project.rootId,
+                root
+            ),
+            "root should register"
+        );
+
+        return project;
+    }
+
+    std::vector<unsigned char> writeProjectBytes(
+        const std::string& name,
+        const CompiledProject& project
+    )
+    {
+        const std::filesystem::path output =
+            testRoot() / name / "game.flxc";
+
+        Diagnostics diagnostics;
+
+        require(
+            CompiledProjectWriter::write(
+                output.generic_string(),
+                project,
+                diagnostics
+            ),
+            "compiled project should write for byte mutation"
+        );
+
+        return readBinaryFile(output);
+    }
+
+    CompiledProjectBinaryResult readMutatedBytes(
+        const std::string& name,
+        const std::vector<unsigned char>& bytes
+    )
+    {
+        const std::filesystem::path path =
+            testRoot() / name / "broken.flxc";
+
+        writeBinary(
+            path,
+            bytes
+        );
+
+        return CompiledProjectReader::read(path.generic_string());
     }
 
     void testCompiledProjectRoundTripMinimal()
@@ -387,6 +487,25 @@ namespace
         require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "string limit should use limit diagnostic");
     }
 
+    void testTotalStringBudgetExceeded()
+    {
+        const std::filesystem::path path =
+            testRoot() / "invalid" / "total_string_budget.flxc";
+
+        std::vector<unsigned char> bytes;
+        appendU32(bytes, 0x43584C46u);
+        appendU32(bytes, 3u);
+        appendU32(bytes, flx::binary::MaxTotalDecodedStringBytes + 1u);
+
+        writeBinary(path, bytes);
+
+        CompiledProjectBinaryResult result =
+            CompiledProjectReader::read(path.generic_string());
+
+        require(!result.success, "total string budget should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "total string budget should use limit diagnostic");
+    }
+
     void testCollectionLimitExceeded()
     {
         const std::filesystem::path path =
@@ -406,6 +525,45 @@ namespace
         require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "collection limit should use limit diagnostic");
     }
 
+    void testTotalElementBudgetExceeded()
+    {
+        const std::filesystem::path path =
+            testRoot() / "invalid" / "total_element_budget.flxc";
+
+        std::vector<unsigned char> bytes;
+        appendMinimalHeaderAndContext(bytes);
+        appendU8(bytes, 0);
+        appendU32(bytes, flx::binary::MaxTotalDecodedElements + 1u);
+
+        writeBinary(path, bytes);
+
+        CompiledProjectBinaryResult result =
+            CompiledProjectReader::read(path.generic_string());
+
+        require(!result.success, "total element budget should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "total element budget should use limit diagnostic");
+    }
+
+    void testPhysicalFileSizeLimitExceeded()
+    {
+        const std::filesystem::path path =
+            testRoot() / "invalid" / "physical_size_limit.flxc";
+
+        std::filesystem::create_directories(path.parent_path());
+
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
+        require(file.is_open(), "large placeholder file should open");
+        file.seekp(static_cast<std::streamoff>(flx::binary::MaxBinaryFileSize));
+        file.put('\0');
+        file.close();
+
+        CompiledProjectBinaryResult result =
+            CompiledProjectReader::read(path.generic_string());
+
+        require(!result.success, "physical file size limit should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectLimitExceeded), "physical size limit should use limit diagnostic");
+    }
+
     void testInvalidBool()
     {
         const std::filesystem::path path =
@@ -422,6 +580,7 @@ namespace
 
         require(!result.success, "invalid bool should fail");
         require(result.diagnostics.hasErrors(), "invalid bool should report diagnostics");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::InvalidCompiledProjectValue), "invalid bool should use invalid value diagnostic");
     }
 
     void testTrailingBytes()
@@ -534,7 +693,7 @@ namespace
         );
 
         require(diagnostics.hasErrors(), "broken child resource should report diagnostics");
-        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompErrorUnclassified), "model invariant should use COMP diagnostic");
+        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompiledProjectMissingChildResource), "model invariant should use missing child diagnostic");
     }
 
     void testEmbeddedChildrenFailWrite()
@@ -560,7 +719,7 @@ namespace
         );
 
         require(diagnostics.hasErrors(), "embedded children should report diagnostics");
-        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompErrorUnclassified), "embedded children should use COMP diagnostic");
+        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompiledProjectEmbeddedChildren), "embedded children should use stable diagnostic");
     }
 
     void testMissingScriptFailsWrite()
@@ -586,7 +745,7 @@ namespace
         );
 
         require(diagnostics.hasErrors(), "missing script should report diagnostics");
-        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompErrorUnclassified), "missing script should use COMP diagnostic");
+        require(hasDiagnosticCode(diagnostics, DiagnosticCode::CompiledProjectMissingScriptResource), "missing script should use stable diagnostic");
     }
 
     void testNoPartialFileOnWriteFailure()
@@ -740,6 +899,265 @@ namespace
         require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledResource), "duplicate script should use stable code");
     }
 
+    void testDuplicateMusicEntry()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        ObjectDefinition root =
+            *project.resources.findObject("root");
+
+        MusicDefinition first;
+        MusicDefinition second;
+        first.tempo = 120.0f;
+        second.tempo = 90.0f;
+        root.music["aaaa"] = first;
+        root.music["bbbb"] = second;
+
+        project = CompiledProject();
+        project.rootId = "root";
+        require(project.resources.addObject("root", root), "root with music should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("duplicate_music_entry", project);
+
+        replaceFirstAscii(
+            bytes,
+            "bbbb",
+            "aaaa"
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("duplicate_music_entry", bytes);
+
+        require(!result.success, "duplicate music entry should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledEntry), "duplicate music should use entry diagnostic");
+    }
+
+    void testDuplicateSoundEntry()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        ObjectDefinition root =
+            *project.resources.findObject("root");
+
+        SoundDefinition first;
+        SoundDefinition second;
+        first.duration = 0.1f;
+        second.duration = 0.2f;
+        root.sounds["aaaa"] = first;
+        root.sounds["bbbb"] = second;
+
+        project = CompiledProject();
+        project.rootId = "root";
+        require(project.resources.addObject("root", root), "root with sounds should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("duplicate_sound_entry", project);
+
+        replaceFirstAscii(
+            bytes,
+            "bbbb",
+            "aaaa"
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("duplicate_sound_entry", bytes);
+
+        require(!result.success, "duplicate sound entry should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledEntry), "duplicate sound should use entry diagnostic");
+    }
+
+    void testDuplicateChildResourceEntry()
+    {
+        CompiledProject project;
+        project.rootId = "root";
+
+        ObjectDefinition root;
+        root.id = "root";
+        root.childResources["aaaa"] = "child_one";
+        root.childResources["bbbb"] = "child_two";
+
+        ObjectDefinition childOne;
+        childOne.id = "child_one";
+
+        ObjectDefinition childTwo;
+        childTwo.id = "child_two";
+
+        require(project.resources.addObject("root", root), "root should register");
+        require(project.resources.addObject("child_one", childOne), "first child should register");
+        require(project.resources.addObject("child_two", childTwo), "second child should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("duplicate_child_entry", project);
+
+        replaceFirstAscii(
+            bytes,
+            "bbbb",
+            "aaaa"
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("duplicate_child_entry", bytes);
+
+        require(!result.success, "duplicate child resource entry should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledEntry), "duplicate child resource should use entry diagnostic");
+    }
+
+    void testDuplicateStateEntry()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        ObjectDefinition root =
+            *project.resources.findObject("root");
+
+        root.initialState = "aaaa";
+        root.stateTransitions["aaaa"] = { "bbbb" };
+        root.stateTransitions["bbbb"] = { "aaaa" };
+
+        project = CompiledProject();
+        project.rootId = "root";
+        require(project.resources.addObject("root", root), "root with states should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("duplicate_state_entry", project);
+
+        replaceNthAscii(
+            bytes,
+            "bbbb",
+            "aaaa",
+            2
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("duplicate_state_entry", bytes);
+
+        require(!result.success, "duplicate state entry should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledEntry), "duplicate state should use entry diagnostic");
+    }
+
+    void testObjectKeyIdMismatch()
+    {
+        CompiledProject project;
+        project.rootId = "root#obj";
+
+        ObjectDefinition root;
+        root.id = "root#obj";
+
+        require(project.resources.addObject("root#obj", root), "compiled-id root should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("object_key_id_mismatch", project);
+
+        replaceNthAscii(
+            bytes,
+            "root#obj",
+            "xxxx#obj",
+            3
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("object_key_id_mismatch", bytes);
+
+        require(!result.success, "object key/id mismatch should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectIdentityMismatch), "object key/id mismatch should use stable diagnostic");
+    }
+
+    void testScriptKeyIdMismatch()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        ObjectDefinition root =
+            *project.resources.findObject("root");
+        root.resolvedScriptPaths.push_back("aaaa");
+
+        project = CompiledProject();
+        project.rootId = "root";
+        require(project.resources.addObject("root", root), "root with script should register");
+
+        ScriptResource script;
+        script.id = "aaaa";
+        script.sourceName = "script.js";
+        script.code = "function action(object) {}";
+        require(project.resources.addScript("aaaa", script), "script should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("script_key_id_mismatch", project);
+
+        replaceNthAscii(
+            bytes,
+            "aaaa",
+            "bbbb",
+            3
+        );
+
+        CompiledProjectBinaryResult result =
+            readMutatedBytes("script_key_id_mismatch", bytes);
+
+        require(!result.success, "script key/id mismatch should fail");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectIdentityMismatch), "script key/id mismatch should use stable diagnostic");
+    }
+
+    void testWriterReaderAndRuntimeUseSameInvariantDiagnostic()
+    {
+        CompiledProject project;
+        project.rootId = "root#obj";
+
+        ObjectDefinition root;
+        root.id = "xxxx#obj";
+
+        require(project.resources.addObject("root#obj", root), "mismatched root should register for invariant test");
+
+        Diagnostics writeDiagnostics;
+
+        require(
+            !CompiledProjectWriter::write(
+                (testRoot() / "shared_invariant" / "writer.flxc").generic_string(),
+                project,
+                writeDiagnostics
+            ),
+            "writer should reject identity mismatch"
+        );
+
+        require(hasDiagnosticCode(writeDiagnostics, DiagnosticCode::CompiledProjectIdentityMismatch), "writer should use identity mismatch diagnostic");
+
+        CompiledProject validProject;
+        validProject.rootId = "root#obj";
+
+        ObjectDefinition validRoot;
+        validRoot.id = "root#obj";
+
+        require(validProject.resources.addObject("root#obj", validRoot), "valid compiled-id root should register");
+
+        std::vector<unsigned char> bytes =
+            writeProjectBytes("shared_invariant", validProject);
+
+        replaceNthAscii(
+            bytes,
+            "root#obj",
+            "xxxx#obj",
+            3
+        );
+
+        CompiledProjectBinaryResult readResult =
+            readMutatedBytes("shared_invariant", bytes);
+
+        require(!readResult.success, "reader should reject identity mismatch");
+        require(hasDiagnosticCode(readResult.diagnostics, DiagnosticCode::CompiledProjectIdentityMismatch), "reader should use identity mismatch diagnostic");
+
+        RuntimeWorld world;
+        ScriptEngine scriptEngine;
+        world.load(
+            project,
+            scriptEngine
+        );
+
+        require(hasDiagnosticCode(world.loadDiagnostics(), DiagnosticCode::CompiledProjectIdentityMismatch), "runtime should use identity mismatch diagnostic");
+    }
+
 }
 
 int main()
@@ -764,7 +1182,13 @@ int main()
 
         { "string limit exceeded", testStringLimitExceeded },
 
+        { "total string budget exceeded", testTotalStringBudgetExceeded },
+
         { "collection limit exceeded", testCollectionLimitExceeded },
+
+        { "total element budget exceeded", testTotalElementBudgetExceeded },
+
+        { "physical file size limit exceeded", testPhysicalFileSizeLimitExceeded },
 
         { "invalid bool", testInvalidBool },
 
@@ -782,7 +1206,21 @@ int main()
 
         { "duplicate object resource", testDuplicateObjectResource },
 
-        { "duplicate script resource", testDuplicateScriptResource }
+        { "duplicate script resource", testDuplicateScriptResource },
+
+        { "duplicate music entry", testDuplicateMusicEntry },
+
+        { "duplicate sound entry", testDuplicateSoundEntry },
+
+        { "duplicate child resource entry", testDuplicateChildResourceEntry },
+
+        { "duplicate state entry", testDuplicateStateEntry },
+
+        { "object key id mismatch", testObjectKeyIdMismatch },
+
+        { "script key id mismatch", testScriptKeyIdMismatch },
+
+        { "writer reader and runtime use same invariant diagnostic", testWriterReaderAndRuntimeUseSameInvariantDiagnostic }
 
     };
 

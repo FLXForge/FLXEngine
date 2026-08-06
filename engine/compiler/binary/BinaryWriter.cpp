@@ -52,11 +52,22 @@ namespace flx::binary
 
     void BinaryWriter::writeString(const std::string& value)
     {
-        writeCount(
+        if (value.size() > MaxStringSize ||
+            value.size() > std::numeric_limits<uint32_t>::max())
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project string limit exceeded",
+                "string"
+            );
+        }
+
+        accountStringBytes(
             value.size(),
-            MaxStringSize,
             "string"
         );
+
+        writeU32(static_cast<uint32_t>(value.size()));
 
         if (!value.empty())
         {
@@ -83,7 +94,58 @@ namespace flx::binary
             );
         }
 
+        accountElements(
+            value,
+            field
+        );
+
         writeU32(static_cast<uint32_t>(value));
+    }
+
+    void BinaryWriter::accountResource(const std::string& field)
+    {
+        accountElements(
+            1,
+            field
+        );
+    }
+
+    void BinaryWriter::accountElements(
+        size_t count,
+        const std::string& field
+    )
+    {
+        if (count > MaxTotalDecodedElements ||
+            totalElements > MaxTotalDecodedElements - count)
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project decoded element budget exceeded",
+                field
+            );
+        }
+
+        totalElements +=
+            static_cast<uint32_t>(count);
+    }
+
+    void BinaryWriter::accountStringBytes(
+        size_t count,
+        const std::string& field
+    )
+    {
+        if (count > MaxTotalDecodedStringBytes ||
+            totalStringBytes > MaxTotalDecodedStringBytes - count)
+        {
+            throw BinaryException(
+                DiagnosticCode::CompiledProjectLimitExceeded,
+                "Compiled project decoded string budget exceeded",
+                field
+            );
+        }
+
+        totalStringBytes +=
+            static_cast<uint32_t>(count);
     }
 
     void BinaryWriter::writeBytes(

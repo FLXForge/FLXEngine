@@ -273,17 +273,15 @@ void RuntimeWorld::load(
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
-
-    Diagnostics validationDiagnostics;
+    lastLoadDiagnostics = Diagnostics();
 
     if (!CompiledProjectValidator::validate(
         project,
-        validationDiagnostics,
-        DiagnosticCode::RuntimeErrorUnclassified,
+        lastLoadDiagnostics,
         "runtime"
     ))
     {
-        for (const Diagnostic& diagnostic : validationDiagnostics.all())
+        for (const Diagnostic& diagnostic : lastLoadDiagnostics.all())
         {
             Logger::error(
                 "runtime",
@@ -329,6 +327,11 @@ void RuntimeWorld::load(
         loadScriptsForObject(object, scriptEngine);
         bornObject(object, scriptEngine);
     }
+}
+
+const Diagnostics& RuntimeWorld::loadDiagnostics() const
+{
+    return lastLoadDiagnostics;
 }
 
 void RuntimeWorld::update(

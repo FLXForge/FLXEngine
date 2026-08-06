@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 59, "registry should include generic codes and implemented project/resource/binary codes");
+        require(codes.size() == 66, "registry should include generic codes and implemented project/resource/binary codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -89,6 +89,18 @@ namespace
         require(
             diagnosticIdentifier(DiagnosticCode::ReferencedScriptNotFound) == std::string("ReferencedScriptNotFound"),
             "referenced script code should expose stable identifier"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::CompiledProjectIdentityMismatch) == std::string("FLX-COMP-00014"),
+            "compiled project identity mismatch should use concrete compiler code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::DuplicateCompiledEntry) == std::string("FLX-BINARY-00019"),
+            "duplicate compiled entry should use concrete binary code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::InvalidCompiledProjectValue) == std::string("FLX-BINARY-00020"),
+            "invalid compiled project value should use concrete binary code"
         );
     }
 

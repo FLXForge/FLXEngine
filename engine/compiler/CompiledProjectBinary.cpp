@@ -1,6 +1,7 @@
 #include "CompiledProjectBinary.h"
 #include "CompiledProjectValidator.h"
 #include "binary/BinaryException.h"
+#include "binary/BinaryLimits.h"
 #include "binary/BinaryReader.h"
 #include "binary/BinaryWriter.h"
 #include "binary/CompiledProjectCodec.h"
@@ -38,7 +39,6 @@ bool CompiledProjectWriter::write(
     if (!CompiledProjectValidator::validate(
         project,
         diagnostics,
-        DiagnosticCode::CompErrorUnclassified,
         path
     ))
     {
@@ -240,6 +240,27 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
 {
     CompiledProjectBinaryResult result;
 
+    const std::filesystem::path inputPath(path);
+
+    std::error_code sizeError;
+    const uintmax_t fileSize =
+        std::filesystem::file_size(
+            inputPath,
+            sizeError
+        );
+
+    if (!sizeError && fileSize > flx::binary::MaxBinaryFileSize)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::CompiledProjectLimitExceeded,
+            "Compiled project file exceeds the maximum binary size",
+            path,
+            "file"
+        );
+
+        return result;
+    }
+
     std::ifstream file(path, std::ios::binary);
 
     if (!file.is_open())
@@ -281,7 +302,6 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
     if (!CompiledProjectValidator::validate(
         result.project,
         result.diagnostics,
-        DiagnosticCode::CompErrorUnclassified,
         path
     ))
     {

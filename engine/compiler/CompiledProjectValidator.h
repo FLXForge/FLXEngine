@@ -10,7 +10,6 @@ public:
     static bool validate(
         const CompiledProject& project,
         Diagnostics& diagnostics,
-        DiagnosticCode code,
         const std::string& source
     );
 };

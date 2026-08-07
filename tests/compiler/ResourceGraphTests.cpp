@@ -1,5 +1,6 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProjectValidator.h"
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -18,6 +19,23 @@ namespace
 
         require(root != nullptr, "root should exist in registry");
         return *root;
+    }
+
+    bool hasErrorCode(
+        const Diagnostics& diagnostics,
+        DiagnosticCode code
+    )
+    {
+        return std::any_of(
+            diagnostics.all().begin(),
+            diagnostics.all().end(),
+            [code](const Diagnostic& diagnostic)
+            {
+                return
+                    diagnostic.severity == DiagnosticSeverity::Error &&
+                    diagnostic.code == code;
+            }
+        );
     }
 
     void testGraphWithAutoAndManualChildren()
@@ -225,6 +243,152 @@ namespace
         require(diagnostics.hasErrors(), "automatic instantiation cycle should report diagnostics");
     }
 
+    void testAutoChildCycleFailsCompilation()
+    {
+        const std::filesystem::path root =
+            testRoot() / "auto_child_cycle";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=AutoCycle\n"
+            "path=game\n"
+            "root=a\n"
+        );
+
+        writeFile(
+            root / "game" / "a.json",
+            "{ \"children\": { \"b\": \"b\" } }\n"
+        );
+
+        writeFile(
+            root / "game" / "b.json",
+            "{ \"children\": { \"a\": \"a\" } }\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(!result.success, "auto A to B to A should fail compilation");
+        require(
+            hasErrorCode(result.diagnostics, DiagnosticCode::AutomaticInstantiationCycle),
+            "auto cycle should report AutomaticInstantiationCycle"
+        );
+    }
+
+    void testManualChildCycleCompiles()
+    {
+        const std::filesystem::path root =
+            testRoot() / "manual_child_cycle";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=ManualCycle\n"
+            "path=game\n"
+            "root=a\n"
+        );
+
+        writeFile(
+            root / "game" / "a.json",
+            "{ \"children\": { \"b\": { \"like\": \"b\", \"spawn\": \"manual\" } } }\n"
+        );
+
+        writeFile(
+            root / "game" / "b.json",
+            "{ \"children\": { \"a\": { \"like\": \"a\", \"spawn\": \"manual\" } } }\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "manual A to B to A should compile");
+        require(
+            !hasErrorCode(result.diagnostics, DiagnosticCode::AutomaticInstantiationCycle),
+            "manual cycle should not report AutomaticInstantiationCycle"
+        );
+    }
+
+    void testMixedManualEdgeDoesNotFormAutomaticCycle()
+    {
+        const std::filesystem::path root =
+            testRoot() / "mixed_child_cycle";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=MixedCycle\n"
+            "path=game\n"
+            "root=a\n"
+        );
+
+        writeFile(
+            root / "game" / "a.json",
+            "{ \"children\": { \"b\": \"b\" } }\n"
+        );
+
+        writeFile(
+            root / "game" / "b.json",
+            "{ \"children\": { \"a\": { \"like\": \"a\", \"spawn\": \"manual\" } } }\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "auto then manual edge should not form an automatic cycle");
+        require(
+            !hasErrorCode(result.diagnostics, DiagnosticCode::AutomaticInstantiationCycle),
+            "mixed cycle should not report AutomaticInstantiationCycle"
+        );
+    }
+
+    void testSameLogicalIdsInDifferentFilesDoNotCreateAutoCycle()
+    {
+        const std::filesystem::path root =
+            testRoot() / "same_logical_id_no_cycle";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game" / "a");
+        std::filesystem::create_directories(root / "game" / "b");
+
+        writeFile(
+            root / "game.flx",
+            "name=SameLogicalId\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"children\": { \"title\": \"a/title\" } }\n"
+        );
+
+        writeFile(
+            root / "game" / "a" / "title.json",
+            "{ \"children\": { \"title\": \"../b/title\" } }\n"
+        );
+
+        writeFile(
+            root / "game" / "b" / "title.json",
+            "{ \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 8 } } }\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "same logical ids in different files should compile");
+        require(
+            !hasErrorCode(result.diagnostics, DiagnosticCode::AutomaticInstantiationCycle),
+            "same logical ids in different files should use ResourceId and avoid false cycles"
+        );
+    }
+
 }
 
 int main()
@@ -242,7 +406,11 @@ int main()
         { "valid FLX reference", testValidFlxReference },
 
         { "invalid FLX reference", testInvalidFlxReference },
-        { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation }
+        { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation },
+        { "auto child cycle fails compilation", testAutoChildCycleFailsCompilation },
+        { "manual child cycle compiles", testManualChildCycleCompiles },
+        { "mixed manual edge does not form automatic cycle", testMixedManualEdgeDoesNotFormAutomaticCycle },
+        { "same logical ids in different files do not create auto cycle", testSameLogicalIdsInDifferentFilesDoNotCreateAutoCycle }
 
     };
 

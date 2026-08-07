@@ -33,6 +33,7 @@ namespace
         std::unordered_map<std::string, Json> jsonCache;
         Diagnostics* diagnostics = nullptr;
         std::vector<std::string> likeStack;
+        std::vector<std::string> definitionStack;
     };
 
     std::string ensureExtension(
@@ -64,6 +65,61 @@ namespace
 
         return result;
     }
+
+    std::string definitionStackKey(
+        const std::filesystem::path& sourceFile,
+        const std::string& id
+    )
+    {
+        return
+            std::filesystem::absolute(sourceFile).lexically_normal().generic_string() +
+            "#" +
+            id;
+    }
+
+    bool definitionIsActive(
+        const JsonLoadSession& session,
+        const std::filesystem::path& sourceFile,
+        const std::string& id
+    )
+    {
+        const std::string key =
+            definitionStackKey(
+                sourceFile,
+                id
+            );
+
+        return std::find(
+            session.definitionStack.begin(),
+            session.definitionStack.end(),
+            key
+        ) != session.definitionStack.end();
+    }
+
+    struct ScopedDefinitionStackEntry
+    {
+        JsonLoadSession& session;
+
+        ScopedDefinitionStackEntry(
+            JsonLoadSession& loadSession,
+            const std::filesystem::path& sourceFile,
+            const std::string& id
+        )
+            : session(loadSession)
+        {
+            session.definitionStack.push_back(
+                definitionStackKey(
+                    sourceFile,
+                    id
+                )
+            );
+        }
+
+        ~ScopedDefinitionStackEntry()
+        {
+            session.definitionStack.pop_back();
+        }
+    };
 
     std::filesystem::path normalizedRelativePath(
         const std::string& path,
@@ -2428,6 +2484,38 @@ namespace
                 );
             }
 
+            const std::filesystem::path resolvedSourceFile =
+                resolvedChild.value(
+                    "__sourceFile",
+                    genericPathString(childSourceFile)
+                );
+
+            if (
+                definitionIsActive(
+                    session,
+                    resolvedSourceFile,
+                    it.key()
+                )
+                )
+            {
+                ObjectDefinition childDefinition;
+                childDefinition.id =
+                    it.key();
+                childDefinition.sourcePath =
+                    genericPathString(resolvedSourceFile);
+                childDefinition.spawnMode =
+                    TextTools::toLower(
+                        resolvedChild.value("spawn", childDefinition.spawnMode)
+                    );
+
+                definition.children[it.key()] =
+                    childDefinition;
+                definition.childSourcePaths[it.key()] =
+                    genericPathString(resolvedSourceFile);
+
+                continue;
+            }
+
             definition.children[it.key()] =
                 parseDefinition(
                     session,
@@ -2460,6 +2548,12 @@ namespace
 
         definition.sourcePath =
             genericPathString(sourceFile);
+
+        ScopedDefinitionStackEntry stackEntry(
+            session,
+            sourceFile,
+            id
+        );
 
         definition.spawnMode =
             TextTools::toLower(

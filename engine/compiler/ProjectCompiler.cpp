@@ -237,18 +237,23 @@ ResourceId ProjectCompiler::makeResourceId(
         ? fallbackPath
         : definition.sourcePath;
 
-    if (!std::filesystem::path(path).is_absolute())
-    {
-        return
-            std::filesystem::path(path).lexically_normal().generic_string() +
-            "#" +
-            definition.id;
-    }
+    ResourceId id =
+        std::filesystem::path(path).is_absolute()
+        ? relativeSourceName(path, projectRoot)
+        : std::filesystem::path(path).lexically_normal().generic_string();
 
-    return
-        relativeSourceName(path, projectRoot) +
+    id +=
         "#" +
         definition.id;
+
+    if (definition.spawnMode != "auto")
+    {
+        id +=
+            "@spawn=" +
+            definition.spawnMode;
+    }
+
+    return id;
 }
 
 ObjectDefinition ProjectCompiler::compileDefinition(
@@ -280,14 +285,12 @@ ObjectDefinition ProjectCompiler::compileDefinition(
 
     if (compiling.find(id) != compiling.end())
     {
-        diagnostics.error(
-            DiagnosticCode::AutomaticInstantiationCycle,
-            "Automatic instantiation cycle detected while compiling object graph",
-            definition.sourcePath,
-            id
-        );
+        ObjectDefinition placeholder =
+            definition;
+        placeholder.children.clear();
+        placeholder.childResources.clear();
 
-        return definition;
+        return placeholder;
     }
 
     compiling.insert(id);
@@ -333,7 +336,7 @@ ObjectDefinition ProjectCompiler::compileDefinition(
 
         const ResourceId childResourceId =
             makeResourceId(
-                compiledChild,
+                child.second,
                 child.second.sourcePath,
                 projectRoot
             );

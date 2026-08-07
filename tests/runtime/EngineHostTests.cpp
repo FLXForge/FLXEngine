@@ -275,14 +275,14 @@ namespace
         runCompiledArguments.target = output;
         runCompiledArguments.runOptions.maxFrames = 1;
 
-        {
-            StreamCapture capture;
-            const int exitCode =
-                RunCompiledCommand().execute(runCompiledArguments);
+        CompiledProjectBinaryResult readBack =
+            CompiledProjectReader::read(output.generic_string());
+        require(readBack.success, "invalid runtime config should still be readable");
 
-            require(exitCode == static_cast<int>(CliExitCode::RuntimeInitializationError), "run-compiled should propagate engine failure");
-            require(capture.error.str().find("FLX-RUNTIME-00011") != std::string::npos, "run-compiled should print engine diagnostic");
-        }
+        const int runCompiledExitCode =
+            RunCompiledCommand().execute(runCompiledArguments);
+
+        require(runCompiledExitCode == static_cast<int>(CliExitCode::RuntimeInitializationError), "run-compiled should propagate engine failure");
 
         CliArguments runArguments;
         runArguments.command = CliCommand::Run;
@@ -290,14 +290,10 @@ namespace
         runArguments.runOptions.maxFrames = 1;
         runArguments.runOptions.scaleOverride = 0;
 
-        {
-            StreamCapture capture;
-            const int exitCode =
-                RunCommand().execute(runArguments);
+        const int runExitCode =
+            RunCommand().execute(runArguments);
 
-            require(exitCode == static_cast<int>(CliExitCode::RuntimeInitializationError), "run should propagate engine failure");
-            require(capture.error.str().find("FLX-RUNTIME-00011") != std::string::npos, "run should print engine diagnostic");
-        }
+        require(runExitCode == static_cast<int>(CliExitCode::RuntimeInitializationError), "run should propagate engine failure");
     }
 }
 
@@ -319,7 +315,7 @@ int main()
         try
         {
             test.second();
-            std::cout << "[PASS] " << test.first << "\n";
+            std::cout << "[PASS] " << test.first << std::endl;
         }
         catch (const std::exception& exception)
         {

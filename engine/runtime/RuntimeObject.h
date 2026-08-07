@@ -50,6 +50,7 @@ public:
 public:
     std::string name;
     std::string runtimeId;
+    std::string definitionId;
     std::string parentId;
     std::string originalParentId;
     std::string sourcePath;

@@ -1,5 +1,121 @@
 #include "CompiledProjectValidator.h"
 
+#include <algorithm>
+#include <unordered_set>
+#include <vector>
+
+namespace
+{
+    bool detectAutomaticCycleFrom(
+        const ResourceId& objectId,
+        const CompiledProject& project,
+        std::vector<ResourceId>& stack,
+        std::unordered_set<ResourceId>& completed,
+        Diagnostics& diagnostics,
+        const std::string& source
+    )
+    {
+        if (completed.find(objectId) != completed.end())
+        {
+            return false;
+        }
+
+        const auto stackIt =
+            std::find(
+                stack.begin(),
+                stack.end(),
+                objectId
+            );
+
+        if (stackIt != stack.end())
+        {
+            std::string chain;
+
+            for (auto it = stackIt; it != stack.end(); ++it)
+            {
+                if (!chain.empty())
+                {
+                    chain += " -> ";
+                }
+
+                chain += *it;
+            }
+
+            chain += " -> " + objectId;
+
+            diagnostics.error(
+                DiagnosticCode::AutomaticInstantiationCycle,
+                "Automatic instantiation cycle detected: " + chain,
+                source,
+                objectId
+            );
+
+            return true;
+        }
+
+        const ObjectDefinition* object =
+            project.resources.findObject(objectId);
+
+        if (object == nullptr)
+        {
+            return false;
+        }
+
+        stack.push_back(objectId);
+
+        bool foundCycle = false;
+
+        for (const auto& childPair : object->childResources)
+        {
+            const ObjectDefinition* child =
+                project.resources.findObject(childPair.second);
+
+            if (child == nullptr || child->spawnMode != "auto")
+            {
+                continue;
+            }
+
+            foundCycle =
+                detectAutomaticCycleFrom(
+                    childPair.second,
+                    project,
+                    stack,
+                    completed,
+                    diagnostics,
+                    source
+                ) || foundCycle;
+        }
+
+        stack.pop_back();
+        completed.insert(objectId);
+
+        return foundCycle;
+    }
+
+    void validateAutomaticInstantiationCycles(
+        const CompiledProject& project,
+        Diagnostics& diagnostics,
+        const std::string& source
+    )
+    {
+        std::unordered_set<ResourceId> completed;
+
+        for (const auto& objectPair : project.resources.allObjects())
+        {
+            std::vector<ResourceId> stack;
+
+            detectAutomaticCycleFrom(
+                objectPair.first,
+                project,
+                stack,
+                completed,
+                diagnostics,
+                source
+            );
+        }
+    }
+}
+
 bool CompiledProjectValidator::validate(
     const CompiledProject& project,
     Diagnostics& diagnostics,
@@ -99,6 +215,12 @@ bool CompiledProjectValidator::validate(
             );
         }
     }
+
+    validateAutomaticInstantiationCycles(
+        project,
+        diagnostics,
+        source
+    );
 
     return !diagnostics.hasErrors();
 }

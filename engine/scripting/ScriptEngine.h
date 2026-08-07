@@ -75,6 +75,9 @@ public:
     using KeepOnlyFunction =
         std::function<void(const std::string&)>;
 
+    using ObjectRuntimeFunction =
+        std::function<void(const std::string&)>;
+
     void setFindObjectFunction(FindObjectFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
@@ -97,6 +100,15 @@ public:
     void setKeepOnlyFunction(KeepOnlyFunction function);
 
     void keepOnly(const std::string& runtimeId);
+
+    void setKillObjectFunction(ObjectRuntimeFunction function);
+    void killObject(const std::string& runtimeId);
+
+    void setShowObjectFunction(ObjectRuntimeFunction function);
+    void showObject(const std::string& runtimeId);
+
+    void setHideObjectFunction(ObjectRuntimeFunction function);
+    void hideObject(const std::string& runtimeId);
 
     void setFindObjectByIdFunction(
         FindObjectByIdFunction function
@@ -185,7 +197,9 @@ private:
         std::string,
         ScriptModule
     > scriptModules;
-    std::string keepOnlyRuntimeId;
+    ObjectRuntimeFunction killObjectFunction;
+    ObjectRuntimeFunction showObjectFunction;
+    ObjectRuntimeFunction hideObjectFunction;
     SpawnObjectFunction spawnObjectFunction;
     RayCastFunction rayCastFunction;
     KeepOnlyFunction keepOnlyFunction;

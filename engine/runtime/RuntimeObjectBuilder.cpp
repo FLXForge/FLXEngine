@@ -17,6 +17,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     );
 
     object.runtimeId = runtimeId;
+    object.definitionId = definition.id;
     object.parentId = parentId;
     object.originalParentId = parentId;
     object.sourcePath = definition.sourcePath;

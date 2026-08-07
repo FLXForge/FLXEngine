@@ -48,6 +48,9 @@ public:
         ScriptEngine& scriptEngine
     );
 
+    void kill(const std::string& runtimeId);
+    void show(const std::string& runtimeId);
+    void hide(const std::string& runtimeId);
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
     void keepOnly(const std::string& runtimeId);
@@ -60,17 +63,20 @@ public:
 private:
     RuntimeObject createRuntimeObject(
         const ObjectDefinition& definition,
+        const std::string& resourceId,
         const std::string& parentId
     );
 
     RuntimeObject createIndividualChild(
         const RuntimeObject& parent,
-        const ObjectDefinition& definition
+        const ObjectDefinition& definition,
+        const std::string& resourceId
     );
 
     RuntimeObject createGridChild(
         const RuntimeObject& parent,
         const ObjectDefinition& definition,
+        const std::string& resourceId,
         int row,
         int column
     );
@@ -114,6 +120,10 @@ private:
     );
 
     void flushSpawnQueue(ScriptEngine& scriptEngine);
+    bool flushSpawnQueueForLoad(
+        ScriptEngine& scriptEngine,
+        Diagnostics& diagnostics
+    );
 
     void beginFrame();
 
@@ -142,4 +152,8 @@ private:
     const ResourceRegistry* resources = nullptr;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
+    bool automaticInstantiationFailed = false;
+    std::string automaticInstantiationFailure;
+    std::vector<ResourceId> automaticInstantiationStack;
+    size_t automaticInstantiationCreated = 0;
 };

@@ -167,9 +167,9 @@ if (Input.player(1).pressed(0)) {
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
-      ↓
+      |
  Object Born
-      ↓
+      |
    born()
 
  action()
@@ -250,6 +250,7 @@ if (Input.player(1).pressed(0)) {
             <p>
                 Object destruction is requested through
                 <code>kill(object)</code>.
+                Direct writes to <code>object.alive</code> are ignored by the runtime.
             </p>
 
             <div class="code-card">
@@ -264,25 +265,31 @@ if (Input.player(1).pressed(0)) {
 
             <p>
                 The runtime marks the object as dead,
-                excludes it from later phases
+                excludes it from later active phases
                 and schedules safe removal.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Death flow</div>
 <pre><code>kill()
-   ↓
-alive = false
-   ↓
-dead()
-   ↓
-cleanup()
+  -> death requested
+  -> dead()
+  -> cleanup()
 </code></pre>
             </div>
 
             <p>
                 This prevents issues during collisions,
                 movement or script execution.
+                <code>dead(object)</code> is terminal: it runs once and cannot
+                resurrect the object.
+            </p>
+
+            <p>
+                Use <code>hide(object)</code> and <code>show(object)</code> to control
+                visibility without changing lifetime. Hidden objects keep updating
+                action, motion, collision, timers and state time, but skip both
+                declarative drawing and JavaScript <code>draw(object)</code>.
             </p>
 
             <hr />

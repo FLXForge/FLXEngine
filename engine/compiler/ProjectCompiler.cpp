@@ -281,8 +281,8 @@ ObjectDefinition ProjectCompiler::compileDefinition(
     if (compiling.find(id) != compiling.end())
     {
         diagnostics.error(
-            DiagnosticCode::ResourceErrorUnclassified,
-            "Resource cycle detected while compiling object graph",
+            DiagnosticCode::AutomaticInstantiationCycle,
+            "Automatic instantiation cycle detected while compiling object graph",
             definition.sourcePath,
             id
         );

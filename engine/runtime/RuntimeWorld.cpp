@@ -13,6 +13,10 @@
 
 namespace
 {
+    constexpr size_t MaxLoadSpawnFlushPasses = 128;
+    constexpr size_t MaxLoadSpawnedObjects = 4096;
+    constexpr size_t MaxAutomaticInstantiationObjects = 4096;
+
     Vector2 rayDirection(float angle)
     {
         const float radians =
@@ -275,6 +279,8 @@ RuntimeLoadResult RuntimeWorld::load(
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
+    automaticInstantiationFailed = false;
+    automaticInstantiationFailure.clear();
 
     if (!CompiledProjectValidator::validate(
         project,
@@ -316,7 +322,11 @@ RuntimeLoadResult RuntimeWorld::load(
     }
 
     RuntimeObject root =
-        createRuntimeObject(*rootDefinition, "");
+        createRuntimeObject(
+            *rootDefinition,
+            project.rootId,
+            ""
+        );
 
     objects.push_back(
         std::move(root)
@@ -330,10 +340,27 @@ RuntimeLoadResult RuntimeWorld::load(
         objects
     );
 
+    if (automaticInstantiationFailed)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            automaticInstantiationFailure,
+            "runtime",
+            project.rootId
+        );
+
+        return result;
+    }
+
     for (auto& object : objects)
     {
         loadScriptsForObject(object, scriptEngine);
         bornObject(object, scriptEngine);
+    }
+
+    if (!flushSpawnQueueForLoad(scriptEngine, result.diagnostics))
+    {
+        return result;
     }
 
     result.success =
@@ -379,12 +406,17 @@ void RuntimeWorld::draw(
     bool debugCollisions
 )
 {
-    std::vector<const RuntimeObject*> drawObjects;
+    std::vector<RuntimeObject*> drawObjects;
 
     drawObjects.reserve(objects.size());
 
-    for (const auto& object : objects)
+    for (auto& object : objects)
     {
+        if (!object.alive || !object.visible)
+        {
+            continue;
+        }
+
         drawObjects.push_back(&object);
     }
 
@@ -397,8 +429,13 @@ void RuntimeWorld::draw(
         }
     );
 
-    for (const RuntimeObject* object : drawObjects)
+    for (RuntimeObject* object : drawObjects)
     {
+        if (!object->alive || !object->visible)
+        {
+            continue;
+        }
+
         object->draw(
             screenScale,
             screenWidth,
@@ -409,9 +446,16 @@ void RuntimeWorld::draw(
         {
             object->drawCollision(screenScale);
         }
-    }
 
-    drawPhase(scriptEngine);
+        for (const auto& scriptPath : object->resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "draw",
+                *object
+            );
+        }
+    }
 }
 
 void RuntimeWorld::spawn(
@@ -460,7 +504,8 @@ void RuntimeWorld::spawn(
         RuntimeObject instance =
             createIndividualChild(
                 source,
-                *definition
+                *definition,
+                resourceId
             );
 
         pendingObjects.push_back(instance);
@@ -509,14 +554,70 @@ void RuntimeWorld::spawn(
     );
 }
 
+void RuntimeWorld::kill(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "kill target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->alive = false;
+}
+
+void RuntimeWorld::show(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "show target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->visible = true;
+}
+
+void RuntimeWorld::hide(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "hide target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->visible = false;
+}
+
 RuntimeObject RuntimeWorld::createIndividualChild(
     const RuntimeObject& parent,
-    const ObjectDefinition& definition
+    const ObjectDefinition& definition,
+    const std::string& resourceId
 )
 {
     RuntimeObject child =
         createRuntimeObject(
             definition,
+            resourceId,
             parent.runtimeId
         );
 
@@ -566,6 +667,7 @@ RuntimeObject RuntimeWorld::createIndividualChild(
 RuntimeObject RuntimeWorld::createGridChild(
     const RuntimeObject& parent,
     const ObjectDefinition& definition,
+    const std::string& resourceId,
     int row,
     int column
 )
@@ -573,6 +675,7 @@ RuntimeObject RuntimeWorld::createGridChild(
     RuntimeObject child =
         createRuntimeObject(
             definition,
+            resourceId,
             parent.runtimeId
         );
 
@@ -614,6 +717,46 @@ void RuntimeWorld::instantiateAutoChildren(
     std::vector<RuntimeObject>& target
 )
 {
+    if (automaticInstantiationFailed)
+    {
+        return;
+    }
+
+    const bool rootCall =
+        automaticInstantiationStack.empty();
+
+    if (rootCall)
+    {
+        automaticInstantiationCreated = 0;
+    }
+
+    const std::string ancestryKey =
+        parent.definitionId.empty()
+            ? parent.sourcePath
+            : parent.definitionId;
+
+    if (
+        !ancestryKey.empty()
+        && std::find(
+            automaticInstantiationStack.begin(),
+            automaticInstantiationStack.end(),
+            ancestryKey
+        ) != automaticInstantiationStack.end()
+        )
+    {
+        automaticInstantiationFailed = true;
+        automaticInstantiationFailure =
+            "Automatic instantiation cycle detected at object resource: " +
+            ancestryKey;
+        Logger::error(
+            "creation",
+            automaticInstantiationFailure
+        );
+        return;
+    }
+
+    automaticInstantiationStack.push_back(ancestryKey);
+
     if (parent.creationMode == "grid")
     {
         instantiateGridChildren(
@@ -623,6 +766,7 @@ void RuntimeWorld::instantiateAutoChildren(
             target
         );
 
+        automaticInstantiationStack.pop_back();
         return;
     }
 
@@ -634,6 +778,7 @@ void RuntimeWorld::instantiateAutoChildren(
             "' in " + parent.runtimeId
         );
 
+        automaticInstantiationStack.pop_back();
         return;
     }
 
@@ -641,6 +786,8 @@ void RuntimeWorld::instantiateAutoChildren(
         parent,
         target
     );
+
+    automaticInstantiationStack.pop_back();
 }
 
 RuntimeObject* RuntimeWorld::findByName(const std::string& name)
@@ -687,7 +834,7 @@ void RuntimeWorld::keepOnly(const std::string& runtimeId)
             continue;
         }
 
-        object.alive = false;
+        kill(object.runtimeId);
     }
 
     if (!found)
@@ -790,6 +937,7 @@ RayCastResult RuntimeWorld::rayCast(
 
 RuntimeObject RuntimeWorld::createRuntimeObject(
     const ObjectDefinition& definition,
+    const std::string& resourceId,
     const std::string& parentId
 )
 {
@@ -808,6 +956,11 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
         object.stateEnteredFrame =
             frameIndex;
     }
+
+    object.definitionId =
+        resourceId.empty()
+            ? definition.id
+            : resourceId;
 
     return object;
 }
@@ -850,8 +1003,24 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
         RuntimeObject child =
             createIndividualChild(
                 parent,
-                *definition
+                *definition,
+                pair.second
             );
+
+        ++automaticInstantiationCreated;
+
+        if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+        {
+            automaticInstantiationFailed = true;
+            automaticInstantiationFailure =
+                "Automatic instantiation limit exceeded under object: " +
+                parent.name;
+            Logger::error(
+                "creation",
+                automaticInstantiationFailure
+            );
+            return;
+        }
 
         std::vector<RuntimeObject> descendants;
 
@@ -955,9 +1124,25 @@ void RuntimeWorld::instantiateGridChildren(
                 createGridChild(
                     parent,
                     *definition,
+                    it->second,
                     row,
                     column
                 );
+
+            ++automaticInstantiationCreated;
+
+            if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+            {
+                automaticInstantiationFailed = true;
+                automaticInstantiationFailure =
+                    "Automatic grid instantiation limit exceeded under object: " +
+                    parent.name;
+                Logger::error(
+                    "creation",
+                    automaticInstantiationFailure
+                );
+                return;
+            }
 
             std::vector<RuntimeObject> descendants;
 
@@ -1137,6 +1322,72 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
             "Spawned instance"
         );
     }
+}
+
+bool RuntimeWorld::flushSpawnQueueForLoad(
+    ScriptEngine& scriptEngine,
+    Diagnostics& diagnostics
+)
+{
+    size_t passCount = 0;
+    size_t spawnedCount = 0;
+
+    while (!pendingObjects.empty())
+    {
+        if (passCount >= MaxLoadSpawnFlushPasses)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeLoadSpawnLimitExceeded,
+                "Runtime load did not stabilize while flushing spawn requests from born",
+                "runtime",
+                "born.spawn"
+            );
+
+            Logger::error(
+                "runtime",
+                "Runtime load spawn flush pass limit exceeded"
+            );
+
+            return false;
+        }
+
+        spawnedCount +=
+            pendingObjects.size();
+
+        if (spawnedCount > MaxLoadSpawnedObjects)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeLoadSpawnLimitExceeded,
+                "Runtime load created too many objects while flushing spawn requests from born",
+                "runtime",
+                "born.spawn"
+            );
+
+            Logger::error(
+                "runtime",
+                "Runtime load spawn object limit exceeded"
+            );
+
+            return false;
+        }
+
+        ++passCount;
+        flushSpawnQueue(scriptEngine);
+
+        if (automaticInstantiationFailed)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeWorldLoadFailed,
+                automaticInstantiationFailure,
+                "runtime",
+                "born.spawn"
+            );
+
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void RuntimeWorld::beginFrame()

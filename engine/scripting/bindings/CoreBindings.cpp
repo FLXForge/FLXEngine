@@ -100,17 +100,118 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "alive",
-            JS_NewBool(context, false)
-        );
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "kill called without a valid object"
+            );
+
+            JS_FreeValue(context, idValue);
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->killObject(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsShow(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "show called without a valid object"
+            );
+
+            JS_FreeValue(context, idValue);
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->showObject(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsHide(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, argv[0], "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "hide called without a valid object"
+            );
+
+            JS_FreeValue(context, idValue);
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->hideObject(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }
@@ -611,6 +712,20 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "kill",
         JS_NewCFunction(context, jsKill, "kill", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "show",
+        JS_NewCFunction(context, jsShow, "show", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "hide",
+        JS_NewCFunction(context, jsHide, "hide", 1)
     );
 
     JS_SetPropertyStr(

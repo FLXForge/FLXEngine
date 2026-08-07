@@ -271,7 +271,8 @@ namespace
         const nlohmann::json diagnostic =
             payload["diagnostics"][0];
 
-        require(diagnostic["code"].get<std::string>() == "FLX-RESOURCE-00002", "json range diagnostic should include code");
+        require(diagnostic.contains("code"), "json range diagnostic should include code field");
+        require(diagnostic["code"].get<std::string>() == diagnosticCodeText(DiagnosticCode::ResourceErrorUnclassified), "json range diagnostic should include stable code value");
         require(diagnostic["identifier"].get<std::string>() == "ResourceErrorUnclassified", "json range diagnostic should include identifier");
         require(diagnostic.contains("range"), "json diagnostic should include range when present");
         require(diagnostic["range"]["startLine"] == 2, "json range should include start line");

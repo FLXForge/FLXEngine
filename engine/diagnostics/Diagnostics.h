@@ -53,6 +53,7 @@ enum class DiagnosticCode
     CompiledProjectMissingChildResource,
     CompiledProjectMissingScriptResource,
     CompiledProjectIdentityMismatch,
+    AutomaticInstantiationCycle,
 
     ResourceInformationUnclassified,
     ResourceWarningUnclassified,
@@ -98,6 +99,7 @@ enum class DiagnosticCode
     WindowInitializationFailed,
     RenderTargetInitializationFailed,
     RuntimeWorldLoadFailed,
+    RuntimeLoadSpawnLimitExceeded,
 
     BuildInformationUnclassified,
     BuildWarningUnclassified,

@@ -146,6 +146,12 @@ interface RuntimeObject {
     /** Optional role inside the collision group. */
     role: string;
 
+    /** True while the object is alive. Read-only from JavaScript. Use kill(object). */
+    readonly alive: boolean;
+
+    /** True while the object can produce visual output. Read-only from JavaScript. Use show(object) and hide(object). */
+    readonly visible: boolean;
+
     /** Draw layer. Lower values are drawn first. */
     layer: number;
 
@@ -411,6 +417,18 @@ declare function ray(
  * The object will be removed at the end of the frame.
  */
 declare function kill(object: RuntimeObject): void;
+
+/**
+ * Enables visual output for an object.
+ */
+declare function show(object: RuntimeObject): void;
+
+/**
+ * Disables visual output for an object.
+ *
+ * Hidden objects still run action, motion, collision, state time and timers.
+ */
+declare function hide(object: RuntimeObject): void;
 
 /**
  * Marks every living runtime object for destruction except the exact object passed.

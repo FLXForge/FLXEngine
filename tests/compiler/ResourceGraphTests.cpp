@@ -1,4 +1,5 @@
 #include "../support/TestSupport.h"
+#include "../../engine/compiler/CompiledProjectValidator.h"
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -190,6 +191,40 @@ namespace
         require(result.diagnostics.hasErrors(), "invalid FLX reference should report errors");
     }
 
+    void testAutomaticInstantiationCycleFailsCompiledProjectValidation()
+    {
+        CompiledProject project;
+        project.rootId = "root";
+
+        ObjectDefinition root;
+        root.id = "root";
+        root.childResources["a"] = "a";
+
+        ObjectDefinition a;
+        a.id = "a";
+        a.childResources["b"] = "b";
+
+        ObjectDefinition b;
+        b.id = "b";
+        b.childResources["a"] = "a";
+
+        require(project.resources.addObject("root", root), "root should be added");
+        require(project.resources.addObject("a", a), "a should be added");
+        require(project.resources.addObject("b", b), "b should be added");
+
+        Diagnostics diagnostics;
+
+        const bool valid =
+            CompiledProjectValidator::validate(
+                project,
+                diagnostics,
+                "automatic-cycle-test"
+            );
+
+        require(!valid, "automatic instantiation cycle should fail compiled project validation");
+        require(diagnostics.hasErrors(), "automatic instantiation cycle should report diagnostics");
+    }
+
 }
 
 int main()
@@ -206,7 +241,8 @@ int main()
 
         { "valid FLX reference", testValidFlxReference },
 
-        { "invalid FLX reference", testInvalidFlxReference }
+        { "invalid FLX reference", testInvalidFlxReference },
+        { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation }
 
     };
 

@@ -535,6 +535,27 @@ void Engine::configureScriptEngine()
             world->keepOnly(runtimeId);
         }
     );
+
+    scriptEngine.setKillObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->kill(runtimeId);
+        }
+    );
+
+    scriptEngine.setShowObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->show(runtimeId);
+        }
+    );
+
+    scriptEngine.setHideObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->hide(runtimeId);
+        }
+    );
 }
 
 void Engine::update()

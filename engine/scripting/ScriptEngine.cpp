@@ -622,10 +622,61 @@ void ScriptEngine::keepOnly(const std::string& runtimeId)
         return;
     }
 
-    keepOnlyRuntimeId =
-        runtimeId;
-
     keepOnlyFunction(runtimeId);
+}
+
+void ScriptEngine::setKillObjectFunction(
+    ObjectRuntimeFunction function
+)
+{
+    killObjectFunction =
+        function;
+}
+
+void ScriptEngine::killObject(const std::string& runtimeId)
+{
+    if (!killObjectFunction)
+    {
+        return;
+    }
+
+    killObjectFunction(runtimeId);
+}
+
+void ScriptEngine::setShowObjectFunction(
+    ObjectRuntimeFunction function
+)
+{
+    showObjectFunction =
+        function;
+}
+
+void ScriptEngine::showObject(const std::string& runtimeId)
+{
+    if (!showObjectFunction)
+    {
+        return;
+    }
+
+    showObjectFunction(runtimeId);
+}
+
+void ScriptEngine::setHideObjectFunction(
+    ObjectRuntimeFunction function
+)
+{
+    hideObjectFunction =
+        function;
+}
+
+void ScriptEngine::hideObject(const std::string& runtimeId)
+{
+    if (!hideObjectFunction)
+    {
+        return;
+    }
+
+    hideObjectFunction(runtimeId);
 }
 
 void ScriptEngine::applyJsObject(
@@ -633,9 +684,6 @@ void ScriptEngine::applyJsObject(
     JSValue jsObject
 )
 {
-    JSValue aliveValue =
-        JS_GetPropertyStr(context, jsObject, "alive");
-
     JSValue attachedValue =
         JS_GetPropertyStr(context, jsObject, "attached");
 
@@ -714,7 +762,6 @@ void ScriptEngine::applyJsObject(
         }
     }
 
-    bool alive = JS_ToBool(context, aliveValue);
     bool attached = JS_ToBool(context, attachedValue);
     double x = source.position.x;
     double y = source.position.y;
@@ -746,19 +793,6 @@ void ScriptEngine::applyJsObject(
             static_cast<float>(height);
     }
 
-    const bool runtimeAliveBeforeApply =
-        source.alive;
-
-    if (
-        !keepOnlyRuntimeId.empty() &&
-        source.runtimeId != keepOnlyRuntimeId &&
-        !runtimeAliveBeforeApply
-        )
-    {
-        alive = false;
-    }
-
-    source.alive = alive;
     source.attached = attached;
     source.position.x = static_cast<float>(x);
     source.position.y = static_cast<float>(y);
@@ -769,7 +803,6 @@ void ScriptEngine::applyJsObject(
     source.layer = layer;
 
     JS_FreeValue(context, localValue);
-    JS_FreeValue(context, aliveValue);
     JS_FreeValue(context, attachedValue);
     JS_FreeValue(context, xValue);
     JS_FreeValue(context, yValue);
@@ -919,6 +952,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
         self,
         "alive",
         JS_NewBool(context, object.alive)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
+        "visible",
+        JS_NewBool(context, object.visible)
     );
 
     JS_SetPropertyStr(

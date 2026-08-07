@@ -167,9 +167,9 @@ if (Input.player(1).pressed(0)) {
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
 <pre><code>Runtime Start
-      ↓
+      |
  Object Born
-      ↓
+      |
    born()
 
  action()
@@ -249,6 +249,8 @@ if (Input.player(1).pressed(0)) {
             <p>
                 La destrucción de un objeto se solicita mediante
                 <code>kill(object)</code>.
+                Las escrituras directas sobre <code>object.alive</code> son ignoradas
+                por el runtime.
             </p>
 
             <div class="code-card">
@@ -263,25 +265,32 @@ if (Input.player(1).pressed(0)) {
 
             <p>
                 El runtime marca el objeto como muerto,
-                lo excluye de las fases posteriores
+                lo excluye de las fases activas posteriores
                 y programa su eliminación segura.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Death flow</div>
 <pre><code>kill()
-   ↓
-alive = false
-   ↓
-dead()
-   ↓
-cleanup()
+  -> death requested
+  -> dead()
+  -> cleanup()
 </code></pre>
             </div>
 
             <p>
                 Esto evita problemas durante colisiones,
                 movimiento o ejecución de scripts.
+                <code>dead(object)</code> es terminal: se ejecuta una vez y no puede
+                resucitar el objeto.
+            </p>
+
+            <p>
+                Usa <code>hide(object)</code> y <code>show(object)</code> para controlar
+                la visibilidad sin cambiar el ciclo de vida. Los objetos ocultos
+                siguen actualizando action, motion, collision, timers y state time,
+                pero omiten tanto el dibujado declarativo como el callback JavaScript
+                <code>draw(object)</code>.
             </p>
 
             <hr />

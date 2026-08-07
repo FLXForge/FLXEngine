@@ -736,6 +736,9 @@ if (Input.player(1).pressed(FIRE)) {
                 Before final removal,
                 the runtime will execute the
                 <code>dead(object)</code> phase.
+                That phase cannot cancel destruction.
+                Writing to <code>object.alive</code> from JavaScript is ignored;
+                use <code>kill(object)</code> as the explicit destruction API.
             </p>
 
             <div class="code-card">
@@ -747,6 +750,35 @@ if (Input.player(1).pressed(FIRE)) {
 }</code></pre>
 
 
+            </div>
+
+            <h2>show(object)</h2>
+
+            <p>
+                Makes a runtime object visible again.
+                Visibility only affects drawing: action, motion, collision,
+                timers and state time continue to run.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">show</div>
+<pre><code>show(player);
+</code></pre>
+            </div>
+
+            <h2>hide(object)</h2>
+
+            <p>
+                Hides a runtime object without destroying it.
+                Hidden objects do not draw their declared shape and do not execute
+                their JavaScript <code>draw(object)</code> callback.
+                Writing to <code>object.visible</code> from JavaScript is ignored.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">hide</div>
+<pre><code>hide(player);
+</code></pre>
             </div>
 
             <h2>keep_only(object)</h2>

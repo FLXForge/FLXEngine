@@ -35,6 +35,7 @@ namespace
             { DiagnosticCode::CompiledProjectMissingChildResource, "FLX-COMP-00012", "CompiledProjectMissingChildResource", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project child resource points to a missing object." },
             { DiagnosticCode::CompiledProjectMissingScriptResource, "FLX-COMP-00013", "CompiledProjectMissingScriptResource", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project script reference points to a missing script." },
             { DiagnosticCode::CompiledProjectIdentityMismatch, "FLX-COMP-00014", "CompiledProjectIdentityMismatch", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project registry key does not match the stored resource id." },
+            { DiagnosticCode::AutomaticInstantiationCycle, "FLX-COMP-00015", "AutomaticInstantiationCycle", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project contains an automatic instantiation cycle." },
 
             { DiagnosticCode::ResourceInformationUnclassified, "FLX-RESOURCE-00000", "ResourceInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::RESOURCE, "Unclassified informational resource diagnostic." },
             { DiagnosticCode::ResourceWarningUnclassified, "FLX-RESOURCE-00001", "ResourceWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Unclassified resource warning." },
@@ -80,6 +81,7 @@ namespace
             { DiagnosticCode::WindowInitializationFailed, "FLX-RUNTIME-00012", "WindowInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Window could not be initialized." },
             { DiagnosticCode::RenderTargetInitializationFailed, "FLX-RUNTIME-00013", "RenderTargetInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Render target could not be initialized." },
             { DiagnosticCode::RuntimeWorldLoadFailed, "FLX-RUNTIME-00014", "RuntimeWorldLoadFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime world could not be loaded." },
+            { DiagnosticCode::RuntimeLoadSpawnLimitExceeded, "FLX-RUNTIME-00015", "RuntimeLoadSpawnLimitExceeded", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime load spawn limit was exceeded." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

@@ -60,6 +60,27 @@ namespace
                 }
             );
 
+            scripts.setKillObjectFunction(
+                [this](const std::string& runtimeId)
+                {
+                    world.kill(runtimeId);
+                }
+            );
+
+            scripts.setShowObjectFunction(
+                [this](const std::string& runtimeId)
+                {
+                    world.show(runtimeId);
+                }
+            );
+
+            scripts.setHideObjectFunction(
+                [this](const std::string& runtimeId)
+                {
+                    world.hide(runtimeId);
+                }
+            );
+
             scripts.setRayCastFunction(
                 [this](RuntimeObject& source, float angle, float distance)
                 {
@@ -118,7 +139,8 @@ namespace
     {
         ObjectDefinition definition;
         definition.id = id;
-        definition.visible = false;
+        definition.visible = true;
+        definition.shapeType = "none";
 
         if (!script.empty())
         {
@@ -165,6 +187,32 @@ namespace
     {
         return std::abs(left - right) <= epsilon;
     }
+
+    class HiddenTestWindow
+    {
+    public:
+        HiddenTestWindow()
+        {
+            if (!IsWindowReady())
+            {
+                SetTraceLogLevel(LOG_WARNING);
+                SetConfigFlags(FLAG_WINDOW_HIDDEN);
+                InitWindow(1, 1, "FLX runtime lifecycle test");
+                opened = true;
+            }
+        }
+
+        ~HiddenTestWindow()
+        {
+            if (opened)
+            {
+                CloseWindow();
+            }
+        }
+
+    private:
+        bool opened = false;
+    };
 
     void testInitialLoadBornOrderAndIdentity()
     {
@@ -222,7 +270,7 @@ namespace
         require(runtimeChild.originalParentId == runtimeParent.runtimeId, "child originalParentId should point to parent");
     }
 
-    void testSpawnDuringBornIsFlushedDuringFirstActionGap()
+    void testSpawnDuringBornIsStabilizedBeforeLoadReturns()
     {
         RuntimeHarness harness;
 
@@ -251,16 +299,90 @@ namespace
         harness.addObject(spawned);
 
         require(harness.load().success, "runtime should load born spawn project");
-        require(harness.world.findByName("spawned") == nullptr, "born spawn should remain pending after load");
-
-        harness.update();
 
         RuntimeObject& runtimeSpawned =
             requireObject(harness.world, "spawned");
 
         require(localValue(runtimeSpawned, "bornCount") == 1.0, "born-spawned object should be born once");
-        require(localValue(runtimeSpawned, "actionCount") == 0.0, "born-spawned object should miss action in first frame");
-        require(localValue(runtimeSpawned, "motionCount") == 1.0, "born-spawned object should join motion in first frame");
+        require(localValue(runtimeSpawned, "actionCount") == 0.0, "born-spawned object should not run action during load");
+
+        harness.update();
+
+        RuntimeObject& updatedSpawned =
+            requireObject(harness.world, "spawned");
+
+        require(localValue(updatedSpawned, "actionCount") == 1.0, "born-spawned object should join first frame action");
+        require(localValue(updatedSpawned, "motionCount") == 1.0, "born-spawned object should join first frame motion");
+    }
+
+    void testRecursiveSpawnDuringBornIsStabilizedBeforeLoadReturns()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "spawnA",
+            "function born(o) { spawn(o, 'a'); }"
+        );
+
+        harness.addScript(
+            "spawnB",
+            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; spawn(o, 'b'); }"
+        );
+
+        harness.addScript(
+            "bornProbe",
+            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "spawnA");
+        root.childResources["a"] = "a";
+
+        ObjectDefinition a =
+            objectDefinition("a", "spawnB");
+        a.spawnMode = "manual";
+        a.childResources["b"] = "b";
+
+        ObjectDefinition b =
+            objectDefinition("b", "bornProbe");
+        b.spawnMode = "manual";
+
+        harness.addObject(root);
+        harness.addObject(a);
+        harness.addObject(b);
+
+        require(harness.load().success, "runtime should stabilize recursive born spawns");
+
+        RuntimeObject& runtimeA =
+            requireObject(harness.world, "a");
+        RuntimeObject& runtimeB =
+            requireObject(harness.world, "b");
+
+        require(localValue(runtimeA, "bornCount") == 1.0, "recursive spawned parent should be born once");
+        require(localValue(runtimeB, "bornCount") == 1.0, "recursive spawned child should be born once");
+    }
+
+    void testSpawnDuringBornLimitFailsLoad()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "spawnSelf",
+            "function born(o) { spawn(o, 'self'); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "spawnSelf");
+        root.childResources["self"] = "root";
+        root.spawnMode = "manual";
+
+        harness.addObject(root);
+
+        RuntimeLoadResult result =
+            harness.load();
+
+        require(!result.success, "runtime load should fail when born spawn never stabilizes");
+        require(result.diagnostics.hasErrors(), "born spawn limit should produce diagnostics");
     }
 
     void testSpawnDuringActionMotionAndCollisionPhases()
@@ -279,7 +401,6 @@ namespace
             "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; }"
             "function action(o) { o.local['actionCount'] = (o.local['actionCount'] || 0) + 1; }"
             "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
-            "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
         );
 
         ObjectDefinition root =
@@ -289,16 +410,22 @@ namespace
         root.childResources["collisionChild"] = "collisionChild";
         root.childResources["target"] = "target";
         root.collisionActive = true;
-        root.collisionType = "box";
+        root.collisionType = "circle";
         root.collisionWith.push_back("target");
         root.group = "source";
+        root.origin = Vector2{ 20.0f, 20.0f };
+        root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 10.0f };
+        root.collisionRadius = 8.0f;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisionType = "circle";
+        target.offset = Vector2{ 0.0f, 0.0f };
+        target.hasOffset = true;
         target.size = Vector2{ 10.0f, 10.0f };
+        target.collisionRadius = 8.0f;
 
         ObjectDefinition actionChild =
             objectDefinition("actionChild", "phaseProbe");
@@ -317,8 +444,25 @@ namespace
         harness.addObject(collisionChild);
 
         require(harness.load().success, "runtime should load phase spawn project");
+        RuntimeObject& loadedRoot =
+            requireObject(harness.world, "root");
+        RuntimeObject& loadedTarget =
+            requireObject(harness.world, "target");
+        require(loadedRoot.collisionActive, "root collision should be active");
+        require(loadedRoot.collisionType == "circle", "root collision should be circle");
+        require(loadedTarget.collisionType == "circle", "target collision should be circle");
+        require(loadedTarget.group == "target", "target group should be target");
+        require(loadedRoot.position.x == loadedTarget.position.x, "root and target x should match");
+        require(loadedRoot.position.y == loadedTarget.position.y, "root and target y should match");
 
         harness.update();
+
+        RuntimeObject& updatedRoot =
+            requireObject(harness.world, "root");
+        require(
+            localValue(updatedRoot, "c") == 1.0,
+            "collision callback should run"
+        );
 
         RuntimeObject& actionRuntime =
             requireObject(harness.world, "actionChild");
@@ -340,43 +484,99 @@ namespace
         require(localValue(collisionRuntime, "motionCount") == 0.0, "collision spawn should miss current motion phase");
     }
 
-    void testDeathCleanupAndDeadResurrection()
+    void testKillDuringActionMotionAndCollisionIsTerminal()
     {
         RuntimeHarness harness;
 
         harness.addScript(
             "killInAction",
-            "function action(o) { o.alive = false; }"
-            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; }"
+            "function action(o) { kill(o); }"
+            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
         );
 
         harness.addScript(
-            "resurrectInDead",
-            "function action(o) { o.alive = false; }"
-                "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+            "killInMotion",
+            "function motion(o) { kill(o); }"
+            "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
+            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+        );
+
+        harness.addScript(
+            "killInCollision",
+            "function collision(o, other) { kill(o); }"
+            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
         );
 
         ObjectDefinition root =
             objectDefinition("root");
-        root.childResources["victim"] = "victim";
-        root.childResources["resurrect"] = "resurrect";
+        root.childResources["actionVictim"] = "actionVictim";
+        root.childResources["motionVictim"] = "motionVictim";
+        root.childResources["collisionVictim"] = "collisionVictim";
+        root.childResources["target"] = "target";
 
-        ObjectDefinition victim =
-            objectDefinition("victim", "killInAction");
-        ObjectDefinition resurrect =
-            objectDefinition("resurrect", "resurrectInDead");
+        ObjectDefinition actionVictim =
+            objectDefinition("actionVictim", "killInAction");
+
+        ObjectDefinition motionVictim =
+            objectDefinition("motionVictim", "killInMotion");
+        motionVictim.collisionActive = true;
+        motionVictim.collisionType = "box";
+        motionVictim.collisionWith.push_back("target");
+        motionVictim.size = Vector2{ 10.0f, 10.0f };
+
+        ObjectDefinition collisionVictim =
+            objectDefinition("collisionVictim", "killInCollision");
+        collisionVictim.collisionActive = true;
+        collisionVictim.collisionType = "box";
+        collisionVictim.collisionWith.push_back("target");
+        collisionVictim.size = Vector2{ 10.0f, 10.0f };
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.group = "target";
+        target.collisionType = "box";
+        target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);
-        harness.addObject(victim);
-        harness.addObject(resurrect);
+        harness.addObject(actionVictim);
+        harness.addObject(motionVictim);
+        harness.addObject(collisionVictim);
+        harness.addObject(target);
 
-        require(harness.load().success, "runtime should load death project");
+        require(harness.load().success, "runtime should load kill project");
 
         harness.update();
 
-        require(harness.world.findByName("victim") == nullptr, "dead victim should be cleaned up");
-        require(harness.world.findByName("resurrect") != nullptr, "dead callback can currently resurrect an object");
-        require(localValue(requireObject(harness.world, "resurrect"), "deadCount") == 1.0, "resurrected object dead should run once");
+        require(harness.world.findByName("actionVictim") == nullptr, "kill in action should be terminal");
+        require(harness.world.findByName("motionVictim") == nullptr, "kill in motion should be terminal");
+        require(harness.world.findByName("collisionVictim") == nullptr, "kill in collision should be terminal");
+    }
+
+    void testAliveIsReadOnlyFromJavaScript()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "writeAlive",
+            "function action(o) { o.alive = false; }"
+            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "writeAlive");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load alive readonly project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(runtimeRoot.alive, "direct JS alive write should not kill object");
+        require(localValue(runtimeRoot, "motionCount") == 1.0, "object should keep participating after ignored alive write");
     }
 
     void testKeepOnlyPreventsOtherObjectsFromResurrecting()
@@ -414,7 +614,97 @@ namespace
         require(harness.world.findByName("resurrect") == nullptr, "keep_only should keep non-kept object dead even if dead sets alive=true");
     }
 
-    void testDrawCallbackOrderAndVisibility()
+    void testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "visibilityProbe",
+            "function born(o) { timer(o, 'life', 1.0); }"
+            "function action(o) {"
+            "  o.local['actionCount'] = (o.local['actionCount'] || 0) + 1;"
+            "  if (o.local['actionCount'] == 1) hide(o);"
+            "  if (o.local['actionCount'] == 2) show(o);"
+            "}"
+            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+            "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
+            "function draw(o) { o.local['drawCount'] = (o.local['drawCount'] || 0) + 1; }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "visibilityProbe");
+        root.childResources["target"] = "target";
+        root.collisionActive = true;
+        root.collisionType = "box";
+        root.collisionWith.push_back("target");
+        root.size = Vector2{ 10.0f, 10.0f };
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.group = "target";
+        target.collisionType = "box";
+        target.size = Vector2{ 10.0f, 10.0f };
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load visibility project");
+
+        HiddenTestWindow window;
+
+        harness.update(0.25f);
+        harness.draw();
+
+        RuntimeObject& hiddenRoot =
+            requireObject(harness.world, "root");
+
+        require(!hiddenRoot.visible, "hide should mark object invisible");
+        require(localValue(hiddenRoot, "actionCount") == 1.0, "hidden object should run action");
+        require(localValue(hiddenRoot, "motionCount") == 1.0, "hidden object should run motion");
+        require(localValue(hiddenRoot, "collisionCount") == 1.0, "hidden object should still collide");
+        require(localValue(hiddenRoot, "drawCount") == 0.0, "hide should suppress JS draw");
+        require(nearlyEqual(hiddenRoot.timers["life"].left, 0.75), "hidden object timers should continue");
+
+        harness.update(0.25f);
+        harness.draw();
+
+        RuntimeObject& shownRoot =
+            requireObject(harness.world, "root");
+
+        require(shownRoot.visible, "show should mark object visible");
+        require(localValue(shownRoot, "drawCount") == 1.0, "show should restore JS draw");
+    }
+
+    void testVisibleIsReadOnlyFromJavaScript()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "writeVisible",
+            "function action(o) { o.visible = false; }"
+            "function draw(o) { o.local['drawCount'] = (o.local['drawCount'] || 0) + 1; }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "writeVisible");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load visible readonly project");
+
+        HiddenTestWindow window;
+
+        harness.update();
+        harness.draw();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(runtimeRoot.visible, "direct JS visible write should be ignored");
+        require(localValue(runtimeRoot, "drawCount") == 1.0, "object should still draw after ignored visible write");
+    }
+
+    void testDrawCallbacksFollowStableLayerOrder()
     {
         RuntimeHarness harness;
 
@@ -430,23 +720,29 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "drawProbe");
         root.childResources["low"] = "low";
+        root.childResources["same"] = "same";
         root.childResources["high"] = "high";
 
         ObjectDefinition low =
             objectDefinition("low", "drawProbe");
         low.layer = -10;
-        low.visible = false;
+
+        ObjectDefinition same =
+            objectDefinition("same", "drawProbe");
+        same.layer = 0;
 
         ObjectDefinition high =
             objectDefinition("high", "drawProbe");
         high.layer = 10;
-        high.visible = false;
 
         harness.addObject(root);
         harness.addObject(low);
+        harness.addObject(same);
         harness.addObject(high);
 
         require(harness.load().success, "runtime should load draw project");
+
+        HiddenTestWindow window;
 
         harness.draw();
 
@@ -454,12 +750,14 @@ namespace
             requireObject(harness.world, "root");
         RuntimeObject& runtimeLow =
             requireObject(harness.world, "low");
+        RuntimeObject& runtimeSame =
+            requireObject(harness.world, "same");
         RuntimeObject& runtimeHigh =
             requireObject(harness.world, "high");
 
-        require(localValue(runtimeRoot, "drawOrder") == 0.0, "draw callbacks currently start with root");
-        require(localValue(runtimeLow, "drawOrder") > 0.0, "visible=false does not suppress draw callback");
-        require(localValue(runtimeHigh, "drawOrder") > 0.0, "visible=false does not suppress draw callback");
+        require(localValue(runtimeLow, "drawOrder") == 0.0, "lower layer should draw first");
+        require(localValue(runtimeRoot, "drawOrder") < localValue(runtimeSame, "drawOrder"), "same layer should keep insertion order");
+        require(localValue(runtimeHigh, "drawOrder") > localValue(runtimeSame, "drawOrder"), "higher layer should draw last");
     }
 
     void testObjectTimeStateAndTimers()
@@ -661,6 +959,8 @@ namespace
 
         require(loadResult.success, "script exception in born should not fail runtime load currently");
 
+        HiddenTestWindow window;
+
         harness.update();
         harness.draw();
 
@@ -678,7 +978,7 @@ namespace
         require(harness.world.findByName("root") == nullptr, "dead exception should not prevent cleanup");
     }
 
-    void testAutoCycleFixtureIsNotExecuted()
+    void testAutomaticInstantiationCycleFailsRuntimeLoad()
     {
         RuntimeHarness harness;
 
@@ -698,8 +998,11 @@ namespace
         harness.addObject(a);
         harness.addObject(b);
 
-        require(harness.project.resources.hasObject("a"), "cycle fixture should include a");
-        require(harness.project.resources.hasObject("b"), "cycle fixture should include b");
+        RuntimeLoadResult result =
+            harness.load();
+
+        require(!result.success, "runtime load should reject automatic instantiation cycle");
+        require(result.diagnostics.hasErrors(), "automatic instantiation cycle should produce diagnostics");
     }
 }
 
@@ -707,16 +1010,21 @@ int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "initial load born order and identity", testInitialLoadBornOrderAndIdentity },
-        { "spawn during born is flushed during first action gap", testSpawnDuringBornIsFlushedDuringFirstActionGap },
+        { "spawn during born is stabilized before load returns", testSpawnDuringBornIsStabilizedBeforeLoadReturns },
+        { "recursive spawn during born is stabilized before load returns", testRecursiveSpawnDuringBornIsStabilizedBeforeLoadReturns },
+        { "spawn during born limit fails load", testSpawnDuringBornLimitFailsLoad },
         { "spawn during action motion and collision phases", testSpawnDuringActionMotionAndCollisionPhases },
-        { "death cleanup and dead resurrection", testDeathCleanupAndDeadResurrection },
+        { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
+        { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
-        { "draw callback order and visibility", testDrawCallbackOrderAndVisibility },
+        { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
+        { "visible is read-only from JavaScript", testVisibleIsReadOnlyFromJavaScript },
+        { "draw callbacks follow stable layer order", testDrawCallbacksFollowStableLayerOrder },
         { "object time state and timers", testObjectTimeStateAndTimers },
         { "attachments apply after motion before collision", testAttachmentsApplyAfterMotionBeforeCollision },
         { "find by runtime id name duplicates and pending lookup", testFindByRuntimeIdNameDuplicatesAndPendingLookup },
         { "script errors are logged and runtime continues", testScriptErrorsAreLoggedAndRuntimeContinues },
-        { "auto cycle fixture is not executed", testAutoCycleFixtureIsNotExecuted }
+        { "automatic instantiation cycle fails runtime load", testAutomaticInstantiationCycleFailsRuntimeLoad }
     };
 
     for (const auto& test : tests)

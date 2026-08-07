@@ -303,6 +303,7 @@ RuntimeObject::RuntimeObject(
 )
     : name(name),
       runtimeId(name),
+      definitionId(""),
       parentId(""),
       originalParentId(""),
       sourcePath(""),

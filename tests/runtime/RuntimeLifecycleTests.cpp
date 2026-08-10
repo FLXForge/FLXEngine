@@ -641,6 +641,153 @@ namespace
         require(localValue(runtimeRoot, "motionCount") == 1.0, "object should keep participating after ignored alive write");
     }
 
+    void testJsFlatRuntimePropertiesAreMutable()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "mutateFlatProperties",
+            "function action(o) {"
+            "  o.x = 11;"
+            "  o.y = 12;"
+            "  o.speed = 13;"
+            "  o.angle = 14;"
+            "  o.velocityX = 15;"
+            "  o.velocityY = 16;"
+            "  o.width = 17;"
+            "  o.height = 18;"
+            "  o.layer = 19;"
+            "  o.attached = true;"
+            "  o.local['mark'] = 20;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "mutateFlatProperties");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load flat property mutation project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(runtimeRoot.position.x, 11.0), "JS x write should update runtime position x");
+        require(nearlyEqual(runtimeRoot.position.y, 12.0), "JS y write should update runtime position y");
+        require(nearlyEqual(runtimeRoot.speed, 13.0), "JS speed write should update runtime speed");
+        require(nearlyEqual(runtimeRoot.angle, 14.0), "JS angle write should update runtime angle");
+        require(nearlyEqual(runtimeRoot.velocity.x, 15.0), "JS velocityX write should update runtime velocity x");
+        require(nearlyEqual(runtimeRoot.velocity.y, 16.0), "JS velocityY write should update runtime velocity y");
+        require(nearlyEqual(runtimeRoot.size.x, 17.0), "JS width write should update runtime size x");
+        require(nearlyEqual(runtimeRoot.size.y, 18.0), "JS height write should update runtime size y");
+        require(runtimeRoot.layer == 19, "JS layer write should update runtime layer");
+        require(runtimeRoot.attached, "JS attached write should update runtime attached");
+        require(localValue(runtimeRoot, "mark") == 20.0, "JS local values should roundtrip as numeric state");
+    }
+
+    void testJsMotionNestedPropertiesAreReadOnlySnapshot()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "mutateMotionSnapshot",
+            "function action(o) {"
+            "  o.motion.speed = 41;"
+            "  o.motion.angle = 42;"
+            "  o.motion.rotationSpeed = 43;"
+            "  o.motion.acceleration = 44;"
+            "  o.motion.inertia = 45;"
+            "  o.motion.maxSpeed = 46;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "mutateMotionSnapshot");
+        root.speed = 1.0f;
+        root.angle = 2.0f;
+        root.rotationSpeed = 3.0f;
+        root.acceleration = 4.0f;
+        root.inertia = 5.0f;
+        root.maxSpeed = 6.0f;
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load nested motion mutation project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(runtimeRoot.speed, 1.0), "motion.speed write should not update runtime speed");
+        require(nearlyEqual(runtimeRoot.angle, 2.0), "motion.angle write should not update runtime angle");
+        require(nearlyEqual(runtimeRoot.rotationSpeed, 3.0), "motion.rotationSpeed write should not update runtime rotationSpeed");
+        require(nearlyEqual(runtimeRoot.acceleration, 4.0), "motion.acceleration write should not update runtime acceleration");
+        require(nearlyEqual(runtimeRoot.inertia, 5.0), "motion.inertia write should not update runtime inertia");
+        require(nearlyEqual(runtimeRoot.maxSpeed, 6.0), "motion.maxSpeed write should not update runtime maxSpeed");
+    }
+
+    void testJsMetadataAndIdentityAreReadableButNotAppliedBack()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "metadataProbe",
+            "function action(o) {"
+            "  o.local['idIsRuntime'] = o.id != o.name ? 1 : 0;"
+            "  o.local['nameRead'] = o.name == 'root' ? 1 : 0;"
+            "  o.local['groupRead'] = o.group == 'actor' ? 1 : 0;"
+            "  o.local['roleRead'] = o.role == 'leader' ? 1 : 0;"
+            "  o.local['originRead'] = o.originX == 7 && o.originY == 8 ? 1 : 0;"
+            "  o.local['originSpeedRead'] = o.originSpeed == 9 ? 1 : 0;"
+            "  o.local['previousRead'] = o.previousX == 7 && o.previousY == 8 ? 1 : 0;"
+            "  o.id = 'changed_id';"
+            "  o.name = 'changed_name';"
+            "  o.group = 'changed_group';"
+            "  o.role = 'changed_role';"
+            "  o.originX = 70;"
+            "  o.originY = 80;"
+            "  o.originSpeed = 90;"
+            "  o.previousX = 700;"
+            "  o.previousY = 800;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "metadataProbe");
+        root.group = "actor";
+        root.role = "leader";
+        root.origin = Vector2{ 7.0f, 8.0f };
+        root.hasOrigin = true;
+        root.speed = 9.0f;
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load metadata probe project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "idIsRuntime") == 1.0, "JS id should expose runtime identity, not logical name");
+        require(localValue(runtimeRoot, "nameRead") == 1.0, "JS name should expose logical instance name");
+        require(localValue(runtimeRoot, "groupRead") == 1.0, "JS group should be readable");
+        require(localValue(runtimeRoot, "roleRead") == 1.0, "JS role should be readable");
+        require(localValue(runtimeRoot, "originRead") == 1.0, "JS origin should be readable");
+        require(localValue(runtimeRoot, "originSpeedRead") == 1.0, "JS originSpeed should be readable");
+        require(localValue(runtimeRoot, "previousRead") == 1.0, "JS previous position should be readable");
+        require(runtimeRoot.runtimeId != "changed_id", "JS id write should not update runtimeId");
+        require(runtimeRoot.name == "root", "JS name write should not update runtime name");
+        require(runtimeRoot.group == "actor", "JS group write should not update runtime group");
+        require(runtimeRoot.role == "leader", "JS role write should not update runtime role");
+        require(nearlyEqual(runtimeRoot.origin.x, 7.0), "JS originX write should not update runtime origin x");
+        require(nearlyEqual(runtimeRoot.origin.y, 8.0), "JS originY write should not update runtime origin y");
+        require(nearlyEqual(runtimeRoot.originSpeed, 9.0), "JS originSpeed write should not update runtime originSpeed");
+    }
+
     void testKeepOnlyPreventsOtherObjectsFromResurrecting()
     {
         RuntimeHarness harness;
@@ -1198,6 +1345,9 @@ int main()
         { "spawn during action motion and collision phases", testSpawnDuringActionMotionAndCollisionPhases },
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
+        { "JS flat runtime properties are mutable", testJsFlatRuntimePropertiesAreMutable },
+        { "JS motion nested properties are read-only snapshot", testJsMotionNestedPropertiesAreReadOnlySnapshot },
+        { "JS metadata and identity are readable but not applied back", testJsMetadataAndIdentityAreReadableButNotAppliedBack },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },

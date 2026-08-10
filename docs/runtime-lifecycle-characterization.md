@@ -1,75 +1,177 @@
-# Caracterizacion del ciclo de vida de RuntimeWorld
+# Contrato del ciclo de vida de RuntimeWorld
 
-Este documento resume la caracterizacion realizada sobre `RuntimeWorld` y el
-contrato consolidado despues de corregir los puntos inseguros detectados.
+Este documento registra el contrato de `RuntimeWorld` despues de la
+consolidacion del ciclo de vida. Ya no describe comportamiento accidental:
+separa reglas consolidadas, reglas futuras deliberadamente pendientes y riesgos
+ya eliminados.
 
-## Contrato consolidado
+## A. Reglas consolidadas
 
-- La carga inicial resuelve el root desde `ResourceRegistry`, crea el root,
-  crea recursivamente los hijos `auto` y llama a `born()` exactamente una vez
-  por instancia.
-- Los `spawn()` solicitados durante `born()` se estabilizan antes de que
-  `RuntimeWorld::load()` devuelva exito. La cola se vacia hasta quedar estable.
-- Si la estabilizacion de `spawn()` durante carga supera el limite defensivo, la
-  carga falla con un diagnostic estable y el loop de `Engine` no empieza.
-- Los ciclos de instanciacion automatica se validan en `CompiledProjectValidator`.
-  `RuntimeWorld` mantiene una defensa adicional para proyectos compilados
-  invalidos.
-- `kill(object)` solicita muerte de forma explicita, segura, idempotente y
-  diferida. No elimina objetos del vector durante una iteracion.
-- La muerte es terminal: el objeto saltara fases activas posteriores,
-  ejecutara `dead(object)` una sola vez y sera eliminado en cleanup. `dead()` no
-  puede resucitarlo.
-- `object.alive` es de solo lectura para JavaScript. Escribir
-  `object.alive = false` no mata el objeto.
-- `keep_only(object)` usa el mismo mecanismo de muerte que `kill(object)` y
-  conserva exactamente el runtime id indicado. No conserva hijos
-  automaticamente.
-- `hide(object)` y `show(object)` controlan visibilidad sin alterar vida,
-  colision, motion, action, timers ni state time.
-- Un objeto oculto no dibuja su shape declarativa ni ejecuta su callback
-  JavaScript `draw(object)`.
-- `object.visible` es de solo lectura para JavaScript. La API publica para
-  cambiar visibilidad es `hide(object)` / `show(object)`.
-- El dibujo de objetos visibles se ordena de forma estable por `layer`. Para
-  cada objeto se dibuja primero la shape declarativa y despues su callback
-  JavaScript `draw(object)`.
-- `layer` solo expresa orden relativo entre objetos del mundo en el renderer
-  actual. No es un sistema global definitivo de capas de video.
+### Carga
 
-## Comportamiento mantenido
-
-- `update()` conserva el orden general: `beginFrame`, `action`, flush de spawn,
-  `motion`, flush de spawn, `attach`, `collision`, flush de spawn,
-  tiempo/timers, `dead`, cleanup.
-- Un `spawn()` solicitado durante `action()` nace antes de `motion` y puede
-  participar en el `motion` del mismo frame.
-- Un `spawn()` solicitado durante `motion()` nace despues de `motion` y antes de
-  attachments/collision. No participa en `action` ni en `motion` de ese frame.
-- Un `spawn()` solicitado durante `collision()` nace despues de collision. No
-  participa en `action` ni en `motion` de ese frame.
-- Los runtime ids siguen el formato `<object id>_<counter>`.
+- `RuntimeWorld::load()` obtiene el objeto raiz desde `ResourceRegistry`.
+- La raiz y todos los hijos `spawn: "auto"` alcanzables se instancian durante la
+  carga.
+- `born(object)` se ejecuta exactamente una vez por instancia.
+- Todo `spawn()` solicitado durante `born()` se vuelca y estabiliza antes de que
+  `RuntimeWorld::load()` devuelva resultado.
+- El `spawn()` recursivo durante `born()` tambien se estabiliza antes de que la
+  carga termine.
+- Existe un limite defensivo para proteger la carga de cadenas de spawn que no
+  llegan a estabilizarse.
+- Si el volcado de spawn durante carga supera ese limite, la carga falla y el
+  loop de `Engine` no debe empezar.
+- Los runtime ids son unicos por instancia.
 - `parentId` y `originalParentId` se inicializan con el runtime id del parent
-  original.
-- Los attachments se aplican despues de `motion` y antes de `collision`.
-- Attachment sigue siempre al parent original. Si el parent no existe o esta
-  muerto, el seguimiento se omite en ese frame.
-- `findByRuntimeId()` busca objetos vivos por runtime id exacto.
+  original cuando un objeto nace como child.
+
+### Spawn Durante Update
+
+- Un `spawn()` solicitado durante `action()` nace despues de la fase `action` y
+  participa en las fases restantes del mismo frame, incluido `motion()`.
+- Un `spawn()` solicitado durante `motion()` nace despues de la fase `motion`.
+  No ejecuta `action()` ni `motion()` en ese mismo frame.
+- Un `spawn()` solicitado durante `collision()` nace despues de la fase
+  `collision`. No ejecuta `action()` ni `motion()` en ese mismo frame.
+- Se conserva el orden de ciclo aprobado:
+
+```text
+beginFrame
+action
+flush spawn
+motion
+flush spawn
+attachments
+collision
+flush spawn
+time/timers
+dead
+cleanup
+```
+
+### Muerte
+
+- `kill(object)` es terminal, explicito, idempotente y diferido.
+- Los objetos muertos no se eliminan del vector de objetos vivos durante una
+  iteracion activa.
+- Una vez muerto, un objeto salta fases activas posteriores, recibe
+  `dead(object)` exactamente una vez y se elimina fisicamente durante cleanup.
+- `dead(object)` no puede resucitar un objeto.
+- `keep_only(object)` usa la misma ruta de muerte que `kill(object)`.
+- `keep_only(object)` conserva exactamente el runtime object pasado. No conserva
+  hijos automaticamente.
+
+### Alive
+
+- `object.alive` es de solo lectura desde JavaScript.
+- Escrituras directas como `object.alive = false` se ignoran.
+- Los scripts deben usar `kill(object)` para solicitar muerte.
+
+### Visible
+
+- `object.visible` es de solo lectura desde JavaScript.
+- Los scripts deben usar `show(object)` y `hide(object)` para cambiar
+  visibilidad.
+- `hide(object)` suprime el dibujo declarativo de la shape.
+- `hide(object)` suprime el callback JavaScript `draw(object)`.
+- Los objetos ocultos siguen ejecutando `action()`, `motion()`, collision,
+  timers y state time.
+- `show(object)` restaura el dibujo declarativo y `draw(object)`.
+
+### Dibujo
+
+- Los objetos visibles se dibujan en orden estable por `layer`.
+- Los valores menores de `layer` se dibujan antes que los mayores.
+- Los objetos con el mismo `layer` mantienen el orden runtime estable actual.
+- Para cada objeto, primero se dibuja la shape declarativa y justo despues se
+  ejecuta su callback JavaScript `draw(object)`.
+- No existen dos pipelines separados del tipo "todas las shapes declarativas" y
+  despues "todos los callbacks draw de objeto".
+- El `layer` actual representa el orden relativo de objetos del mundo.
+- Las futuras video layers introduciran un nivel superior de composicion por
+  encima de este orden de dibujo por objeto.
+
+### Ciclos De Instanciacion Automatica
+
+- Los ciclos `auto -> auto` son invalidos y deben fallar.
+- Los ciclos `manual -> manual` son validos porque no son ciclos de
+  instanciacion automatica.
+- Los grafos mixtos son validos cuando el ciclo queda cortado por una arista
+  manual.
+- Los ciclos de referencia de recursos y los ciclos de instanciacion automatica
+  siguen siendo conceptos separados.
+- `CompiledProjectValidator` es la capa principal de validacion de ciclos de
+  instanciacion automatica.
+- `RuntimeWorld` mantiene una proteccion defensiva para proyectos compilados
+  invalidos.
+
+### Errores De Script
+
+- Las excepciones lanzadas por callbacks de script se registran mediante
+  `Logger`.
+- La ejecucion runtime continua despues de excepciones en `born`, `action`,
+  `motion`, `collision`, `draw` y `dead`.
+- Esta es la politica explicita actual. Los diagnostics runtime para fallos de
+  script quedan pendientes para una auditoria futura.
+
+### Tiempo
+
+- State time y timers empiezan con sus valores de nacimiento.
+- Durante un frame, los scripts observan state time y timers antes de que se
+  aplique el incremento/decremento del frame.
+- State time y timers se actualizan despues de collision y antes de `dead()`.
+- Los objetos ocultos siguen actualizando timers y state time.
+
+### Identidad Y Busqueda
+
+- `findByRuntimeId()` devuelve un objeto vivo por runtime id exacto.
 - `findByName()` devuelve el primer objeto vivo con ese nombre en el orden
-  interno actual.
-- Los objetos pendientes de spawn no son visibles para busqueda hasta que la
-  cola de spawn se vuelca.
-- Las excepciones de script en `born`, `action`, `motion`, `collision`, `draw`
-  y `dead` se registran y el runtime continua.
+  runtime actual.
+- Los objetos pendientes de spawn no son visibles para busqueda hasta que se
+  vuelca la cola de spawn.
+- Los objetos muertos no se devuelven despues de cleanup.
 
-## Deuda pendiente
+## B. Reglas futuras deliberadamente pendientes
 
-- El orden de creacion entre hermanos sigue dependiendo del orden de
-  `childResources`. No se fija como contrato estable.
-- Las excepciones de script aun no se representan como diagnostics
-  estructurados de runtime.
-- `RuntimeWorld` almacena instancias vivas en un `std::vector`; no deben
-  conservarse punteros C++ a `RuntimeObject` entre operaciones que puedan hacer
-  spawn o cleanup.
-- No existe todavia un renderer separable para verificar orden visual mediante
-  llamadas capturables o pixeles en tests unitarios puros.
+- Video layers: el `layer` actual solo es orden de dibujo por objeto. Un sistema
+  futuro de video layers debe definir composicion por encima del dibujo de
+  objetos.
+- Attachments: el contrato actual confirma el timing aprobado: attachments se
+  aplican despues de `motion()` y antes de collision, usando el parent original.
+  Queda pendiente una auditoria mas amplia de attachments.
+- States: las transiciones de estado existen, pero queda pendiente una auditoria
+  completa de timing de entrada y diagnostics.
+- Timers: los timers pertenecen al objeto y se actualizan dentro del ciclo, pero
+  persistencia, diagnostics y semanticas avanzadas quedan pendientes.
+- Collision semantics: este documento solo cubre cuando participa collision en
+  el ciclo. Filtrado y politica de respuesta requieren auditoria propia.
+- Runtime diagnostics: muchos fallos runtime y de script siguen registrandose
+  como logs en lugar de diagnostics estructurados.
+- Politica de errores de script: actualmente la ejecucion continua tras errores
+  de script. Una decision futura podria introducir comportamiento estricto o
+  configurable.
+- Almacenamiento de RuntimeObject: el contenedor vivo sigue siendo un vector
+  interno. El codigo externo no debe conservar punteros C++ a `RuntimeObject`
+  entre operaciones que puedan hacer spawn o cleanup.
+- Verificacion de dibujo: los tests cubren orden critico a nivel de pixel, pero
+  no existe todavia una abstraccion de renderer para inspeccionar todos los
+  comandos de dibujo.
+
+## C. Riesgos ya eliminados
+
+- El spawn durante `born()` ya no deja instancias pendientes despues de
+  `RuntimeWorld::load()`.
+- El spawn recursivo durante `born()` se estabiliza o falla con limite
+  defensivo.
+- `kill()` ya no permite resurreccion mediante `dead()`.
+- `keep_only()` ya no usa un comportamiento de eliminacion separado.
+- `object.alive` ya no es mutable desde JavaScript.
+- `object.visible` ya no es mutable desde JavaScript.
+- `hide()` ya no suprime solo parte del render; suprime shape declarativa y
+  `draw(object)`.
+- El dibujo de objetos ya no se comporta como dos pipelines de layer
+  independientes.
+- Los ciclos manuales de children ya no se clasifican como
+  `AutomaticInstantiationCycle`.
+- La deteccion de ciclos automaticos usa identidad de recurso, evitando falsos
+  positivos por nombres logicos cortos repetidos en archivos distintos.

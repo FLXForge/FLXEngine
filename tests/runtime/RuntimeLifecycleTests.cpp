@@ -31,6 +31,7 @@ namespace
             project.context.machine.video.screenWidth = static_cast<int>(ScreenWidth);
             project.context.machine.video.screenHeight = static_cast<int>(ScreenHeight);
             project.context.machine.video.outputScale = 1;
+            scripts.setScreenScale(1);
 
             scripts.setFindObjectFunction(
                 [this](const std::string& name)
@@ -188,6 +189,18 @@ namespace
         return std::abs(left - right) <= epsilon;
     }
 
+    bool sameColor(
+        Color left,
+        Color right
+    )
+    {
+        return
+            left.r == right.r &&
+            left.g == right.g &&
+            left.b == right.b &&
+            left.a == right.a;
+    }
+
     class HiddenTestWindow
     {
     public:
@@ -213,6 +226,43 @@ namespace
     private:
         bool opened = false;
     };
+
+    int countRenderedColor(
+        RuntimeHarness& harness,
+        Color color
+    )
+    {
+        HiddenTestWindow window;
+
+        RenderTexture2D target =
+            LoadRenderTexture(16, 16);
+
+        BeginTextureMode(target);
+        ClearBackground(BLACK);
+        harness.draw();
+        EndTextureMode();
+
+        Image image =
+            LoadImageFromTexture(target.texture);
+
+        int count = 0;
+
+        for (int y = 0; y < image.height; ++y)
+        {
+            for (int x = 0; x < image.width; ++x)
+            {
+                if (sameColor(GetImageColor(image, x, y), color))
+                {
+                    ++count;
+                }
+            }
+        }
+
+        UnloadImage(image);
+        UnloadRenderTexture(target);
+
+        return count;
+    }
 
     void testInitialLoadBornOrderAndIdentity()
     {
@@ -489,27 +539,32 @@ namespace
         RuntimeHarness harness;
 
         harness.addScript(
+            "rootDeadCounter",
+            "function action(o) { o.local['deadCount'] = global['deadCount'] || 0; }"
+        );
+
+        harness.addScript(
             "killInAction",
             "function action(o) { kill(o); }"
             "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
-            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
         );
 
         harness.addScript(
             "killInMotion",
             "function motion(o) { kill(o); }"
             "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
-            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
         );
 
         harness.addScript(
             "killInCollision",
             "function collision(o, other) { kill(o); }"
-            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
         );
 
         ObjectDefinition root =
-            objectDefinition("root");
+            objectDefinition("root", "rootDeadCounter");
         root.childResources["actionVictim"] = "actionVictim";
         root.childResources["motionVictim"] = "motionVictim";
         root.childResources["collisionVictim"] = "collisionVictim";
@@ -551,6 +606,13 @@ namespace
         require(harness.world.findByName("actionVictim") == nullptr, "kill in action should be terminal");
         require(harness.world.findByName("motionVictim") == nullptr, "kill in motion should be terminal");
         require(harness.world.findByName("collisionVictim") == nullptr, "kill in collision should be terminal");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "deadCount") == 3.0, "dead should run exactly once per killed object");
     }
 
     void testAliveIsReadOnlyFromJavaScript()
@@ -675,6 +737,34 @@ namespace
         require(localValue(shownRoot, "drawCount") == 1.0, "show should restore JS draw");
     }
 
+    void testHideSuppressesDeclarativeDrawing()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "hideOnBorn",
+            "function born(o) { hide(o); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["hiddenBlock"] = "hiddenBlock";
+
+        ObjectDefinition hiddenBlock =
+            objectDefinition("hiddenBlock", "hideOnBorn");
+        hiddenBlock.shapeType = "block";
+        hiddenBlock.size = Vector2{ 4.0f, 4.0f };
+        hiddenBlock.color = GREEN;
+        hiddenBlock.origin = Vector2{ 4.0f, 4.0f };
+        hiddenBlock.hasOrigin = true;
+
+        harness.addObject(root);
+        harness.addObject(hiddenBlock);
+
+        require(harness.load().success, "runtime should load hidden declarative draw project");
+        require(countRenderedColor(harness, GREEN) == 0, "hide should suppress declarative shape drawing");
+    }
+
     void testVisibleIsReadOnlyFromJavaScript()
     {
         RuntimeHarness harness;
@@ -758,6 +848,43 @@ namespace
         require(localValue(runtimeLow, "drawOrder") == 0.0, "lower layer should draw first");
         require(localValue(runtimeRoot, "drawOrder") < localValue(runtimeSame, "drawOrder"), "same layer should keep insertion order");
         require(localValue(runtimeHigh, "drawOrder") > localValue(runtimeSame, "drawOrder"), "higher layer should draw last");
+    }
+
+    void testDeclarativeDrawAndJsDrawShareObjectLayerOrder()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "paintRedPixel",
+            "function draw(o) { draw_pixel(5, 5, 'red'); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["lowPainter"] = "lowPainter";
+        root.childResources["highBlock"] = "highBlock";
+
+        ObjectDefinition lowPainter =
+            objectDefinition("lowPainter", "paintRedPixel");
+        lowPainter.layer = -10;
+
+        ObjectDefinition highBlock =
+            objectDefinition("highBlock");
+        highBlock.layer = 10;
+        highBlock.shapeType = "block";
+        highBlock.size = Vector2{ 1.0f, 1.0f };
+        highBlock.origin = Vector2{ 5.0f, 5.0f };
+        highBlock.hasOrigin = true;
+        highBlock.color = BLUE;
+
+        harness.addObject(root);
+        harness.addObject(lowPainter);
+        harness.addObject(highBlock);
+
+        require(harness.load().success, "runtime should load draw pipeline project");
+
+        require(countRenderedColor(harness, BLUE) == 1, "higher layer declarative draw should cover lower layer JS draw");
+        require(countRenderedColor(harness, RED) == 0, "lower layer JS draw should not run in a separate final overlay pipeline");
     }
 
     void testObjectTimeStateAndTimers()
@@ -1004,6 +1131,61 @@ namespace
         require(!result.success, "runtime load should reject automatic instantiation cycle");
         require(result.diagnostics.hasErrors(), "automatic instantiation cycle should produce diagnostics");
     }
+
+    void testManualInstantiationCycleDoesNotFailRuntimeLoad()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["a"] = "a";
+
+        ObjectDefinition a =
+            objectDefinition("a");
+        a.spawnMode = "manual";
+        a.childResources["b"] = "b";
+
+        ObjectDefinition b =
+            objectDefinition("b");
+        b.spawnMode = "manual";
+        b.childResources["a"] = "a";
+
+        harness.addObject(root);
+        harness.addObject(a);
+        harness.addObject(b);
+
+        RuntimeLoadResult result =
+            harness.load();
+
+        require(result.success, "runtime load should accept manual-only instantiation cycles");
+    }
+
+    void testMixedManualEdgeDoesNotFailRuntimeLoad()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["a"] = "a";
+
+        ObjectDefinition a =
+            objectDefinition("a");
+        a.childResources["b"] = "b";
+
+        ObjectDefinition b =
+            objectDefinition("b");
+        b.spawnMode = "manual";
+        b.childResources["a"] = "a";
+
+        harness.addObject(root);
+        harness.addObject(a);
+        harness.addObject(b);
+
+        RuntimeLoadResult result =
+            harness.load();
+
+        require(result.success, "runtime load should accept a cycle broken by a manual edge");
+    }
 }
 
 int main()
@@ -1018,13 +1200,17 @@ int main()
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
+        { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },
         { "visible is read-only from JavaScript", testVisibleIsReadOnlyFromJavaScript },
         { "draw callbacks follow stable layer order", testDrawCallbacksFollowStableLayerOrder },
+        { "declarative draw and JS draw share object layer order", testDeclarativeDrawAndJsDrawShareObjectLayerOrder },
         { "object time state and timers", testObjectTimeStateAndTimers },
         { "attachments apply after motion before collision", testAttachmentsApplyAfterMotionBeforeCollision },
         { "find by runtime id name duplicates and pending lookup", testFindByRuntimeIdNameDuplicatesAndPendingLookup },
         { "script errors are logged and runtime continues", testScriptErrorsAreLoggedAndRuntimeContinues },
-        { "automatic instantiation cycle fails runtime load", testAutomaticInstantiationCycleFailsRuntimeLoad }
+        { "automatic instantiation cycle fails runtime load", testAutomaticInstantiationCycleFailsRuntimeLoad },
+        { "manual instantiation cycle does not fail runtime load", testManualInstantiationCycleDoesNotFailRuntimeLoad },
+        { "mixed manual edge does not fail runtime load", testMixedManualEdgeDoesNotFailRuntimeLoad }
     };
 
     for (const auto& test : tests)

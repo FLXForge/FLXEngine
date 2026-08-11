@@ -8,7 +8,6 @@
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cmath>
@@ -157,10 +156,10 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
     applyGlobalObject(globalObject);
@@ -227,10 +226,10 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
     applyJsObject(object, self);
@@ -306,10 +305,10 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
     applyJsObject(object, self);

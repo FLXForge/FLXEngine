@@ -70,10 +70,8 @@ Implemented diagnostic identities:
 - `FLX-COMP-00016 CompiledProjectInvalidStateMachine`
 
 Runtime warnings remain logger warnings for invalid `state_to` calls. Runtime
-diagnostic identities are reserved for host/runtime result flows:
-
-- `FLX-RUNTIME-00016 RuntimeObjectMissingStateMachine`
-- `FLX-RUNTIME-00017 RuntimeInvalidStateTransition`
+diagnostics for script callbacks remain pending until the runtime diagnostics
+flow is explicitly designed.
 
 ## D. Confirmed Tests
 

@@ -150,8 +150,6 @@ BUILD
 | FLX-RUNTIME-00013 | RenderTargetInitializationFailed | error | No se ha podido inicializar el render target. |
 | FLX-RUNTIME-00014 | RuntimeWorldLoadFailed | error | No se ha podido cargar el mundo runtime. |
 | FLX-RUNTIME-00015 | RuntimeLoadSpawnLimitExceeded | error | La carga del runtime supero el limite de instanciacion. |
-| FLX-RUNTIME-00016 | RuntimeObjectMissingStateMachine | error | Se ha solicitado una operacion de estados sobre un objeto sin maquina de estados. |
-| FLX-RUNTIME-00017 | RuntimeInvalidStateTransition | error | Se ha solicitado una transicion de estado invalida durante runtime. |
 
 ### BUILD
 

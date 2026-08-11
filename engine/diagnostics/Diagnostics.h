@@ -105,8 +105,6 @@ enum class DiagnosticCode
     RenderTargetInitializationFailed,
     RuntimeWorldLoadFailed,
     RuntimeLoadSpawnLimitExceeded,
-    RuntimeObjectMissingStateMachine,
-    RuntimeInvalidStateTransition,
 
     BuildInformationUnclassified,
     BuildWarningUnclassified,

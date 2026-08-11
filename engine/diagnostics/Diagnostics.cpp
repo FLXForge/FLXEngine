@@ -87,8 +87,6 @@ namespace
             { DiagnosticCode::RenderTargetInitializationFailed, "FLX-RUNTIME-00013", "RenderTargetInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Render target could not be initialized." },
             { DiagnosticCode::RuntimeWorldLoadFailed, "FLX-RUNTIME-00014", "RuntimeWorldLoadFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime world could not be loaded." },
             { DiagnosticCode::RuntimeLoadSpawnLimitExceeded, "FLX-RUNTIME-00015", "RuntimeLoadSpawnLimitExceeded", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime load spawn limit was exceeded." },
-            { DiagnosticCode::RuntimeObjectMissingStateMachine, "FLX-RUNTIME-00016", "RuntimeObjectMissingStateMachine", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Runtime script attempted to use State on an object without a state machine." },
-            { DiagnosticCode::RuntimeInvalidStateTransition, "FLX-RUNTIME-00017", "RuntimeInvalidStateTransition", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Runtime script requested an invalid state transition." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

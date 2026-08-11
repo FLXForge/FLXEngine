@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 80, "registry should include generic codes and implemented project/resource/binary/runtime codes");
+        require(codes.size() == 78, "registry should include generic codes and implemented project/resource/binary/runtime codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -137,14 +137,6 @@ namespace
         require(
             diagnosticCodeText(DiagnosticCode::RuntimeLoadSpawnLimitExceeded) == std::string("FLX-RUNTIME-00015"),
             "runtime load spawn limit should use concrete runtime code"
-        );
-        require(
-            diagnosticCodeText(DiagnosticCode::RuntimeObjectMissingStateMachine) == std::string("FLX-RUNTIME-00016"),
-            "runtime object missing state machine should use concrete runtime code"
-        );
-        require(
-            diagnosticCodeText(DiagnosticCode::RuntimeInvalidStateTransition) == std::string("FLX-RUNTIME-00017"),
-            "runtime invalid state transition should use concrete runtime code"
         );
     }
 

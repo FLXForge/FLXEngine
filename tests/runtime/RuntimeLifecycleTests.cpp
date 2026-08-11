@@ -788,6 +788,142 @@ namespace
         require(nearlyEqual(runtimeRoot.originSpeed, 9.0), "JS originSpeed write should not update runtime originSpeed");
     }
 
+    void testScriptModuleVariablesAreSharedBetweenInstances()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "sharedModuleState",
+            "var shared = 0;"
+            "function born(o) {"
+            "  shared = shared + 1;"
+            "  o.local['sharedValue'] = shared;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "sharedModuleState");
+        root.childResources["child"] = "child";
+
+        ObjectDefinition child =
+            objectDefinition("child", "sharedModuleState");
+
+        harness.addObject(root);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load shared module state project");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+        RuntimeObject& runtimeChild =
+            requireObject(harness.world, "child");
+
+        require(localValue(runtimeRoot, "sharedValue") == 1.0, "first instance should see initial module state increment");
+        require(localValue(runtimeChild, "sharedValue") == 2.0, "second instance should share the same script module state");
+    }
+
+    void testCollisionCallbackReceivesConcreteOtherReference()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "collisionReferenceProbe",
+            "function collision(o, other) {"
+            "  o.local['otherName'] = other.name == 'target' ? 1 : 0;"
+            "  o.local['otherGroup'] = other.group == 'targetGroup' ? 1 : 0;"
+            "  other.x = 44;"
+            "  other.local['touched'] = 1;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "collisionReferenceProbe");
+        root.childResources["target"] = "target";
+        root.collisionActive = true;
+        root.collisionType = "box";
+        root.collisionWith.push_back("targetGroup");
+        root.size = Vector2{ 10.0f, 10.0f };
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.group = "targetGroup";
+        target.collisionType = "box";
+        target.size = Vector2{ 10.0f, 10.0f };
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load collision reference project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+        RuntimeObject& runtimeTarget =
+            requireObject(harness.world, "target");
+
+        require(localValue(runtimeRoot, "otherName") == 1.0, "collision second argument should expose the concrete other name");
+        require(localValue(runtimeRoot, "otherGroup") == 1.0, "collision second argument should expose the concrete other group");
+        require(nearlyEqual(runtimeTarget.position.x, 44.0), "collision second argument writes should apply to the other runtime object");
+        require(localValue(runtimeTarget, "touched") == 1.0, "collision second argument local state should roundtrip to the other object");
+    }
+
+    void testPublicScriptingFunctionsAreRegistered()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "apiSurfaceProbe",
+            "function born(o) {"
+            "  const functions = ["
+            "    'kill','show','hide','keep_only','delta','random','probability','ray',"
+            "    'exit','save','load','move_x','move_y','advance','follow_x','follow_y',"
+            "    'attach','detach','attach_active','carry','bounce_x','bounce_y','accelerate',"
+            "    'rotate','to_origin','draw_text','draw_pixel','draw_line','draw_rectangle',"
+            "    'fade_on','fade_off','fade_set','fade_active','fade_done','fade_alpha',"
+            "    'play_sound','play_music','stop_music','pause_music','music_active','music_paused',"
+            "    'spawn','state','state_current','state_active','state_entered','state_time',"
+            "    'timer','timer_active','timer_left','timer_clear'"
+            "  ];"
+            "  let missing = 0;"
+            "  for (let i = 0; i < functions.length; i = i + 1) {"
+            "    if (typeof globalThis[functions[i]] !== 'function') missing = missing + 1;"
+            "  }"
+            "  if (typeof console !== 'object' || typeof console.log !== 'function') missing = missing + 1;"
+            "  if (typeof Input !== 'object') missing = missing + 1;"
+            "  if (typeof Input.player !== 'function') missing = missing + 1;"
+            "  if (typeof Input.system !== 'object') missing = missing + 1;"
+            "  if (typeof Input.system.down !== 'function') missing = missing + 1;"
+            "  if (typeof Input.system.pressed !== 'function') missing = missing + 1;"
+            "  if (typeof Input.pointer !== 'object') missing = missing + 1;"
+            "  if (typeof Input.pointer.x !== 'function') missing = missing + 1;"
+            "  if (typeof Input.pointer.y !== 'function') missing = missing + 1;"
+            "  if (typeof Input.pointer.down !== 'function') missing = missing + 1;"
+            "  if (typeof Input.pointer.pressed !== 'function') missing = missing + 1;"
+            "  const player = Input.player(1);"
+            "  if (typeof player.up !== 'function') missing = missing + 1;"
+            "  if (typeof player.down !== 'function') missing = missing + 1;"
+            "  if (typeof player.left !== 'function') missing = missing + 1;"
+            "  if (typeof player.right !== 'function') missing = missing + 1;"
+            "  if (typeof player.button !== 'function') missing = missing + 1;"
+            "  if (typeof player.pressed !== 'function') missing = missing + 1;"
+            "  o.local['missing'] = missing;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "apiSurfaceProbe");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load API surface probe project");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "missing") == 0.0, "public scripting functions should be registered");
+    }
+
     void testKeepOnlyPreventsOtherObjectsFromResurrecting()
     {
         RuntimeHarness harness;
@@ -1348,6 +1484,9 @@ int main()
         { "JS flat runtime properties are mutable", testJsFlatRuntimePropertiesAreMutable },
         { "JS motion nested properties are read-only snapshot", testJsMotionNestedPropertiesAreReadOnlySnapshot },
         { "JS metadata and identity are readable but not applied back", testJsMetadataAndIdentityAreReadableButNotAppliedBack },
+        { "script module variables are shared between instances", testScriptModuleVariablesAreSharedBetweenInstances },
+        { "collision callback receives concrete other reference", testCollisionCallbackReceivesConcreteOtherReference },
+        { "public scripting functions are registered", testPublicScriptingFunctionsAreRegistered },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },

@@ -1210,6 +1210,121 @@ namespace
         require(nearlyEqual(updatedRoot.timers["life"].left, 0.75), "timer decrements after collision phase");
     }
 
+    void testStateMachineSingleTerminalInvalidAndAbsentStates()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "stateProbe",
+            "function action(o) {"
+            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
+            "  if (o.local['frame'] == 1) {"
+            "    o.local['initialIsIntro'] = state_current(o) == 'intro' ? 1 : 0;"
+            "    o.local['initialActive'] = state_active(o, 'intro') ? 1 : 0;"
+            "    o.local['initialEntered'] = state_entered(o) ? 1 : 0;"
+            "    o.local['initialTime'] = state_time(o);"
+            "    state(o, 'missing');"
+            "    o.local['afterInvalidStillIntro'] = state_current(o) == 'intro' ? 1 : 0;"
+            "    state(o, 'gameover');"
+            "    o.local['afterValidIsGameover'] = state_current(o) == 'gameover' ? 1 : 0;"
+            "    o.local['enteredImmediatelyAfterState'] = state_entered(o) ? 1 : 0;"
+            "    o.local['timeImmediatelyAfterState'] = state_time(o);"
+            "  }"
+            "  if (o.local['frame'] == 2) {"
+            "    o.local['terminalEnteredNextFrame'] = state_entered(o) ? 1 : 0;"
+            "    o.local['terminalActive'] = state_active(o, 'gameover') ? 1 : 0;"
+            "    o.local['terminalTimeSeen'] = state_time(o);"
+            "    state(o, 'intro');"
+            "    o.local['afterTerminalInvalidStillGameover'] = state_current(o) == 'gameover' ? 1 : 0;"
+            "  }"
+            "}"
+        );
+
+        harness.addScript(
+            "singleStateProbe",
+            "function action(o) {"
+            "  o.local['currentIsSolo'] = state_current(o) == 'solo' ? 1 : 0;"
+            "  o.local['activeSolo'] = state_active(o, 'solo') ? 1 : 0;"
+            "  o.local['enteredSolo'] = state_entered(o) ? 1 : 0;"
+            "  state(o, 'solo');"
+            "  o.local['sameStateStillSolo'] = state_current(o) == 'solo' ? 1 : 0;"
+            "}"
+        );
+
+        harness.addScript(
+            "noStateProbe",
+            "function action(o) {"
+            "  o.local['currentEmpty'] = state_current(o) == '' ? 1 : 0;"
+            "  o.local['activeEmptyName'] = state_active(o, '') ? 1 : 0;"
+            "  o.local['entered'] = state_entered(o) ? 1 : 0;"
+            "  o.local['time'] = state_time(o);"
+            "  state(o, 'anything');"
+            "  o.local['stillEmpty'] = state_current(o) == '' ? 1 : 0;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "stateProbe");
+        root.childResources["single"] = "single";
+        root.childResources["none"] = "none";
+        root.initialState = "intro";
+        root.stateTransitions["intro"] = { "gameover" };
+        root.stateTransitions["gameover"] = {};
+
+        ObjectDefinition single =
+            objectDefinition("single", "singleStateProbe");
+        single.initialState = "solo";
+        single.stateTransitions["solo"] = {};
+
+        ObjectDefinition none =
+            objectDefinition("none", "noStateProbe");
+
+        harness.addObject(root);
+        harness.addObject(single);
+        harness.addObject(none);
+
+        require(harness.load().success, "runtime should load state characterization project");
+
+        harness.update(0.25f);
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+        RuntimeObject& runtimeSingle =
+            requireObject(harness.world, "single");
+        RuntimeObject& runtimeNone =
+            requireObject(harness.world, "none");
+
+        require(localValue(runtimeRoot, "initialIsIntro") == 1.0, "initial state should become current state");
+        require(localValue(runtimeRoot, "initialActive") == 1.0, "state_active should compare current state by name");
+        require(localValue(runtimeRoot, "initialEntered") == 1.0, "initial state should be entered during first frame");
+        require(nearlyEqual(localValue(runtimeRoot, "initialTime"), 0.0), "state_time should be zero before first time update");
+        require(localValue(runtimeRoot, "afterInvalidStillIntro") == 1.0, "invalid state transition should leave state unchanged");
+        require(localValue(runtimeRoot, "afterValidIsGameover") == 1.0, "valid transition should change current state");
+        require(localValue(runtimeRoot, "enteredImmediatelyAfterState") == 0.0, "state_entered should not be true in the same frame as state()");
+        require(nearlyEqual(localValue(runtimeRoot, "timeImmediatelyAfterState"), 0.0), "state() should reset state_time immediately");
+
+        require(localValue(runtimeSingle, "currentIsSolo") == 1.0, "single-state machine should set its initial state");
+        require(localValue(runtimeSingle, "activeSolo") == 1.0, "single-state machine should report active state");
+        require(localValue(runtimeSingle, "enteredSolo") == 1.0, "single-state machine should enter during first frame");
+        require(localValue(runtimeSingle, "sameStateStillSolo") == 1.0, "state() to the same state should leave state unchanged");
+
+        require(localValue(runtimeNone, "currentEmpty") == 1.0, "object without states should report empty current state");
+        require(localValue(runtimeNone, "activeEmptyName") == 1.0, "state_active with empty name should match empty current state");
+        require(localValue(runtimeNone, "entered") == 0.0, "object without states should not report entered");
+        require(nearlyEqual(localValue(runtimeNone, "time"), 0.0), "object without states should report zero state_time");
+        require(localValue(runtimeNone, "stillEmpty") == 1.0, "state() should not create states when no machine exists");
+
+        harness.update(0.25f);
+
+        RuntimeObject& afterSecondFrameRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(afterSecondFrameRoot, "terminalEnteredNextFrame") == 1.0, "state_entered should fire on the frame after state()");
+        require(localValue(afterSecondFrameRoot, "terminalActive") == 1.0, "terminal state should remain active");
+        require(nearlyEqual(localValue(afterSecondFrameRoot, "terminalTimeSeen"), 0.25), "next frame should see time accumulated after transition frame");
+        require(localValue(afterSecondFrameRoot, "afterTerminalInvalidStillGameover") == 1.0, "terminal state without next should reject outgoing transition");
+    }
+
     void testAttachmentsApplyAfterMotionBeforeCollision()
     {
         RuntimeHarness harness;
@@ -1494,6 +1609,7 @@ int main()
         { "draw callbacks follow stable layer order", testDrawCallbacksFollowStableLayerOrder },
         { "declarative draw and JS draw share object layer order", testDeclarativeDrawAndJsDrawShareObjectLayerOrder },
         { "object time state and timers", testObjectTimeStateAndTimers },
+        { "state machine single terminal invalid and absent states", testStateMachineSingleTerminalInvalidAndAbsentStates },
         { "attachments apply after motion before collision", testAttachmentsApplyAfterMotionBeforeCollision },
         { "find by runtime id name duplicates and pending lookup", testFindByRuntimeIdNameDuplicatesAndPendingLookup },
         { "script errors are logged and runtime continues", testScriptErrorsAreLoggedAndRuntimeContinues },

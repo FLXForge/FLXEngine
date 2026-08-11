@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 73, "registry should include generic codes and implemented project/resource/binary/runtime codes");
+        require(codes.size() == 80, "registry should include generic codes and implemented project/resource/binary/runtime codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -99,6 +99,26 @@ namespace
             "automatic instantiation cycle should use concrete compiler code"
         );
         require(
+            diagnosticCodeText(DiagnosticCode::CompiledProjectInvalidStateMachine) == std::string("FLX-COMP-00016"),
+            "compiled project invalid state machine should use concrete compiler code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::InvalidStateMachineDeclaration) == std::string("FLX-RESOURCE-00015"),
+            "invalid state machine declaration should use concrete resource code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::MissingStateMachineInitialState) == std::string("FLX-RESOURCE-00016"),
+            "missing state machine initial state should use concrete resource code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::MissingStateMachineState) == std::string("FLX-RESOURCE-00017"),
+            "missing state machine state should use concrete resource code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::InvalidStateTransitionTarget) == std::string("FLX-RESOURCE-00018"),
+            "invalid state transition target should use concrete resource code"
+        );
+        require(
             diagnosticCodeText(DiagnosticCode::DuplicateCompiledEntry) == std::string("FLX-BINARY-00019"),
             "duplicate compiled entry should use concrete binary code"
         );
@@ -117,6 +137,14 @@ namespace
         require(
             diagnosticCodeText(DiagnosticCode::RuntimeLoadSpawnLimitExceeded) == std::string("FLX-RUNTIME-00015"),
             "runtime load spawn limit should use concrete runtime code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::RuntimeObjectMissingStateMachine) == std::string("FLX-RUNTIME-00016"),
+            "runtime object missing state machine should use concrete runtime code"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::RuntimeInvalidStateTransition) == std::string("FLX-RUNTIME-00017"),
+            "runtime invalid state transition should use concrete runtime code"
         );
     }
 

@@ -534,6 +534,25 @@ void ScriptEngine::setFindObjectByIdFunction(
     findObjectById = function;
 }
 
+void ScriptEngine::setFindObjectDefinitionFunction(
+    FindObjectDefinitionFunction function
+)
+{
+    findObjectDefinitionById = function;
+}
+
+const ObjectDefinition* ScriptEngine::findObjectDefinition(
+    const std::string& id
+) const
+{
+    if (!findObjectDefinitionById)
+    {
+        return nullptr;
+    }
+
+    return findObjectDefinitionById(id);
+}
+
 RuntimeObject* ScriptEngine::findObjectByRuntimeId(
     const std::string& id
 )

@@ -114,6 +114,83 @@ namespace
             );
         }
     }
+
+    void validateStateMachine(
+        const ObjectDefinition& object,
+        Diagnostics& diagnostics,
+        const std::string& source,
+        const ResourceId& objectId
+    )
+    {
+        if (
+            object.initialState.empty() &&
+            object.stateTransitions.empty()
+            )
+        {
+            return;
+        }
+
+        if (object.initialState.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompiledProjectInvalidStateMachine,
+                "Compiled state machine is missing initial state",
+                source,
+                objectId + ".states.initial"
+            );
+        }
+
+        if (object.stateTransitions.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompiledProjectInvalidStateMachine,
+                "Compiled state machine declares no states",
+                source,
+                objectId + ".states"
+            );
+
+            return;
+        }
+
+        if (!object.stateTransitions.contains(object.initialState))
+        {
+            diagnostics.error(
+                DiagnosticCode::CompiledProjectInvalidStateMachine,
+                "Compiled state machine initial state is not declared",
+                source,
+                objectId + ".states.initial"
+            );
+        }
+
+        for (const auto& transition : object.stateTransitions)
+        {
+            if (transition.first.empty())
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompiledProjectInvalidStateMachine,
+                    "Compiled state machine contains an empty state name",
+                    source,
+                    objectId + ".states"
+                );
+            }
+
+            for (const std::string& target : transition.second)
+            {
+                if (
+                    target.empty() ||
+                    !object.stateTransitions.contains(target)
+                    )
+                {
+                    diagnostics.error(
+                        DiagnosticCode::CompiledProjectInvalidStateMachine,
+                        "Compiled state machine transition points to a missing state",
+                        source,
+                        objectId + ".states." + transition.first + ".next"
+                    );
+                }
+            }
+        }
+    }
 }
 
 bool CompiledProjectValidator::validate(
@@ -196,6 +273,13 @@ bool CompiledProjectValidator::validate(
                 );
             }
         }
+
+        validateStateMachine(
+            object,
+            diagnostics,
+            source,
+            objectId
+        );
     }
 
     for (const auto& scriptPair : project.resources.allScripts())

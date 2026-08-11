@@ -1,6 +1,7 @@
 #include "StateBindings.h"
 #include "BindingHelpers.h"
 #include "../../debug/Logger.h"
+#include "../../runtime/ObjectDefinition.h"
 #include "../../runtime/RuntimeObject.h"
 
 #include <algorithm>
@@ -43,30 +44,51 @@ namespace
         return object;
     }
 
+    const ObjectDefinition* definitionFor(
+        JSContext* context,
+        const RuntimeObject& object
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr)
+        {
+            return nullptr;
+        }
+
+        return scriptEngine->findObjectDefinition(
+            object.definitionId
+        );
+    }
+
+    bool hasStateMachine(const ObjectDefinition* definition)
+    {
+        return definition != nullptr &&
+            !definition->initialState.empty() &&
+            !definition->stateTransitions.empty();
+    }
+
     bool transitionAllowed(
-        const RuntimeObject& object,
+        const ObjectDefinition& definition,
+        const std::string& currentState,
         const std::string& nextState
     )
     {
-        if (object.stateTransitions.empty())
+        if (!definition.stateTransitions.contains(nextState))
         {
             return false;
         }
 
-        if (!object.stateTransitions.contains(nextState))
+        if (currentState.empty())
         {
             return false;
-        }
-
-        if (object.state.empty())
-        {
-            return true;
         }
 
         const auto it =
-            object.stateTransitions.find(object.state);
+            definition.stateTransitions.find(currentState);
 
-        if (it == object.stateTransitions.end())
+        if (it == definition.stateTransitions.end())
         {
             return false;
         }
@@ -78,7 +100,7 @@ namespace
         ) != it->second.end();
     }
 
-    JSValue jsState(
+    JSValue jsStateTo(
         JSContext* context,
         JSValueConst thisValue,
         int argc,
@@ -114,12 +136,21 @@ namespace
 
         JS_FreeCString(context, stateName);
 
-        if (object->state == nextState)
+        const ObjectDefinition* definition =
+            definitionFor(context, *object);
+
+        if (!hasStateMachine(definition))
         {
+            Logger::warning(
+                "state",
+                "Object '" + object->runtimeId +
+                "' does not define a state machine"
+            );
+
             return JS_UNDEFINED;
         }
 
-        if (!transitionAllowed(*object, nextState))
+        if (!transitionAllowed(*definition, object->state, nextState))
         {
             Logger::warning(
                 "state",
@@ -159,7 +190,10 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (object == nullptr)
+        if (
+            object == nullptr ||
+            !hasStateMachine(definitionFor(context, *object))
+            )
         {
             return JS_NewString(context, "");
         }
@@ -199,6 +233,7 @@ namespace
         }
 
         const bool active =
+            hasStateMachine(definitionFor(context, *object)) &&
             object->state == stateName;
 
         JS_FreeCString(context, stateName);
@@ -224,7 +259,10 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (object == nullptr)
+        if (
+            object == nullptr ||
+            !hasStateMachine(definitionFor(context, *object))
+            )
         {
             return JS_NewBool(context, false);
         }
@@ -250,7 +288,10 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (object == nullptr)
+        if (
+            object == nullptr ||
+            !hasStateMachine(definitionFor(context, *object))
+            )
         {
             return JS_NewFloat64(context, 0.0);
         }
@@ -270,8 +311,8 @@ void StateBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(
         context,
         global,
-        "state",
-        JS_NewCFunction(context, jsState, "state", 2)
+        "state_to",
+        JS_NewCFunction(context, jsStateTo, "state_to", 2)
     );
 
     JS_SetPropertyStr(

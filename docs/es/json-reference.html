@@ -626,9 +626,18 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             </div>
 
             <p>
-                Usa <code>state(object, "playing")</code> para solicitar una
-                transicion. Las transiciones invalidas se ignoran y se registran
-                como warnings.
+                Usa <code>state_to(object, "playing")</code> para solicitar una
+                transicion. Las declaraciones invalidas fallan durante la
+                compilacion. Las transiciones invalidas en runtime se ignoran y
+                se registran como warnings.
+            </p>
+            <p>
+                Cuando <code>states</code> existe, <code>initial</code> es
+                obligatorio y debe nombrar un estado declarado. Un estado sin
+                <code>next</code>, o con <code>next</code> vacio, es terminal.
+                Los ciclos son validos. Una autotransicion solo es valida si el
+                estado se incluye explicitamente a si mismo en
+                <code>next</code>.
             </p>
 
             <h2 id="like">ComposiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n JSON (like)</h2>

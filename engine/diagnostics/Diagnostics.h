@@ -54,6 +54,7 @@ enum class DiagnosticCode
     CompiledProjectMissingScriptResource,
     CompiledProjectIdentityMismatch,
     AutomaticInstantiationCycle,
+    CompiledProjectInvalidStateMachine,
 
     ResourceInformationUnclassified,
     ResourceWarningUnclassified,
@@ -65,6 +66,10 @@ enum class DiagnosticCode
     ResourceReferenceCycle,
     ResourceIdCollision,
     ReferencedScriptNotFound,
+    InvalidStateMachineDeclaration,
+    MissingStateMachineInitialState,
+    MissingStateMachineState,
+    InvalidStateTransitionTarget,
 
     MachineInformationUnclassified,
     MachineWarningUnclassified,
@@ -100,6 +105,8 @@ enum class DiagnosticCode
     RenderTargetInitializationFailed,
     RuntimeWorldLoadFailed,
     RuntimeLoadSpawnLimitExceeded,
+    RuntimeObjectMissingStateMachine,
+    RuntimeInvalidStateTransition,
 
     BuildInformationUnclassified,
     BuildWarningUnclassified,

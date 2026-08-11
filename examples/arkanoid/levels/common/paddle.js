@@ -23,7 +23,7 @@ function born(paddle){
     global["activeBroken"] = 0;
     global["activeGun"] = 0;
 
-    state(paddle, "playing");
+    state_to(paddle, "playing");
 }
 
 function action(paddle){
@@ -87,7 +87,7 @@ function update_respawn(paddle){
 
         if (global["lives"] > 0) {
             timer(paddle, "respawn", RESPAWN_TIME);
-            state(paddle, "respawn");
+            state_to(paddle, "respawn");
         } else {
             global["show_hud"] = 0;
             global["game_over"] = 1;
@@ -100,7 +100,7 @@ function update_respawn(paddle){
     ){
         spawn(paddle, "ball");
         play_sound(paddle, "pop");
-        state(paddle, "playing");
+        state_to(paddle, "playing");
     }
 }
 

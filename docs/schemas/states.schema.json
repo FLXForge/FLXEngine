@@ -3,21 +3,25 @@
   "$id": "states.schema.json",
   "title": "FLX Object States",
   "type": "object",
+  "required": ["initial"],
   "additionalProperties": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "next": {
         "type": "array",
+        "uniqueItems": true,
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       }
     }
   },
   "properties": {
     "initial": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     }
   }
 }

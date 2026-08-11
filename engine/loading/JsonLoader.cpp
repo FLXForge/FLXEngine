@@ -276,6 +276,30 @@ namespace
         );
     }
 
+    void addStateMachineError(
+        JsonLoadSession& session,
+        DiagnosticCode code,
+        const std::string& message,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
+    )
+    {
+        if (session.diagnostics != nullptr)
+        {
+            session.diagnostics->error(
+                code,
+                message,
+                genericPathString(declaringFile),
+                field
+            );
+        }
+
+        Logger::error(
+            "json",
+            message
+        );
+    }
+
     bool loadJsonCached(
         JsonLoadSession& session,
         const std::filesystem::path& path,
@@ -2310,11 +2334,13 @@ namespace
     }
 
     void parseStates(
+        JsonLoadSession& session,
         const Json& object,
+        const std::filesystem::path& sourceFile,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("states") || !object["states"].is_object())
+        if (!object.contains("states"))
         {
             return;
         }
@@ -2322,8 +2348,58 @@ namespace
         const auto& states =
             object["states"];
 
-        definition.initialState =
-            states.value("initial", definition.initialState);
+        if (!states.is_object())
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::InvalidStateMachineDeclaration,
+                "Invalid states declaration in '" + definition.id +
+                "': expected object",
+                sourceFile,
+                "states"
+            );
+
+            return;
+        }
+
+        if (!states.contains("initial"))
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineInitialState,
+                "Missing initial state in '" + definition.id + "'",
+                sourceFile,
+                "states.initial"
+            );
+        }
+        else if (!states["initial"].is_string())
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineInitialState,
+                "Invalid initial state in '" + definition.id +
+                "': expected non-empty string",
+                sourceFile,
+                "states.initial"
+            );
+        }
+        else
+        {
+            definition.initialState =
+                states["initial"].get<std::string>();
+
+            if (definition.initialState.empty())
+            {
+                addStateMachineError(
+                    session,
+                    DiagnosticCode::MissingStateMachineInitialState,
+                    "Invalid initial state in '" + definition.id +
+                    "': expected non-empty string",
+                    sourceFile,
+                    "states.initial"
+                );
+            }
+        }
 
         for (auto it = states.begin(); it != states.end(); ++it)
         {
@@ -2334,10 +2410,13 @@ namespace
 
             if (!it.value().is_object())
             {
-                Logger::warning(
-                    "json",
+                addStateMachineError(
+                    session,
+                    DiagnosticCode::InvalidStateMachineDeclaration,
                     "Invalid state '" + it.key() + "' in '" +
-                    definition.id + "': expected object"
+                    definition.id + "': expected object",
+                    sourceFile,
+                    "states." + it.key()
                 );
 
                 continue;
@@ -2349,10 +2428,13 @@ namespace
             {
                 if (!it.value()["next"].is_array())
                 {
-                    Logger::warning(
-                        "json",
+                    addStateMachineError(
+                        session,
+                        DiagnosticCode::InvalidStateMachineDeclaration,
                         "Invalid next states in '" + it.key() +
-                        "': expected array"
+                        "': expected array",
+                        sourceFile,
+                        "states." + it.key() + ".next"
                     );
                 }
                 else
@@ -2361,18 +2443,54 @@ namespace
                     {
                         if (!nextState.is_string())
                         {
-                            Logger::warning(
-                                "json",
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
                                 "Ignoring invalid next state in '" +
-                                it.key() + "'"
+                                it.key() + "': expected string",
+                                sourceFile,
+                                "states." + it.key() + ".next"
                             );
 
                             continue;
                         }
 
-                        nextStates.push_back(
-                            nextState.get<std::string>()
-                        );
+                        const std::string target =
+                            nextState.get<std::string>();
+
+                        if (target.empty())
+                        {
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
+                                "Invalid next state in '" + it.key() +
+                                "': expected non-empty string",
+                                sourceFile,
+                                "states." + it.key() + ".next"
+                            );
+
+                            continue;
+                        }
+
+                        if (std::find(
+                            nextStates.begin(),
+                            nextStates.end(),
+                            target
+                        ) != nextStates.end())
+                        {
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
+                                "Duplicate next state '" + target +
+                                "' in '" + it.key() + "'",
+                                sourceFile,
+                                "states." + it.key() + ".next"
+                            );
+
+                            continue;
+                        }
+
+                        nextStates.push_back(target);
                     }
                 }
             }
@@ -2386,11 +2504,33 @@ namespace
             !definition.stateTransitions.contains(definition.initialState)
             )
         {
-            Logger::warning(
-                "json",
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineState,
                 "Initial state '" + definition.initialState +
-                "' is not declared in '" + definition.id + "'"
+                "' is not declared in '" + definition.id + "'",
+                sourceFile,
+                "states.initial"
             );
+        }
+
+        for (const auto& state : definition.stateTransitions)
+        {
+            for (const std::string& target : state.second)
+            {
+                if (!definition.stateTransitions.contains(target))
+                {
+                    addStateMachineError(
+                        session,
+                        DiagnosticCode::MissingStateMachineState,
+                        "State '" + state.first +
+                        "' references missing next state '" + target +
+                        "' in '" + definition.id + "'",
+                        sourceFile,
+                        "states." + state.first + ".next"
+                    );
+                }
+            }
         }
     }
 
@@ -2600,7 +2740,7 @@ namespace
         parseCollision(object, definition);
         parseSounds(session, object, sourceFile, definition);
         parseMusic(session, object, sourceFile, definition);
-        parseStates(object, definition);
+        parseStates(session, object, sourceFile, definition);
         parseChildren(session, object, sourceFile, definition);
 
         return definition;

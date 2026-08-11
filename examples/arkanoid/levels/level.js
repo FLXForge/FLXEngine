@@ -24,7 +24,7 @@ function action(level){
             spawn(level, "paddle");
             spawn(level, "bricks");
 
-            state(level, "playing");
+            state_to(level, "playing");
         }
     }
 }

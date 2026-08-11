@@ -322,23 +322,16 @@ _is  → clasificación / identidad semántica
 
 La auditoría de `group` y `role` deberá validarlo.
 
-## 16. `state`
+## 16. `state_to`
 
-La API actual:
-
-```javascript
-state(object, "moving");
-```
-
-es ambigua porque `state` no expresa una acción.
-
-La forma candidata:
+La API consolidada:
 
 ```javascript
 state_to(object, "moving");
 ```
 
-expresa una transición hacia un destino.
+expresa una transicion hacia un destino y sustituye a la forma antigua basada
+en `state`.
 
 Las consultas pueden permanecer agrupadas:
 
@@ -349,7 +342,7 @@ state_entered
 state_time
 ```
 
-No constituye todavía un renombre cerrado.
+Este renombre queda cerrado: no se registra alias heredado.
 
 ## 17. `timer`
 

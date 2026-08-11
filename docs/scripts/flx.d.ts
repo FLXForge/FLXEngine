@@ -457,9 +457,10 @@ declare function spawn(
 ): void;
 
 /**
- * Changes the current state of an object using its JSON states declaration.
+ * Requests a transition to another state using the object's JSON states
+ * declaration.
  */
-declare function state(object: RuntimeObject, stateName: string): void;
+declare function state_to(object: RuntimeObject, stateName: string): void;
 
 /**
  * Returns the current state name, or an empty string if the object has none.
@@ -467,7 +468,8 @@ declare function state(object: RuntimeObject, stateName: string): void;
 declare function state_current(object: RuntimeObject): string;
 
 /**
- * Returns true when the object is currently in the given state.
+ * Returns true when the object has a state machine and is currently in the
+ * given state.
  */
 declare function state_active(
     object: RuntimeObject,
@@ -475,13 +477,14 @@ declare function state_active(
 ): boolean;
 
 /**
- * Returns true only during the first runtime frame after the object enters
- * its current state.
+ * Returns true only during the first full runtime frame after the object
+ * enters its current state.
  */
 declare function state_entered(object: RuntimeObject): boolean;
 
 /**
  * Returns seconds elapsed since the object entered its current state.
+ * The first full frame of a state reports 0.
  */
 declare function state_time(object: RuntimeObject): number;
 

@@ -628,8 +628,17 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             </div>
 
             <p>
-                Use <code>state(object, "playing")</code> to request a transition.
-                Invalid transitions are ignored and logged as warnings.
+                Use <code>state_to(object, "playing")</code> to request a transition.
+                Invalid declarations fail during compilation. Invalid runtime
+                transitions are ignored and logged as warnings.
+            </p>
+
+            <p>
+                When <code>states</code> is present, <code>initial</code> is
+                required and must name a declared state. A state with no
+                <code>next</code> list, or with an empty one, is terminal.
+                Cycles are valid. A self-transition is valid only when the state
+                explicitly includes itself in <code>next</code>.
             </p>
 
             <h2 id="like">JSON Composition (like)</h2>

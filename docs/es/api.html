@@ -1111,30 +1111,30 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
-            <h2>state(object, stateName)</h2>
+            <h2>state_to(object, stateName)</h2>
 
             <p>
-                Cambia el estado actual de un objeto que declara
+                Solicita una transicion para un objeto que declara
                 <code>states</code> en JSON. La transicion se valida contra la
                 lista <code>next</code> del estado actual.
             </p>
 
 <pre><code>if (state_active(game, "title") &amp;&amp; Input.player(1).pressed(0)) {
-    state(game, "playing");
+    state_to(game, "playing");
 }
 </code></pre>
 
             <ul>
-                <li><code>state_current(object)</code>: devuelve el estado actual.</li>
-                <li><code>state_active(object, "name")</code>: comprueba el estado actual.</li>
-                <li><code>state_entered(object)</code>: true solo durante el primer frame de runtime despues de que el objeto entra en su estado actual.</li>
-                <li><code>state_time(object)</code>: segundos transcurridos desde la entrada en el estado actual.</li>
+                <li><code>state_current(object)</code>: devuelve el estado actual, o <code>""</code> si el objeto no tiene maquina de estados.</li>
+                <li><code>state_active(object, "name")</code>: comprueba el estado actual. Los objetos sin maquina de estados siempre devuelven <code>false</code>.</li>
+                <li><code>state_entered(object)</code>: true solo durante el primer frame completo de runtime despues de que el objeto entra en su estado actual.</li>
+                <li><code>state_time(object)</code>: segundos transcurridos desde la entrada en el estado actual. El primer frame completo devuelve <code>0</code>.</li>
             </ul>
 
             <p>
                 Los estados no ejecutan callbacks automaticos. Los scripts
                 siguen decidiendo cuando ocurren las transiciones y que hace
-                cada estado.
+                cada estado. <code>state_to</code> no tiene alias heredado.
             </p>
 
             <hr />

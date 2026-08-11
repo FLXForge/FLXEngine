@@ -36,6 +36,7 @@ namespace
             { DiagnosticCode::CompiledProjectMissingScriptResource, "FLX-COMP-00013", "CompiledProjectMissingScriptResource", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project script reference points to a missing script." },
             { DiagnosticCode::CompiledProjectIdentityMismatch, "FLX-COMP-00014", "CompiledProjectIdentityMismatch", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project registry key does not match the stored resource id." },
             { DiagnosticCode::AutomaticInstantiationCycle, "FLX-COMP-00015", "AutomaticInstantiationCycle", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project contains an automatic instantiation cycle." },
+            { DiagnosticCode::CompiledProjectInvalidStateMachine, "FLX-COMP-00016", "CompiledProjectInvalidStateMachine", DiagnosticSeverity::Error, DiagnosticDomain::COMP, "Compiled project object contains an invalid state machine." },
 
             { DiagnosticCode::ResourceInformationUnclassified, "FLX-RESOURCE-00000", "ResourceInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::RESOURCE, "Unclassified informational resource diagnostic." },
             { DiagnosticCode::ResourceWarningUnclassified, "FLX-RESOURCE-00001", "ResourceWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Unclassified resource warning." },
@@ -47,6 +48,10 @@ namespace
             { DiagnosticCode::ResourceReferenceCycle, "FLX-RESOURCE-00012", "ResourceReferenceCycle", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Resource reference cycle detected." },
             { DiagnosticCode::ResourceIdCollision, "FLX-RESOURCE-00013", "ResourceIdCollision", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Resource id collision detected." },
             { DiagnosticCode::ReferencedScriptNotFound, "FLX-RESOURCE-00014", "ReferencedScriptNotFound", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Referenced script could not be found." },
+            { DiagnosticCode::InvalidStateMachineDeclaration, "FLX-RESOURCE-00015", "InvalidStateMachineDeclaration", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine declaration is structurally invalid." },
+            { DiagnosticCode::MissingStateMachineInitialState, "FLX-RESOURCE-00016", "MissingStateMachineInitialState", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine initial state is missing or invalid." },
+            { DiagnosticCode::MissingStateMachineState, "FLX-RESOURCE-00017", "MissingStateMachineState", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine references a missing state." },
+            { DiagnosticCode::InvalidStateTransitionTarget, "FLX-RESOURCE-00018", "InvalidStateTransitionTarget", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine transition target is invalid." },
 
             { DiagnosticCode::MachineInformationUnclassified, "FLX-MACHINE-00000", "MachineInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::MACHINE, "Unclassified informational machine diagnostic." },
             { DiagnosticCode::MachineWarningUnclassified, "FLX-MACHINE-00001", "MachineWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::MACHINE, "Unclassified machine warning." },
@@ -82,6 +87,8 @@ namespace
             { DiagnosticCode::RenderTargetInitializationFailed, "FLX-RUNTIME-00013", "RenderTargetInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Render target could not be initialized." },
             { DiagnosticCode::RuntimeWorldLoadFailed, "FLX-RUNTIME-00014", "RuntimeWorldLoadFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime world could not be loaded." },
             { DiagnosticCode::RuntimeLoadSpawnLimitExceeded, "FLX-RUNTIME-00015", "RuntimeLoadSpawnLimitExceeded", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime load spawn limit was exceeded." },
+            { DiagnosticCode::RuntimeObjectMissingStateMachine, "FLX-RUNTIME-00016", "RuntimeObjectMissingStateMachine", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Runtime script attempted to use State on an object without a state machine." },
+            { DiagnosticCode::RuntimeInvalidStateTransition, "FLX-RUNTIME-00017", "RuntimeInvalidStateTransition", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Runtime script requested an invalid state transition." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

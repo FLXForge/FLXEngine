@@ -1187,29 +1187,30 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
-            <h2>state(object, stateName)</h2>
+            <h2>state_to(object, stateName)</h2>
 
             <p>
-                Changes the current state of an object that declares
+                Requests a transition for an object that declares
                 <code>states</code> in JSON. The transition is validated against
                 the current state's <code>next</code> list.
             </p>
 
 <pre><code>if (state_active(game, "title") &amp;&amp; Input.player(1).pressed(0)) {
-    state(game, "playing");
+    state_to(game, "playing");
 }
 </code></pre>
 
             <ul>
-                <li><code>state_current(object)</code>: returns the current state name.</li>
-                <li><code>state_active(object, "name")</code>: checks the current state.</li>
-                <li><code>state_entered(object)</code>: true only during the first runtime frame after the object enters its current state.</li>
-                <li><code>state_time(object)</code>: seconds elapsed since entering the current state.</li>
+                <li><code>state_current(object)</code>: returns the current state name, or <code>""</code> when the object has no state machine.</li>
+                <li><code>state_active(object, "name")</code>: checks the current state. Objects without a state machine always return <code>false</code>.</li>
+                <li><code>state_entered(object)</code>: true only during the first full runtime frame after the object enters its current state.</li>
+                <li><code>state_time(object)</code>: seconds elapsed since entering the current state. The first full frame reports <code>0</code>.</li>
             </ul>
 
             <p>
                 States do not run callbacks automatically. Scripts keep deciding
                 when transitions happen and what each state does.
+                <code>state_to</code> has no legacy alias.
             </p>
 
             <hr />

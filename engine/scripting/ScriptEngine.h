@@ -59,6 +59,9 @@ public:
     using FindObjectByIdFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
+    using FindObjectDefinitionFunction =
+        std::function<const ObjectDefinition* (const std::string&)>;
+
     using SpawnObjectFunction =
         std::function<void(
             RuntimeObject& source,
@@ -117,6 +120,14 @@ public:
     RuntimeObject* findObjectByRuntimeId(
         const std::string& id
     );
+
+    void setFindObjectDefinitionFunction(
+        FindObjectDefinitionFunction function
+    );
+
+    const ObjectDefinition* findObjectDefinition(
+        const std::string& id
+    ) const;
 
     void setScreenScale(int scale);
     int getScreenScale() const;
@@ -205,6 +216,7 @@ private:
     KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
+    FindObjectDefinitionFunction findObjectDefinitionById;
     FadeSystem* fadeSystem = nullptr;
     AudioSystem* audioSystem = nullptr;
     InputSystem* inputSystem = nullptr;

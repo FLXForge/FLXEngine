@@ -26,7 +26,6 @@ Clasificacion provisional:
 | `music` | `unordered_map<string,MusicDefinition>` | `ObjectDefinition.music` | no esperado | `play_music(object,id)` | builder | C/F |
 | `sounds` | `unordered_map<string,SoundDefinition>` | `ObjectDefinition.sounds` | no esperado | `play_sound(object,id)` | builder | C/F |
 | `timers` | `unordered_map<string,RuntimeTimer>` | runtime vacio | si | timer bindings, lifecycle | timer bindings, update time | A |
-| `stateTransitions` | `unordered_map<string,vector<string>>` | `ObjectDefinition.stateTransitions` | no esperado | state bindings | builder | C/F |
 | `creationMode` | `string` | `ObjectDefinition.creationMode` | no esperado | grid creation | builder | C/F |
 | `gridRules` | `GridCreationRules` | `ObjectDefinition.gridRules` | no esperado | grid creation | builder | C/F |
 | `gridPatternIsRows` | `bool` | `ObjectDefinition.gridPatternIsRows` | no esperado | grid creation | builder | C/F |
@@ -119,7 +118,7 @@ operaciones:
 `acceleration`, `maxSpeed`, `inertia`, `boundsMode`, `boundsOverflow`, `group`,
 `role`, `collisionType`, `collisionActive`, `collisionRadius`, `collisionWith`,
 `scripts`, `resolvedScriptPaths`, `music`, `sounds`, `children`,
-`childResources`, `stateTransitions`, `creationMode`, `gridRules`,
+`childResources`, `creationMode`, `gridRules`,
 `gridPatternIsRows`, `gridPattern`, `gridRowPattern`.
 
 ### No copia desde ObjectDefinition
@@ -144,8 +143,8 @@ operaciones:
   `play_music(object,id)` y `play_sound(object,id)` los consultan desde la
   instancia.
 - `resolvedScriptPaths` se copia y es esencial para ejecutar callbacks.
-- `stateTransitions` se copia; el runtime no consulta ResourceRegistry para la
-  FSM.
+- `stateTransitions` permanece en `ObjectDefinition`; las bindings de estado
+  consultan la definicion compilada mediante `definitionId`.
 - Grid se copia completo; `creation.grid` no consulta la definicion original.
 
 ## C. Contrato JavaScript actual
@@ -194,7 +193,7 @@ No se exponen directamente: `definitionId`, `parentId`, `originalParentId`,
 `shapeType`, `textContent`, `points`, `boundsMode`, `boundsOverflow`,
 `collisionActive`, `collisionWith`, `collisionType`, `collisionRadius`,
 `scripts`, `resolvedScriptPaths`, `children`, `childResources`, `music`,
-`sounds`, `timers`, `stateTransitions`, `creationMode`, `gridRules`,
+`sounds`, `timers`, `creationMode`, `gridRules`,
 `gridPattern*`.
 
 Algunas de estas capacidades se exponen mediante funciones:

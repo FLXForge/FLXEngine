@@ -282,6 +282,15 @@ RuntimeLoadResult RuntimeWorld::load(
     automaticInstantiationFailed = false;
     automaticInstantiationFailure.clear();
 
+    scriptEngine.setFindObjectDefinitionFunction(
+        [this](const std::string& id) -> const ObjectDefinition*
+        {
+            return resources == nullptr
+                ? nullptr
+                : resources->findObject(id);
+        }
+    );
+
     if (!CompiledProjectValidator::validate(
         project,
         result.diagnostics,
@@ -954,7 +963,7 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
     if (!object.state.empty())
     {
         object.stateEnteredFrame =
-            frameIndex;
+            frameIndex == 0 ? 0 : frameIndex + 1;
     }
 
     object.definitionId =
@@ -1564,8 +1573,11 @@ void RuntimeWorld::updateObjectTime(float delta)
 
         if (!object.state.empty())
         {
-            object.stateTime +=
-                delta;
+            if (object.stateEnteredFrame <= frameIndex)
+            {
+                object.stateTime +=
+                    delta;
+            }
         }
 
         for (auto& timer : object.timers)

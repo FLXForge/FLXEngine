@@ -133,7 +133,7 @@ Notas:
 
 | Nombre JS | Firma real | Retorno | Subsistema | RuntimeObject | Necesita id runtime | Modifica runtime | d.ts | Docs | Usos examples |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
-| `state` | `state(object, stateName)` | `undefined` | state | si | si, busca por `object.id` | si | si | si | 4 |
+| `state_to` | `state_to(object, stateName)` | `undefined` | state | si | si, busca por `object.id` | si | si | si | 4 |
 | `state_current` | `state_current(object)` | string | state query | si | si | no | si | si | 0 |
 | `state_active` | `state_active(object, stateName)` | boolean | state query | si | si | no | si | si | 3 |
 | `state_entered` | `state_entered(object)` | boolean | state query | si | si | no | si | si | 0 |
@@ -194,7 +194,7 @@ Funciones internas expuestas globalmente para construir `Input`:
 | spawn | `spawn` |
 | movement | `move_x`, `move_y`, `advance`, `rotate`, `accelerate`, `bounce_x`, `bounce_y`, `follow_x`, `follow_y`, `to_origin`, propiedades `x/y/speed/angle/velocityX/velocityY` |
 | relation | `attach`, `detach`, `attach_active`, `carry`, `attached` |
-| state | `state`, `state_current`, `state_active`, `state_entered`, `state_time` |
+| state | `state_to`, `state_current`, `state_active`, `state_entered`, `state_time` |
 | timer | `timer`, `timer_active`, `timer_left`, `timer_clear` |
 | collision/raycast | callback `collision`, `ray`, `group`, `role` |
 | drawing | callback `draw`, `draw_text`, `draw_pixel`, `draw_line`, `draw_rectangle`, `fade_*` |
@@ -253,7 +253,7 @@ Casos repartidos entre bindings:
 | `music_active` | music | music | active | objeto_estado | medio | invierte respecto a `play_music` |
 | `music_paused` | music | music | paused | objeto_estado | medio | `paused` vs `active` |
 | `spawn` | spawn | spawn | - | verbo | si | claro |
-| `state` | state | state | - | sustantivo usado como verbo | bajo | cambia estado pero el nombre no expresa accion |
+| `state_to` | state | state | to | verbo compuesto | si | solicita transicion validada |
 | `state_current` | state | state | current | objeto_estado | si | consulta |
 | `state_active` | state | state | active | objeto_estado | si | consulta |
 | `state_entered` | state | state | entered | objeto_evento | medio | evento de frame |
@@ -270,7 +270,8 @@ Casos repartidos entre bindings:
 - Algunas familias usan `verbo_complemento`: `draw_text`, `play_sound`,
   `move_x`.
 - Otras invierten el orden: `fade_set`, `timer_clear`, `state_current`.
-- `state` y `timer` son sustantivos usados como accion.
+- `timer` sigue siendo sustantivo usado como accion; `state` fue sustituido por
+  `state_to`.
 - `*_active` aparece en fade, music, state, timer y attach, con significado
   bastante estable: consulta booleana de estado activo.
 - `fade_done` no tiene equivalente en timer/state/music.
@@ -414,7 +415,7 @@ Conteo aproximado en `examples/*.js`:
 | `bounce_y` | 5 |
 | `keep_only` | 4 |
 | `move_y` | 4 |
-| `state` | 4 |
+| `state_to` | 4 |
 | `bounce_x` | 3 |
 | `draw_line` | 3 |
 | `state_active` | 3 |
@@ -563,7 +564,8 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 - Audio/music: nomenclatura `play_music` vs `music_active`, pausa toggle, y
   consultas futuras.
 - Persistence: ubicacion final de saves y tipos soportados.
-- Estado/timers: nombres verbales frente a sustantivos `state` y `timer`.
+- Estado/timers: `state_to` ya usa verbo compuesto; `timer` mantiene pendiente
+  el debate sobre nombre verbal.
 
 ## O. Preguntas de diseno pendientes
 

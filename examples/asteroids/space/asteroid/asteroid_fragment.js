@@ -7,7 +7,7 @@
 const LIVE_TIME = 1.2;
 
 function born(fragment) {
-    timer(fragment, "life", LIVE_TIME);
+    play_timer(fragment, "life", LIVE_TIME);
 
     fragment.angle = random(0, 360);
     fragment.speed = random(20, 120);

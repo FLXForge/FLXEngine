@@ -883,12 +883,14 @@ namespace
             "    'fade_on','fade_off','fade_set','fade_active','fade_done','fade_alpha',"
             "    'play_sound','play_music','stop_music','pause_music','music_active','music_paused',"
             "    'spawn','state_to','state_current','state_active','state_entered','state_time',"
-            "    'timer','timer_active','timer_left','timer_clear'"
+            "    'play_timer','pause_timer','stop_timer','timer_active','timer_paused','timer_done','timer_left'"
             "  ];"
             "  let missing = 0;"
             "  for (let i = 0; i < functions.length; i = i + 1) {"
             "    if (typeof globalThis[functions[i]] !== 'function') missing = missing + 1;"
             "  }"
+            "  if (typeof globalThis.timer === 'function') missing = missing + 1;"
+            "  if (typeof globalThis.timer_clear === 'function') missing = missing + 1;"
             "  if (typeof console !== 'object' || typeof console.log !== 'function') missing = missing + 1;"
             "  if (typeof Input !== 'object') missing = missing + 1;"
             "  if (typeof Input.player !== 'function') missing = missing + 1;"
@@ -966,7 +968,7 @@ namespace
 
         harness.addScript(
             "visibilityProbe",
-            "function born(o) { timer(o, 'life', 1.0); }"
+            "function born(o) { play_timer(o, 'life', 1.0); }"
             "function action(o) {"
             "  o.local['actionCount'] = (o.local['actionCount'] || 0) + 1;"
             "  if (o.local['actionCount'] == 1) hide(o);"
@@ -1177,7 +1179,7 @@ namespace
 
         harness.addScript(
             "timeProbe",
-            "function born(o) { timer(o, 'life', 1.0); }"
+            "function born(o) { play_timer(o, 'life', 1.0); }"
             "function action(o) {"
             "  if (o.local['firstStateTime'] == null) o.local['firstStateTime'] = state_time(o);"
             "  if (o.local['firstTimerLeft'] == null) o.local['firstTimerLeft'] = timer_left(o, 'life');"

@@ -1582,11 +1582,22 @@ void RuntimeWorld::updateObjectTime(float delta)
 
         for (auto& timer : object.timers)
         {
+            if (timer.second.status != RuntimeTimerStatus::Running)
+            {
+                continue;
+            }
+
             timer.second.left =
                 std::max(
                     0.0f,
                     timer.second.left - delta
                 );
+
+            if (timer.second.left <= 0.0f)
+            {
+                timer.second.left = 0.0f;
+                timer.second.status = RuntimeTimerStatus::Done;
+            }
         }
     }
 }

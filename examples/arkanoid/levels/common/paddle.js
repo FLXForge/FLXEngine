@@ -86,7 +86,8 @@ function update_respawn(paddle){
         global["ball_lost"] = 0;
 
         if (global["lives"] > 0) {
-            timer(paddle, "respawn", RESPAWN_TIME);
+            stop_timer(paddle, "respawn");
+            play_timer(paddle, "respawn", RESPAWN_TIME);
             state_to(paddle, "respawn");
         } else {
             global["show_hud"] = 0;
@@ -123,20 +124,24 @@ function collision(paddle, other) {
 
 function apply_powerup(paddle, powerup){
     if (powerup.name == "broken") {
-        timer(paddle, "broken", POWERUP_TIME);
+        stop_timer(paddle, "broken");
+        play_timer(paddle, "broken", POWERUP_TIME);
     }
 
     if (powerup.name == "gun") {
-        timer(paddle, "gun", POWERUP_TIME);
+        stop_timer(paddle, "gun");
+        play_timer(paddle, "gun", POWERUP_TIME);
     }
 
     if (powerup.name == "big") {
-        timer(paddle, "big", POWERUP_TIME);
-        timer_clear(paddle, "small");
+        stop_timer(paddle, "big");
+        play_timer(paddle, "big", POWERUP_TIME);
+        stop_timer(paddle, "small");
     }
 
     if (powerup.name == "small") {
-        timer(paddle, "small", POWERUP_TIME);
-        timer_clear(paddle, "big");
+        stop_timer(paddle, "small");
+        play_timer(paddle, "small", POWERUP_TIME);
+        stop_timer(paddle, "big");
     }
 }

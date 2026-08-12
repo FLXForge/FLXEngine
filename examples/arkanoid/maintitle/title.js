@@ -14,7 +14,7 @@ function motion(title) {
 
     if (title.local["hit_running"] != 1) {
         title.local["hit_running"] = 1;
-        timer(title, "hit", HIT_TIME);
+        play_timer(title, "hit", HIT_TIME);
     }
 
     let t = HIT_TIME - timer_left(title, "hit");

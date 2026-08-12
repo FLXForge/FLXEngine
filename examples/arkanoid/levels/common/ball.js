@@ -14,7 +14,7 @@ function motion(ball){
         if (Input.player(1).pressed(FIRE_BUTTON)) {
             detach(ball);
             ball.angle = 135;
-            timer(ball, "detach", DETACH_COOLDOWN);
+            play_timer(ball, "detach", DETACH_COOLDOWN);
         }
 
         return;

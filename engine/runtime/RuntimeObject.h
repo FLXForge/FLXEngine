@@ -8,9 +8,18 @@
 #include <unordered_map>
 #include <cstdint>
 
+enum class RuntimeTimerStatus
+{
+    Running,
+    Paused,
+    Done
+};
+
 struct RuntimeTimer
 {
+    float duration = 0.0f;
     float left = 0.0f;
+    RuntimeTimerStatus status = RuntimeTimerStatus::Running;
 };
 
 class RuntimeObject

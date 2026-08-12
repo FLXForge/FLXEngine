@@ -30,7 +30,7 @@ function action(player){
 
     if (Key.pressed(KEY_SPACE) && !timer_active(player, "shot")) {
         spawn(player, "laser");
-        timer(player, "shot", SHOT_COOLDOWN);
+        play_timer(player, "shot", SHOT_COOLDOWN);
     }
 }
 

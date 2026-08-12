@@ -9,12 +9,13 @@ const SPAWN_INTERVAL = 1.5;
 const ASTEROID_LIMIT = 10;
 
 function born(space) {
-    timer(space, "spawn", SPAWN_INTERVAL);
+    play_timer(space, "spawn", SPAWN_INTERVAL);
 }
 
 function motion(space) {
     if (global["inGame"] == 0) {
-        timer(space, "spawn", SPAWN_INTERVAL);
+        stop_timer(space, "spawn");
+        play_timer(space, "spawn", SPAWN_INTERVAL);
         return;
     }
 
@@ -23,7 +24,7 @@ function motion(space) {
     }
 
     if (global["asteroids"] >= ASTEROID_LIMIT) {
-        timer(space, "spawn", SPAWN_INTERVAL);
+        play_timer(space, "spawn", SPAWN_INTERVAL);
         return;
     }
 
@@ -37,5 +38,5 @@ function motion(space) {
 
     global["asteroids"] += 2;
 
-    timer(space, "spawn", SPAWN_INTERVAL);
+    play_timer(space, "spawn", SPAWN_INTERVAL);
 }

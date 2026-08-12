@@ -1215,28 +1215,37 @@ rotate(ship, RIGHT);</code></pre>
 
             <hr />
 
-            <h2>timer(object, name, duration)</h2>
+            <h2>play_timer(object, name, duration?)</h2>
 
             <p>
-                Creates or restarts a named timer owned by the object. Timers
-                are updated automatically by the runtime and disappear with
-                their owner.
-                A finished timer remains stored with <code>0</code> seconds
-                left until it is restarted, cleared with
-                <code>timer_clear()</code>, or its owner is destroyed.
+                Starts, resumes, or redefines a named timer owned by the
+                object. Timers update automatically and disappear with their
+                owner.
+                A finished timer remains observable as done until it is played
+                again, stopped with <code>stop_timer()</code>, or its owner is
+                destroyed.
             </p>
 
-<pre><code>timer(paddle, "gun", 5);
+<pre><code>play_timer(paddle, "gun", 5);
 
 if (timer_active(paddle, "gun")) {
     attach(ball);
 }
+
+pause_timer(paddle, "gun");
+play_timer(paddle, "gun");
+stop_timer(paddle, "gun");
 </code></pre>
 
             <ul>
-                <li><code>timer_active(object, "name")</code>: true while the timer has time left.</li>
-                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code> when it does not exist or has finished.</li>
-                <li><code>timer_clear(object, "name")</code>: removes the timer immediately.</li>
+                <li><code>play_timer(object, "name")</code>: resumes a paused timer or replays a done timer from its known duration.</li>
+                <li><code>play_timer(object, "name", duration)</code>: creates or retimes a timer using total duration, preserving elapsed time when it already exists.</li>
+                <li><code>pause_timer(object, "name")</code>: pauses a running timer without clearing it.</li>
+                <li><code>stop_timer(object, "name")</code>: removes the timer immediately. Stop is not done.</li>
+                <li><code>timer_active(object, "name")</code>: true while the timer is running or paused.</li>
+                <li><code>timer_paused(object, "name")</code>: true only while the timer is paused.</li>
+                <li><code>timer_done(object, "name")</code>: true only after natural completion.</li>
+                <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code> when absent, stopped, or done.</li>
             </ul>
 
             <hr />

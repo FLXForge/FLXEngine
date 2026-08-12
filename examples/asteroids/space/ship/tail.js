@@ -8,7 +8,7 @@
 const LIVE_TIME = 0.5;
 
 function born(tail) {
-    timer(tail, "life", LIVE_TIME);
+    play_timer(tail, "life", LIVE_TIME);
 
     tail.speed = 10;
 }

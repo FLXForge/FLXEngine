@@ -8,7 +8,7 @@
 const TIME_TO_DIE = 1.5;
 
 function born(fragment) {
-    timer(fragment, "life", TIME_TO_DIE);
+    play_timer(fragment, "life", TIME_TO_DIE);
 
     fragment.local["mode"] = random(0, 3);
 

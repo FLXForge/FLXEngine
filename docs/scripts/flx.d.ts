@@ -489,19 +489,36 @@ declare function state_entered(object: RuntimeObject): boolean;
 declare function state_time(object: RuntimeObject): number;
 
 /**
- * Creates or restarts a named timer owned by the object.
+ * Starts, resumes, or redefines a named timer owned by the object.
  *
- * Finished timers stay stored with 0 seconds left until they are restarted,
- * cleared with timer_clear(), or their owner is destroyed.
+ * Without duration, play_timer resumes a paused timer or replays a done timer
+ * from its known duration. With duration, the value represents total duration,
+ * not remaining time.
  */
-declare function timer(
+declare function play_timer(
     object: RuntimeObject,
     timerName: string,
-    duration: number
+    duration?: number
 ): void;
 
 /**
- * Returns true while the named object timer exists and has time left.
+ * Pauses a running timer without clearing its remaining time.
+ */
+declare function pause_timer(
+    object: RuntimeObject,
+    timerName: string
+): void;
+
+/**
+ * Stops and removes a timer. Stop does not mark the timer as done.
+ */
+declare function stop_timer(
+    object: RuntimeObject,
+    timerName: string
+): void;
+
+/**
+ * Returns true while the named timer is running or paused.
  */
 declare function timer_active(
     object: RuntimeObject,
@@ -509,20 +526,29 @@ declare function timer_active(
 ): boolean;
 
 /**
- * Returns remaining seconds for the named object timer, or 0 if it does not
- * exist or has already finished.
+ * Returns true while the named timer is paused.
+ */
+declare function timer_paused(
+    object: RuntimeObject,
+    timerName: string
+): boolean;
+
+/**
+ * Returns true when the named timer reached the end naturally.
+ */
+declare function timer_done(
+    object: RuntimeObject,
+    timerName: string
+): boolean;
+
+/**
+ * Returns remaining seconds for the named object timer, or 0 when absent,
+ * stopped, or done.
  */
 declare function timer_left(
     object: RuntimeObject,
     timerName: string
 ): number;
-
-/**
- * Removes a named object timer immediately.
- */
-declare function timer_clear(
-    object: RuntimeObject,
-    timerName: string
 ): void;
 
 /**

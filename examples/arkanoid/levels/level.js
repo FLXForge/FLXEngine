@@ -11,7 +11,7 @@ function born(level){
     fade_set(1);
     fade_off();
 
-    timer(level, "intro", INTRO_TIME);
+    play_timer(level, "intro", INTRO_TIME);
 }
 
 function action(level){

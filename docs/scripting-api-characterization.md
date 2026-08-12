@@ -143,10 +143,13 @@ Notas:
 
 | Nombre JS | Firma real | Retorno | Subsistema | RuntimeObject | Necesita id runtime | Modifica runtime | d.ts | Docs | Usos examples |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
-| `timer` | `timer(object, timerName, duration)` | `undefined` | timer | si | si | si | si | si | 17 |
+| `play_timer` | `play_timer(object, timerName, duration?)` | `undefined` | timer | si | si | si | si | si | 17 |
+| `pause_timer` | `pause_timer(object, timerName)` | `undefined` | timer | si | si | si | si | si | 0 |
+| `stop_timer` | `stop_timer(object, timerName)` | `undefined` | timer | si | si | si | si | si | 7 |
 | `timer_active` | `timer_active(object, timerName)` | boolean | timer query | si | si | no | si | si | 14 |
+| `timer_paused` | `timer_paused(object, timerName)` | boolean | timer query | si | si | no | si | si | 0 |
+| `timer_done` | `timer_done(object, timerName)` | boolean | timer query | si | si | no | si | si | 0 |
 | `timer_left` | `timer_left(object, timerName)` | number | timer query | si | si | no | si | si | 6 |
-| `timer_clear` | `timer_clear(object, timerName)` | `undefined` | timer | si | si | si | si | si | 2 |
 
 ### InputBindings
 
@@ -195,7 +198,7 @@ Funciones internas expuestas globalmente para construir `Input`:
 | movement | `move_x`, `move_y`, `advance`, `rotate`, `accelerate`, `bounce_x`, `bounce_y`, `follow_x`, `follow_y`, `to_origin`, propiedades `x/y/speed/angle/velocityX/velocityY` |
 | relation | `attach`, `detach`, `attach_active`, `carry`, `attached` |
 | state | `state_to`, `state_current`, `state_active`, `state_entered`, `state_time` |
-| timer | `timer`, `timer_active`, `timer_left`, `timer_clear` |
+| timer | `play_timer`, `pause_timer`, `stop_timer`, `timer_active`, `timer_paused`, `timer_done`, `timer_left` |
 | collision/raycast | callback `collision`, `ray`, `group`, `role` |
 | drawing | callback `draw`, `draw_text`, `draw_pixel`, `draw_line`, `draw_rectangle`, `fade_*` |
 | audio/music | `play_sound`, `play_music`, `stop_music`, `pause_music`, `music_active`, `music_paused` |
@@ -258,10 +261,13 @@ Casos repartidos entre bindings:
 | `state_active` | state | state | active | objeto_estado | si | consulta |
 | `state_entered` | state | state | entered | objeto_evento | medio | evento de frame |
 | `state_time` | state | state | time | objeto_valor | medio | consulta |
-| `timer` | timer | timer | - | sustantivo usado como verbo | bajo | crea/reinicia |
+| `play_timer` | timer | play | timer | verbo_objeto | si | inicia, reanuda o reproduce temporizador |
+| `pause_timer` | timer | pause | timer | verbo_objeto | si | pausa sin alternar |
+| `stop_timer` | timer | stop | timer | verbo_objeto | si | elimina sin marcar done |
 | `timer_active` | timer | timer | active | objeto_estado | si | consulta |
+| `timer_paused` | timer | timer | paused | objeto_estado | si | consulta |
+| `timer_done` | timer | timer | done | objeto_estado | si | consulta finalizacion natural |
 | `timer_left` | timer | timer | left | objeto_valor | medio | consulta |
-| `timer_clear` | timer | timer | clear | objeto_verbo | medio | invierte VERBO_COMPLEMENTO |
 | `Input.player(1).pressed` | input | pressed | - | estado/evento | medio | botones tienen pressed |
 | `Input.player(1).up/down/left/right` | input | - | direccion | direccion como metodo | medio | direcciones no tienen pressed |
 
@@ -269,12 +275,12 @@ Casos repartidos entre bindings:
 
 - Algunas familias usan `verbo_complemento`: `draw_text`, `play_sound`,
   `move_x`.
-- Otras invierten el orden: `fade_set`, `timer_clear`, `state_current`.
-- `timer` sigue siendo sustantivo usado como accion; `state` fue sustituido por
-  `state_to`.
+- Otras invierten el orden: `fade_set`, `state_current`.
+- Timer ya no usa el sustantivo `timer` como accion. La operacion se expresa
+  con `play_timer`, `pause_timer` y `stop_timer`.
 - `*_active` aparece en fade, music, state, timer y attach, con significado
   bastante estable: consulta booleana de estado activo.
-- `fade_done` no tiene equivalente en timer/state/music.
+- `fade_done` y `timer_done` comparten el significado de proceso terminado.
 - `pause_music` alterna pausa/reanuda, pero el nombre solo expresa una mitad.
 - `follow_x/follow_y` parecen recibir target objeto por analogia con
   `carry(object, carrier)`, pero reciben nombre.
@@ -399,7 +405,7 @@ Conteo aproximado en `examples/*.js`:
 | `spawn` | 44 |
 | `random` | 24 |
 | `kill` | 23 |
-| `timer` | 17 |
+| `play_timer` | 17 |
 | `advance` | 16 |
 | `draw_text` | 16 |
 | `play_sound` | 15 |
@@ -422,7 +428,7 @@ Conteo aproximado en `examples/*.js`:
 | `draw_pixel` | 2 |
 | `fade_on` | 2 |
 | `pause_music` | 2 |
-| `timer_clear` | 2 |
+| `stop_timer` | 7 |
 | `accelerate` | 2 |
 | `follow_x`, `follow_y`, `attach`, `detach`, `to_origin`, `fade_done`, `play_music` | 1 cada una |
 
@@ -537,7 +543,8 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 - Relaciones: `attach`, `detach`, `attach_active`, `carry`.
 - Instanciacion: `spawn`.
 - Audio/musica: `play_sound`, `play_music`, `stop_music`, `pause_music`.
-- Estados y timers: familia `state_*` y `timer_*`.
+- Estados y timers: familias `state_*`, `play_timer`, `pause_timer`,
+  `stop_timer` y consultas `timer_*`.
 - Persistencia y salida: `save`, `load`, `exit`.
 - Consultas de mundo: `ray`.
 
@@ -564,8 +571,8 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 - Audio/music: nomenclatura `play_music` vs `music_active`, pausa toggle, y
   consultas futuras.
 - Persistence: ubicacion final de saves y tipos soportados.
-- Estado/timers: `state_to` ya usa verbo compuesto; `timer` mantiene pendiente
-  el debate sobre nombre verbal.
+- Estado/timers: `state_to` ya usa verbo compuesto; Timer consolida el control
+  de proceso con `play_timer`, `pause_timer` y `stop_timer`.
 
 ## O. Preguntas de diseno pendientes
 

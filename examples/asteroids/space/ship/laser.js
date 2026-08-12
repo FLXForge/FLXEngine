@@ -7,7 +7,7 @@
 const MAX_LIFE_TIME = 4;
 
 function born(laser) {
-    timer(laser, "life", MAX_LIFE_TIME);
+    play_timer(laser, "life", MAX_LIFE_TIME);
 }
 
 function motion(laser) {

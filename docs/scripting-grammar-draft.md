@@ -344,19 +344,49 @@ state_time
 
 Este renombre queda cerrado: no se registra alias heredado.
 
-## 17. `timer`
+## 17. Timer
 
-La API actual:
+La API consolidada de Timer:
 
 ```javascript
-timer(object, "reload", 1);
+play_timer(object, "reload", 1);
+pause_timer(object, "reload");
+stop_timer(object, "reload");
 ```
 
-también carece de verbo explícito.
+valida `play`, `pause` y `stop` como vocabulario de control de proceso.
 
-No debe renombrarse automáticamente a `timer_to`.
+Timer representa una capacidad que puede ejecutarse, suspenderse, terminar
+voluntariamente y terminar naturalmente.
 
-Antes debe auditarse si crea, inicia, reinicia, establece duración o sustituye un temporizador.
+Por eso combina acciones verbales:
+
+```text
+play_timer
+pause_timer
+stop_timer
+```
+
+con consultas agrupadas por concepto:
+
+```text
+timer_active
+timer_paused
+timer_done
+timer_left
+```
+
+`play_timer(object, name, duration)` no significa reinicio automatico. Cambia
+la duracion total conservando el tiempo ya transcurrido. Un reinicio completo
+se expresa con:
+
+```javascript
+stop_timer(object, "reload");
+play_timer(object, "reload", 1);
+```
+
+Esta consolidacion no implica que toda capacidad futura deba soportar siempre
+`play`, `pause` y `stop`; solo confirma que Timer encaja con esa familia.
 
 ## 18. Audio
 

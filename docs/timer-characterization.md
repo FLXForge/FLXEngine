@@ -1,168 +1,165 @@
 # FLX Timer Characterization
 
-This document characterizes the current Timer contract in FLX.
+This document records the consolidated Timer contract after the Timer audit.
+Timer is now a small runtime process owned by a `RuntimeObject`.
 
-It does not propose production changes. Its purpose is to record what the
-runtime and JavaScript API actually do today before deciding naming,
-semantics, or refactors.
+Timer remains:
 
-Sources reviewed:
+- runtime-only;
+- local to one object instance;
+- identified by a string name inside that instance;
+- independent from State, visibility and global pause.
 
-- `engine/scripting/bindings/TimerBindings.*`
-- `engine/runtime/RuntimeObject.*`
-- `engine/runtime/RuntimeWorld.*`
-- `docs/scripts/flx.d.ts`
-- `docs/en/api.html`
-- `docs/es/api.html`
-- `docs/scripting-api-characterization.md`
-- `docs/scripting-grammar-draft.md`
-- `docs/runtime-lifecycle-characterization.md`
-- `docs/runtime-object-characterization.md`
-- `examples`
-- `tests/runtime/RuntimeLifecycleTests.cpp`
-- `tests/runtime/RuntimeTimerTests.cpp`
+`docs/runtime.md` was referenced during the audit, but it does not exist in the
+current project tree. Runtime timing was contrasted with
+`docs/runtime-lifecycle-characterization.md` instead.
 
-Requested source note:
+## A. Public API
 
-- `docs/runtime.md` does not exist in the current project tree. Runtime timing
-  was contrasted with `docs/runtime-lifecycle-characterization.md` instead.
+The public JavaScript Timer API is:
 
-## A. Current Contract
+| Function | Signature | Return | Meaning |
+| --- | --- | --- | --- |
+| `play_timer` | `play_timer(object, name)` | `undefined` | resumes a paused timer or replays a done timer |
+| `play_timer` | `play_timer(object, name, duration)` | `undefined` | creates or retimes a timer using a total duration |
+| `pause_timer` | `pause_timer(object, name)` | `undefined` | pauses a running timer |
+| `stop_timer` | `stop_timer(object, name)` | `undefined` | removes a timer |
+| `timer_active` | `timer_active(object, name)` | boolean | true for running or paused timers |
+| `timer_paused` | `timer_paused(object, name)` | boolean | true only for paused timers |
+| `timer_done` | `timer_done(object, name)` | boolean | true only after natural completion |
+| `timer_left` | `timer_left(object, name)` | number | remaining seconds |
 
-### Public API
+Removed public APIs:
 
-| Function | Signature | Return | Implementation | Documented | d.ts |
-| --- | --- | --- | --- | --- | --- |
-| `timer` | `timer(object, timerName, duration)` | `undefined` | `TimerBindings.cpp::jsTimer` | yes EN/ES | yes |
-| `timer_active` | `timer_active(object, timerName)` | boolean | `TimerBindings.cpp::jsTimerActive` | yes EN/ES | yes |
-| `timer_left` | `timer_left(object, timerName)` | number | `TimerBindings.cpp::jsTimerLeft` | yes EN/ES | yes |
-| `timer_clear` | `timer_clear(object, timerName)` | `undefined` | `TimerBindings.cpp::jsTimerClear` | yes EN/ES | yes |
+- `timer(object, name, duration)`
+- `timer_clear(object, name)`
 
-No other timer-related JavaScript functions are currently registered.
-
-### `timer(object, name, duration)`
-
-Current behavior:
-
-- Requires at least three arguments. With fewer arguments it returns
-  `undefined` and does nothing.
-- Resolves `object` by reading `object.id` and calling
-  `ScriptEngine::findObjectByRuntimeId`.
-- Converts `name` with `JS_ToCString`, then immediately copies it into
-  `std::string`.
-- Converts `duration` with `JS_ToFloat64`.
-- Creates a timer if the name does not exist.
-- Starts it immediately by setting `left`.
-- If the same name already exists, replaces the remaining time.
-- Does not store original duration.
-- Does not store a started flag.
-- Does not store a finished flag.
-- Allows multiple timers per object.
-- Timer names are unique inside one `RuntimeObject`.
-- Different instances can use the same timer name independently.
-
-The operation currently behaves most like:
-
-```text
-create-or-restart timer with remaining time = duration clamped to >= 0
-```
-
-Linguistically, the real operation is closer to `start`, `restart`, or `set`
-than to a pure noun `timer`. It is not a transition like `state_to`, because it
-does not move toward a named state; it replaces a remaining-time value.
-
-No rename is proposed here.
-
-### `timer_active(object, name)`
-
-Current behavior:
-
-- Returns `false` with fewer than two arguments.
-- Resolves `object` by `object.id`.
-- Converts `name` to `std::string`.
-- Returns `true` only when:
-  - the timer exists in `object.timers`;
-  - `left > 0.0f`.
-- Returns `false` for:
-  - missing timer;
-  - cleared timer;
-  - zero-duration timer;
-  - negative-duration timer after clamp;
-  - finished timer stored at zero.
-
-`timer_active` means "exists and has remaining time", not merely "exists".
-
-### `timer_left(object, name)`
-
-Current behavior:
-
-- Returns `0` with fewer than two arguments.
-- Resolves `object` by `object.id`.
-- Converts `name` to `std::string`.
-- Returns timer `left` when the timer exists.
-- Returns `0` when the timer does not exist.
-- Finished timers are clamped to `0`.
-- Units are seconds.
-
-From JavaScript, `timer_left` cannot distinguish:
-
-- missing timer;
-- timer cleared with `timer_clear`;
-- timer created with duration `0`;
-- timer finished naturally.
-
-### `timer_clear(object, name)`
-
-Current behavior:
-
-- Returns `undefined`.
-- With fewer than two arguments it does nothing.
-- Resolves `object` by `object.id`.
-- Converts `name` to `std::string`.
-- Calls `object->timers.erase(name)`.
-- If the timer does not exist, nothing happens.
-- The name can be reused later with `timer()`.
-
-The name `_clear` accurately describes the current operation: it removes the
-entry. It does not set `left` to zero.
+No deprecated aliases are registered.
 
 ## B. Runtime Model
 
 Timers live in `RuntimeObject`:
 
 ```cpp
+enum class RuntimeTimerStatus
+{
+    Running,
+    Paused,
+    Done
+};
+
 struct RuntimeTimer
 {
+    float duration = 0.0f;
     float left = 0.0f;
+    RuntimeTimerStatus status = RuntimeTimerStatus::Running;
 };
 
 std::unordered_map<std::string, RuntimeTimer> timers;
 ```
 
-Current data per timer:
+The absence of a map entry represents `ABSENT`. There is no stopped status.
+Stopping a timer removes it.
 
-| Data | Exists | Meaning |
-| --- | --- | --- |
-| name | yes, as map key | unique timer identity inside one instance |
-| original duration | no | cannot be queried or reconstructed reliably |
-| left | yes | remaining seconds |
-| active flag | no | derived from `left > 0` |
-| finished flag | no | not represented |
-| just-finished event | no | not represented |
-| cleared flag | no | erased entry |
+## C. Observable States
 
-Timers are runtime-only, per-instance state. They do not come from
-`ObjectDefinition`, are not copied from JSON, and are not shared between
-instances.
+| State | `timer_active` | `timer_paused` | `timer_done` | `timer_left` |
+| --- | --- | --- | --- | --- |
+| `ABSENT` | false | false | false | 0 |
+| `RUNNING` | true | false | false | `> 0` |
+| `PAUSED` | true | true | false | frozen `> 0` |
+| `DONE` | false | false | true | 0 |
 
-When an object is spawned, it starts with an empty `timers` map. Any timers must
-be created by script, commonly in `born()`.
+`active` means the timer is still valid and has not naturally completed or
+been stopped. A paused timer is active.
 
-When a `RuntimeObject` is destroyed, its timers disappear with the object.
+`done` means the timer reached the end naturally. `stop_timer` does not mark a
+timer as done.
 
-## C. Temporal Semantics
+## D. Validation
 
-Runtime frame order is currently:
+Timer names must be strings and must not be empty.
+
+Durations, when provided, must be:
+
+- numbers;
+- finite;
+- strictly greater than `0`.
+
+Invalid input logs a warning through `Logger`, leaves the timer untouched and
+lets script execution continue. This task deliberately does not add structured
+Runtime diagnostics for Timer.
+
+## E. `play_timer`
+
+### Without Duration
+
+`play_timer(object, name)` behaves by state:
+
+| State | Result |
+| --- | --- |
+| `ABSENT` | warning and no-op, because duration is unknown |
+| `RUNNING` | no-op |
+| `PAUSED` | becomes `RUNNING`, preserving `left` and `duration` |
+| `DONE` | restarts from the stored `duration` |
+
+### With Duration
+
+`play_timer(object, name, duration)` uses `duration` as total duration, not as
+new remaining time.
+
+| State | Result |
+| --- | --- |
+| `ABSENT` | creates a running timer with `left = duration` |
+| `DONE` | redefines `duration`, sets `left = duration`, runs |
+| `RUNNING` / `PAUSED` | preserves elapsed time and changes total duration |
+
+For an existing running or paused timer:
+
+```text
+elapsed = oldDuration - left
+newLeft = newDuration - elapsed
+```
+
+If `newLeft > 0`, the timer becomes running with that remaining time.
+If `newLeft <= 0`, the timer becomes done with `left = 0`.
+
+This is intentionally not an automatic restart. A real restart is expressed
+explicitly as:
+
+```js
+stop_timer(object, "name");
+play_timer(object, "name", duration);
+```
+
+## F. Pause And Stop
+
+`pause_timer(object, name)`:
+
+- `RUNNING` -> `PAUSED`;
+- `PAUSED`, `DONE`, `ABSENT` -> no-op.
+
+It is not a toggle. Resume is done through `play_timer(object, name)`.
+
+`stop_timer(object, name)`:
+
+- removes running, paused or done timers;
+- absent timers are a no-op;
+- after stop, active, paused and done are all false and left is `0`.
+
+## G. Natural Completion
+
+During update, running timers decrement once per frame. When `left <= 0`:
+
+- `left` is clamped to `0`;
+- status becomes `Done`;
+- the timer remains stored until `play_timer` or `stop_timer`.
+
+`DONE` is persistent, not a one-frame event.
+
+## H. Frame And Lifecycle Semantics
+
+The consolidated runtime order remains:
 
 ```text
 action
@@ -177,238 +174,76 @@ dead
 cleanup
 ```
 
-Timers are updated in `RuntimeWorld::updateObjectTime(delta)` after collision
-and after spawn flushes, before `dead()` and cleanup.
+Rules:
 
-Current timing rules confirmed by tests:
+- timers created in `born()` keep full duration until the first update;
+- timers created or modified in `action`, `motion` or `collision` keep their
+  defined value during that callback;
+- running timers decrement at the timer phase of that same frame;
+- paused and done timers do not decrement;
+- hidden objects still update timers;
+- `state_to` does not affect timers;
+- killed objects do not advance timers after being killed;
+- `dead()` can still query the final timer state before cleanup destroys the
+  instance.
 
-- A timer created in `born()` keeps its full value until the first update.
-- A timer created in `action()` is observable at full value in that same
-  callback.
-- A timer created in `motion()` is observable at full value in that same
-  callback.
-- A timer created in `collision()` is observable at full value in that same
-  callback.
-- Timers created in action, motion, or collision are decremented at the end of
-  that same frame.
-- The next frame's `action()` observes the value left after the previous
-  frame's decrement.
-- Decrement uses the safe delta passed to `RuntimeWorld::update`.
-- Timers clamp to zero and do not go negative.
+## I. Historical Restart Audit
 
-The update loop skips timer decrement for objects with `alive == false`.
+The old `timer(...)` function restarted active timers by replacing `left`.
+That behavior is no longer implicit.
 
-This matters for `kill()`:
+Real uses that depended on restart semantics were updated explicitly:
 
-- If an object is killed in `action()`, `updateObjectTime` skips it.
-- `dead()` then runs before cleanup.
-- During `dead()`, `timer_left()` and `timer_active()` can still query the
-  killed object because it still exists in the world until cleanup.
-- The dead callback sees the timer value from before the frame decrement.
+- Asteroids asteroid spawner reset while the game is not running:
+  `stop_timer` + `play_timer`.
+- Arkanoid paddle respawn and power-up refreshes:
+  `stop_timer` + `play_timer`.
 
-## D. Edge Cases
+No separate `restart_timer` API was added. Current real usage is readable with
+the explicit stop/play pair.
 
-Confirmed current behavior:
+## J. Grammar Result
 
-| Case | Current behavior |
-| --- | --- |
-| missing timer | `active=false`, `left=0` |
-| `duration = 0` | entry is created, `left=0`, `active=false` |
-| `duration < 0` | entry is created, `left=0`, `active=false` |
-| `duration = NaN` | entry is created, stores `0` today, `active=false` |
-| `duration = Infinity` | entry is created, stores infinity today, `active=true` |
-| empty name `""` | accepted as a valid key |
-| repeated same name | replaces `left` with new clamped duration |
-| many names | independent entries in the same object map |
-| clear missing name | no error, no effect |
-| clear existing name | erases entry |
-| restart finished timer | replaces zero with new duration |
+Timer validates `play`, `pause` and `stop` as process-control vocabulary for
+capabilities that can run, be suspended and end voluntarily.
 
-No warnings or diagnostics are produced for these edge cases.
+Queries remain in the timer family:
 
-There is no validation against `NaN`, `Infinity`, empty names, or extremely many
-timers in this layer.
+- `timer_active`
+- `timer_paused`
+- `timer_done`
+- `timer_left`
 
-## E. Real Usage
+This does not mean every future capability must implement all three control
+verbs. It only confirms that Timer is a good fit for this vocabulary.
 
-Examples use timers as:
+## K. Tests
 
-| Example | Files / pattern | Purpose |
-| --- | --- | --- |
-| Asteroids | `laser.js`, `tail.js`, fragments | lifetime and fade-out |
-| Asteroids | asteroid `space.js` | periodic spawn interval |
-| Arkanoid | `maintitle/title.js` | short hit animation |
-| Arkanoid | `levels/level.js` | intro timing |
-| Arkanoid | `paddle.js` | power-up durations and respawn cooldown |
-| Arkanoid | `ball.js` | detach cooldown |
-| Invaders | `player.js` | shot cooldown |
+`flx-runtime-timer-tests` covers:
 
-Observed patterns:
+- creation with duration;
+- play without duration on absent timers;
+- running retime preserving elapsed;
+- duration shorter than elapsed becoming done;
+- pause, repeated pause and resume;
+- pause plus duration change;
+- natural done persistence;
+- replaying done timers;
+- stop from running, paused, done and absent;
+- invalid names and invalid durations;
+- multiple timers per instance;
+- same timer name on different instances;
+- frame timing from `born`, `action`, `motion` and `collision`;
+- interaction with `hide`, `state_to`, `kill` and `dead`;
+- explicit restart for historical restart use cases.
 
-- `timer()` is usually called in `born()` for lifetime/intro timers.
-- `timer()` is also called during gameplay to start cooldowns and power-ups.
-- `timer_active()` is the dominant query for "can I act now?" or "is effect
-  still running?".
-- `timer_left()` is used for fade/scaling/interpolation.
-- `timer_clear()` is used in Arkanoid to cancel mutually exclusive paddle size
-  effects.
+## L. Open Questions
 
-No example currently relies on:
+Deliberately pending:
 
-- `timer_done`;
-- original duration;
-- a just-finished event;
-- querying whether a finished timer still exists.
-
-## F. Current Grammar
-
-Current timer family:
-
-```text
-timer
-timer_active
-timer_left
-timer_clear
-```
-
-Grammar observations:
-
-- `timer` is a noun used as an action. This matches the concern already noted
-  in `docs/scripting-grammar-draft.md`.
-- `timer_active` fits the current `_active` predicate family. It means "running
-  with remaining time", not "entry exists".
-- `timer_left` is a value projection and is consistent with the draft's
-  `CONCEPTO_VALOR` form.
-- `timer_clear` is an operation but uses object-then-verb order, like
-  `fade_set` and `state_current`, not the `VERBO_COMPLEMENTO` pattern.
-
-The operation performed by `timer()` is not just "create"; it also starts and
-restarts. Candidate names should reflect replacement of remaining time.
-
-No naming decision is made here.
-
-## G. Inconsistencies
-
-- The API cannot distinguish "missing", "cleared", "duration zero", and
-  "finished"; all report `active=false` and `left=0`.
-- Finished timers remain stored internally, but JS has no `timer_exists`.
-- There is no `timer_done`, unlike `fade_done`.
-- `timer()` has no explicit verb.
-- `timer_clear()` is action-like but uses the timer family as prefix.
-- Edge values such as `Infinity`, `NaN`, and empty names are accepted silently.
-- `timer_active()` could be misread as "timer entry exists", but it actually
-  means `left > 0`.
-
-## H. Real Debt
-
-Real technical/design debt observed:
-
-- `RuntimeTimer` only stores `left`; any future `timer_done` or exact
-  completion event needs additional state.
-- No duration/original duration is stored, limiting later progress ratios unless
-  scripts keep constants manually.
-- No diagnostics or warnings for invalid duration or invalid name.
-- No guard against unbounded timer creation per object.
-- The public function `timer()` is semantically overloaded: create, start,
-  restart, and set remaining time.
-- Timer behavior is runtime-only and not currently represented in structured
-  runtime diagnostics.
-
-Not debt:
-
-- Keeping timers per `RuntimeObject` is coherent with the current model.
-- Storing timer names as `std::string` is correct; the QuickJS C string is not
-  kept after `JS_FreeCString`.
-- Finished timers remaining stored at zero is deliberate in current docs and
-  tests.
-
-## I. Capabilities That Do Not Exist Yet
-
-The current model does not provide:
-
-- `timer_done(object, name)`;
-- `timer_exists(object, name)`;
-- `timer_progress(object, name)`;
-- original duration;
-- elapsed time;
-- pause/resume per timer;
-- global timers;
-- timer callbacks;
+- structured runtime Diagnostics for invalid Timer calls;
+- global game pause policy;
+- timer progress/elapsed public queries;
+- timer callbacks or events;
 - timer groups;
-- structured runtime diagnostics for invalid timer calls;
-- automatic warning on invalid name/duration;
-- one-frame "finished just now" event.
-
-Distinguishing these states would require new runtime data:
-
-```text
-A. timer missing
-B. timer active
-C. timer just finished this frame
-D. timer finished previously
-E. timer explicitly cleared
-```
-
-Today only B is distinguishable through `timer_active()`. A, C, D, and E all
-collapse to `active=false` and mostly `left=0` from JavaScript.
-
-## J. Naming Candidates, Without Decision
-
-Given the real operation, plausible future names could include:
-
-| Candidate | Strength | Concern |
-| --- | --- | --- |
-| `timer_start(object, name, duration)` | clear action; family indexed by timer | still also restarts |
-| `start_timer(object, name, duration)` | natural verb-object order | differs from current `timer_*` family |
-| `timer_restart(object, name, duration)` | honest for existing timers | odd for first creation |
-| `timer_set(object, name, duration)` | matches actual replacement of `left` | `_set` is not preferred in grammar draft |
-| `timer_to(object, name, duration)` | aligns with transition pattern | semantically weak: duration is not a destination state |
-| keep `timer(...)` | short and already used | noun-as-verb remains unclear |
-
-No definitive recommendation is made in this characterization.
-
-## K. Design Questions
-
-1. Should `timer()` be renamed to a verb form, or is the short noun acceptable
-   for v0.3.x?
-2. Should timer identity remain a string local to each object?
-3. Should empty timer names be invalid?
-4. Should non-finite durations be rejected or clamped with warning?
-5. Should `timer_active()` continue to mean `left > 0`, or should there also be
-   `timer_exists()`?
-6. Is `timer_done()` needed, and should it mean "finished ever" or "finished
-   this frame"?
-7. Should finished timers remain stored at zero, or should they be removed once
-   a richer done-state exists?
-8. Should timers store original duration to support progress queries?
-9. Should timers advance for killed objects before `dead()`, or should the
-   current skip-on-dead behavior stay?
-10. Should invalid timer operations eventually produce structured runtime
-    diagnostics instead of silent no-op / silent clamp?
-11. Should timers be able to pause when object state changes, or stay
-    independent of state machines?
-12. Should there be any limit on timers per object?
-
-## Tests Added
-
-The suite `flx-runtime-timer-tests` characterizes:
-
-- creation;
-- restart with same name;
-- multiple timers per object;
-- `timer_active`;
-- `timer_left`;
-- `timer_clear`;
-- missing timer queries;
-- duration `0`;
-- negative duration;
-- `NaN`;
-- `Infinity`;
-- empty name;
-- creation in `born`, `action`, `motion`, and `collision`;
-- exact decrement point after collision;
-- finished timers persisting at zero;
-- restart after finish;
-- interaction with `kill()` and `dead()`;
-- interaction with `hide()`;
-- interaction with `state_to()`.
+- maximum timers per object.

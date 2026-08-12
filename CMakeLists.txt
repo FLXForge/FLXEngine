@@ -354,6 +354,7 @@ add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGrap
 add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)
 add_flx_test_suite(flx-runtime-compiled-tests tests/runtime/CompiledRuntimeTests.cpp)
 add_flx_test_suite(flx-runtime-lifecycle-tests tests/runtime/RuntimeLifecycleTests.cpp)
+add_flx_test_suite(flx-runtime-timer-tests tests/runtime/RuntimeTimerTests.cpp)
 add_flx_test_suite(flx-engine-host-tests tests/runtime/EngineHostTests.cpp)
 add_flx_test_suite(flx-example-smoke-tests tests/examples/ExampleSmokeTests.cpp)
 

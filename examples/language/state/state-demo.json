@@ -1,0 +1,12 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "states": {
+    "initial": "idle",
+    "idle": { "next": ["warning"] },
+    "warning": { "next": ["done"] },
+    "done": {}
+  },
+  "behavior": {
+    "scripts": ["state-demo"]
+  }
+}

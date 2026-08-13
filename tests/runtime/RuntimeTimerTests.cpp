@@ -304,6 +304,44 @@ namespace
         require(root.timers["life"].status == RuntimeTimerStatus::Done, "timer should be done");
     }
 
+    void testPlayTimerDurationEqualElapsedMarksDone()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "equalProbe",
+            "function born(o) { play_timer(o, 'life', 5.0); }"
+            "function action(o) {"
+            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
+            "  if (o.local['frame'] == 2) {"
+            "    play_timer(o, 'life', 3.0);"
+            "    o.local['activeAfterEqual'] = timer_active(o, 'life') ? 1 : 0;"
+            "    o.local['pausedAfterEqual'] = timer_paused(o, 'life') ? 1 : 0;"
+            "    o.local['doneAfterEqual'] = timer_done(o, 'life') ? 1 : 0;"
+            "    o.local['leftAfterEqual'] = timer_left(o, 'life');"
+            "  }"
+            "}"
+        );
+
+        harness.addObject(objectDefinition("root", "equalProbe"));
+
+        require(harness.load().success, "runtime should load equal timer project");
+
+        harness.update(3.0f);
+        harness.update(0.25f);
+
+        RuntimeObject& root =
+            requireObject(harness.world, "root");
+
+        require(localValue(root, "activeAfterEqual") == 0.0, "duration equal to elapsed should not be active");
+        require(localValue(root, "pausedAfterEqual") == 0.0, "duration equal to elapsed should not be paused");
+        require(localValue(root, "doneAfterEqual") == 1.0, "duration equal to elapsed should mark done");
+        require(nearlyEqual(localValue(root, "leftAfterEqual"), 0.0), "duration equal to elapsed should report zero left");
+        require(nearlyEqual(root.timers["life"].duration, 3.0), "equal elapsed timer should keep new duration");
+        require(nearlyEqual(root.timers["life"].left, 0.0), "equal elapsed timer should have zero left");
+        require(root.timers["life"].status == RuntimeTimerStatus::Done, "equal elapsed timer should be done");
+    }
+
     void testPauseResumeAndPausedDurationChange()
     {
         RuntimeHarness harness;
@@ -463,8 +501,11 @@ namespace
             "  play_timer(o, 'negative', -1.0);"
             "  play_timer(o, 'nan', NaN);"
             "  play_timer(o, 'infinity', Infinity);"
+            "  play_timer(o, 'negativeInfinity', -Infinity);"
             "  play_timer(o, 'life', 0.0);"
             "  play_timer(o, 'life', NaN);"
+            "  play_timer(o, 'life', Infinity);"
+            "  play_timer(o, 'life', -Infinity);"
             "  o.local['lifeLeft'] = timer_left(o, 'life');"
             "}"
         );
@@ -480,6 +521,45 @@ namespace
         require(root.timers.count("life") == 1, "valid timer should remain");
         require(nearlyEqual(localValue(root, "lifeLeft"), 1.0), "invalid duration should not modify existing timer");
         require(nearlyEqual(root.timers["life"].left, 1.0), "existing timer should keep previous left after invalid calls");
+    }
+
+    void testInvalidInputsDoNotModifyElapsedTimer()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "invalidElapsedProbe",
+            "function born(o) { play_timer(o, 'life', 5.0); }"
+            "function action(o) {"
+            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
+            "  if (o.local['frame'] == 2) {"
+            "    o.local['leftBeforeInvalid'] = timer_left(o, 'life');"
+            "    play_timer(o, '', 10.0);"
+            "    play_timer(o, 'life', NaN);"
+            "    play_timer(o, 'life', Infinity);"
+            "    play_timer(o, 'life', -Infinity);"
+            "    play_timer(o, 'life', 0.0);"
+            "    play_timer(o, 'life', -1.0);"
+            "    o.local['leftAfterInvalid'] = timer_left(o, 'life');"
+            "  }"
+            "}"
+        );
+
+        harness.addObject(objectDefinition("root", "invalidElapsedProbe"));
+
+        require(harness.load().success, "runtime should load invalid elapsed timer project");
+
+        harness.update(2.0f);
+        harness.update(0.25f);
+
+        RuntimeObject& root =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(localValue(root, "leftBeforeInvalid"), 3.0), "elapsed timer should expose value before invalid calls");
+        require(nearlyEqual(localValue(root, "leftAfterInvalid"), 3.0), "invalid calls should not modify elapsed timer inside callback");
+        require(nearlyEqual(root.timers["life"].duration, 5.0), "invalid calls should not modify existing duration");
+        require(nearlyEqual(root.timers["life"].left, 2.75), "valid elapsed timer should only receive normal frame decrement");
+        require(root.timers["life"].status == RuntimeTimerStatus::Running, "invalid calls should not change existing status");
     }
 
     void testMultipleTimersAndInstanceIsolation()
@@ -514,6 +594,57 @@ namespace
         require(b.timers.size() == 2, "second instance should hold its own named timers");
         require(nearlyEqual(a.timers["same"].left, 1.0), "first instance same-name timer should use first duration");
         require(nearlyEqual(b.timers["same"].left, 2.0), "second instance same-name timer should use second duration");
+    }
+
+    void testTimerOperationsAreIsolated()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "isolationProbe",
+            "function born(o) {"
+            "  play_timer(o, 'same', o.name == 'a' ? 1.0 : 2.0);"
+            "  play_timer(o, 'other', 3.0);"
+            "}"
+            "function action(o) {"
+            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
+            "  if (o.local['frame'] == 2 && o.name == 'a') {"
+            "    pause_timer(o, 'same');"
+            "    stop_timer(o, 'other');"
+            "  }"
+            "  if (o.local['frame'] == 2 && o.name == 'b') {"
+            "    play_timer(o, 'same', 1.0);"
+            "  }"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["a"] = "a";
+        root.childResources["b"] = "b";
+
+        harness.addObject(root);
+        harness.addObject(objectDefinition("a", "isolationProbe"));
+        harness.addObject(objectDefinition("b", "isolationProbe"));
+
+        require(harness.load().success, "runtime should load timer operation isolation project");
+
+        harness.update(0.5f);
+        harness.update(0.25f);
+
+        RuntimeObject& a =
+            requireObject(harness.world, "a");
+        RuntimeObject& b =
+            requireObject(harness.world, "b");
+
+        require(a.timers.count("other") == 0, "stop on one instance should remove only that instance timer");
+        require(b.timers.count("other") == 1, "stop on another instance should not remove this instance timer");
+        require(a.timers["same"].status == RuntimeTimerStatus::Paused, "pause should affect only selected instance");
+        require(nearlyEqual(a.timers["same"].left, 0.5), "paused selected instance should not decrement");
+        require(b.timers["same"].status == RuntimeTimerStatus::Running, "duration change on other instance should stay local");
+        require(nearlyEqual(b.timers["same"].duration, 1.0), "duration change should affect only other instance");
+        require(nearlyEqual(b.timers["same"].left, 0.25), "duration change should preserve elapsed and decrement normally");
+        require(nearlyEqual(b.timers["other"].left, 2.25), "unrelated timer should continue normally");
     }
 
     void testFrameTimingByPhase()
@@ -730,11 +861,14 @@ int main()
         { "play timer creates and absent queries are false", testPlayTimerCreatesAndAbsentQueriesAreFalse },
         { "play timer on running preserves elapsed", testPlayTimerOnRunningPreservesElapsed },
         { "play timer duration shorter than elapsed marks done", testPlayTimerDurationShorterThanElapsedMarksDone },
+        { "play timer duration equal elapsed marks done", testPlayTimerDurationEqualElapsedMarksDone },
         { "pause resume and paused duration change", testPauseResumeAndPausedDurationChange },
         { "natural done persists and can replay", testNaturalDonePersistsAndCanReplay },
         { "stop removes running paused done and absent is noop", testStopRemovesRunningPausedDoneAndAbsentIsNoop },
         { "invalid inputs do not modify timers", testInvalidInputsDoNotModifyTimers },
+        { "invalid inputs do not modify elapsed timer", testInvalidInputsDoNotModifyElapsedTimer },
         { "multiple timers and instance isolation", testMultipleTimersAndInstanceIsolation },
+        { "timer operations are isolated", testTimerOperationsAreIsolated },
         { "frame timing by phase", testFrameTimingByPhase },
         { "lifecycle hide state kill and dead", testLifecycleHideStateKillAndDead },
         { "historical restart uses explicit stop then play", testHistoricalRestartUsesExplicitStopThenPlay }

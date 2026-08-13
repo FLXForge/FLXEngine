@@ -199,7 +199,8 @@ No se exponen directamente: `definitionId`, `parentId`, `originalParentId`,
 Algunas de estas capacidades se exponen mediante funciones:
 
 - `state_current`, `state_active`, `state_entered`, `state_time`.
-- `timer`, `timer_active`, `timer_left`, `timer_clear`.
+- `play_timer`, `pause_timer`, `stop_timer`, `timer_active`,
+  `timer_paused`, `timer_done`, `timer_left`.
 - `spawn`, `play_sound`, `play_music`.
 - `attach`, `detach`, `attach_active`.
 

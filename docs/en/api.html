@@ -1248,6 +1248,24 @@ stop_timer(paddle, "gun");
                 <li><code>timer_left(object, "name")</code>: remaining seconds, or <code>0</code> when absent, stopped, or done.</li>
             </ul>
 
+            <table>
+                <thead>
+                    <tr>
+                        <th>State</th>
+                        <th>active</th>
+                        <th>paused</th>
+                        <th>done</th>
+                        <th>left</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>absent</td><td>false</td><td>false</td><td>false</td><td>0</td></tr>
+                    <tr><td>running</td><td>true</td><td>false</td><td>false</td><td>&gt; 0</td></tr>
+                    <tr><td>paused</td><td>true</td><td>true</td><td>false</td><td>frozen &gt; 0</td></tr>
+                    <tr><td>done</td><td>false</td><td>false</td><td>true</td><td>0</td></tr>
+                </tbody>
+            </table>
+
             <hr />
 
             <h2>to_origin(object)</h2>

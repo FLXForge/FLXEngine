@@ -202,7 +202,70 @@ Real uses that depended on restart semantics were updated explicitly:
 No separate `restart_timer` API was added. Current real usage is readable with
 the explicit stop/play pair.
 
-## J. Grammar Result
+## J. Post-Consolidation Audit
+
+The final audit found no production path outside `TimerBindings` and
+`RuntimeWorld::updateObjectTime` that mutates `RuntimeTimer::duration`,
+`RuntimeTimer::left` or `RuntimeTimer::status`.
+
+Current producers:
+
+- `play_timer`: creates, resumes, replays or retimes timers;
+- `pause_timer`: changes `Running` to `Paused`;
+- `stop_timer`: removes map entries;
+- `RuntimeWorld::updateObjectTime`: decrements running timers and marks natural
+  completion as `Done`.
+
+Current consumers:
+
+- `timer_active`;
+- `timer_paused`;
+- `timer_done`;
+- `timer_left`;
+- tests that inspect runtime state directly;
+- scripts in examples through the public API.
+
+Runtime invariants are guaranteed by production paths, assuming timers are only
+created through the public API:
+
+| Internal status | Invariant |
+| --- | --- |
+| `Running` | `duration > 0`, `left > 0` |
+| `Paused` | `duration > 0`, `left > 0` |
+| `Done` | `duration > 0`, `left == 0` |
+
+`ABSENT` remains represented by no map entry.
+
+## K. Rule-To-Test Matrix
+
+| Rule | Test coverage |
+| --- | --- |
+| absent queries are false and left is 0 | `play timer creates and absent queries are false` |
+| play with duration creates running timer | `play timer creates and absent queries are false` |
+| play without duration on absent is warning/no-op | `play timer creates and absent queries are false` |
+| running retime preserves elapsed | `play timer on running preserves elapsed` |
+| duration greater than elapsed increases remaining time | `play timer on running preserves elapsed` |
+| duration below elapsed becomes done | `play timer duration shorter than elapsed marks done` |
+| duration equal to elapsed becomes done | `play timer duration equal elapsed marks done` |
+| pause is not toggle and freezes left | `pause resume and paused duration change` |
+| paused timer remains active and not done | `pause resume and paused duration change` |
+| play resumes paused timer | `pause resume and paused duration change` |
+| play with duration from paused preserves elapsed and resumes | `pause resume and paused duration change` |
+| natural completion is persistent done | `natural done persists and can replay` |
+| play without duration replays done timer | `natural done persists and can replay` |
+| play with duration on done starts new reproduction | `natural done persists and can replay` |
+| stop removes running, paused, done and absent is no-op | `stop removes running paused done and absent is noop` |
+| invalid names and durations do not create timers | `invalid inputs do not modify timers` |
+| invalid inputs do not modify existing elapsed timer | `invalid inputs do not modify elapsed timer` |
+| multiple timers per instance | `multiple timers and instance isolation` |
+| same timer name on different instances is isolated | `multiple timers and instance isolation` |
+| pause/stop/duration changes are isolated per instance | `timer operations are isolated` |
+| born/action/motion/collision timing | `frame timing by phase` |
+| hide/state_to/kill/dead interaction | `lifecycle hide state kill and dead` |
+| historical restart is explicit stop + play | `historical restart uses explicit stop then play` |
+| old API is not registered | `public scripting functions are registered` |
+
+## L. Grammar Result
 
 Timer validates `play`, `pause` and `stop` as process-control vocabulary for
 capabilities that can run, be suspended and end voluntarily.
@@ -217,7 +280,7 @@ Queries remain in the timer family:
 This does not mean every future capability must implement all three control
 verbs. It only confirms that Timer is a good fit for this vocabulary.
 
-## K. Tests
+## M. Tests
 
 `flx-runtime-timer-tests` covers:
 
@@ -225,19 +288,33 @@ verbs. It only confirms that Timer is a good fit for this vocabulary.
 - play without duration on absent timers;
 - running retime preserving elapsed;
 - duration shorter than elapsed becoming done;
+- duration equal to elapsed becoming done;
 - pause, repeated pause and resume;
 - pause plus duration change;
 - natural done persistence;
 - replaying done timers;
 - stop from running, paused, done and absent;
 - invalid names and invalid durations;
+- invalid calls against an already elapsed timer;
 - multiple timers per instance;
 - same timer name on different instances;
+- isolated pause, stop and duration changes per instance;
 - frame timing from `born`, `action`, `motion` and `collision`;
 - interaction with `hide`, `state_to`, `kill` and `dead`;
 - explicit restart for historical restart use cases.
 
-## L. Open Questions
+## N. Historical Behavior
+
+The removed historical API was:
+
+- `timer(object, name, duration)`;
+- `timer_clear(object, name)`.
+
+It was characterized before consolidation and is kept here only as historical
+context. It is not registered, not declared in `flx.d.ts`, not used by examples
+and not documented as public API.
+
+## O. Future Capabilities, Not Current Debt
 
 Deliberately pending:
 
@@ -247,3 +324,12 @@ Deliberately pending:
 - timer callbacks or events;
 - timer groups;
 - maximum timers per object.
+
+Structured Runtime diagnostics are a transversal runtime diagnostics topic, not
+a Timer-specific defect.
+
+Timer progress, elapsed queries, callbacks, groups and global pause are possible
+future capabilities, not debt in the consolidated contract.
+
+A maximum timers-per-object policy should only be treated as debt if a concrete
+resource-risk case is demonstrated.

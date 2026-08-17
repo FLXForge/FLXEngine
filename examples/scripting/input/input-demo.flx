@@ -1,0 +1,14 @@
+# Game data
+title=Input Demo
+name=input-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=input-demo
+machine=input-demo.machine.yml
+input.mapping=input-demo.input
+
+# Notes
+notes=Minimal digital input demo

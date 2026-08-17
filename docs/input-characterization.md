@@ -270,6 +270,16 @@ Structured Diagnostics currently cover configuration/compilation errors:
 Runtime misuse from JavaScript currently uses `Logger::warning` and returns
 `false`. Runtime Diagnostics for input calls are deliberately pending.
 
+Mapping validation currently happens while the runtime loads the embedded
+mapping text. Malformed lines, out-of-range entries and incompatible direction
+components are ignored with `Logger::warning`. They are not structured
+Diagnostics yet. This is real debt for the future mapping specification because
+a badly formatted `.input` file can degrade controls without failing compile.
+
+Practical evidence after consolidation: the Asteroids menu in 80sLike replaced
+manual direction locks with `input_pressed(player(1), direction(0), UP/DOWN/LEFT/RIGHT)`
+and behaves correctly.
+
 ## K. Future Work
 
 Deliberately pending:
@@ -283,6 +293,7 @@ Deliberately pending:
 - per-action gameplay buffers;
 - configurable device remapping UI;
 - named gameplay actions.
+- structured `.input` validation diagnostics.
 
 Open design questions:
 

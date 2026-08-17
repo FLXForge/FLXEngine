@@ -163,7 +163,7 @@ API consolidada:
 | `system` | `system()` | descriptor sujeto | input | no | no | si | si | si |
 | `input_pressed` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | si |
 | `input_down` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | si |
-| `input_released` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | no |
+| `input_released` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | si |
 
 `Input.*`, `Key.*` y los antiguos `__flx_input_*` no forman parte de la
 superficie publica consolidada.

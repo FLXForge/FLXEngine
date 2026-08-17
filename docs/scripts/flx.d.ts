@@ -6,25 +6,25 @@
 // Usage:
 // /// <reference path="../flx.d.ts" />
 
-/** Semantic direction constant. */
+/** Logical UP component. Do not depend on its numeric value. */
 declare const UP: number;
 
-/** Semantic direction constant. */
+/** Logical DOWN component. Do not depend on its numeric value. */
 declare const DOWN: number;
 
-/** Semantic direction constant. */
+/** Logical LEFT component. Do not depend on its numeric value. */
 declare const LEFT: number;
 
-/** Semantic direction constant. */
+/** Logical RIGHT component. Do not depend on its numeric value. */
 declare const RIGHT: number;
 
 /** Neutral movement constant. */
 declare const STOP: number;
 
-/** Negative component of a two-way direction. */
+/** Logical NEGATIVE component. Do not depend on its numeric value. */
 declare const NEGATIVE: number;
 
-/** Positive component of a two-way direction. */
+/** Logical POSITIVE component. Do not depend on its numeric value. */
 declare const POSITIVE: number;
 
 /**

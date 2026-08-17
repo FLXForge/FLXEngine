@@ -18,16 +18,17 @@ namespace
             std::filesystem::path(FLX_SOURCE_DIR);
 
         const std::vector<std::string> examples = {
-            "pong",
-            "asteroids",
-            "arkanoid",
-            "invaders"
+            "pong.flx",
+            "asteroids.flx",
+            "arkanoid.flx",
+            "invaders.flx",
+            "scripting/input/input-demo.flx"
         };
 
         for (const std::string& example : examples)
         {
             CompilationResult compiled =
-                compile(sourceRoot / "examples" / (example + ".flx"));
+                compile(sourceRoot / "examples" / example);
 
             require(
                 compiled.success,
@@ -35,7 +36,8 @@ namespace
             );
 
             const std::filesystem::path output =
-                testRoot() / "compiled_examples" / (example + ".flxc");
+                testRoot() / "compiled_examples" /
+                std::filesystem::path(example).replace_extension(".flxc");
 
             Diagnostics writeDiagnostics;
 
@@ -69,16 +71,17 @@ namespace
             std::filesystem::path(FLX_SOURCE_DIR);
 
         const std::vector<std::string> examples = {
-            "pong",
-            "asteroids",
-            "arkanoid",
-            "invaders"
+            "pong.flx",
+            "asteroids.flx",
+            "arkanoid.flx",
+            "invaders.flx",
+            "scripting/input/input-demo.flx"
         };
 
         for (const std::string& example : examples)
         {
             const CompilationResult result =
-                compile(sourceRoot / "examples" / (example + ".flx"));
+                compile(sourceRoot / "examples" / example);
 
             require(
                 result.success,

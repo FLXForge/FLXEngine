@@ -2,6 +2,8 @@
 #include "../../engine/debug/Logger.h"
 #include "../../engine/input/InputSystem.h"
 #include "../../engine/machine/MachineLoader.h"
+#include "../../engine/runtime/RuntimeWorld.h"
+#include "../../engine/scripting/ScriptEngine.h"
 
 #include <raylib.h>
 
@@ -614,6 +616,98 @@ namespace
         require(output.find("invalid player mapping") != std::string::npos, "gameplay button names should not be accepted as player mapping");
         require(output.find("unknown mapping key 'fire'") != std::string::npos, "gameplay action names should not be top-level mapping keys");
     }
+
+    void testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject()
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_characterization" / "no_machine_player_subject";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game" / "scripts");
+
+        writeFile(
+            root / "game.flx",
+            "name=NoMachineInput\n"
+            "path=game\n"
+            "root=root\n"
+            "input.mapping=controls.input\n"
+        );
+
+        writeFile(
+            root / "controls.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.buttons.0=KEY_SPACE\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"behavior\": { \"scripts\": [\"scripts/input-probe\"] } }\n"
+        );
+
+        writeFile(
+            root / "game" / "scripts" / "input-probe.js",
+            "const MOVE = direction(0);\n"
+            "const FIRE = button(0);\n"
+            "function action(root) {\n"
+            "  if (input_pressed(player(1), MOVE, UP)) root.local['upPressed'] = 1;\n"
+            "  if (input_down(player(1), MOVE, UP)) root.local['upDown'] = 1;\n"
+            "  if (input_released(player(1), MOVE, UP)) root.local['upReleased'] = 1;\n"
+            "  if (input_pressed(player(1), FIRE)) root.local['firePressed'] = 1;\n"
+            "  if (input_pressed(root, MOVE, UP)) root.local['objectSubjectPressed'] = 1;\n"
+            "}\n"
+        );
+
+        CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "project without machine should compile");
+        require(result.project.context.machine.input.players >= 1, "default machine should provide player 1");
+        require(!result.project.context.machine.input.directions.empty(), "default machine should provide direction 0");
+        require(result.project.context.machine.input.directions[0].type == "4way", "default direction should be 4way");
+        require(result.project.context.machine.input.directions[0].simultaneous == "last", "default direction policy should be last");
+        require(result.project.context.machine.input.directions[0].buffer == 0.0f, "default direction buffer should be zero");
+
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(result.project.context.machine.input);
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            result.project.context.inputMappingSourceName,
+            result.project.context.inputMappingContent
+        );
+
+        ScriptEngine scripts;
+        scripts.setInputSystem(&input);
+        scripts.setScreenScale(1);
+
+        RuntimeWorld world;
+        RuntimeLoadResult loadResult =
+            world.load(result.project, scripts);
+
+        require(loadResult.success, "runtime should load project without machine");
+
+        RuntimeObject* runtimeRoot =
+            world.findByName("root");
+
+        require(runtimeRoot != nullptr, "runtime root should exist");
+
+        provider.setKeys({ KEY_W, KEY_SPACE });
+        input.update(0.016f);
+        scripts.setFrameDelta(0.016f);
+        world.update(scripts, 640.0f, 480.0f, 0.016f);
+
+        require(runtimeRoot->local["upPressed"] == 1.0, "player(1) direction should report pressed without control.player");
+        require(runtimeRoot->local["upDown"] == 1.0, "player(1) direction should report down without control.player");
+        require(runtimeRoot->local["firePressed"] == 1.0, "player(1) button should still work under default machine");
+        require(runtimeRoot->local["objectSubjectPressed"] == 0.0, "RuntimeObject subject should still require control.player");
+
+        provider.setKeys({});
+        input.update(0.016f);
+        scripts.setFrameDelta(0.016f);
+        world.update(scripts, 640.0f, 480.0f, 0.016f);
+
+        require(runtimeRoot->local["upReleased"] == 1.0, "player(1) direction should report released without control.player");
+    }
 }
 
 int main()
@@ -637,7 +731,8 @@ int main()
         { "multiple physical sources keep logical button and direction active", testMultiplePhysicalSourcesKeepLogicalButtonAndDirectionActive },
         { "high indexes players system and directions are independent", testHighIndexesPlayersSystemAndDirectionsAreIndependent },
         { "invalid queries return false", testInvalidQueriesReturnFalse },
-        { "mapping does not expose gameplay names", testMappingDoesNotExposeGameplayNames }
+        { "mapping does not expose gameplay names", testMappingDoesNotExposeGameplayNames },
+        { "project without machine uses default direction from player subject", testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject }
     };
 
     for (const auto& test : tests)

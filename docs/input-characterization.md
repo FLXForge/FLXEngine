@@ -61,6 +61,7 @@ Fields:
 
 If no input chip is declared, FLX uses the internal default: 16 players, 16
 system buttons, 16 player buttons and one `4way` direction using `last`.
+The full Default Machine is characterized in `docs/default-machine-characterization.md`.
 
 The legacy shapes `input.direction`, `input.buttons.player` and
 `input.buttons.system` are not part of the v0.3.0 contract.
@@ -252,8 +253,10 @@ The current examples use the consolidated API:
 | multiple physical sources keep logical state | `actionDown` | `multiple physical sources keep logical button and direction active` |
 | high indexes and subjects are isolated | `InputSystem` state maps | `high indexes players system and directions are independent` |
 | invalid runtime queries are false | `InputSystem` validators | `invalid queries return false` |
+| project without explicit Machine can use `player(1), direction(0)` | `ProjectCompiler`, `InputSystem`, `InputBindings` | `project without machine uses default direction from player subject` |
 | `control.player` is compile-validated | `ProjectCompiler` validator | `control player outside input chip fails` |
 | Input survives `.flxc` v4 | binary codec | `compiled project roundtrip input v4` |
+| Default Machine Input survives `.flxc` v4 | binary codec | `compiled project roundtrip default machine input v4` |
 | old JS globals are absent | `InputBindings` registration | runtime lifecycle scripting surface test |
 
 ## J. Diagnostics

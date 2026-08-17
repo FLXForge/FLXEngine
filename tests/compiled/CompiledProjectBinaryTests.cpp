@@ -533,6 +533,63 @@ namespace
         require(rootObject(loaded.project).controlPlayer == 2, "control.player should survive roundtrip");
     }
 
+    void testCompiledProjectRoundTripDefaultMachineInputV4()
+    {
+        const std::filesystem::path root =
+            testRoot() / "roundtrip_default_input_v4";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=RoundTripDefaultInput\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{}\n"
+        );
+
+        CompilationResult compiled =
+            compile(root / "game.flx");
+
+        require(compiled.success, "default input project should compile");
+        require(compiled.project.context.machine.input.directions.size() == 1, "compiled default machine should expose one direction");
+        require(compiled.project.context.machine.input.directions[0].type == "4way", "compiled default direction should be 4way");
+        require(compiled.project.context.machine.input.directions[0].simultaneous == "last", "compiled default direction policy should be last");
+        require(compiled.project.context.machine.input.directions[0].buffer == 0.0f, "compiled default direction buffer should be zero");
+
+        const std::filesystem::path output =
+            root / "game.flxc";
+
+        Diagnostics writeDiagnostics;
+
+        require(
+            CompiledProjectWriter::write(
+                output.generic_string(),
+                compiled.project,
+                writeDiagnostics
+            ),
+            "default input project should write"
+        );
+
+        CompiledProjectBinaryResult loaded =
+            CompiledProjectReader::read(output.generic_string());
+
+        require(loaded.success, "default input project should read");
+        require(loaded.metadata.formatVersion == 4, "default input roundtrip should use format 4");
+        require(loaded.project.context.machine.input.systemButtons == 16, "default system button count should survive roundtrip");
+        require(loaded.project.context.machine.input.players == 16, "default player count should survive roundtrip");
+        require(loaded.project.context.machine.input.playerButtons == 16, "default player button count should survive roundtrip");
+        require(loaded.project.context.machine.input.directions.size() == 1, "default direction collection should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].type == "4way", "default direction type should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].simultaneous == "last", "default direction policy should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].buffer == 0.0f, "default direction buffer should survive roundtrip");
+    }
+
     void testInvalidCompiledMagic()
     {
         const std::filesystem::path path =
@@ -1348,6 +1405,8 @@ int main()
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
 
         { "compiled project roundtrip input v4", testCompiledProjectRoundTripInputV4 },
+
+        { "compiled project roundtrip default machine input v4", testCompiledProjectRoundTripDefaultMachineInputV4 },
 
         { "deterministic bytes", testDeterministicBytes },
 

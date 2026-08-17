@@ -133,6 +133,45 @@ namespace
         );
     }
 
+    void testControlPlayerOutsideInputChipFails()
+    {
+        const std::filesystem::path root =
+            testRoot() / "control_player_outside_input_chip";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+        std::filesystem::create_directories(root / "machines");
+
+        writeFile(
+            root / "game.flx",
+            "name=ControlPlayerInvalid\n"
+            "path=game\n"
+            "root=root\n"
+            "machine=machines/input.machine.yml\n"
+        );
+
+        writeFile(
+            root / "machines" / "input.machine.yml",
+            "machine:\n"
+            "  input:\n"
+            "    players:\n"
+            "      count: 1\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"control\": { \"player\": 2 }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(!result.success, "control.player outside players count should fail compilation");
+        require(hasErrorCode(result.diagnostics, DiagnosticCode::CompErrorUnclassified), "invalid control.player should report a compiler diagnostic");
+    }
+
     void testRemovedScreenFieldFails()
     {
         const std::filesystem::path root =
@@ -382,6 +421,8 @@ int main()
         { "external machine", testExternalMachine },
 
         { "input mapping is compiled from manifest directory", testInputMappingIsCompiledFromManifestDirectory },
+
+        { "control player outside input chip fails", testControlPlayerOutsideInputChipFails },
 
         { "removed screen field fails", testRemovedScreenFieldFails },
 

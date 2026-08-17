@@ -454,6 +454,85 @@ namespace
         require(rootObject(loaded.project).creationMode == "grid", "grid creation mode should survive");
     }
 
+    void testCompiledProjectRoundTripInputV4()
+    {
+        const std::filesystem::path root =
+            testRoot() / "roundtrip_input_v4";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+        std::filesystem::create_directories(root / "machines");
+
+        writeFile(
+            root / "game.flx",
+            "name=RoundTripInput\n"
+            "path=game\n"
+            "root=root\n"
+            "machine=machines/input.machine.yml\n"
+        );
+
+        writeFile(
+            root / "machines" / "input.machine.yml",
+            "machine:\n"
+            "  input:\n"
+            "    system:\n"
+            "      buttons: 9\n"
+            "    players:\n"
+            "      count: 3\n"
+            "      controls:\n"
+            "        directions:\n"
+            "          - type: 2way\n"
+            "            simultaneous: first\n"
+            "            buffer: 0.25\n"
+            "          - type: 4way\n"
+            "            simultaneous: neutral\n"
+            "            buffer: 0\n"
+            "        buttons: 12\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"control\": { \"player\": 2 }\n"
+            "}\n"
+        );
+
+        CompilationResult compiled =
+            compile(root / "game.flx");
+
+        require(compiled.success, "input v4 project should compile");
+
+        const std::filesystem::path output =
+            root / "game.flxc";
+
+        Diagnostics writeDiagnostics;
+
+        require(
+            CompiledProjectWriter::write(
+                output.generic_string(),
+                compiled.project,
+                writeDiagnostics
+            ),
+            "input v4 project should write"
+        );
+
+        CompiledProjectBinaryResult loaded =
+            CompiledProjectReader::read(output.generic_string());
+
+        require(loaded.success, "input v4 project should read");
+        require(loaded.metadata.formatVersion == 4, "input v4 roundtrip should use format 4");
+        require(loaded.project.context.machine.input.systemButtons == 9, "system button count should survive roundtrip");
+        require(loaded.project.context.machine.input.players == 3, "player count should survive roundtrip");
+        require(loaded.project.context.machine.input.playerButtons == 12, "player button count should survive roundtrip");
+        require(loaded.project.context.machine.input.directions.size() == 2, "direction collection should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].type == "2way", "direction type should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].simultaneous == "first", "direction simultaneous policy should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[0].buffer == 0.25f, "direction buffer should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[1].type == "4way", "second direction type should survive roundtrip");
+        require(loaded.project.context.machine.input.directions[1].simultaneous == "neutral", "second direction simultaneous policy should survive roundtrip");
+        require(rootObject(loaded.project).controlPlayer == 2, "control.player should survive roundtrip");
+    }
+
     void testInvalidCompiledMagic()
     {
         const std::filesystem::path path =
@@ -1267,6 +1346,8 @@ int main()
         { "compiled project roundtrip minimal", testCompiledProjectRoundTripMinimal },
 
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
+
+        { "compiled project roundtrip input v4", testCompiledProjectRoundTripInputV4 },
 
         { "deterministic bytes", testDeterministicBytes },
 

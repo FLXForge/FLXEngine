@@ -263,6 +263,37 @@ namespace
         require(input.systemButtonReleased(0), "system button should be released on transition");
     }
 
+    void testTwoWayNativeComponents()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("2way", "last"));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "twoway.input",
+            "players.1.directions.0.negative=KEY_A\n"
+            "players.1.directions.0.positive=KEY_D\n"
+        );
+
+        provider.setKeys({});
+        input.update(0.016f);
+
+        provider.setKeys({ KEY_A });
+        input.update(0.016f);
+
+        require(input.playerDirectionPressed(1, 0, InputComponent::Negative), "2way negative should press from neutral");
+        require(input.playerDirectionDown(1, 0, InputComponent::Negative), "2way negative should be down");
+        require(!input.playerDirectionDown(1, 0, InputComponent::Positive), "2way positive should not be down");
+        require(!input.componentAllowed(0, InputComponent::Up), "2way should not accept up as a native component");
+        require(!input.componentAllowed(0, InputComponent::Left), "2way should not accept left as a native component");
+
+        provider.setKeys({ KEY_D });
+        input.update(0.016f);
+
+        require(input.playerDirectionReleased(1, 0, InputComponent::Negative), "2way negative should release when positive wins");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Positive), "2way positive should press after negative");
+    }
+
     void testFourWayLastResolvesNewestLogicalComponent()
     {
         FakeInputProvider provider;
@@ -288,6 +319,62 @@ namespace
         require(input.playerDirectionPressed(1, 0, InputComponent::Right), "right should be pressed when it wins");
         require(!input.playerDirectionPressed(1, 0, InputComponent::Positive), "positive projection should not retrigger between up and right");
         require(input.playerDirectionDown(1, 0, InputComponent::Positive), "right also projects to positive");
+    }
+
+    void testFourWayLastProjectionTransitionsAcrossPolarity()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way", "last"));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "projection.input",
+            "players.1.directions.0.right=KEY_D\n"
+            "players.1.directions.0.down=KEY_S\n"
+        );
+
+        provider.setKeys({ KEY_D });
+        input.update(0.016f);
+
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "right should project to positive");
+
+        provider.setKeys({ KEY_D, KEY_S });
+        input.update(0.016f);
+
+        require(input.playerDirectionReleased(1, 0, InputComponent::Right), "right should release when down wins");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Down), "down should press when it wins");
+        require(input.playerDirectionReleased(1, 0, InputComponent::Positive), "positive projection should release on right to down");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Negative), "negative projection should press on right to down");
+    }
+
+    void testFourWayNeutralPolicy()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way", "neutral"));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "neutral.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+        );
+
+        provider.setKeys({ KEY_W });
+        input.update(0.016f);
+
+        require(input.playerDirectionDown(1, 0, InputComponent::Up), "single active component should win under neutral policy");
+
+        provider.setKeys({ KEY_W, KEY_D });
+        input.update(0.016f);
+
+        require(input.playerDirectionReleased(1, 0, InputComponent::Up), "neutral policy should release current when conflict appears");
+        require(!input.playerDirectionDown(1, 0, InputComponent::Up), "neutral policy should not keep up during conflict");
+        require(!input.playerDirectionDown(1, 0, InputComponent::Right), "neutral policy should not choose right during conflict");
+
+        provider.setKeys({ KEY_W });
+        input.update(0.016f);
+
+        require(input.playerDirectionPressed(1, 0, InputComponent::Up), "neutral policy should restore single remaining component");
     }
 
     void testFirstBufferPromotesPendingCandidate()
@@ -317,6 +404,62 @@ namespace
         require(input.playerDirectionPressed(1, 0, InputComponent::Right), "pending candidate should become logical before buffer expires");
     }
 
+    void testFirstBufferKeepsOnlyLatestCandidate()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way", "first", 0.2f));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "first_replace.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+            "players.1.directions.0.down=KEY_S\n"
+        );
+
+        provider.setKeys({ KEY_W });
+        input.update(0.016f);
+
+        provider.setKeys({ KEY_W, KEY_D });
+        input.update(0.016f);
+
+        provider.setKeys({ KEY_W, KEY_D, KEY_S });
+        input.update(0.016f);
+
+        provider.setKeys({ KEY_D, KEY_S });
+        input.update(0.016f);
+
+        require(input.playerDirectionPressed(1, 0, InputComponent::Down), "latest buffered candidate should replace previous candidate");
+        require(!input.playerDirectionDown(1, 0, InputComponent::Right), "older buffered candidate should not win");
+    }
+
+    void testFirstWithZeroBufferDoesNotHoldPendingCandidate()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way", "first", 0.0f));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "first_zero.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+        );
+
+        provider.setKeys({ KEY_W });
+        input.update(0.016f);
+
+        provider.setKeys({ KEY_W, KEY_D });
+        input.update(0.016f);
+
+        require(input.playerDirectionDown(1, 0, InputComponent::Up), "first with zero buffer should keep current component");
+        require(!input.playerDirectionPressed(1, 0, InputComponent::Right), "first with zero buffer should not press blocked component");
+
+        provider.setKeys({ KEY_D });
+        input.update(0.016f);
+
+        require(input.playerDirectionPressed(1, 0, InputComponent::Right), "first with zero buffer should choose first remaining active component");
+    }
+
     void testFirstBufferExpiresCandidate()
     {
         FakeInputProvider provider;
@@ -339,6 +482,123 @@ namespace
         input.update(0.05f);
 
         require(input.playerDirectionPressed(1, 0, InputComponent::Right), "active candidate should still win as first remaining input after buffer expiry");
+    }
+
+    void testBufferDoesNotChangeNeutralOrLastPolicy()
+    {
+        FakeInputProvider neutralProvider;
+        InputSystem neutralInput;
+        neutralInput.configure(inputChip("4way", "neutral", 10.0f));
+        neutralInput.setPhysicalInputProvider(&neutralProvider);
+        neutralInput.loadMappingContent(
+            "neutral_buffer.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+        );
+
+        neutralProvider.setKeys({ KEY_W });
+        neutralInput.update(0.016f);
+        neutralProvider.setKeys({ KEY_W, KEY_D });
+        neutralInput.update(0.016f);
+
+        require(!neutralInput.playerDirectionDown(1, 0, InputComponent::Up), "buffer should not override neutral conflict resolution");
+        require(!neutralInput.playerDirectionDown(1, 0, InputComponent::Right), "buffer should not choose a neutral conflict candidate");
+
+        FakeInputProvider lastProvider;
+        InputSystem lastInput;
+        lastInput.configure(inputChip("4way", "last", 10.0f));
+        lastInput.setPhysicalInputProvider(&lastProvider);
+        lastInput.loadMappingContent(
+            "last_buffer.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+        );
+
+        lastProvider.setKeys({ KEY_W });
+        lastInput.update(0.016f);
+        lastProvider.setKeys({ KEY_W, KEY_D });
+        lastInput.update(0.016f);
+
+        require(lastInput.playerDirectionDown(1, 0, InputComponent::Right), "buffer should not override last conflict resolution");
+    }
+
+    void testMultiplePhysicalSourcesKeepLogicalButtonAndDirectionActive()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way", "last"));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "multi_source.input",
+            "players.1.buttons.0=KEY_SPACE,KEY_ENTER\n"
+            "players.1.directions.0.up=KEY_W,KEY_UP\n"
+        );
+
+        provider.setKeys({ KEY_SPACE, KEY_W });
+        input.update(0.016f);
+
+        require(input.playerButtonPressed(1, 0), "button should press from first source");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Up), "direction should press from first source");
+
+        provider.setKeys({ KEY_ENTER, KEY_UP });
+        input.update(0.016f);
+
+        require(input.playerButtonDown(1, 0), "button should stay down while another source is active");
+        require(!input.playerButtonReleased(1, 0), "button should not release while another source remains active");
+        require(input.playerDirectionDown(1, 0, InputComponent::Up), "direction should stay down while another source is active");
+        require(!input.playerDirectionReleased(1, 0, InputComponent::Up), "direction should not release while another source remains active");
+    }
+
+    void testHighIndexesPlayersSystemAndDirectionsAreIndependent()
+    {
+        InputChipDefinition chip;
+        chip.systemButtons = 128;
+        chip.players = 2;
+        chip.playerButtons = 128;
+        chip.directions = {
+            InputDirectionDefinition{ "2way", "last", 0.0f },
+            InputDirectionDefinition{ "4way", "last", 0.0f }
+        };
+
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(chip);
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "high.input",
+            "system.buttons.126=KEY_ESCAPE\n"
+            "players.1.buttons.126=KEY_SPACE\n"
+            "players.2.buttons.126=KEY_ENTER\n"
+            "players.1.directions.0.positive=KEY_D\n"
+            "players.1.directions.1.up=KEY_W\n"
+            "players.2.directions.1.down=KEY_S\n"
+        );
+
+        provider.setKeys({ KEY_ESCAPE, KEY_SPACE, KEY_D, KEY_W });
+        input.update(0.016f);
+
+        require(input.systemButtonPressed(126), "high system button index should be representable");
+        require(input.playerButtonPressed(1, 126), "high player button index should be representable");
+        require(!input.playerButtonPressed(2, 126), "players should be isolated");
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "direction 0 should be independent");
+        require(input.playerDirectionDown(1, 1, InputComponent::Up), "direction 1 should be independent");
+        require(!input.playerDirectionDown(2, 1, InputComponent::Down), "player directions should be isolated");
+    }
+
+    void testInvalidQueriesReturnFalse()
+    {
+        InputSystem input;
+        input.configure(inputChip("2way", "last"));
+
+        require(!input.validPlayer(0), "player indexes should start at one");
+        require(!input.validPlayer(2), "players above chip count should be invalid");
+        require(!input.validPlayerButton(-1), "negative player button should be invalid");
+        require(!input.validSystemButton(-1), "negative system button should be invalid");
+        require(!input.validDirection(-1), "negative direction should be invalid");
+        require(!input.validDirection(1), "direction outside chip should be invalid");
+        require(!input.playerButtonDown(2, 0), "invalid player button query should return false");
+        require(!input.playerDirectionDown(1, 1, InputComponent::Positive), "invalid direction query should return false");
+        require(!input.componentAllowed(0, InputComponent::Up), "incompatible component should be rejected");
     }
 
     void testMappingDoesNotExposeGameplayNames()
@@ -365,9 +625,18 @@ int main()
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
         { "mapping is constrained by input chip", testMappingIsConstrainedByInputChip },
         { "button pressed down released are logical and idempotent", testButtonPressedDownReleasedAreLogicalAndIdempotent },
+        { "two way native components", testTwoWayNativeComponents },
         { "four way last resolves newest logical component", testFourWayLastResolvesNewestLogicalComponent },
+        { "four way last projection transitions across polarity", testFourWayLastProjectionTransitionsAcrossPolarity },
+        { "four way neutral policy", testFourWayNeutralPolicy },
         { "first buffer promotes pending candidate", testFirstBufferPromotesPendingCandidate },
+        { "first buffer keeps only latest candidate", testFirstBufferKeepsOnlyLatestCandidate },
+        { "first with zero buffer does not hold pending candidate", testFirstWithZeroBufferDoesNotHoldPendingCandidate },
         { "first buffer expires candidate", testFirstBufferExpiresCandidate },
+        { "buffer does not change neutral or last policy", testBufferDoesNotChangeNeutralOrLastPolicy },
+        { "multiple physical sources keep logical button and direction active", testMultiplePhysicalSourcesKeepLogicalButtonAndDirectionActive },
+        { "high indexes players system and directions are independent", testHighIndexesPlayersSystemAndDirectionsAreIndependent },
+        { "invalid queries return false", testInvalidQueriesReturnFalse },
         { "mapping does not expose gameplay names", testMappingDoesNotExposeGameplayNames }
     };
 

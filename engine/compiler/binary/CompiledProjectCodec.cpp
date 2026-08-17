@@ -217,23 +217,49 @@ namespace flx::binary
 
         void writeInput(BinaryWriter& writer, const InputChipDefinition& input)
         {
-            writer.writeI32(input.players);
-            writer.writeString(input.direction);
-            writer.writeI32(input.playerButtons);
             writer.writeI32(input.systemButtons);
-            writer.writeBool(input.pointer);
-            writer.writeBool(input.text);
+            writer.writeI32(input.players);
+            writer.writeCount(
+                input.directions.size(),
+                MaxCollectionCount,
+                "input.players.controls.directions"
+            );
+
+            for (const InputDirectionDefinition& direction : input.directions)
+            {
+                writer.writeString(direction.type);
+                writer.writeString(direction.simultaneous);
+                writer.writeF32(direction.buffer);
+            }
+
+            writer.writeI32(input.playerButtons);
         }
 
         InputChipDefinition readInput(BinaryReader& reader)
         {
             InputChipDefinition input;
-            input.players = reader.readI32("input.players");
-            input.direction = reader.readString("input.capabilities.direction");
-            input.playerButtons = reader.readI32("input.capabilities.buttons");
-            input.systemButtons = reader.readI32("input.capabilities.systemButtons");
-            input.pointer = reader.readBool("input.capabilities.pointer");
-            input.text = reader.readBool("input.capabilities.text");
+            input.systemButtons = reader.readI32("input.system.buttons");
+            input.players = reader.readI32("input.players.count");
+
+            const uint32_t directionCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "input.players.controls.directions"
+                );
+
+            input.directions.clear();
+            input.directions.reserve(directionCount);
+
+            for (uint32_t i = 0; i < directionCount; ++i)
+            {
+                InputDirectionDefinition direction;
+                direction.type = reader.readString("input.direction.type");
+                direction.simultaneous = reader.readString("input.direction.simultaneous");
+                direction.buffer = reader.readF32("input.direction.buffer");
+                input.directions.push_back(direction);
+            }
+
+            input.playerButtons = reader.readI32("input.players.controls.buttons");
             return input;
         }
 
@@ -435,6 +461,7 @@ namespace flx::binary
             writer.writeBool(object.boundsOverflow);
             writer.writeString(object.group);
             writer.writeString(object.role);
+            writer.writeI32(object.controlPlayer);
             writer.writeString(object.collisionType);
             writer.writeBool(object.collisionActive);
             writer.writeF32(object.collisionRadius);
@@ -573,6 +600,7 @@ namespace flx::binary
             object.boundsOverflow = reader.readBool("object.bounds.overflow");
             object.group = reader.readString("object.group");
             object.role = reader.readString("object.role");
+            object.controlPlayer = reader.readI32("object.control.player");
             object.collisionType = reader.readString("object.collision.type");
             object.collisionActive = reader.readBool("object.collision.active");
             object.collisionRadius = reader.readF32("object.collision.radius");

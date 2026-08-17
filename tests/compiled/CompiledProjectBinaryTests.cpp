@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -174,6 +175,18 @@ namespace
         );
     }
 
+    void appendF32(
+        std::vector<unsigned char>& bytes,
+        float value
+    )
+    {
+        static_assert(sizeof(float) == 4);
+
+        uint32_t raw = 0;
+        std::memcpy(&raw, &value, sizeof(float));
+        appendU32(bytes, raw);
+    }
+
     void appendString(
         std::vector<unsigned char>& bytes,
         const std::string& value
@@ -196,7 +209,7 @@ namespace
     )
     {
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 3u);
+        appendU32(bytes, 4u);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
@@ -207,6 +220,44 @@ namespace
         appendI32(bytes, 640);
         appendI32(bytes, 480);
         appendString(bytes, "black");
+        appendU8(bytes, 0);
+        appendU32(bytes, 0);
+        appendI32(bytes, 0);
+        appendI32(bytes, 0);
+        appendI32(bytes, 0);
+        appendU8(bytes, 0);
+        appendString(bytes, "");
+        appendI32(bytes, 0);
+        appendU8(bytes, 0);
+        appendU8(bytes, 1);
+        appendU8(bytes, 0);
+        appendU8(bytes, 0);
+        appendI32(bytes, 1);
+        appendU8(bytes, 0);
+
+        appendI32(bytes, 8);
+        appendI32(bytes, 16);
+        appendString(bytes, "shared");
+        appendString(bytes, "replace_oldest");
+        appendString(bytes, "open");
+        appendString(bytes, "rich");
+        appendString(bytes, "expressive");
+        appendString(bytes, "rich");
+        appendString(bytes, "high");
+        appendString(bytes, "expressive");
+        appendString(bytes, "stereo");
+        appendU8(bytes, 1);
+        appendU8(bytes, 1);
+        appendU8(bytes, 1);
+        appendString(bytes, "all");
+
+        appendI32(bytes, 16);
+        appendI32(bytes, 16);
+        appendU32(bytes, 1);
+        appendString(bytes, "4way");
+        appendString(bytes, "last");
+        appendF32(bytes, 0.0f);
+        appendI32(bytes, 16);
     }
 
     bool hasDiagnosticCode(
@@ -309,7 +360,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "compiled project should read");
-        require(loaded.metadata.formatVersion == 3, "format version should be exposed");
+        require(loaded.metadata.formatVersion == 4, "format version should be exposed");
         require(!loaded.metadata.producerVersion.empty(), "producer version should be exposed");
         require(loaded.project.context.name == compiled.project.context.name, "context name should survive roundtrip");
         require(loaded.project.rootId == compiled.project.rootId, "root id should survive roundtrip");
@@ -475,7 +526,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 3u);
+        appendU32(bytes, 4u);
         appendU32(bytes, flx::binary::MaxStringSize + 1u);
 
         writeBinary(path, bytes);
@@ -494,7 +545,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 3u);
+        appendU32(bytes, 4u);
         appendU32(bytes, flx::binary::MaxTotalDecodedStringBytes + 1u);
 
         writeBinary(path, bytes);
@@ -513,7 +564,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendMinimalHeaderAndContext(bytes);
-        appendU8(bytes, 0);
+        appendString(bytes, "");
         appendU32(bytes, flx::binary::MaxCollectionCount + 1u);
 
         writeBinary(path, bytes);
@@ -532,7 +583,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendMinimalHeaderAndContext(bytes);
-        appendU8(bytes, 0);
+        appendString(bytes, "");
         appendU32(bytes, flx::binary::MaxTotalDecodedElements + 1u);
 
         writeBinary(path, bytes);
@@ -605,7 +656,18 @@ namespace
             testRoot() / "invalid" / "invalid_bool.flxc";
 
         std::vector<unsigned char> bytes;
-        appendMinimalHeaderAndContext(bytes);
+        appendU32(bytes, 0x43584C46u);
+        appendU32(bytes, 4u);
+        appendString(bytes, "test-producer");
+
+        for (int i = 0; i < 7; ++i)
+        {
+            appendString(bytes, "");
+        }
+
+        appendI32(bytes, 640);
+        appendI32(bytes, 480);
+        appendString(bytes, "black");
         appendU8(bytes, 2);
 
         writeBinary(path, bytes);

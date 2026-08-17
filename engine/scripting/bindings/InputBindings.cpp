@@ -1,230 +1,450 @@
 #include "InputBindings.h"
 #include "BindingHelpers.h"
+#include "../../debug/Logger.h"
 #include "../../input/InputSystem.h"
+#include "../../runtime/RuntimeObject.h"
 
 #include <quickjs.h>
-#include <cstring>
+
+#include <string>
 
 namespace
 {
+    constexpr const char* SubjectKindProperty = "__flxInputSubject";
+    constexpr const char* ControlKindProperty = "__flxInputControl";
+
     InputSystem* inputSystemFromContext(JSContext* context)
     {
         ScriptEngine* scriptEngine =
             scriptEngineFromContext(context);
 
-        if (scriptEngine == nullptr)
-        {
-            return nullptr;
-        }
-
-        return scriptEngine->getInputSystem();
+        return scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->getInputSystem();
     }
 
     int intArgument(
         JSContext* context,
-        JSValueConst* argv,
+        JSValueConst value,
+        int fallback = 0
+    )
+    {
+        int result = fallback;
+        JS_ToInt32(context, &result, value);
+        return result;
+    }
+
+    std::string stringProperty(
+        JSContext* context,
+        JSValueConst value,
+        const char* property
+    )
+    {
+        JSValue jsProperty =
+            JS_GetPropertyStr(context, value, property);
+
+        const char* text =
+            JS_ToCString(context, jsProperty);
+
+        std::string result =
+            text == nullptr ? "" : text;
+
+        if (text != nullptr)
+        {
+            JS_FreeCString(context, text);
+        }
+
+        JS_FreeValue(context, jsProperty);
+
+        return result;
+    }
+
+    int intProperty(
+        JSContext* context,
+        JSValueConst value,
+        const char* property,
+        int fallback = 0
+    )
+    {
+        JSValue jsProperty =
+            JS_GetPropertyStr(context, value, property);
+
+        int result =
+            intArgument(context, jsProperty, fallback);
+
+        JS_FreeValue(context, jsProperty);
+
+        return result;
+    }
+
+    JSValue makeDescriptor(
+        JSContext* context,
+        const char* markerName,
+        const char* markerValue,
         int index
     )
     {
-        int value = 0;
-        JS_ToInt32(context, &value, argv[index]);
-        return value;
+        JSValue object =
+            JS_NewObject(context);
+
+        JS_SetPropertyStr(
+            context,
+            object,
+            markerName,
+            JS_NewString(context, markerValue)
+        );
+
+        JS_SetPropertyStr(
+            context,
+            object,
+            "index",
+            JS_NewInt32(context, index)
+        );
+
+        return object;
     }
 
-    JSValue jsSystemDown(
+    JSValue jsButton(
         JSContext* context,
         JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        InputSystem* input =
-            inputSystemFromContext(context);
-
-        if (input == nullptr || argc < 1)
-        {
-            return JS_NewBool(context, false);
-        }
-
-        return JS_NewBool(
+        return makeDescriptor(
             context,
-            input->systemDown(intArgument(context, argv, 0))
+            ControlKindProperty,
+            "button",
+            argc < 1 ? 0 : intArgument(context, argv[0])
         );
     }
 
-    JSValue jsSystemPressed(
+    JSValue jsDirection(
         JSContext* context,
         JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        InputSystem* input =
-            inputSystemFromContext(context);
-
-        if (input == nullptr || argc < 1)
-        {
-            return JS_NewBool(context, false);
-        }
-
-        return JS_NewBool(
+        return makeDescriptor(
             context,
-            input->systemPressed(intArgument(context, argv, 0))
+            ControlKindProperty,
+            "direction",
+            argc < 1 ? 0 : intArgument(context, argv[0])
         );
     }
 
-    JSValue jsPlayerUp(
+    JSValue jsPlayer(
         JSContext* context,
         JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
+        return makeDescriptor(
             context,
-            input != nullptr && argc >= 1 &&
-                input->playerUp(intArgument(context, argv, 0))
+            SubjectKindProperty,
+            "player",
+            argc < 1 ? 1 : intArgument(context, argv[0], 1)
         );
     }
 
-    JSValue jsPlayerDown(
-        JSContext* context,
-        JSValueConst,
-        int argc,
-        JSValueConst* argv
-    )
-    {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 1 &&
-                input->playerDown(intArgument(context, argv, 0))
-        );
-    }
-
-    JSValue jsPlayerLeft(
-        JSContext* context,
-        JSValueConst,
-        int argc,
-        JSValueConst* argv
-    )
-    {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 1 &&
-                input->playerLeft(intArgument(context, argv, 0))
-        );
-    }
-
-    JSValue jsPlayerRight(
-        JSContext* context,
-        JSValueConst,
-        int argc,
-        JSValueConst* argv
-    )
-    {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 1 &&
-                input->playerRight(intArgument(context, argv, 0))
-        );
-    }
-
-    JSValue jsPlayerButton(
-        JSContext* context,
-        JSValueConst,
-        int argc,
-        JSValueConst* argv
-    )
-    {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 2 &&
-                input->playerButtonDown(
-                    intArgument(context, argv, 0),
-                    intArgument(context, argv, 1)
-                )
-        );
-    }
-
-    JSValue jsPlayerPressed(
-        JSContext* context,
-        JSValueConst,
-        int argc,
-        JSValueConst* argv
-    )
-    {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 2 &&
-                input->playerButtonPressed(
-                    intArgument(context, argv, 0),
-                    intArgument(context, argv, 1)
-                )
-        );
-    }
-
-    JSValue jsPointerX(
+    JSValue jsSystem(
         JSContext* context,
         JSValueConst,
         int,
         JSValueConst*
     )
     {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewFloat64(
+        return makeDescriptor(
             context,
-            input == nullptr ? 0.0 : input->pointerX()
+            SubjectKindProperty,
+            "system",
+            0
         );
     }
 
-    JSValue jsPointerY(
+    InputComponent componentFromArgument(
         JSContext* context,
-        JSValueConst,
-        int,
-        JSValueConst*
+        JSValueConst value
     )
     {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewFloat64(
+        const int raw =
+            intArgument(context, value, 0);
+
+        switch (raw)
+        {
+            case -1: return InputComponent::Negative;
+            case 1: return InputComponent::Positive;
+            case -100: return InputComponent::Up;
+            case 100: return InputComponent::Down;
+            case -101: return InputComponent::Left;
+            case 101: return InputComponent::Right;
+            default: return InputComponent::Neutral;
+        }
+    }
+
+    bool readSubject(
+        JSContext* context,
+        JSValueConst value,
+        InputSubject& subject
+    )
+    {
+        if (!JS_IsObject(value))
+        {
+            return false;
+        }
+
+        const std::string kind =
+            stringProperty(context, value, SubjectKindProperty);
+
+        if (kind == "player")
+        {
+            subject.kind = InputSubjectKind::Player;
+            subject.index = intProperty(context, value, "index", 1);
+            return true;
+        }
+
+        if (kind == "system")
+        {
+            subject.kind = InputSubjectKind::System;
+            subject.index = 0;
+            return true;
+        }
+
+        JSValue controlValue =
+            JS_GetPropertyStr(context, value, "controlPlayer");
+
+        int controlPlayer = 0;
+        JS_ToInt32(context, &controlPlayer, controlValue);
+        JS_FreeValue(context, controlValue);
+
+        if (controlPlayer <= 0)
+        {
+            Logger::warning(
+                "input",
+                "RuntimeObject does not declare control.player"
+            );
+
+            return false;
+        }
+
+        subject.kind = InputSubjectKind::Player;
+        subject.index = controlPlayer;
+        return true;
+    }
+
+    bool readControl(
+        JSContext* context,
+        JSValueConst value,
+        std::string& kind,
+        int& index
+    )
+    {
+        if (!JS_IsObject(value))
+        {
+            return false;
+        }
+
+        kind =
+            stringProperty(context, value, ControlKindProperty);
+
+        index =
+            intProperty(context, value, "index", 0);
+
+        return kind == "button" || kind == "direction";
+    }
+
+    enum class InputQuery
+    {
+        Pressed,
+        Down,
+        Released
+    };
+
+    bool queryButton(
+        const InputSystem& input,
+        InputQuery query,
+        const InputSubject& subject,
+        int button
+    )
+    {
+        if (subject.kind == InputSubjectKind::System)
+        {
+            if (!input.validSystemButton(button))
+            {
+                Logger::warning("input", "System button outside Input Chip limit");
+                return false;
+            }
+
+            if (query == InputQuery::Pressed)
+            {
+                return input.systemButtonPressed(button);
+            }
+
+            if (query == InputQuery::Released)
+            {
+                return input.systemButtonReleased(button);
+            }
+
+            return input.systemButtonDown(button);
+        }
+
+        if (!input.validPlayer(subject.index))
+        {
+            Logger::warning("input", "Player outside Input Chip players");
+            return false;
+        }
+
+        if (!input.validPlayerButton(button))
+        {
+            Logger::warning("input", "Player button outside Input Chip limit");
+            return false;
+        }
+
+        if (query == InputQuery::Pressed)
+        {
+            return input.playerButtonPressed(subject.index, button);
+        }
+
+        if (query == InputQuery::Released)
+        {
+            return input.playerButtonReleased(subject.index, button);
+        }
+
+        return input.playerButtonDown(subject.index, button);
+    }
+
+    bool queryDirection(
+        const InputSystem& input,
+        InputQuery query,
+        const InputSubject& subject,
+        int direction,
+        InputComponent component
+    )
+    {
+        if (subject.kind == InputSubjectKind::System)
+        {
+            Logger::warning("input", "System subject does not support directions");
+            return false;
+        }
+
+        if (!input.validPlayer(subject.index))
+        {
+            Logger::warning("input", "Player outside Input Chip players");
+            return false;
+        }
+
+        if (!input.validDirection(direction))
+        {
+            Logger::warning("input", "Direction outside Input Chip limit");
+            return false;
+        }
+
+        if (!input.componentAllowed(direction, component))
+        {
+            Logger::warning("input", "Direction component is incompatible with Input Chip");
+            return false;
+        }
+
+        if (query == InputQuery::Pressed)
+        {
+            return input.playerDirectionPressed(subject.index, direction, component);
+        }
+
+        if (query == InputQuery::Released)
+        {
+            return input.playerDirectionReleased(subject.index, direction, component);
+        }
+
+        return input.playerDirectionDown(subject.index, direction, component);
+    }
+
+    JSValue jsInputQuery(
+        JSContext* context,
+        int argc,
+        JSValueConst* argv,
+        InputQuery query
+    )
+    {
+        InputSystem* input =
+            inputSystemFromContext(context);
+
+        if (input == nullptr || argc < 2)
+        {
+            return JS_NewBool(context, false);
+        }
+
+        InputSubject subject;
+
+        if (!readSubject(context, argv[0], subject))
+        {
+            return JS_NewBool(context, false);
+        }
+
+        std::string controlKind;
+        int controlIndex = 0;
+
+        if (!readControl(context, argv[1], controlKind, controlIndex))
+        {
+            Logger::warning("input", "Invalid input control descriptor");
+            return JS_NewBool(context, false);
+        }
+
+        if (controlKind == "button")
+        {
+            return JS_NewBool(
+                context,
+                queryButton(*input, query, subject, controlIndex)
+            );
+        }
+
+        if (argc < 3)
+        {
+            Logger::warning("input", "Direction query requires a component");
+            return JS_NewBool(context, false);
+        }
+
+        return JS_NewBool(
             context,
-            input == nullptr ? 0.0 : input->pointerY()
+            queryDirection(
+                *input,
+                query,
+                subject,
+                controlIndex,
+                componentFromArgument(context, argv[2])
+            )
         );
     }
 
-    JSValue jsPointerDown(
+    JSValue jsInputPressed(
         JSContext* context,
         JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 1 &&
-                input->pointerDown(intArgument(context, argv, 0))
-        );
+        return jsInputQuery(context, argc, argv, InputQuery::Pressed);
     }
 
-    JSValue jsPointerPressed(
+    JSValue jsInputDown(
         JSContext* context,
         JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        InputSystem* input = inputSystemFromContext(context);
-        return JS_NewBool(
-            context,
-            input != nullptr && argc >= 1 &&
-                input->pointerPressed(intArgument(context, argv, 0))
-        );
+        return jsInputQuery(context, argc, argv, InputQuery::Down);
+    }
+
+    JSValue jsInputReleased(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        return jsInputQuery(context, argc, argv, InputQuery::Released);
     }
 
     void setFunction(
@@ -242,69 +462,6 @@ namespace
             JS_NewCFunction(context, function, name, length)
         );
     }
-
-    void installInputFacade(JSContext* context)
-    {
-        constexpr const char* source = R"(
-globalThis.Input = {
-    system: {
-        down(buttonIndex) {
-            return __flx_input_system_down(buttonIndex);
-        },
-        pressed(buttonIndex) {
-            return __flx_input_system_pressed(buttonIndex);
-        }
-    },
-    player(playerIndex) {
-        return {
-            up() {
-                return __flx_input_player_up(playerIndex);
-            },
-            down() {
-                return __flx_input_player_down(playerIndex);
-            },
-            left() {
-                return __flx_input_player_left(playerIndex);
-            },
-            right() {
-                return __flx_input_player_right(playerIndex);
-            },
-            button(buttonIndex) {
-                return __flx_input_player_button(playerIndex, buttonIndex);
-            },
-            pressed(buttonIndex) {
-                return __flx_input_player_pressed(playerIndex, buttonIndex);
-            }
-        };
-    },
-    pointer: {
-        x() {
-            return __flx_input_pointer_x();
-        },
-        y() {
-            return __flx_input_pointer_y();
-        },
-        down(buttonIndex) {
-            return __flx_input_pointer_down(buttonIndex);
-        },
-        pressed(buttonIndex) {
-            return __flx_input_pointer_pressed(buttonIndex);
-        }
-    }
-};
-)";
-
-        JSValue result =
-            JS_Eval(
-                context,
-                source,
-                std::strlen(source),
-                "flx_input_api",
-                JS_EVAL_TYPE_GLOBAL
-            );
-
-        JS_FreeValue(context, result);
-    }
 }
 
 void InputBindings::registerAll(JSContext* context)
@@ -312,20 +469,16 @@ void InputBindings::registerAll(JSContext* context)
     JSValue global =
         JS_GetGlobalObject(context);
 
-    setFunction(context, global, "__flx_input_system_down", jsSystemDown, 1);
-    setFunction(context, global, "__flx_input_system_pressed", jsSystemPressed, 1);
-    setFunction(context, global, "__flx_input_player_up", jsPlayerUp, 1);
-    setFunction(context, global, "__flx_input_player_down", jsPlayerDown, 1);
-    setFunction(context, global, "__flx_input_player_left", jsPlayerLeft, 1);
-    setFunction(context, global, "__flx_input_player_right", jsPlayerRight, 1);
-    setFunction(context, global, "__flx_input_player_button", jsPlayerButton, 2);
-    setFunction(context, global, "__flx_input_player_pressed", jsPlayerPressed, 2);
-    setFunction(context, global, "__flx_input_pointer_x", jsPointerX, 0);
-    setFunction(context, global, "__flx_input_pointer_y", jsPointerY, 0);
-    setFunction(context, global, "__flx_input_pointer_down", jsPointerDown, 1);
-    setFunction(context, global, "__flx_input_pointer_pressed", jsPointerPressed, 1);
+    setFunction(context, global, "button", jsButton, 1);
+    setFunction(context, global, "direction", jsDirection, 1);
+    setFunction(context, global, "player", jsPlayer, 1);
+    setFunction(context, global, "system", jsSystem, 0);
+    setFunction(context, global, "input_pressed", jsInputPressed, 2);
+    setFunction(context, global, "input_down", jsInputDown, 2);
+    setFunction(context, global, "input_released", jsInputReleased, 2);
 
-    installInputFacade(context);
+    JS_SetPropertyStr(context, global, "NEGATIVE", JS_NewInt32(context, -1));
+    JS_SetPropertyStr(context, global, "POSITIVE", JS_NewInt32(context, 1));
 
     JS_FreeValue(context, global);
 }

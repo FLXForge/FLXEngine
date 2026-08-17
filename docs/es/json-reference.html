@@ -78,7 +78,7 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
                 <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
-                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API normalizada <code>Input</code>. Si se omite, no se generan controles mapeados. <i>[ Opcional ]</i></li>
+                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, no se generan controles mapeados. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -104,10 +104,10 @@ notes=FLX example with spawn and basic UI
 <pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
 system.buttons.1=KEY_ENTER,JOY1_START
 
-players.1.direction.up=KEY_W,JOY1_UP
-players.1.direction.down=KEY_S,JOY1_DOWN
-players.1.direction.left=KEY_A,JOY1_LEFT
-players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.directions.0.up=KEY_W,JOY1_UP
+players.1.directions.0.down=KEY_S,JOY1_DOWN
+players.1.directions.0.left=KEY_A,JOY1_LEFT
+players.1.directions.0.right=KEY_D,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             </div>
 
@@ -159,20 +159,25 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             <div class="code-card">
                 <div class="code-header">input chip</div>
 <pre><code>input:
-  players: 1
-  direction: 4way
-  buttons:
-    player: 1
-    system: 2
-  pointer: false
-  text: false</code></pre>
+  system:
+    buttons: 2
+  players:
+    count: 1
+    controls:
+      directions:
+        - type: 4way
+          simultaneous: last
+          buffer: 0
+      buttons: 1</code></pre>
             </div>
 
             <p>
                 El Input Chip declara solo capacidades de entrada. No nombra
                 acciones semanticas como start, pause o fire. Los botones de
-                jugador y los botones de sistema son presupuestos separados.
+                jugador, direcciones de jugador y botones de sistema son
+                presupuestos separados.
                 Si no se declara Input Chip, FLX usa un chip interno permisivo.
+                Esta iteracion soporta direcciones digitales 2way y 4way.
             </p>
 
             <p>
@@ -824,11 +829,19 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
+                <li><code>control</code>: vinculacion opcional de input para este objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo logico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><code>role</code>: papel opcional dentro del grupo del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuracion de colision asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
+
+            <p>
+                <code>control.player</code> vincula un objeto con un indice de
+                jugador. Esto permite llamar desde script a
+                <code>input_down(object, ...)</code> sin fijar
+                <code>player(1)</code> en el comportamiento.
+            </p>
 
             <p>
                 <code>group</code> clasifica que tipo de objeto es para colisiones y consultas.

@@ -139,18 +139,21 @@ Runtime -> Connects both
             <h2>Input</h2>
 
             <p>
-                Scripts read input through the normalized <code>Input</code> API.
-                Physical keys and gamepad buttons are declared in the project
+                Scripts read input through logical controls. Physical keys and
+                gamepad buttons are declared in the project
                 <code>input.mapping</code> file, not directly in scripts.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Input</div>
-<pre><code>if (Input.player(1).left()) {
+<pre><code>const MOVE = direction(0);
+const FIRE = button(0);
+
+if (input_down(player, MOVE, LEFT)) {
     move_x(player, LEFT);
 }
 
-if (Input.player(1).pressed(0)) {
+if (input_pressed(player, FIRE)) {
     spawn(player, "laser");
 }</code></pre>
             </div>

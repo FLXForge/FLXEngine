@@ -1,5 +1,8 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "control": {
+    "player": 1
+  },
 
   "states": {
     "initial": "title",

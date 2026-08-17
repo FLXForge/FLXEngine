@@ -72,11 +72,13 @@ function update_resize(paddle){
 }
 
 function update_movement(paddle){
-    if (Input.player(1).left()) {
+    const MOVE = direction(0);
+
+    if (input_down(paddle, MOVE, LEFT)) {
         move_x(paddle, LEFT);
     }
 
-    if (Input.player(1).right()) {
+    if (input_down(paddle, MOVE, RIGHT)) {
         move_x(paddle, RIGHT);
     }
 }

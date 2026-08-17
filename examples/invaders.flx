@@ -7,3 +7,5 @@ engine=0.2.0
 # Configuration
 path=invaders
 root=game
+machine=machines/arkanoidMachine.yml
+input.mapping=controllers.input

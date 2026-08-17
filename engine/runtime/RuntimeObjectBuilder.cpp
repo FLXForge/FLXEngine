@@ -55,6 +55,7 @@ RuntimeObject RuntimeObjectBuilder::build(
 
     object.group = definition.group;
     object.role = definition.role;
+    object.controlPlayer = definition.controlPlayer;
     object.collisionType = definition.collisionType;
     object.collisionActive = definition.collisionActive;
     object.collisionRadius = definition.collisionRadius;

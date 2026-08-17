@@ -5,11 +5,13 @@
 */
 
 function action(player) {
-    if (Input.player(1).up()) {
+    const MOVE = direction(0);
+
+    if (input_down(player, MOVE, NEGATIVE)) {
         move_y(player, UP);
     }
 
-    if (Input.player(1).down()) {
+    if (input_down(player, MOVE, POSITIVE)) {
         move_y(player, DOWN);
     }
 }

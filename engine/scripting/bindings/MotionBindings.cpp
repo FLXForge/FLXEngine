@@ -11,6 +11,21 @@
 
 namespace
 {
+    double directionSign(double direction)
+    {
+        if (direction < 0.0)
+        {
+            return -1.0;
+        }
+
+        if (direction > 0.0)
+        {
+            return 1.0;
+        }
+
+        return 0.0;
+    }
+
     double frameDelta(JSContext* context)
     {
         ScriptEngine* scriptEngine =
@@ -51,7 +66,7 @@ namespace
         JS_ToFloat64(context, &x, xValue);
         JS_ToFloat64(context, &speed, speedValue);
 
-        x += direction * speed * frameDelta(context);
+        x += directionSign(direction) * speed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,
@@ -93,7 +108,7 @@ namespace
         JS_ToFloat64(context, &y, yValue);
         JS_ToFloat64(context, &speed, speedValue);
 
-        y += direction * speed * frameDelta(context);
+        y += directionSign(direction) * speed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,
@@ -389,7 +404,7 @@ namespace
         JS_ToFloat64(context, &angle, angleValue);
         JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
 
-        angle += direction * rotationSpeed * frameDelta(context);
+        angle += directionSign(direction) * rotationSpeed * frameDelta(context);
 
         JS_SetPropertyStr(
             context,

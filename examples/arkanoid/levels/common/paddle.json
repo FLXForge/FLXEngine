@@ -27,6 +27,9 @@
   "motion": {
     "speed": 200
   },
+  "control": {
+    "player": 1
+  },
 
   "group": "paddle",
 

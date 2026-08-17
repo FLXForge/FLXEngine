@@ -153,40 +153,20 @@ Notas:
 
 ### InputBindings
 
-API recomendada:
+API consolidada:
 
 | Nombre JS | Firma real | Retorno | Subsistema | RuntimeObject | Modifica runtime | d.ts | Docs | Usos examples |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
-| `Input.system.down` | `Input.system.down(buttonIndex)` | boolean | input | no | no | si | si | 0 |
-| `Input.system.pressed` | `Input.system.pressed(buttonIndex)` | boolean | input | no | no | si | si | 0 |
-| `Input.player` | `Input.player(playerIndex)` | objeto API | input | no | no | si | si | 11 |
-| `Input.player(n).up` | `up()` | boolean | input | no | no | si | si | 2 |
-| `Input.player(n).down` | `down()` | boolean | input | no | no | si | si | 2 |
-| `Input.player(n).left` | `left()` | boolean | input | no | no | si | si | 3 |
-| `Input.player(n).right` | `right()` | boolean | input | no | no | si | si | 3 |
-| `Input.player(n).button` | `button(buttonIndex)` | boolean | input | no | no | si | si | 0 |
-| `Input.player(n).pressed` | `pressed(buttonIndex)` | boolean | input | no | no | si | si | 4 |
-| `Input.pointer.x` | `x()` | number | input/pointer | no | no | si | si | 0 |
-| `Input.pointer.y` | `y()` | number | input/pointer | no | no | si | si | 0 |
-| `Input.pointer.down` | `down(buttonIndex)` | boolean | input/pointer | no | no | si | si | 0 |
-| `Input.pointer.pressed` | `pressed(buttonIndex)` | boolean | input/pointer | no | no | si | si | 0 |
+| `button` | `button(index)` | descriptor | input | no | no | si | si | si |
+| `direction` | `direction(index)` | descriptor | input | no | no | si | si | si |
+| `player` | `player(index)` | descriptor sujeto | input | no | no | si | si | si |
+| `system` | `system()` | descriptor sujeto | input | no | no | si | si | si |
+| `input_pressed` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | si |
+| `input_down` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | si |
+| `input_released` | `(subject, control, component?)` | boolean | input | si, si subject es objeto | no | si | si | no |
 
-Funciones internas expuestas globalmente para construir `Input`:
-
-| Nombre JS | Firma real | Retorno | Estado publico |
-| --- | --- | --- | --- |
-| `__flx_input_system_down` | `(buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_system_pressed` | `(buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_up` | `(playerIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_down` | `(playerIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_left` | `(playerIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_right` | `(playerIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_button` | `(playerIndex, buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_player_pressed` | `(playerIndex, buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_pointer_x` | `()` | number | expuesta accidentalmente/infraestructura |
-| `__flx_input_pointer_y` | `()` | number | expuesta accidentalmente/infraestructura |
-| `__flx_input_pointer_down` | `(buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
-| `__flx_input_pointer_pressed` | `(buttonIndex)` | boolean | expuesta accidentalmente/infraestructura |
+`Input.*`, `Key.*` y los antiguos `__flx_input_*` no forman parte de la
+superficie publica consolidada.
 
 ## B. Familias conceptuales
 
@@ -202,7 +182,7 @@ Funciones internas expuestas globalmente para construir `Input`:
 | collision/raycast | callback `collision`, `ray`, `group`, `role` |
 | drawing | callback `draw`, `draw_text`, `draw_pixel`, `draw_line`, `draw_rectangle`, `fade_*` |
 | audio/music | `play_sound`, `play_music`, `stop_music`, `pause_music`, `music_active`, `music_paused` |
-| input | `Input.system`, `Input.player`, `Input.pointer`, constantes de direccion |
+| input | `button`, `direction`, `player`, `system`, `input_pressed`, `input_down`, `input_released`, constantes de direccion |
 | persistence | `save`, `load` |
 | runtime control | `exit` |
 | randomness/time | `delta`, `random`, `probability` |
@@ -268,8 +248,9 @@ Casos repartidos entre bindings:
 | `timer_paused` | timer | timer | paused | objeto_estado | si | consulta |
 | `timer_done` | timer | timer | done | objeto_estado | si | consulta finalizacion natural |
 | `timer_left` | timer | timer | left | objeto_valor | medio | consulta |
-| `Input.player(1).pressed` | input | pressed | - | estado/evento | medio | botones tienen pressed |
-| `Input.player(1).up/down/left/right` | input | - | direccion | direccion como metodo | medio | direcciones no tienen pressed |
+| `input_pressed` | input | input | pressed | sujeto_control | medio | botones y direcciones comparten consulta |
+| `input_down` | input | input | down | sujeto_control | medio | botones y direcciones comparten consulta |
+| `input_released` | input | input | released | sujeto_control | medio | botones y direcciones comparten consulta |
 
 ## D. Inconsistencias de nomenclatura
 
@@ -320,7 +301,7 @@ Clasificacion del objeto JS:
   `fade_done`.
 - C. Propiedad local: `local`, `x/y`, `speed`, `angle`, `velocityX/Y`,
   `width/height`.
-- D. Exposicion accidental: `id` como runtime id, helpers `__flx_input_*`.
+- D. Exposicion accidental: `id` como runtime id.
 - E. Estructura heredada del JSON: `motion.*`.
 - F. Infraestructura: `global`, callbacks, `console.log`.
 
@@ -410,7 +391,8 @@ Conteo aproximado en `examples/*.js`:
 | `draw_text` | 16 |
 | `play_sound` | 15 |
 | `timer_active` | 14 |
-| `Input.player` | 11 |
+| `input_down` | ejemplos migrados |
+| `input_pressed` | ejemplos migrados |
 | `rotate` | 7 |
 | `probability` | 7 |
 | `delta` | 6 |
@@ -472,9 +454,6 @@ Implementada y documentada, pero sin uso claro en `examples`:
 - `state_current`
 - `state_entered`
 - `state_time`
-- `Input.system.*`
-- `Input.pointer.*`
-- `Input.player().button`
 - `STOP`
 
 Propiedades expuestas sin uso claro en `examples`:
@@ -492,18 +471,11 @@ Propiedades expuestas sin uso claro en `examples`:
 - `velocityY`
 - `motion.*`
 
-API implementada pero no documentada/promocionada:
+API retirada o no implementada:
 
+- `Input.*`.
+- `Key.*`.
 - `__flx_input_*`.
-
-API usada por ejemplos pero no implementada en la superficie actual:
-
-- `Key.down`.
-- `Key.pressed`.
-- `KEY_LEFT`, `KEY_RIGHT`, `KEY_SPACE`.
-
-Estos usos aparecen en `examples/invaders/player/player.js`, lo que indica
-resto de API antigua o ejemplo pendiente de migracion.
 
 ## J. Diferencias implementation / d.ts / docs
 
@@ -517,8 +489,7 @@ resto de API antigua o ejemplo pendiente de migracion.
 | `id/name/group/role/origin*/previous*` | escrituras ignoradas | no todos readonly | parcialmente | d.ts permite mas escritura de la real |
 | `motion.*` | snapshot no aplicado | mutable | documentado como config | divergencia importante |
 | `attached` | mutable real y API funcional | mutable | si | duplicidad semantica |
-| `__flx_input_*` | globales reales | no | no | infraestructura expuesta accidentalmente |
-| `Key.*` / `KEY_*` | no implementado | no | no actual | ejemplo Invaders conserva uso antiguo |
+| `Input.*` / `Key.*` / `__flx_input_*` | retirado | no | no actual | ejemplos migrados |
 | audio config types | tipos d.ts | no son objetos runtime JS | JSON authoring | no forman API runtime directa |
 
 ## K. Candidatos claros a propiedad JS
@@ -550,7 +521,6 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 
 ## M. Candidatos a ocultar
 
-- `__flx_input_*`: son detalle de implementacion de la fachada `Input`.
 - `id` como runtime id publico: hoy es necesario para bindings, pero no aparece
   como dato de juego en ejemplos.
 - `motion.*`: estructura heredada del JSON con escritura enganosa.
@@ -560,8 +530,7 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 
 ## N. Familias que requieren mini-auditoria propia
 
-- Input: falta decidir semantica `pressed` para direcciones, compatibilidad con
-  restos `Key.*`, y que partes del mapping deben ser visibles.
+- Input: quedan pendientes 8way, analog, pointer, text y remapeo avanzado.
 - Movimiento: convivencia entre speed/angle, velocity, acceleration y
   `motion.*`.
 - Identidad/referencias: si `id` debe existir, si se exponen parent/children, y
@@ -593,10 +562,9 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 9. Debe `follow_x/follow_y` seguir usando nombre o recibir una referencia?
 10. Como se normaliza la nomenclatura de consultas: `*_active`, `is_*`,
     `*_done`, `*_left`, `*_current`?
-11. Deben los helpers internos `__flx_input_*` ocultarse dentro de un namespace
-    no documentado o eliminarse del global publico?
-12. Se migra `examples/invaders` fuera de `Key.*` ahora, o se trata en una
-    auditoria especifica de Input?
+11. Debe exponerse en el futuro una API de remapeo o introspeccion de controles?
+12. Debe existir un sistema de nombres de acciones por encima de los controles
+    logicos numerados?
 
 ## Tests de caracterizacion anadidos
 

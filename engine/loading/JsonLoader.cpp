@@ -2534,6 +2534,33 @@ namespace
         }
     }
 
+    void parseControl(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("control"))
+        {
+            return;
+        }
+
+        if (!object["control"].is_object())
+        {
+            Logger::warning(
+                "json",
+                "Invalid control block in '" + definition.id + "': expected object"
+            );
+
+            return;
+        }
+
+        const Json& control =
+            object["control"];
+
+        definition.controlPlayer =
+            control.value("player", definition.controlPlayer);
+    }
+
     ObjectDefinition parseDefinition(
         JsonLoadSession& session,
         const Json& object,
@@ -2731,6 +2758,7 @@ namespace
         definition.visible =
             object.value("visible", definition.visible);
 
+        parseControl(object, definition);
         parseShape(object, definition);
         parseMotion(object, definition);
         parseAttach(object, definition);

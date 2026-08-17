@@ -23,6 +23,9 @@
     "mode": "wrap",
     "overflow": true
   },
+  "control": {
+    "player": 1
+  },
   "group": "ship",
   "collision": {
     "type": "circle",

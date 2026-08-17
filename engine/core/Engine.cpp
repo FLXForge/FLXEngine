@@ -565,12 +565,7 @@ void Engine::update()
 
     scriptEngine.setFrameDelta(delta);
 
-    inputSystem.update(
-        delta,
-        context.machine.video.screenWidth,
-        context.machine.video.screenHeight,
-        renderDestination(context, runOptions)
-    );
+    inputSystem.update(delta);
 
     world->update(
         scriptEngine,

@@ -21,6 +21,12 @@ declare const RIGHT: number;
 /** Neutral movement constant. */
 declare const STOP: number;
 
+/** Negative component of a two-way direction. */
+declare const NEGATIVE: number;
+
+/** Positive component of a two-way direction. */
+declare const POSITIVE: number;
+
 /**
  * Motion configuration exposed from JSON.
  */
@@ -158,6 +164,12 @@ interface RuntimeObject {
     /** True while the object is attached to its original parent. */
     attached: boolean;
 
+    /**
+     * Player index declared by control.player in JSON.
+     * A value of 0 means this object is not bound to a player.
+     */
+    readonly controlPlayer: number;
+
     /** Current X position. */
     x: number;
 
@@ -240,56 +252,47 @@ interface RayResult {
  */
 declare const global: Record<string, number>;
 
-interface InputPlayerApi {
-    /** Returns true while the mapped up direction is active. */
-    up(): boolean;
-
-    /** Returns true while the mapped down direction is active. */
-    down(): boolean;
-
-    /** Returns true while the mapped left direction is active. */
-    left(): boolean;
-
-    /** Returns true while the mapped right direction is active. */
-    right(): boolean;
-
-    /** Returns true while the mapped player button is held. */
-    button(buttonIndex: number): boolean;
-
-    /** Returns true on the frame the mapped player button is pressed. */
-    pressed(buttonIndex: number): boolean;
+interface InputButton {
+    readonly __flxInputControl?: "button";
+    readonly index: number;
 }
 
-/**
- * Normalized input API backed by the project's input.mapping file and the
- * active Input Chip capabilities.
- */
-declare const Input: {
-    system: {
-        /** Returns true while the mapped system button is held. */
-        down(buttonIndex: number): boolean;
+interface InputDirection {
+    readonly __flxInputControl?: "direction";
+    readonly index: number;
+}
 
-        /** Returns true on the frame the mapped system button is pressed. */
-        pressed(buttonIndex: number): boolean;
-    };
+interface InputSubject {
+    readonly __flxInputSubject?: "player" | "system";
+    readonly index: number;
+}
 
-    /** Returns the normalized API for a player. Player indexes start at 1. */
-    player(playerIndex: number): InputPlayerApi;
+type InputControl = InputButton | InputDirection;
+type InputReadableSubject = RuntimeObject | InputSubject;
 
-    pointer: {
-        /** Pointer X coordinate in logical FLX space. */
-        x(): number;
+/** Returns a logical button descriptor. */
+declare function button(index: number): InputButton;
 
-        /** Pointer Y coordinate in logical FLX space. */
-        y(): number;
+/** Returns a logical direction descriptor. */
+declare function direction(index: number): InputDirection;
 
-        /** Returns true while the mapped pointer button is held. */
-        down(buttonIndex: number): boolean;
+/** Returns an explicit player input subject. Player indexes start at 1. */
+declare function player(playerIndex: number): InputSubject;
 
-        /** Returns true on the frame the mapped pointer button is pressed. */
-        pressed(buttonIndex: number): boolean;
-    };
-};
+/** Returns the system input subject. */
+declare function system(): InputSubject;
+
+/** True on the frame a mapped button or direction component becomes active. */
+declare function input_pressed(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_pressed(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+
+/** True while a mapped button or direction component is active. */
+declare function input_down(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_down(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+
+/** True on the frame a mapped button or direction component stops being active. */
+declare function input_released(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_released(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
 
 /**
  * Moves an object on the X axis.

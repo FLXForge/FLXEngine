@@ -64,6 +64,7 @@ public:
     std::string sourcePath;
     std::string group;
     std::string role;
+    int controlPlayer = 0;
     std::string state;
     float stateTime = 0.0f;
     uint64_t stateEnteredFrame = 0;

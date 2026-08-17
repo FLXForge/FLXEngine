@@ -20,6 +20,9 @@
     "speed": 200,
     "angle": 135
   },
+  "control": {
+    "player": 1
+  },
 
   "attach": {
     "born": true,

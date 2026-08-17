@@ -19,6 +19,9 @@
   "motion": {
     "speed": 90
   },
+  "control": {
+    "player": 1
+  },
 
   "group": "player",
 

@@ -7,11 +7,12 @@
         -space key shoot (laser spawn)
 */
 
-const FIRE_BUTTON = 0;
+const FIRE_BUTTON = button(0);
+const MOVE = direction(0);
 
 function action(ship) {
 
-    if (Input.player(1).up()) {
+    if (input_down(ship, MOVE, UP)) {
         accelerate(ship);
 
         if (probability(20)) {
@@ -20,15 +21,15 @@ function action(ship) {
         }
     }
 
-    if (Input.player(1).left()) {
+    if (input_down(ship, MOVE, LEFT)) {
         rotate(ship, LEFT);
     }
 
-    if (Input.player(1).right()) {
+    if (input_down(ship, MOVE, RIGHT)) {
         rotate(ship, RIGHT);
     }
 
-    if (Input.player(1).pressed(FIRE_BUTTON)) {
+    if (input_pressed(ship, FIRE_BUTTON)) {
         play_sound(ship, "laser");
         spawn(ship, "laser");
     }

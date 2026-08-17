@@ -63,6 +63,7 @@ struct ObjectDefinition
 
     std::string group;
     std::string role;
+    int controlPlayer = 0;
     std::string collisionType = "none";
     bool collisionActive = false;
     float collisionRadius = 0.0f;

@@ -199,7 +199,10 @@ FlxContext ProjectCompiler::makeCompiledContext(
         else
         {
             context.machine =
-                MachineLoader::load(machinePath.generic_string());
+                MachineLoader::load(
+                    machinePath.generic_string(),
+                    diagnostics
+                );
         }
     }
 

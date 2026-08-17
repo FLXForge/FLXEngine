@@ -156,19 +156,21 @@ title=My first FLX
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
 function action(tofu) {
-    if (Input.player(1).up()) {
+    const MOVE = direction(0);
+
+    if (input_down(tofu, MOVE, UP)) {
         move_y(tofu, UP);
     }
 
-    if (Input.player(1).down()) {
+    if (input_down(tofu, MOVE, DOWN)) {
         move_y(tofu, DOWN);
     }
 
-    if (Input.player(1).left()) {
+    if (input_down(tofu, MOVE, LEFT)) {
         move_x(tofu, LEFT);
     }
 
-    if (Input.player(1).right()) {
+    if (input_down(tofu, MOVE, RIGHT)) {
         move_x(tofu, RIGHT);
     }
 }

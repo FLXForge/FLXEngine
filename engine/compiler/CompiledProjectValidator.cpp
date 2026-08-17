@@ -248,6 +248,19 @@ bool CompiledProjectValidator::validate(
             );
         }
 
+        if (
+            object.controlPlayer < 0 ||
+            object.controlPlayer > project.context.machine.input.players
+            )
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled object control.player is outside Input Chip players",
+                source,
+                objectId + ".control.player"
+            );
+        }
+
         for (const auto& childPair : object.childResources)
         {
             if (project.resources.findObject(childPair.second) == nullptr)

@@ -131,7 +131,14 @@ void RuntimeHelpers::moveY(
     float delta
 )
 {
-    object.position.y += direction * object.speed * delta;
+    const float sign =
+        direction < 0.0f
+        ? -1.0f
+        : direction > 0.0f
+            ? 1.0f
+            : 0.0f;
+
+    object.position.y += sign * object.speed * delta;
 }
 
 void RuntimeHelpers::advance(

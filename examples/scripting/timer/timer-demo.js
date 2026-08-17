@@ -1,5 +1,9 @@
 const TIMER_NAME = "countdown";
 const TIMER_DURATION = 5.0;
+const PLAY = button(0);
+const PAUSE = button(1);
+const RESUME = button(2);
+const STOP_BUTTON = button(3);
 
 function born(demo)
 {
@@ -8,19 +12,19 @@ function born(demo)
 
 function action(demo)
 {
-    if (Key.pressed(KEY_SPACE)) {
+    if (input_pressed(player(1), PLAY)) {
         play_timer(demo, TIMER_NAME, TIMER_DURATION);
     }
 
-    if (Key.pressed(KEY_P)) {
+    if (input_pressed(player(1), PAUSE)) {
         pause_timer(demo, TIMER_NAME);
     }
 
-    if (Key.pressed(KEY_R)) {
+    if (input_pressed(player(1), RESUME)) {
         play_timer(demo, TIMER_NAME);
     }
 
-    if (Key.pressed(KEY_S)) {
+    if (input_pressed(player(1), STOP_BUTTON)) {
         stop_timer(demo, TIMER_NAME);
     }
 }

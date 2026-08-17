@@ -6,17 +6,19 @@
 */
 
 const SHOT_COOLDOWN = 0.35;
+const FIRE_BUTTON = button(0);
+const MOVE = direction(0);
 
 function action(player){
     if (global["game_over"] == 1 || global["victory"] == 1) {
         return;
     }
 
-    if (Key.down(KEY_LEFT)) {
+    if (input_down(player, MOVE, LEFT)) {
         move_x(player, LEFT);
     }
 
-    if (Key.down(KEY_RIGHT)) {
+    if (input_down(player, MOVE, RIGHT)) {
         move_x(player, RIGHT);
     }
 
@@ -28,7 +30,7 @@ function action(player){
         player.x = 596;
     }
 
-    if (Key.pressed(KEY_SPACE) && !timer_active(player, "shot")) {
+    if (input_pressed(player, FIRE_BUTTON) && !timer_active(player, "shot")) {
         spawn(player, "laser");
         play_timer(player, "shot", SHOT_COOLDOWN);
     }

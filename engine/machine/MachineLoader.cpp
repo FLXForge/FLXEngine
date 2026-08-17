@@ -5,10 +5,12 @@
 #include <yaml-cpp/yaml.h>
 
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
 #include <sstream>
+#include <string>
 #include <unordered_set>
 
 namespace
@@ -762,56 +764,298 @@ namespace
             );
     }
 
-    void assignInputChip(
-        InputChipDefinition& chip,
-        const YAML::Node& node
+    void addMachineError(
+        Diagnostics* diagnostics,
+        const std::string& message,
+        const std::string& file,
+        const std::string& field
     )
     {
-        chip.players =
-            nodeToInt(
-                childNode(node, { "players" }),
-                chip.players,
-                "input.players",
-                1
+        Logger::error("machine", message);
+
+        if (diagnostics != nullptr)
+        {
+            diagnostics->error(
+                DiagnosticCode::MachineErrorUnclassified,
+                message,
+                file,
+                field
+            );
+        }
+    }
+
+    float nodeToFloat(
+        const YAML::Node& node,
+        float fallback,
+        const std::string& fieldName,
+        float minimum,
+        Diagnostics* diagnostics,
+        const std::string& file
+    )
+    {
+        if (!node || !node.IsDefined() || node.IsNull())
+        {
+            return fallback;
+        }
+
+        if (!node.IsScalar())
+        {
+            addMachineError(
+                diagnostics,
+                "Invalid numeric field '" + fieldName + "'",
+                file,
+                fieldName
+            );
+            return fallback;
+        }
+
+        try
+        {
+            const float parsedValue =
+                node.as<float>();
+
+            if (!std::isfinite(parsedValue) || parsedValue < minimum)
+            {
+                addMachineError(
+                    diagnostics,
+                    "Invalid numeric field '" + fieldName + "'",
+                    file,
+                    fieldName
+                );
+                return fallback;
+            }
+
+            return parsedValue;
+        }
+        catch (const YAML::Exception&)
+        {
+            addMachineError(
+                diagnostics,
+                "Invalid numeric field '" + fieldName + "'",
+                file,
+                fieldName
+            );
+            return fallback;
+        }
+    }
+
+    bool unsupportedInputField(
+        const YAML::Node& node,
+        const std::string& field,
+        Diagnostics* diagnostics,
+        const std::string& file
+    )
+    {
+        if (!hasNode(childNode(node, { field })))
+        {
+            return false;
+        }
+
+        addMachineError(
+            diagnostics,
+            "Input capability '" + field + "' is not implemented in v0.3.0",
+            file,
+            "input." + field
+        );
+
+        return true;
+    }
+
+    InputDirectionDefinition parseInputDirection(
+        const YAML::Node& node,
+        int index,
+        Diagnostics* diagnostics,
+        const std::string& file
+    )
+    {
+        InputDirectionDefinition direction;
+
+        if (!node || !node.IsDefined() || node.IsNull())
+        {
+            return direction;
+        }
+
+        if (!node.IsMap())
+        {
+            addMachineError(
+                diagnostics,
+                "Invalid input direction declaration",
+                file,
+                "input.players.controls.directions." + std::to_string(index)
+            );
+            return direction;
+        }
+
+        const std::string fieldPrefix =
+            "input.players.controls.directions." + std::to_string(index);
+
+        const std::string type =
+            nodeToString(childNode(node, { "type" }));
+
+        if (!type.empty())
+        {
+            if (type == "2way" || type == "4way")
+            {
+                direction.type = type;
+            }
+            else
+            {
+                direction.type = type;
+                addMachineError(
+                    diagnostics,
+                    "Input direction type '" + type + "' is not implemented in v0.3.0",
+                    file,
+                    fieldPrefix + ".type"
+                );
+            }
+        }
+
+        const std::string simultaneous =
+            nodeToString(childNode(node, { "simultaneous" }));
+
+        if (!simultaneous.empty())
+        {
+            if (
+                simultaneous == "first" ||
+                simultaneous == "neutral" ||
+                simultaneous == "last"
+            )
+            {
+                direction.simultaneous = simultaneous;
+            }
+            else
+            {
+                addMachineError(
+                    diagnostics,
+                    "Invalid input direction simultaneous policy '" + simultaneous + "'",
+                    file,
+                    fieldPrefix + ".simultaneous"
+                );
+            }
+        }
+
+        direction.buffer =
+            nodeToFloat(
+                childNode(node, { "buffer" }),
+                direction.buffer,
+                fieldPrefix + ".buffer",
+                0.0f,
+                diagnostics,
+                file
             );
 
-        chip.direction =
-            nodeToEnum(
-                childNode(node, { "direction" }),
-                chip.direction,
-                "input.direction",
-                { "none", "2way", "4way", "8way", "analog" }
-            );
+        return direction;
+    }
 
-        chip.playerButtons =
-            nodeToInt(
-                childNode(node, { "buttons", "player" }),
-                chip.playerButtons,
-                "input.buttons.player",
-                0
+    void assignInputChip(
+        InputChipDefinition& chip,
+        const YAML::Node& node,
+        Diagnostics* diagnostics,
+        const std::string& file
+    )
+    {
+        unsupportedInputField(node, "pointer", diagnostics, file);
+        unsupportedInputField(node, "text", diagnostics, file);
+
+        const YAML::Node systemNode =
+            childNode(node, { "system" });
+
+        const YAML::Node playersNode =
+            childNode(node, { "players" });
+
+        if (hasNode(childNode(node, { "direction" })))
+        {
+            addMachineError(
+                diagnostics,
+                "Legacy input.direction is not supported in v0.3.0",
+                file,
+                "input.direction"
             );
+        }
+
+        if (hasNode(childNode(node, { "buttons" })))
+        {
+            addMachineError(
+                diagnostics,
+                "Legacy input.buttons is not supported in v0.3.0",
+                file,
+                "input.buttons"
+            );
+        }
 
         chip.systemButtons =
             nodeToInt(
-                childNode(node, { "buttons", "system" }),
+                childNode(systemNode, { "buttons" }),
                 chip.systemButtons,
-                "input.buttons.system",
+                "input.system.buttons",
                 0
             );
 
-        chip.pointer =
-            nodeToBool(
-                childNode(node, { "pointer" }),
-                chip.pointer,
-                "input.pointer"
+        chip.players =
+            nodeToInt(
+                childNode(playersNode, { "count" }),
+                chip.players,
+                "input.players.count",
+                1
             );
 
-        chip.text =
-            nodeToBool(
-                childNode(node, { "text" }),
-                chip.text,
-                "input.text"
+        const YAML::Node controlsNode =
+            childNode(playersNode, { "controls" });
+
+        chip.playerButtons =
+            nodeToInt(
+                childNode(controlsNode, { "buttons" }),
+                chip.playerButtons,
+                "input.players.controls.buttons",
+                0
             );
+
+        const YAML::Node directionsNode =
+            childNode(controlsNode, { "directions" });
+
+        if (hasNode(directionsNode))
+        {
+            chip.directions.clear();
+
+            if (!directionsNode.IsSequence())
+            {
+                addMachineError(
+                    diagnostics,
+                    "input.players.controls.directions must be an array",
+                    file,
+                    "input.players.controls.directions"
+                );
+                chip.directions.push_back(InputDirectionDefinition{});
+            }
+            else
+            {
+                int index = 0;
+
+                for (const auto& directionNode : directionsNode)
+                {
+                    chip.directions.push_back(
+                        parseInputDirection(
+                            directionNode,
+                            index,
+                            diagnostics,
+                            file
+                        )
+                    );
+                    ++index;
+                }
+
+                if (chip.directions.empty())
+                {
+                    addMachineError(
+                        diagnostics,
+                        "input.players.controls.directions must declare at least one direction",
+                        file,
+                        "input.players.controls.directions"
+                    );
+                    chip.directions.push_back(InputDirectionDefinition{});
+                }
+            }
+        }
     }
 
     bool validMachineRoot(
@@ -877,17 +1121,24 @@ MachineDefinition MachineLoader::defaultMachine()
     machine.audio.resourcesStreams = true;
     machine.audio.fileAudioMode = "all";
 
-    machine.input.players = 16;
-    machine.input.direction = "analog";
-    machine.input.playerButtons = 16;
     machine.input.systemButtons = 16;
-    machine.input.pointer = true;
-    machine.input.text = true;
+    machine.input.players = 16;
+    machine.input.directions = { InputDirectionDefinition{} };
+    machine.input.playerButtons = 16;
 
     return machine;
 }
 
 MachineDefinition MachineLoader::load(const std::string& path)
+{
+    Diagnostics diagnostics;
+    return load(path, diagnostics);
+}
+
+MachineDefinition MachineLoader::load(
+    const std::string& path,
+    Diagnostics& diagnostics
+)
 {
     MachineDefinition machine =
         defaultMachine();
@@ -944,7 +1195,12 @@ MachineDefinition MachineLoader::load(const std::string& path)
 
     if (inputNode)
     {
-        assignInputChip(machine.input, inputNode);
+        assignInputChip(
+            machine.input,
+            inputNode,
+            &diagnostics,
+            path
+        );
     }
 
     Logger::debug(

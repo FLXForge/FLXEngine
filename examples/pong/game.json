@@ -17,6 +17,9 @@
       "motion": {
         "speed": 120
       },
+      "control": {
+        "player": 1
+      },
       "group": "paddle",
       "collision": {
         "type": "box"

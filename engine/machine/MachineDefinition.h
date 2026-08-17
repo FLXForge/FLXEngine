@@ -55,14 +55,19 @@ struct AudioChipDefinition
     std::string fileAudioMode = "all";
 };
 
+struct InputDirectionDefinition
+{
+    std::string type = "4way";
+    std::string simultaneous = "last";
+    float buffer = 0.0f;
+};
+
 struct InputChipDefinition
 {
-    int players = 16;
-    std::string direction = "analog";
-    int playerButtons = 16;
     int systemButtons = 16;
-    bool pointer = true;
-    bool text = true;
+    int players = 16;
+    std::vector<InputDirectionDefinition> directions = { InputDirectionDefinition{} };
+    int playerButtons = 16;
 };
 
 struct MachineDefinition

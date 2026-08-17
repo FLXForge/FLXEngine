@@ -565,7 +565,7 @@ fade_set(0, "black");</code></pre>
             <div class="code-card">
                 <div class="code-header">safe transition</div>
 <pre><code>function action(title) {
-    if (Input.player(1).pressed(0)) {
+    if (input_pressed(title, button(0))) {
         title.local["leaving"] = 1;
         fade_on();
     }
@@ -651,7 +651,7 @@ fade_set(0, "black");</code></pre>
 
             <div class="code-card">
                 <div class="code-header">detach</div>
-<pre><code>if (attach_active(ball) && Input.player(1).pressed(0)) {
+<pre><code>if (attach_active(ball) && input_pressed(ball, button(0))) {
     detach(ball);
     ball.angle = -45;
 }</code></pre>
@@ -684,37 +684,40 @@ fade_set(0, "black");</code></pre>
             <h2>Input</h2>
 
             <p>
-                <code>Input</code> reads normalized controls declared by the
-                project <code>input.mapping</code> file and constrained by the
-                active Input Chip.
+                Input reads logical controls declared by the project
+                <code>input.mapping</code> file and constrained by the active
+                Input Chip.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Input</div>
-<pre><code>const EXIT = 0;
-const FIRE = 0;
+<pre><code>const EXIT = button(0);
+const FIRE = button(0);
+const MOVE = direction(0);
 
-if (Input.system.pressed(EXIT)) {
+if (input_pressed(system(), EXIT)) {
     exit();
 }
 
-if (Input.player(1).up()) {
+if (input_down(player, MOVE, UP)) {
     move_y(player, UP);
 }
 
-if (Input.player(1).pressed(FIRE)) {
+if (input_pressed(player, FIRE)) {
     spawn(player, "laser");
 }
 </code></pre>
             </div>
 
             <ul>
-                <li><code>Input.system.down(index)</code>: true while a mapped system button is held.</li>
-                <li><code>Input.system.pressed(index)</code>: true on the frame a mapped system button is pressed.</li>
-                <li><code>Input.player(1).up()</code>, <code>down()</code>, <code>left()</code>, <code>right()</code>: player direction.</li>
-                <li><code>Input.player(1).button(index)</code>: true while a mapped player button is held.</li>
-                <li><code>Input.player(1).pressed(index)</code>: true on the frame a mapped player button is pressed.</li>
-                <li><code>Input.pointer.x()</code>, <code>y()</code>, <code>down(index)</code>, <code>pressed(index)</code>: pointer input.</li>
+                <li><code>button(index)</code>: logical button descriptor.</li>
+                <li><code>direction(index)</code>: logical direction descriptor.</li>
+                <li><code>player(index)</code>: explicit player subject.</li>
+                <li><code>system()</code>: system subject.</li>
+                <li><code>input_pressed(subject, button)</code>: true on the frame a mapped button is pressed.</li>
+                <li><code>input_down(subject, button)</code>: true while a mapped button is held.</li>
+                <li><code>input_released(subject, button)</code>: true on the frame a mapped button is released.</li>
+                <li><code>input_pressed(subject, direction, component)</code>, <code>input_down(...)</code> and <code>input_released(...)</code>: query a direction component such as <code>UP</code>, <code>LEFT</code>, <code>NEGATIVE</code> or <code>POSITIVE</code>.</li>
             </ul>
 
             <hr />
@@ -817,7 +820,7 @@ if (Input.player(1).pressed(FIRE)) {
             <div class="code-card">
                 <div class="code-header">exit</div>
 <pre><code>function action(menu) {
-    if (Input.system.pressed(0)) {
+    if (input_pressed(system(), button(0))) {
         exit();
     }
 }</code></pre>
@@ -998,7 +1001,7 @@ if (probability(1, 1000)) {
 
             <div class="code-card">
                 <div class="code-header">play_sound</div>
-<pre><code>if (Input.player(1).pressed(0)) {
+<pre><code>if (input_pressed(ship, button(0))) {
     play_sound(ship, "laser");
     spawn(ship, "laser");
 }
@@ -1160,7 +1163,7 @@ rotate(ship, RIGHT);</code></pre>
                 <div class="code-header">spawn</div>
 
 
-<pre><code>if (Input.player(1).pressed(0)) {
+<pre><code>if (input_pressed(ship, button(0))) {
     spawn(ship, "laser");
 }
 </code></pre>
@@ -1195,7 +1198,7 @@ rotate(ship, RIGHT);</code></pre>
                 the current state's <code>next</code> list.
             </p>
 
-<pre><code>if (state_active(game, "title") &amp;&amp; Input.player(1).pressed(0)) {
+<pre><code>if (state_active(game, "title") &amp;&amp; input_pressed(game, button(0))) {
     state_to(game, "playing");
 }
 </code></pre>

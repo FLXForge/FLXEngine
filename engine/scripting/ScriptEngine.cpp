@@ -1003,6 +1003,13 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JS_SetPropertyStr(
         context,
         self,
+        "controlPlayer",
+        JS_NewInt32(context, object.controlPlayer)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        self,
         "layer",
         JS_NewInt32(context, object.layer)
     );

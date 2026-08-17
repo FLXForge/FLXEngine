@@ -78,7 +78,7 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: root JSON object compiled as the world entry point. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
                 <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
-                <li><code>input.mapping</code>: properties-style input mapping used by the normalized <code>Input</code> API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
+                <li><code>input.mapping</code>: properties-style input mapping used by the logical input API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
@@ -104,10 +104,10 @@ notes=FLX example with spawn and basic UI
 <pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
 system.buttons.1=KEY_ENTER,JOY1_START
 
-players.1.direction.up=KEY_W,JOY1_UP
-players.1.direction.down=KEY_S,JOY1_DOWN
-players.1.direction.left=KEY_A,JOY1_LEFT
-players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.directions.0.up=KEY_W,JOY1_UP
+players.1.directions.0.down=KEY_S,JOY1_DOWN
+players.1.directions.0.left=KEY_A,JOY1_LEFT
+players.1.directions.0.right=KEY_D,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             </div>
 
@@ -178,20 +178,24 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
             <div class="code-card">
                 <div class="code-header">input chip</div>
 <pre><code>input:
-  players: 1
-  direction: 4way
-  buttons:
-    player: 1
-    system: 2
-  pointer: false
-  text: false</code></pre>
+  system:
+    buttons: 2
+  players:
+    count: 1
+    controls:
+      directions:
+        - type: 4way
+          simultaneous: last
+          buffer: 0
+      buttons: 1</code></pre>
             </div>
 
             <p>
                 The input chip declares input capabilities only. It does not name
-                semantic actions such as start, pause or fire. Player buttons and
-                system buttons are separate budgets. If no Input Chip is declared,
-                FLX uses a permissive internal chip.
+                semantic actions such as start, pause or fire. Player buttons,
+                player directions and system buttons are separate budgets. If no
+                Input Chip is declared, FLX uses a permissive internal chip.
+                This iteration supports digital 2way and 4way directions.
             </p>
 
             <p>
@@ -825,11 +829,18 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#music">music</a>: generated music declarations owned by this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
+                <li><code>control</code>: optional input subject binding for this object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><code>role</code>: optional role inside the object's group. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
+
+            <p>
+                <code>control.player</code> binds an object to a player index.
+                That lets scripts call <code>input_down(object, ...)</code>
+                without hard-coding <code>player(1)</code> in behavior code.
+            </p>
 
             <p>
                 <code>group</code> classifies what kind of object it is for collisions and queries.

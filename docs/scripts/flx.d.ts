@@ -281,6 +281,8 @@ declare function input_released(subject: InputReadableSubject, control: InputDir
 /**
  * Returns -1, 0 or 1 for a logical direction on a concrete axis.
  * RIGHT and UP are positive; LEFT and DOWN are negative.
+ * In 4way, HORIZONTAL reads LEFT/RIGHT and VERTICAL reads UP/DOWN.
+ * In 2way, POSITIVE/NEGATIVE project onto either axis.
  */
 declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
 
@@ -540,7 +542,6 @@ declare function timer_left(
     object: RuntimeObject,
     timerName: string
 ): number;
-): void;
 
 /**
  * Draws text on screen using logical screen coordinates.

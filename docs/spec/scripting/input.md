@@ -404,6 +404,11 @@ implemented in v0.3.0. In a `2way` direction, both axes project onto the same
 logical way so a Machine can later expand to `4way` without forcing script
 changes.
 
+In a `4way` direction, axis queries use only their concrete components:
+`HORIZONTAL` reads `LEFT` and `RIGHT`; `VERTICAL` reads `UP` and `DOWN`.
+`UP` and `DOWN` never affect the horizontal axis, and `LEFT` and `RIGHT` never
+affect the vertical axis.
+
 The normalized convention is:
 
 ```text

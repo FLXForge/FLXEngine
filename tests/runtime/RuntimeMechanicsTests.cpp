@@ -204,6 +204,30 @@ namespace
         require(nearlyEqual(object.position.x, 10.0f), "direct move_horizontal should use restored live speed");
     }
 
+    void testPolarApplyAndRestorePreserveAdditionalVelocity()
+    {
+        RuntimeObject laser =
+            mechanicsObject(MechanicsType::Polar, 300.0f, 90.0f);
+        laser.velocity = Vector2{ 20.0f, 5.0f };
+
+        RuntimeHelpers::applySpeed(laser, 400.0f);
+
+        require(nearlyEqual(laser.speed, 400.0f), "polar apply_speed should update own polar speed");
+        require(nearlyEqual(laser.velocity.x, 20.0f), "polar apply_speed should preserve additional velocity x");
+        require(nearlyEqual(laser.velocity.y, 5.0f), "polar apply_speed should preserve additional velocity y");
+
+        RuntimeHelpers::advance(laser, Delta);
+
+        require(nearlyEqual(laser.position.x, 420.0f), "polar advance should add own speed and preserved velocity once");
+        require(nearlyEqual(laser.position.y, 5.0f), "polar advance should preserve inherited vertical velocity");
+
+        RuntimeHelpers::restoreSpeed(laser);
+
+        require(nearlyEqual(laser.speed, 300.0f), "polar restore_speed should restore own polar speed");
+        require(nearlyEqual(laser.velocity.x, 20.0f), "polar restore_speed should preserve additional velocity x");
+        require(nearlyEqual(laser.velocity.y, 5.0f), "polar restore_speed should preserve additional velocity y");
+    }
+
     void testApplySpeedLimitStillClamps()
     {
         RuntimeObject object =
@@ -225,6 +249,41 @@ namespace
 
         require(nearlyEqual(ship.velocity.x, 50.0f), "acceleration should add velocity using delta");
         require(nearlyEqual(ship.position.x, 25.0f), "acceleration should move by the generated velocity during the frame");
+    }
+
+    void testAccelerateThenAdvanceDoesNotDoubleCountMomentum()
+    {
+        RuntimeObject ship =
+            mechanicsObject(MechanicsType::Polar, 0.0f, 0.0f);
+        ship.mechanicsMotion.acceleration = 100.0f;
+
+        RuntimeHelpers::accelerate(ship, 1.0f, Delta);
+        require(nearlyEqual(ship.position.y, -100.0f), "accelerate should move by generated momentum");
+
+        RuntimeHelpers::beginMechanicsFrame(ship);
+        RuntimeHelpers::advance(ship, Delta);
+
+        require(nearlyEqual(ship.position.x, 0.0f), "advance should not add extra polar movement after acceleration");
+        require(nearlyEqual(ship.position.y, -200.0f), "advance should continue with existing momentum once");
+    }
+
+    void testAccelerateRotateThenAdvanceKeepsMomentumDirection()
+    {
+        RuntimeObject ship =
+            mechanicsObject(MechanicsType::Polar, 0.0f, 0.0f);
+        ship.mechanicsMotion.acceleration = 100.0f;
+        ship.mechanicsRotation.speed.start = 90.0f;
+
+        RuntimeHelpers::accelerate(ship, 1.0f, Delta);
+        RuntimeHelpers::beginMechanicsFrame(ship);
+        RuntimeHelpers::rotate(ship, 1.0f, Delta);
+        RuntimeHelpers::advance(ship, Delta);
+
+        require(nearlyEqual(ship.angle, 90.0f), "rotate should change orientation");
+        require(nearlyEqual(ship.velocity.x, 0.0f), "rotation should not rotate existing momentum x");
+        require(nearlyEqual(ship.velocity.y, -100.0f), "rotation should not rotate existing momentum y");
+        require(nearlyEqual(ship.position.x, 0.0f), "advance after rotate should not add movement in new orientation");
+        require(nearlyEqual(ship.position.y, -200.0f), "advance after rotate should keep previous momentum direction");
     }
 
     void testPolarInertiaDoesNotRotateExistingMomentum()
@@ -340,7 +399,7 @@ namespace
         require(nearlyEqual(runtimeLaser.position.y, 5.0f), "laser should include inherited y velocity without altering own polar direction");
     }
 
-    void testInputDirectionSignsAndTwoWayProjection()
+    void testInputDirectionAxesDoNotCross()
     {
         RuntimeHarness harness;
 
@@ -384,22 +443,46 @@ namespace
         require(harness.load().success, "runtime should load input direction probe");
         RuntimeObject& rootObject = requireObject(harness.world, "root");
 
-        harness.provider.setKeys({ KEY_D, KEY_W, KEY_E });
+        harness.provider.setKeys({ KEY_W });
+        harness.input.update(0.016f);
+        harness.update(0.016f);
+
+        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "4way up should not leak into horizontal");
+        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 1.0f), "4way up should be positive vertical");
+        require(nearlyEqual(static_cast<float>(rootObject.local["system"]), 0.0f), "system subject should reject directional intent");
+
+        harness.provider.setKeys({ KEY_D });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
         require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 1.0f), "4way right should be positive horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 1.0f), "4way up should be positive vertical");
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayHorizontal"]), 1.0f), "2way positive should project as positive horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayVertical"]), 1.0f), "2way positive should project as positive vertical");
-        require(nearlyEqual(static_cast<float>(rootObject.local["system"]), 0.0f), "system subject should reject directional intent");
+        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "4way right should not leak into vertical");
 
-        harness.provider.setKeys({ KEY_A, KEY_S, KEY_Q });
+        harness.provider.setKeys({ KEY_S });
+        harness.input.update(0.016f);
+        harness.update(0.016f);
+
+        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "4way down should not leak into horizontal");
+        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), -1.0f), "4way down should be negative vertical");
+
+        harness.provider.setKeys({ KEY_A });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
         require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), -1.0f), "4way left should be negative horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), -1.0f), "4way down should be negative vertical");
+        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "4way left should not leak into vertical");
+
+        harness.provider.setKeys({ KEY_E });
+        harness.input.update(0.016f);
+        harness.update(0.016f);
+
+        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayHorizontal"]), 1.0f), "2way positive should project as positive horizontal");
+        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayVertical"]), 1.0f), "2way positive should project as positive vertical");
+
+        harness.provider.setKeys({ KEY_Q });
+        harness.input.update(0.016f);
+        harness.update(0.016f);
+
         require(nearlyEqual(static_cast<float>(rootObject.local["twoWayHorizontal"]), -1.0f), "2way negative should project as negative horizontal");
         require(nearlyEqual(static_cast<float>(rootObject.local["twoWayVertical"]), -1.0f), "2way negative should project as negative vertical");
 
@@ -410,6 +493,84 @@ namespace
         require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "neutral should return zero horizontal");
         require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "neutral should return zero vertical");
     }
+
+    void testAsteroidsInputIntentDoesNotCrossAxes()
+    {
+        RuntimeHarness harness;
+
+        harness.project.context.machine.input.players = 1;
+        harness.project.context.machine.input.directions = {
+            InputDirectionDefinition{ "4way", "last", 0.0f }
+        };
+
+        harness.input.configure(harness.project.context.machine.input);
+        harness.input.setPhysicalInputProvider(&harness.provider);
+        harness.input.loadMappingContent(
+            "asteroids.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.down=KEY_S\n"
+            "players.1.directions.0.left=KEY_A\n"
+            "players.1.directions.0.right=KEY_D\n"
+        );
+
+        harness.addScript(
+            "shipInput",
+            "const MOVE = direction(0);"
+            "function action(ship) {"
+            "  const thrust = input_direction(ship, MOVE, VERTICAL);"
+            "  const rotation = input_direction(ship, MOVE, HORIZONTAL);"
+            "  if (thrust > 0) accelerate(ship, thrust);"
+            "  if (rotation != 0) rotate(ship, rotation);"
+            "}"
+        );
+
+        ObjectDefinition ship;
+        ship.id = "root";
+        ship.controlPlayer = 1;
+        ship.resolvedScriptPaths.push_back("shipInput");
+        ship.mechanics.type = MechanicsType::Polar;
+        ship.mechanics.motion.acceleration = 100.0f;
+        ship.mechanics.rotation.speed.start = 90.0f;
+
+        harness.addObject(ship);
+        require(harness.load().success, "runtime should load asteroids input regression");
+        RuntimeObject& runtimeShip = requireObject(harness.world, "root");
+
+        harness.provider.setKeys({ KEY_W });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+        require(nearlyEqual(runtimeShip.angle, 0.0f), "UP should not rotate Asteroids ship");
+        require(nearlyEqual(runtimeShip.velocity.y, -100.0f), "UP should accelerate Asteroids ship");
+
+        runtimeShip.position = Vector2{ 0.0f, 0.0f };
+        runtimeShip.velocity = Vector2{ 0.0f, 0.0f };
+        runtimeShip.angle = 0.0f;
+
+        harness.provider.setKeys({ KEY_D });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+        require(nearlyEqual(runtimeShip.angle, 90.0f), "RIGHT should rotate Asteroids ship");
+        require(nearlyEqual(runtimeShip.velocity.x, 0.0f), "RIGHT should not accelerate Asteroids ship x");
+        require(nearlyEqual(runtimeShip.velocity.y, 0.0f), "RIGHT should not accelerate Asteroids ship y");
+
+        runtimeShip.angle = 0.0f;
+
+        harness.provider.setKeys({ KEY_A });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+        require(nearlyEqual(runtimeShip.angle, -90.0f), "LEFT should rotate Asteroids ship");
+        require(nearlyEqual(runtimeShip.velocity.x, 0.0f), "LEFT should not accelerate Asteroids ship x");
+        require(nearlyEqual(runtimeShip.velocity.y, 0.0f), "LEFT should not accelerate Asteroids ship y");
+
+        runtimeShip.angle = 0.0f;
+
+        harness.provider.setKeys({ KEY_S });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+        require(nearlyEqual(runtimeShip.angle, 0.0f), "DOWN should not rotate Asteroids ship");
+        require(nearlyEqual(runtimeShip.velocity.x, 0.0f), "DOWN should not reverse thrust Asteroids ship x");
+        require(nearlyEqual(runtimeShip.velocity.y, 0.0f), "DOWN should not reverse thrust Asteroids ship y");
+    }
 }
 
 int main()
@@ -417,13 +578,17 @@ int main()
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "polar speed does not double count velocity", testPolarSpeedDoesNotDoubleCountVelocity },
         { "direct apply_speed and restore_speed drive axis movement", testDirectApplySpeedAndRestoreSpeedDriveAxisMovement },
+        { "polar apply_speed and restore_speed preserve additional velocity", testPolarApplyAndRestorePreserveAdditionalVelocity },
         { "apply_speed limit still clamps", testApplySpeedLimitStillClamps },
         { "acceleration uses delta", testAccelerationUsesDelta },
+        { "accelerate then advance does not double count momentum", testAccelerateThenAdvanceDoesNotDoubleCountMomentum },
+        { "accelerate rotate then advance keeps momentum direction", testAccelerateRotateThenAdvanceKeepsMomentumDirection },
         { "polar inertia does not rotate existing momentum", testPolarInertiaDoesNotRotateExistingMomentum },
         { "inertia zero clears stale velocity", testInertiaZeroClearsStaleVelocity },
         { "inertia partial and perpetual", testInertiaPartialAndPerpetual },
         { "inherit velocity copy and compose", testInheritVelocityCopyAndCompose },
-        { "input_direction signs and 2way projection", testInputDirectionSignsAndTwoWayProjection }
+        { "input_direction axes do not cross", testInputDirectionAxesDoNotCross },
+        { "Asteroids input intent does not cross axes", testAsteroidsInputIntentDoesNotCrossAxes }
     };
 
     for (const auto& test : tests)

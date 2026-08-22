@@ -919,6 +919,11 @@ let music = load("settings", "music", true);</code></pre>
                 digital input implementation.
                 <code>RIGHT</code> and <code>UP</code> are positive;
                 <code>LEFT</code> and <code>DOWN</code> are negative.
+                In a <code>4way</code> direction, <code>HORIZONTAL</code> reads
+                only <code>LEFT</code>/<code>RIGHT</code> and
+                <code>VERTICAL</code> reads only <code>UP</code>/<code>DOWN</code>.
+                In a <code>2way</code> direction, positive/negative intent can be
+                projected onto either axis.
             </p>
 
             <div class="code-card">

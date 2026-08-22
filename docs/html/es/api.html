@@ -881,6 +881,11 @@ let music = load("settings", "music", true);</code></pre>
                 implementacion digital actual.
                 <code>RIGHT</code> y <code>UP</code> son positivos;
                 <code>LEFT</code> y <code>DOWN</code> son negativos.
+                En una direccion <code>4way</code>, <code>HORIZONTAL</code> lee
+                solo <code>LEFT</code>/<code>RIGHT</code> y
+                <code>VERTICAL</code> lee solo <code>UP</code>/<code>DOWN</code>.
+                En una direccion <code>2way</code>, la intencion positiva/negativa
+                puede proyectarse sobre cualquiera de los dos ejes.
             </p>
 
             <div class="code-card">

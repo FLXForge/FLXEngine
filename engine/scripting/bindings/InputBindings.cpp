@@ -522,14 +522,16 @@ namespace
                 ? InputAxis::Vertical
                 : InputAxis::Horizontal;
 
-        if (axis == InputAxis::Horizontal)
+        const bool isFourWay =
+            input->componentAllowed(directionIndex, InputComponent::Up) ||
+            input->componentAllowed(directionIndex, InputComponent::Right);
+
+        if (!isFourWay)
         {
             const bool positive =
-                directionDown(*input, subject, directionIndex, InputComponent::Right) ||
                 directionDown(*input, subject, directionIndex, InputComponent::Positive);
 
             const bool negative =
-                directionDown(*input, subject, directionIndex, InputComponent::Left) ||
                 directionDown(*input, subject, directionIndex, InputComponent::Negative);
 
             if (positive == negative)
@@ -540,13 +542,27 @@ namespace
             return JS_NewInt32(context, positive ? 1 : -1);
         }
 
+        if (axis == InputAxis::Horizontal)
+        {
+            const bool positive =
+                directionDown(*input, subject, directionIndex, InputComponent::Right);
+
+            const bool negative =
+                directionDown(*input, subject, directionIndex, InputComponent::Left);
+
+            if (positive == negative)
+            {
+                return JS_NewInt32(context, 0);
+            }
+
+            return JS_NewInt32(context, positive ? 1 : -1);
+        }
+
         const bool positive =
-            directionDown(*input, subject, directionIndex, InputComponent::Up) ||
-            directionDown(*input, subject, directionIndex, InputComponent::Positive);
+            directionDown(*input, subject, directionIndex, InputComponent::Up);
 
         const bool negative =
-            directionDown(*input, subject, directionIndex, InputComponent::Down) ||
-            directionDown(*input, subject, directionIndex, InputComponent::Negative);
+            directionDown(*input, subject, directionIndex, InputComponent::Down);
 
         if (positive == negative)
         {

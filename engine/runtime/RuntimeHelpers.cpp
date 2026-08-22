@@ -312,7 +312,7 @@ void RuntimeHelpers::moveHorizontal(
     const MechanicsAxisDefinition& axis =
         object.mechanicsMotion.horizontal;
 
-        float velocity =
+    float velocity =
         axisVelocity(
             object.velocity.x,
             intent,
@@ -367,7 +367,7 @@ void RuntimeHelpers::moveVertical(
     const MechanicsAxisDefinition& axis =
         object.mechanicsMotion.vertical;
 
-        float velocity =
+    float velocity =
         axisVelocity(
             object.velocity.y,
             intent,
@@ -485,9 +485,6 @@ void RuntimeHelpers::accelerate(
                 object.velocity,
                 object.mechanicsMotion.speed.limit
             );
-
-        object.speed =
-            vectorLength(object.velocity);
     }
     else if (std::abs(object.speed) <= 0.00001f)
     {
@@ -503,18 +500,18 @@ void RuntimeHelpers::accelerate(
                 object.mechanicsMotion.speed.limit
             );
 
-        object.velocity =
-            polarVector(
-                object.angle,
-                object.speed
-            );
     }
 
+    const Vector2 movementVelocity =
+        acceleration > 0.0f
+            ? object.velocity
+            : polarVector(object.angle, object.speed);
+
     object.position.x +=
-        quantize(object.velocity.x * delta, object.mechanicsMotion.step);
+        quantize(movementVelocity.x * delta, object.mechanicsMotion.step);
 
     object.position.y +=
-        quantize(object.velocity.y * delta, object.mechanicsMotion.step);
+        quantize(movementVelocity.y * delta, object.mechanicsMotion.step);
 
     object.motionCommanded =
         true;
@@ -617,6 +614,11 @@ void RuntimeHelpers::applySpeed(
     object.speed =
         speed;
 
+    if (object.mechanicsType == MechanicsType::Polar)
+    {
+        return;
+    }
+
     const float length =
         vectorLength(object.velocity);
 
@@ -694,11 +696,6 @@ void RuntimeHelpers::applyFreeMechanics(
                 object.velocity = Vector2{ 0.0f, 0.0f };
             }
 
-            if (object.mechanicsMotion.acceleration > 0.0f)
-            {
-                object.speed =
-                    vectorLength(object.velocity);
-            }
         }
 
         object.position.x +=

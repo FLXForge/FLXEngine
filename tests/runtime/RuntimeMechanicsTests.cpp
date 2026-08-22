@@ -1,5 +1,6 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProject.h"
+#include "../../engine/debug/Logger.h"
 #include "../../engine/input/InputSystem.h"
 #include "../../engine/runtime/RuntimeHelpers.h"
 #include "../../engine/runtime/RuntimeObjectBuilder.h"
@@ -154,6 +155,63 @@ namespace
         return *object;
     }
 
+    const ObjectDefinition& requireCompiledObject(
+        const CompiledProject& project,
+        const std::string& id
+    )
+    {
+        const ObjectDefinition* object =
+            project.resources.findObject(id);
+
+        require(object != nullptr, "compiled object should exist: " + id);
+        return *object;
+    }
+
+    const ObjectDefinition& requireCompiledObjectBySource(
+        const CompiledProject& project,
+        const std::string& sourcePath
+    )
+    {
+        for (const auto& pair : project.resources.allObjects())
+        {
+            if (pair.second.sourcePath.find(sourcePath) != std::string::npos)
+            {
+                return pair.second;
+            }
+        }
+
+        throw std::runtime_error("compiled object source should exist: " + sourcePath);
+    }
+
+    CompilationResult compileMechanicsProject(
+        const std::string& name,
+        const std::vector<std::pair<std::string, std::string>>& files
+    )
+    {
+        const std::filesystem::path root =
+            testRoot() / name;
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=Mechanics\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        for (const auto& file : files)
+        {
+            writeFile(
+                root / "game" / file.first,
+                file.second
+            );
+        }
+
+        return compile(root / "game.flx");
+    }
+
     void testPolarSpeedDoesNotDoubleCountVelocity()
     {
         RuntimeObject ball =
@@ -236,6 +294,141 @@ namespace
 
         RuntimeHelpers::applySpeed(object, 20.0f);
         require(nearlyEqual(object.speed, 15.0f), "apply_speed should clamp to mechanics motion speed limit");
+    }
+
+    void testApplyVelocitySetsLinearVector()
+    {
+        RuntimeObject object =
+            mechanicsObject(MechanicsType::Direct, 0.0f, 10.0f);
+        object.rotationSpeed = 30.0f;
+        object.mechanicsMotion.speed.limit = 0.0f;
+
+        RuntimeHelpers::applyVelocity(object, 90.0f, 50.0f);
+
+        require(nearlyEqual(object.velocity.x, 50.0f), "apply_velocity should set velocity x from direction");
+        require(nearlyEqual(object.velocity.y, 0.0f), "apply_velocity should set velocity y from direction");
+        require(nearlyEqual(object.angle, 10.0f), "apply_velocity should not modify angle");
+        require(nearlyEqual(object.rotationSpeed, 30.0f), "apply_velocity should not modify rotation speed");
+        require(nearlyEqual(object.speed, 0.0f), "apply_velocity should not modify live speed");
+    }
+
+    void testApplyVelocityLimit()
+    {
+        RuntimeObject object =
+            mechanicsObject(MechanicsType::Direct, 0.0f, 0.0f);
+        object.mechanicsMotion.speed.limit = 100.0f;
+
+        Logger::setConsoleEnabled(true);
+        StreamCapture capture;
+
+        RuntimeHelpers::applyVelocity(object, 90.0f, 200.0f);
+
+        const float magnitude =
+            std::sqrt(
+                object.velocity.x * object.velocity.x +
+                object.velocity.y * object.velocity.y
+            );
+
+        require(nearlyEqual(magnitude, 100.0f), "apply_velocity should clamp vector magnitude to speed limit");
+        require(capture.output.str().find("apply_velocity requested value exceeds mechanics.motion.speed.limit") != std::string::npos, "apply_velocity should warn when speed exceeds limit");
+
+        RuntimeObject unlimited =
+            mechanicsObject(MechanicsType::Direct, 0.0f, 0.0f);
+        unlimited.mechanicsMotion.speed.limit = 0.0f;
+
+        RuntimeHelpers::applyVelocity(unlimited, 90.0f, 200.0f);
+
+        const float unlimitedMagnitude =
+            std::sqrt(
+                unlimited.velocity.x * unlimited.velocity.x +
+                unlimited.velocity.y * unlimited.velocity.y
+            );
+
+        require(nearlyEqual(unlimitedMagnitude, 200.0f), "apply_velocity should treat limit zero as unlimited");
+    }
+
+    void testCommonInertiaResolvesToAxes()
+    {
+        CompilationResult result =
+            compileMechanicsProject(
+                "runtime-mechanics-common-inertia",
+                {
+                    {
+                        "root.json",
+                        "{\n"
+                        "  \"children\": {\n"
+                        "    \"common\": { \"like\": \"common\" },\n"
+                        "    \"horizontal\": { \"like\": \"horizontal\" },\n"
+                        "    \"vertical\": { \"like\": \"vertical\" }\n"
+                        "  }\n"
+                        "}\n"
+                    },
+                    {
+                        "common.json",
+                        "{\n"
+                        "  \"mechanics\": {\n"
+                        "    \"type\": \"direct\",\n"
+                        "    \"motion\": { \"inertia\": 0.82 }\n"
+                        "  }\n"
+                        "}\n"
+                    },
+                    {
+                        "horizontal.json",
+                        "{\n"
+                        "  \"mechanics\": {\n"
+                        "    \"type\": \"direct\",\n"
+                        "    \"motion\": {\n"
+                        "      \"inertia\": 0.82,\n"
+                        "      \"horizontal\": { \"inertia\": 0.3 }\n"
+                        "    }\n"
+                        "  }\n"
+                        "}\n"
+                    },
+                    {
+                        "vertical.json",
+                        "{\n"
+                        "  \"mechanics\": {\n"
+                        "    \"type\": \"direct\",\n"
+                        "    \"motion\": {\n"
+                        "      \"inertia\": 0.82,\n"
+                        "      \"vertical\": { \"inertia\": 0.4 }\n"
+                        "    }\n"
+                        "  }\n"
+                        "}\n"
+                    }
+                }
+            );
+
+        require(result.success, "common inertia project should compile");
+
+        const ObjectDefinition& common =
+            requireCompiledObjectBySource(result.project, "common.json");
+        const ObjectDefinition& horizontal =
+            requireCompiledObjectBySource(result.project, "horizontal.json");
+        const ObjectDefinition& vertical =
+            requireCompiledObjectBySource(result.project, "vertical.json");
+
+        RuntimeObject commonObject =
+            RuntimeObjectBuilder::build(common, "common", "root");
+        RuntimeObject horizontalObject =
+            RuntimeObjectBuilder::build(horizontal, "horizontal", "root");
+        RuntimeObject verticalObject =
+            RuntimeObjectBuilder::build(vertical, "vertical", "root");
+
+        require(nearlyEqual(commonObject.mechanicsMotion.horizontal.inertia, 0.82f), "common motion.inertia should apply to horizontal");
+        require(nearlyEqual(commonObject.mechanicsMotion.vertical.inertia, 0.82f), "common motion.inertia should apply to vertical");
+        require(nearlyEqual(horizontalObject.mechanicsMotion.horizontal.inertia, 0.3f), "horizontal override should replace common inertia");
+        require(nearlyEqual(horizontalObject.mechanicsMotion.vertical.inertia, 0.82f), "horizontal override should keep common vertical inertia");
+        require(nearlyEqual(verticalObject.mechanicsMotion.horizontal.inertia, 0.82f), "vertical override should keep common horizontal inertia");
+        require(nearlyEqual(verticalObject.mechanicsMotion.vertical.inertia, 0.4f), "vertical override should replace common inertia");
+
+        commonObject.velocity = Vector2{ 100.0f, 50.0f };
+        RuntimeHelpers::applyFreeMechanics(commonObject, Delta);
+
+        require(commonObject.position.x > 0.0f, "common inertia direct object should move freely on x");
+        require(commonObject.position.y > 0.0f, "common inertia direct object should move freely on y");
+        require(commonObject.velocity.x > 0.0f && commonObject.velocity.x < 100.0f, "common inertia should reduce x progressively");
+        require(commonObject.velocity.y > 0.0f && commonObject.velocity.y < 50.0f, "common inertia should reduce y progressively");
     }
 
     void testAccelerationUsesDelta()
@@ -351,13 +544,13 @@ namespace
         root.id = "root";
         root.childResources["fragment"] = "fragment";
         root.childResources["laser"] = "laser";
+        root.mechanics.motion.inertia = 1.0f;
 
         ObjectDefinition fragment;
         fragment.id = "fragment";
         fragment.spawnMode = "manual";
         fragment.mechanics.type = MechanicsType::Direct;
-        fragment.mechanics.motion.horizontal.inertia = 1.0f;
-        fragment.mechanics.motion.vertical.inertia = 1.0f;
+        fragment.mechanics.motion.inertia = 1.0f;
         fragment.inherit.creationVelocity = InheritCreationMode::Copy;
 
         ObjectDefinition laser;
@@ -397,6 +590,130 @@ namespace
         RuntimeHelpers::advance(runtimeLaser, Delta);
         require(nearlyEqual(runtimeLaser.position.x, 320.0f), "laser should move by own polar speed plus inherited x velocity");
         require(nearlyEqual(runtimeLaser.position.y, 5.0f), "laser should include inherited y velocity without altering own polar direction");
+    }
+
+    void testAsteroidsFragmentInheritsVelocityAndKeepsDirection()
+    {
+        CompilationResult result =
+            compileMechanicsProject(
+                "runtime-mechanics-asteroids-fragment",
+                {
+                    {
+                        "root.json",
+                        "{\n"
+                        "  \"children\": {\n"
+                        "    \"fragment\": {\n"
+                        "      \"like\": \"fragment\",\n"
+                        "      \"spawn\": \"manual\"\n"
+                        "    }\n"
+                        "  }\n"
+                        "}\n"
+                    },
+                    {
+                        "fragment.json",
+                        "{\n"
+                        "  \"mechanics\": {\n"
+                        "    \"type\": \"direct\",\n"
+                        "    \"motion\": { \"inertia\": 0.82 },\n"
+                        "    \"rotation\": { \"speed\": { \"start\": 30 } }\n"
+                        "  },\n"
+                        "  \"inherit\": {\n"
+                        "    \"creation\": { \"velocity\": \"copy\" }\n"
+                        "  },\n"
+                        "  \"behavior\": { \"scripts\": [\"fragment\"] }\n"
+                        "}\n"
+                    },
+                    {
+                        "fragment.js",
+                        "function born(fragment) {\n"
+                        "  fragment.rotationSpeed = 180;\n"
+                        "}\n"
+                    }
+                }
+            );
+
+        require(result.success, "fragment mechanics project should compile");
+
+        RuntimeHarness harness;
+        harness.project =
+            result.project;
+        harness.scripts.setFindObjectFunction(
+            [&harness](const std::string& name)
+            {
+                return harness.world.findByName(name);
+            }
+        );
+        harness.scripts.setFindObjectByIdFunction(
+            [&harness](const std::string& runtimeId)
+            {
+                return harness.world.findByRuntimeId(runtimeId);
+            }
+        );
+        harness.scripts.setSpawnObjectFunction(
+            [&harness](RuntimeObject& source, const std::string& resourceId)
+            {
+                harness.world.spawn(source, resourceId, harness.scripts);
+            }
+        );
+
+        require(harness.load().success, "fragment runtime should load");
+
+        RuntimeObject& root =
+            requireObject(harness.world, "root");
+        root.velocity = Vector2{ 100.0f, 50.0f };
+        root.mechanicsMotion.horizontal.inertia = 1.0f;
+        root.mechanicsMotion.vertical.inertia = 1.0f;
+
+        const auto fragmentResource =
+            root.childResources.find("fragment");
+        require(fragmentResource != root.childResources.end(), "root should expose fragment child resource");
+
+        harness.world.spawn(root, fragmentResource->second, harness.scripts);
+        harness.update(0.0f);
+
+        RuntimeObject& fragment =
+            requireObject(harness.world, "fragment");
+
+        require(nearlyEqual(fragment.velocity.x, 100.0f), "fragment should copy parent velocity x at creation");
+        require(nearlyEqual(fragment.velocity.y, 50.0f), "fragment should copy parent velocity y at creation");
+        require(nearlyEqual(fragment.rotationSpeed, 180.0f), "fragment born should configure visual rotation");
+
+        RuntimeHelpers::beginMechanicsFrame(fragment);
+        RuntimeHelpers::rotate(fragment, 1.0f, Delta);
+        RuntimeHelpers::applyFreeMechanics(fragment, Delta);
+
+        require(fragment.angle > 0.0f, "fragment should rotate visually");
+        require(fragment.position.x > 0.0f, "fragment should move from inherited velocity x");
+        require(fragment.position.y > 0.0f, "fragment should move from inherited velocity y");
+        require(fragment.velocity.x > 0.0f && fragment.velocity.x < 100.0f, "fragment x velocity should decay progressively");
+        require(fragment.velocity.y > 0.0f && fragment.velocity.y < 50.0f, "fragment y velocity should decay progressively");
+        require(nearlyEqual(fragment.velocity.x / fragment.velocity.y, 2.0f), "fragment rotation should not change velocity direction");
+    }
+
+    void testDirectAsteroidRotationDoesNotCurveTrajectory()
+    {
+        RuntimeObject asteroid =
+            mechanicsObject(MechanicsType::Direct, 0.0f, 0.0f);
+        asteroid.mechanicsRotation.speed.start = 90.0f;
+
+        RuntimeHelpers::applyVelocity(asteroid, 45.0f, 50.0f);
+
+        const Vector2 initialVelocity =
+            asteroid.velocity;
+
+        for (int frame = 0; frame < 3; ++frame)
+        {
+            RuntimeHelpers::beginMechanicsFrame(asteroid);
+            RuntimeHelpers::rotate(asteroid, 1.0f, Delta);
+            RuntimeHelpers::advance(asteroid, Delta);
+        }
+
+        require(asteroid.angle > 0.0f, "direct asteroid should rotate visually");
+        require(nearlyEqual(asteroid.velocity.x, initialVelocity.x), "direct asteroid rotation should not change velocity x");
+        require(nearlyEqual(asteroid.velocity.y, initialVelocity.y), "direct asteroid rotation should not change velocity y");
+        require(asteroid.position.x > 0.0f, "direct asteroid should move along applied x trajectory");
+        require(asteroid.position.y < 0.0f, "direct asteroid should move along applied y trajectory");
+        require(nearlyEqual(asteroid.position.x / -asteroid.position.y, 1.0f), "direct asteroid trajectory should remain 45 degrees");
     }
 
     void testInputDirectionAxesDoNotCross()
@@ -580,6 +897,9 @@ int main()
         { "direct apply_speed and restore_speed drive axis movement", testDirectApplySpeedAndRestoreSpeedDriveAxisMovement },
         { "polar apply_speed and restore_speed preserve additional velocity", testPolarApplyAndRestorePreserveAdditionalVelocity },
         { "apply_speed limit still clamps", testApplySpeedLimitStillClamps },
+        { "apply_velocity sets linear vector", testApplyVelocitySetsLinearVector },
+        { "apply_velocity limit", testApplyVelocityLimit },
+        { "common inertia resolves to axes", testCommonInertiaResolvesToAxes },
         { "acceleration uses delta", testAccelerationUsesDelta },
         { "accelerate then advance does not double count momentum", testAccelerateThenAdvanceDoesNotDoubleCountMomentum },
         { "accelerate rotate then advance keeps momentum direction", testAccelerateRotateThenAdvanceKeepsMomentumDirection },
@@ -587,6 +907,8 @@ int main()
         { "inertia zero clears stale velocity", testInertiaZeroClearsStaleVelocity },
         { "inertia partial and perpetual", testInertiaPartialAndPerpetual },
         { "inherit velocity copy and compose", testInheritVelocityCopyAndCompose },
+        { "Asteroids fragment inherits velocity and keeps direction", testAsteroidsFragmentInheritsVelocityAndKeepsDirection },
+        { "direct asteroid rotation does not curve trajectory", testDirectAsteroidRotationDoesNotCurveTrajectory },
         { "input_direction axes do not cross", testInputDirectionAxesDoNotCross },
         { "Asteroids input intent does not cross axes", testAsteroidsInputIntentDoesNotCrossAxes }
     };

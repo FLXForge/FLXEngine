@@ -18,6 +18,7 @@ public:
     static void position(RuntimeObject& object, float x, float y);
     static void positionOrigin(RuntimeObject& object);
     static void applySpeed(RuntimeObject& object, float speed);
+    static void applyVelocity(RuntimeObject& object, float direction, float speed);
     static void restoreSpeed(RuntimeObject& object);
 
     static void accelerate(RuntimeObject& object, float intent, float delta);

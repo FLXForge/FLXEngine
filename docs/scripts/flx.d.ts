@@ -361,6 +361,16 @@ declare function accelerate(object: RuntimeObject, intent?: number): void;
 declare function apply_speed(object: RuntimeObject, value: number): void;
 
 /**
+ * Replaces the live linear velocity vector using a direction and magnitude.
+ * Does not change angle, rotation, declared speed, acceleration or inertia.
+ */
+declare function apply_velocity(
+    object: RuntimeObject,
+    direction: number,
+    speed: number
+): void;
+
+/**
  * Restores the runtime movement speed declared at creation.
  */
 declare function restore_speed(object: RuntimeObject): void;

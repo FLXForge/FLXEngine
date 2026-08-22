@@ -635,6 +635,36 @@ void RuntimeHelpers::applySpeed(
     }
 }
 
+void RuntimeHelpers::applyVelocity(
+    RuntimeObject& object,
+    float direction,
+    float speed
+)
+{
+    const float requestedSpeed =
+        speed;
+
+    speed =
+        clampMagnitude(
+            speed,
+            object.mechanicsMotion.speed.limit
+        );
+
+    if (std::abs(speed - requestedSpeed) > 0.00001f)
+    {
+        Logger::warning(
+            "mechanics",
+            "apply_velocity requested value exceeds mechanics.motion.speed.limit; effective limit applied"
+        );
+    }
+
+    object.velocity =
+        polarVector(
+            direction,
+            speed
+        );
+}
+
 void RuntimeHelpers::restoreSpeed(RuntimeObject& object)
 {
     object.speed = object.originSpeed;

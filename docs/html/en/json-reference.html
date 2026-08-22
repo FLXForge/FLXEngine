@@ -1081,7 +1081,7 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <li><code>motion.inertia</code>: normalized persistence from <code>0</code> to <code>1</code>. Default is <code>0</code>.</li>
                 <li><code>motion.step</code>: movement quantization. <code>0</code> means continuous.</li>
                 <li><code>motion.diagonal</code>: <code>independent</code> or <code>vector</code>.</li>
-                <li><code>motion.horizontal</code> and <code>motion.vertical</code>: optional per-axis overrides for speed, acceleration, inertia and step.</li>
+                <li><code>motion.horizontal</code> and <code>motion.vertical</code>: optional per-axis overrides for speed, acceleration, inertia and step. Common <code>motion</code> values apply to both axes unless a concrete axis overrides that field.</li>
                 <li><code>rotation.angle</code>: initial live angle in degrees.</li>
                 <li><code>rotation.speed</code>: rotation speed as number shorthand or <code>{ "start", "limit" }</code>.</li>
                 <li><code>rotation.acceleration</code>, <code>rotation.inertia</code> and <code>rotation.step</code>: rotational equivalents of the motion fields.</li>

@@ -104,6 +104,21 @@ Vida/muerte, visibilidad, relaciones, attachments o participación en subsistema
 
 Principio: **el script puede modificar estado local; el Runtime gobierna las relaciones con el mundo.**
 
+## 9.1. Movimiento vivo
+`speed`, `velocity` y `angle` no representan el mismo concepto:
+
+```text
+speed    → magnitud escalar viva
+velocity → vector lineal vivo
+angle    → orientación viva
+```
+
+En mecánicas `direct`, la trayectoria lineal reside en `velocity`. `rotate()` modifica la orientación visual y no debe redirigir esa trayectoria.
+
+En mecánicas `polar`, `advance()` usa `angle` y `speed` como movimiento polar propio. Cualquier `velocity` heredada o acumulada se suma como contribución lineal separada.
+
+Las propiedades comunes de `mechanics.motion` se aplican a ambos ejes. `motion.horizontal` y `motion.vertical` son overrides parciales: si un eje no declara un campo concreto, conserva el valor común de `motion`.
+
 ## 10. Muerte
 La operación es conceptualmente `kill(instance)` y actúa sobre identidad runtime, no sobre un nombre global.
 

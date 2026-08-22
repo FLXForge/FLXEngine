@@ -1,5 +1,55 @@
 #include "RuntimeObjectBuilder.h"
 
+namespace
+{
+    void resolveAxisDefaults(
+        MechanicsAxisDefinition& axis,
+        const MechanicsMotionDefinition& motion
+    )
+    {
+        if (!axis.hasSpeed)
+        {
+            axis.speed =
+                motion.speed;
+        }
+
+        if (!axis.hasAcceleration)
+        {
+            axis.acceleration =
+                motion.acceleration;
+        }
+
+        if (!axis.hasInertia)
+        {
+            axis.inertia =
+                motion.inertia;
+        }
+
+        if (!axis.hasStep)
+        {
+            axis.step =
+                motion.step;
+        }
+    }
+
+    MechanicsMotionDefinition resolveMotionDefaults(
+        MechanicsMotionDefinition motion
+    )
+    {
+        resolveAxisDefaults(
+            motion.horizontal,
+            motion
+        );
+
+        resolveAxisDefaults(
+            motion.vertical,
+            motion
+        );
+
+        return motion;
+    }
+}
+
 RuntimeObject RuntimeObjectBuilder::build(
     const ObjectDefinition& definition,
     const std::string& runtimeId,
@@ -44,7 +94,10 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.mechanics = definition.mechanics;
     object.inherit = definition.inherit;
     object.mechanicsType = definition.mechanics.type;
-    object.mechanicsMotion = definition.mechanics.motion;
+    object.mechanicsMotion =
+        resolveMotionDefaults(definition.mechanics.motion);
+    object.mechanics.motion =
+        object.mechanicsMotion;
     object.mechanicsRotation = definition.mechanics.rotation;
 
     object.speed = definition.mechanics.motion.speed.start;

@@ -241,6 +241,33 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
             <hr />
 
+            <h2>apply_velocity(object, direction, speed)</h2>
+
+            <p>
+                Sustituye la velocity lineal viva del objeto por un vector usando
+                <code>direction</code> en grados FLX y <code>speed</code> como
+                magnitud. No desplaza el objeto inmediatamente.
+                Si <code>mechanics.motion.speed.limit</code> es mayor que cero,
+                FLX limita la magnitud solicitada a ese maximo y registra un warning.
+            </p>
+
+            <p>
+                <code>speed</code> es la velocidad escalar viva usada por helpers
+                como <code>apply_speed()</code>. <code>velocityX</code> y
+                <code>velocityY</code> son el vector lineal vivo. <code>angle</code>
+                es la orientacion viva. <code>apply_velocity()</code> cambia solo
+                el vector, de modo que un objeto direct puede moverse en una
+                trayectoria estable mientras <code>rotate()</code> cambia su
+                orientacion visual.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_velocity</div>
+<pre><code>apply_velocity(asteroid, random(0, 360), random(20, 70));</code></pre>
+            </div>
+
+            <hr />
+
             <h2>restore_speed(object)</h2>
 
             <p>

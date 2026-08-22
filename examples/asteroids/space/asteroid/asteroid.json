@@ -34,7 +34,7 @@
     "overflow": true
   },
   "mechanics": {
-    "type": "polar",
+    "type": "direct",
     "rotation": {
       "speed": {
         "start": 90

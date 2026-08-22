@@ -673,6 +673,41 @@ namespace
 
         return JS_UNDEFINED;
     }
+
+    JSValue jsApplyVelocity(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double direction =
+            object->angle;
+
+        double speed =
+            0.0;
+
+        JS_ToFloat64(context, &direction, argv[1]);
+        JS_ToFloat64(context, &speed, argv[2]);
+
+        RuntimeHelpers::applyVelocity(
+            *object,
+            static_cast<float>(direction),
+            static_cast<float>(speed)
+        );
+
+        writeRuntimeObjectState(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
 }
 
 void MotionBindings::registerAll(JSContext* context)
@@ -696,6 +731,7 @@ void MotionBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(context, global, "position", JS_NewCFunction(context, jsPosition, "position", 3));
     JS_SetPropertyStr(context, global, "position_origin", JS_NewCFunction(context, jsPositionOrigin, "position_origin", 1));
     JS_SetPropertyStr(context, global, "apply_speed", JS_NewCFunction(context, jsApplySpeed, "apply_speed", 2));
+    JS_SetPropertyStr(context, global, "apply_velocity", JS_NewCFunction(context, jsApplyVelocity, "apply_velocity", 3));
     JS_SetPropertyStr(context, global, "restore_speed", JS_NewCFunction(context, jsRestoreSpeed, "restore_speed", 1));
 
     JS_FreeValue(context, global);

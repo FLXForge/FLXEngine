@@ -236,6 +236,32 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
             <hr />
 
+            <h2>apply_velocity(object, direction, speed)</h2>
+
+            <p>
+                Replaces the object's live linear velocity with a vector using
+                <code>direction</code> in FLX degrees and <code>speed</code> as
+                magnitude. It does not move the object immediately.
+                If <code>mechanics.motion.speed.limit</code> is greater than zero,
+                FLX clamps the requested magnitude to that limit and logs a warning.
+            </p>
+
+            <p>
+                <code>speed</code> is the live scalar speed used by helpers such as
+                <code>apply_speed()</code>. <code>velocityX</code> and
+                <code>velocityY</code> are the live linear vector. <code>angle</code>
+                is the live orientation. <code>apply_velocity()</code> changes only
+                the vector, so direct objects can move on a stable trajectory while
+                <code>rotate()</code> changes their visual orientation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_velocity</div>
+<pre><code>apply_velocity(asteroid, random(0, 360), random(20, 70));</code></pre>
+            </div>
+
+            <hr />
+
             <h2>restore_speed(object)</h2>
 
             <p>

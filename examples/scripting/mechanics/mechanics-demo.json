@@ -1,0 +1,87 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "behavior": {
+    "scripts": ["mechanics-demo"]
+  },
+  "children": {
+    "ship": {
+      "origin": { "x": 160, "y": 130 },
+      "shape": {
+        "type": "triangle",
+        "mode": "outline",
+        "color": "white",
+        "size": { "width": 16, "height": 22 }
+      },
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": { "start": 0, "limit": 120 },
+          "acceleration": 90,
+          "inertia": 0.90
+        },
+        "rotation": {
+          "speed": { "start": 120 }
+        }
+      },
+      "control": { "player": 1 },
+      "behavior": { "scripts": ["ship"] },
+      "children": {
+        "probe": {
+          "spawn": "manual",
+          "offset": { "x": 0, "y": -14 },
+          "shape": {
+            "type": "block",
+            "color": "yellow",
+            "size": { "width": 3, "height": 6 }
+          },
+          "mechanics": {
+            "type": "polar",
+            "motion": {
+              "speed": { "start": 150 }
+            }
+          },
+          "inherit": {
+            "creation": {
+              "angle": "copy",
+              "velocity": "compose"
+            }
+          },
+          "behavior": { "scripts": ["probe"] }
+        }
+      }
+    },
+    "direct_spinner": {
+      "origin": { "x": 70, "y": 300 },
+      "shape": {
+        "type": "block",
+        "color": "cyan",
+        "size": { "width": 18, "height": 6 }
+      },
+      "mechanics": {
+        "type": "direct",
+        "rotation": {
+          "speed": { "start": 120 }
+        }
+      },
+      "behavior": { "scripts": ["direct-spinner"] }
+    },
+    "speed_ball": {
+      "origin": { "x": 80, "y": 390 },
+      "shape": {
+        "type": "block",
+        "color": "green",
+        "size": { "width": 8, "height": 8 }
+      },
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": { "start": 45, "limit": 90 }
+        },
+        "rotation": {
+          "angle": 90
+        }
+      },
+      "behavior": { "scripts": ["speed-ball"] }
+    }
+  }
+}

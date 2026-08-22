@@ -2,8 +2,8 @@
 
 /* 
     The player moves the ship using:
-        -up key to accelerate with acceleration, inertia and max speed defined in motion
-        -left and right keys to rotate using the rotation speed defined in motion
+        -up key to accelerate with acceleration, inertia and speed limit defined in mechanics
+        -left and right keys to rotate using the rotation speed defined in mechanics
         -space key shoot (laser spawn)
 */
 
@@ -33,10 +33,6 @@ function action(ship) {
         play_sound(ship, "laser");
         spawn(ship, "laser");
     }
-}
-
-function motion(ship) {
-    advance(ship);
 }
 
 function dead(ship) {

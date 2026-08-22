@@ -33,6 +33,14 @@
     "mode": "wrap",
     "overflow": true
   },
+  "mechanics": {
+    "type": "polar",
+    "rotation": {
+      "speed": {
+        "start": 90
+      }
+    }
+  },
   "group": "asteroid",
   "collision": {
     "type": "circle",

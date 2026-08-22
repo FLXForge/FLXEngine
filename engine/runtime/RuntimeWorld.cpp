@@ -1,4 +1,5 @@
 #include "RuntimeWorld.h"
+#include "RuntimeHelpers.h"
 #include "RuntimeObjectBuilder.h"
 #include "../compiler/CompiledProjectValidator.h"
 #include "../collision/CollisionSystem.h"
@@ -235,30 +236,35 @@ namespace
         const ObjectDefinition& definition
     )
     {
-        if (!definition.inheritParentAngle)
-        {
-            return;
-        }
-
-        if (!definition.hasAngle)
+        if (definition.inherit.creationAngle == InheritCreationMode::Copy)
         {
             child.angle =
                 parent.angle;
         }
 
-        if (!definition.hasSpeed && definition.maxSpeed > 0.0f)
+        if (definition.inherit.creationVelocity == InheritCreationMode::Copy)
         {
-            child.speed =
-                definition.maxSpeed;
-            child.originSpeed =
-                definition.maxSpeed;
+            child.velocity =
+                parent.velocity;
+
+            if (child.mechanicsType == MechanicsType::Polar)
+            {
+                child.speed =
+                    std::sqrt(
+                        child.velocity.x * child.velocity.x +
+                        child.velocity.y * child.velocity.y
+                    );
+            }
         }
 
-        child.velocity.x +=
-            parent.velocity.x;
+        if (definition.inherit.creationVelocity == InheritCreationMode::Compose)
+        {
+            child.velocity.x +=
+                parent.velocity.x;
 
-        child.velocity.y +=
-            parent.velocity.y;
+            child.velocity.y +=
+                parent.velocity.y;
+        }
     }
 }
 
@@ -1405,6 +1411,7 @@ void RuntimeWorld::beginFrame()
     {
         object.previousPosition =
             object.position;
+        RuntimeHelpers::beginMechanicsFrame(object);
 
         if (
             !object.state.empty() &&
@@ -1459,6 +1466,11 @@ void RuntimeWorld::motionPhase(
             );
         }
 
+        RuntimeHelpers::applyFreeMechanics(
+            object,
+            scriptEngine.getFrameDelta()
+        );
+
         object.applyBounds(screenWidth, screenHeight);
     }
 }
@@ -1487,7 +1499,7 @@ void RuntimeWorld::applyAttachments()
 {
     for (auto& object : objects)
     {
-        if (!object.alive || !object.attached)
+        if (!object.alive)
         {
             continue;
         }
@@ -1505,19 +1517,25 @@ void RuntimeWorld::applyAttachments()
             continue;
         }
 
-        if (object.attachFollowX)
+        if (object.attached && object.attachFollowX)
         {
             object.position.x =
                 parent->position.x + object.originalOffset.x;
         }
 
-        if (object.attachFollowY)
+        if (object.attached && object.attachFollowY)
         {
             object.position.y =
                 parent->position.y + object.originalOffset.y;
         }
 
-        if (object.attachFollowAngle)
+        if (object.attached && object.attachFollowAngle)
+        {
+            object.angle =
+                parent->angle;
+        }
+
+        if (object.inherit.liveAngle == InheritLiveMode::Copy)
         {
             object.angle =
                 parent->angle;

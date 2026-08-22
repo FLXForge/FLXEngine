@@ -14,8 +14,13 @@
           "height": 30
         }
       },
-      "motion": {
-        "speed": 120
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 120
+          }
+        }
       },
       "control": {
         "player": 1
@@ -41,8 +46,13 @@
           "height": 30
         }
       },
-      "motion": {
-        "speed": 55
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 55
+          }
+        }
       },
       "group": "paddle",
       "collision": {
@@ -65,9 +75,16 @@
           "height": 5
         }
       },
-      "motion": {
-        "speed": 90,
-        "angle": 45
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": {
+            "start": 90
+          }
+        },
+        "rotation": {
+          "angle": 45
+        }
       },
       "group": "ball",
       "collision": {

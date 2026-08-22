@@ -11,9 +11,16 @@
     }
   },
 
-  "motion": {
-    "speed": 160,
-    "angle": 0
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 160
+      }
+    },
+    "rotation": {
+      "angle": 0
+    }
   },
 
   "group": "laser",

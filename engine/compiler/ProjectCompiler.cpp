@@ -259,7 +259,7 @@ ResourceId ProjectCompiler::makeResourceId(
     return id;
 }
 
-ObjectDefinition ProjectCompiler::compileDefinition(
+void ProjectCompiler::compileDefinition(
     const ObjectDefinition& definition,
     const VideoChipDefinition& video,
     ResourceRegistry& registry,
@@ -275,25 +275,14 @@ ObjectDefinition ProjectCompiler::compileDefinition(
             definition.sourcePath,
             projectRoot
         );
-
     if (registry.hasObject(id))
     {
-        const ObjectDefinition* existing =
-            registry.findObject(id);
-
-        return existing == nullptr
-            ? definition
-            : *existing;
+        return;
     }
 
     if (compiling.find(id) != compiling.end())
     {
-        ObjectDefinition placeholder =
-            definition;
-        placeholder.children.clear();
-        placeholder.childResources.clear();
-
-        return placeholder;
+        return;
     }
 
     compiling.insert(id);
@@ -326,16 +315,15 @@ ObjectDefinition ProjectCompiler::compileDefinition(
 
     for (const auto& child : definition.children)
     {
-        ObjectDefinition compiledChild =
-            compileDefinition(
-                child.second,
-                video,
-                registry,
-                diagnostics,
-                compiling,
-                projectRoot,
-                worldRoot
-            );
+        compileDefinition(
+            child.second,
+            video,
+            registry,
+            diagnostics,
+            compiling,
+            projectRoot,
+            worldRoot
+        );
 
         const ResourceId childResourceId =
             makeResourceId(
@@ -362,8 +350,6 @@ ObjectDefinition ProjectCompiler::compileDefinition(
             id
         );
     }
-
-    return compiled;
 }
 
 void ProjectCompiler::resolveScripts(

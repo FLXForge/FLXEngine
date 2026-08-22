@@ -11,9 +11,16 @@
     }
   },
 
-  "motion": {
-    "speed": 160,
-    "angle": 180
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 160
+      }
+    },
+    "rotation": {
+      "angle": 180
+    }
   },
 
   "group": "enemy",

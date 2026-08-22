@@ -8,9 +8,21 @@
       "height": 20
     }
   },
-  "motion": {
-    "inherit": "creation",
-    "rotationSpeed": 30
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "inertia": 1
+    },
+    "rotation": {
+      "speed": {
+        "start": 30
+      }
+    }
+  },
+  "inherit": {
+    "creation": {
+      "velocity": "copy"
+    }
   },
   "bounds": {
     "mode": "wrap",

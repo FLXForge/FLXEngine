@@ -137,14 +137,15 @@ machine=machines/standard.yml
 
 
 <pre><code>{
-    "name": "Ship",
-
     "shape": {
         "type": "triangle"
     },
 
-    "motion": {
-        "maxSpeed": 180
+    "mechanics": {
+        "type": "polar",
+        "motion": {
+            "speed": { "limit": 180 }
+        }
     }
 }
 </code></pre>

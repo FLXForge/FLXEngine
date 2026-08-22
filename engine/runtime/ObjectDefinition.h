@@ -17,6 +17,84 @@ struct GridCreationRules
     float cellHeight = 0.0f;
 };
 
+enum class MechanicsType
+{
+    Direct,
+    Polar
+};
+
+enum class MechanicsDiagonalMode
+{
+    Independent,
+    Vector
+};
+
+enum class InheritCreationMode
+{
+    None,
+    Copy,
+    Compose
+};
+
+enum class InheritLiveMode
+{
+    None,
+    Copy
+};
+
+struct MechanicsSpeedDefinition
+{
+    float start = 0.0f;
+    float limit = 0.0f;
+};
+
+struct MechanicsAxisDefinition
+{
+    MechanicsSpeedDefinition speed;
+    float acceleration = 0.0f;
+    float inertia = 0.0f;
+    float step = 0.0f;
+
+    bool hasSpeed = false;
+    bool hasAcceleration = false;
+    bool hasInertia = false;
+    bool hasStep = false;
+};
+
+struct MechanicsMotionDefinition
+{
+    MechanicsSpeedDefinition speed;
+    float acceleration = 0.0f;
+    float inertia = 0.0f;
+    float step = 0.0f;
+    MechanicsDiagonalMode diagonal = MechanicsDiagonalMode::Independent;
+    MechanicsAxisDefinition horizontal;
+    MechanicsAxisDefinition vertical;
+};
+
+struct MechanicsRotationDefinition
+{
+    float angle = 0.0f;
+    MechanicsSpeedDefinition speed;
+    float acceleration = 0.0f;
+    float inertia = 0.0f;
+    float step = 0.0f;
+};
+
+struct MechanicsDefinition
+{
+    MechanicsType type = MechanicsType::Direct;
+    MechanicsMotionDefinition motion;
+    MechanicsRotationDefinition rotation;
+};
+
+struct InheritDefinition
+{
+    InheritCreationMode creationAngle = InheritCreationMode::None;
+    InheritCreationMode creationVelocity = InheritCreationMode::None;
+    InheritLiveMode liveAngle = InheritLiveMode::None;
+};
+
 struct ObjectDefinition
 {
     std::string id;
@@ -47,16 +125,8 @@ struct ObjectDefinition
     float radius = 0.0f;
     std::vector<Vector2> points;
 
-    float speed = 120.0f;
-    bool hasSpeed = false;
-    float angle = 0.0f;
-    bool hasAngle = false;
-    bool inheritParentAngle = false;
-
-    float rotationSpeed = 0.0f;
-    float acceleration = 0.0f;
-    float maxSpeed = 0.0f;
-    float inertia = 1.0f;
+    MechanicsDefinition mechanics;
+    InheritDefinition inherit;
 
     std::string boundsMode = "none";
     bool boundsOverflow = false;

@@ -320,7 +320,7 @@ RuntimeObject::RuntimeObject(
     this->originalOffset = Vector2{ 0.0f, 0.0f };
     this->shapeMode = "fill";
     this->radius = 0.0f;
-    this->speed = 120.0f;
+    this->speed = 0.0f;
     this->angle = 0.0f;
     this->originSpeed = speed;
     this->group = "";
@@ -334,8 +334,11 @@ RuntimeObject::RuntimeObject(
     this->rotationSpeed = 0.0f;
     this->acceleration = 0.0f;
     this->maxSpeed = 0.0f;
-    this->inertia = 1.0f;
+    this->inertia = 0.0f;
     this->velocity = Vector2{ 0.0f, 0.0f };
+    this->angularVelocity = 0.0f;
+    this->motionCommanded = false;
+    this->rotationCommanded = false;
     this->boundsMode = "none";
     this->boundsOverflow = false;
     this->collisionType = "none";

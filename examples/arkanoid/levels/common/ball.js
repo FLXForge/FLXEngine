@@ -37,13 +37,13 @@ function collision(ball, other) {
     }
 
     if (other.group == "wall_top") {
-        bounce_y(ball);
+        reflect_y(ball);
         play_sound(ball, "paddle");
         return;
     }
 
     if (other.group == "wall_side") {
-        bounce_x(ball);
+        reflect_x(ball);
         play_sound(ball, "paddle");
         return;
     }
@@ -71,7 +71,7 @@ function collision(ball, other) {
 
     if (other.group == "brick") {
         if (global["activeBroken"] == 0) {
-            bounce_y(ball);
+            reflect_y(ball);
         }
 
         kill(other);

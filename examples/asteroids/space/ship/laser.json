@@ -8,9 +8,19 @@
       "height": 12
     }
   },
-  "motion": {
-    "inherit": "creation",
-    "maxSpeed": 300
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 300
+      }
+    }
+  },
+  "inherit": {
+    "creation": {
+      "angle": "copy",
+      "velocity": "compose"
+    }
   },
   "bounds": {
     "mode": "wrap",

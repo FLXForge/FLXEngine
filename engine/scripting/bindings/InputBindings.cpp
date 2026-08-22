@@ -262,6 +262,12 @@ namespace
         Released
     };
 
+    enum class InputAxis
+    {
+        Horizontal,
+        Vertical
+    };
+
     bool queryButton(
         const InputSystem& input,
         InputQuery query,
@@ -447,6 +453,109 @@ namespace
         return jsInputQuery(context, argc, argv, InputQuery::Released);
     }
 
+    bool directionDown(
+        const InputSystem& input,
+        const InputSubject& subject,
+        int direction,
+        InputComponent component
+    )
+    {
+        if (!input.validPlayer(subject.index) ||
+            !input.validDirection(direction) ||
+            !input.componentAllowed(direction, component))
+        {
+            return false;
+        }
+
+        return queryDirection(
+            input,
+            InputQuery::Down,
+            subject,
+            direction,
+            component
+        );
+    }
+
+    JSValue jsInputDirection(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        InputSystem* input =
+            inputSystemFromContext(context);
+
+        if (input == nullptr || argc < 3)
+        {
+            return JS_NewInt32(context, 0);
+        }
+
+        InputSubject subject;
+
+        if (!readSubject(context, argv[0], subject))
+        {
+            return JS_NewInt32(context, 0);
+        }
+
+        if (subject.kind == InputSubjectKind::System)
+        {
+            Logger::warning("input", "System subject does not support directions");
+            return JS_NewInt32(context, 0);
+        }
+
+        std::string controlKind;
+        int directionIndex = 0;
+
+        if (!readControl(context, argv[1], controlKind, directionIndex) ||
+            controlKind != "direction")
+        {
+            Logger::warning("input", "input_direction requires a direction descriptor");
+            return JS_NewInt32(context, 0);
+        }
+
+        const int axisValue =
+            intArgument(context, argv[2], 0);
+
+        const InputAxis axis =
+            axisValue == 1
+                ? InputAxis::Vertical
+                : InputAxis::Horizontal;
+
+        if (axis == InputAxis::Horizontal)
+        {
+            const bool positive =
+                directionDown(*input, subject, directionIndex, InputComponent::Right) ||
+                directionDown(*input, subject, directionIndex, InputComponent::Positive);
+
+            const bool negative =
+                directionDown(*input, subject, directionIndex, InputComponent::Left) ||
+                directionDown(*input, subject, directionIndex, InputComponent::Negative);
+
+            if (positive == negative)
+            {
+                return JS_NewInt32(context, 0);
+            }
+
+            return JS_NewInt32(context, positive ? 1 : -1);
+        }
+
+        const bool positive =
+            directionDown(*input, subject, directionIndex, InputComponent::Down) ||
+            directionDown(*input, subject, directionIndex, InputComponent::Positive);
+
+        const bool negative =
+            directionDown(*input, subject, directionIndex, InputComponent::Up) ||
+            directionDown(*input, subject, directionIndex, InputComponent::Negative);
+
+        if (positive == negative)
+        {
+            return JS_NewInt32(context, 0);
+        }
+
+        return JS_NewInt32(context, positive ? 1 : -1);
+    }
+
     void setFunction(
         JSContext* context,
         JSValue global,
@@ -476,9 +585,12 @@ void InputBindings::registerAll(JSContext* context)
     setFunction(context, global, "input_pressed", jsInputPressed, 2);
     setFunction(context, global, "input_down", jsInputDown, 2);
     setFunction(context, global, "input_released", jsInputReleased, 2);
+    setFunction(context, global, "input_direction", jsInputDirection, 3);
 
     JS_SetPropertyStr(context, global, "NEGATIVE", JS_NewInt32(context, -1));
     JS_SetPropertyStr(context, global, "POSITIVE", JS_NewInt32(context, 1));
+    JS_SetPropertyStr(context, global, "HORIZONTAL", JS_NewInt32(context, 0));
+    JS_SetPropertyStr(context, global, "VERTICAL", JS_NewInt32(context, 1));
 
     JS_FreeValue(context, global);
 }

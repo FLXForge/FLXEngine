@@ -8,8 +8,13 @@
       "height": 8
     }
   },
-  "motion": {
-    "maxSpeed": 180
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 180
+      }
+    }
   },
   "behavior": {
     "scripts": [

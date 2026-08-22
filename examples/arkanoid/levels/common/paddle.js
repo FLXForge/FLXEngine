@@ -73,14 +73,7 @@ function update_resize(paddle){
 
 function update_movement(paddle){
     const MOVE = direction(0);
-
-    if (input_down(paddle, MOVE, LEFT)) {
-        move_x(paddle, LEFT);
-    }
-
-    if (input_down(paddle, MOVE, RIGHT)) {
-        move_x(paddle, RIGHT);
-    }
+    move_horizontal(paddle, input_direction(paddle, MOVE, HORIZONTAL));
 }
 
 function update_respawn(paddle){

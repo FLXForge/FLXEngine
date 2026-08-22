@@ -27,28 +27,11 @@ declare const NEGATIVE: number;
 /** Logical POSITIVE component. Do not depend on its numeric value. */
 declare const POSITIVE: number;
 
-/**
- * Motion configuration exposed from JSON.
- */
-interface MotionConfig {
-    /** Initial movement speed. */
-    speed: number;
+/** Horizontal axis selector for input_direction(). */
+declare const HORIZONTAL: number;
 
-    /** Initial movement angle in degrees. */
-    angle: number;
-
-    /** Rotation speed in degrees per second. */
-    rotationSpeed: number;
-
-    /** Acceleration applied when accelerate(object) is called. */
-    acceleration: number;
-
-    /** Velocity multiplier applied by advance(object). */
-    inertia: number;
-
-    /** Maximum vector speed. A value of 0 means no limit. */
-    maxSpeed: number;
-}
+/** Vertical axis selector for input_direction(). */
+declare const VERTICAL: number;
 
 type AudioSourceType = "oscillator" | "noise" | "impact" | "pulse";
 type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
@@ -211,14 +194,15 @@ interface RuntimeObject {
     /** Current vertical velocity. Used by motion-based movement. */
     velocityY: number;
 
+    /** Runtime rotation speed in degrees per second. */
+    rotationSpeed: number;
+
     /** Initial X position. */
     originX: number;
 
     /** Initial Y position. */
     originY: number;
 
-    /** Motion configuration defined in JSON. */
-    motion: MotionConfig;
 }
 
 /**
@@ -295,31 +279,33 @@ declare function input_released(subject: InputReadableSubject, control: InputBut
 declare function input_released(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
 
 /**
- * Moves an object on the X axis.
+ * Returns -1, 0 or 1 for a logical direction on a concrete axis.
  */
-declare function move_x(object: RuntimeObject, direction: number): void;
+declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
 
 /**
- * Moves an object on the Y axis.
+ * Moves an object on the horizontal axis using an intent from -1 to 1.
  */
-declare function move_y(object: RuntimeObject, direction: number): void;
+declare function move_horizontal(object: RuntimeObject, intent: number): void;
 
 /**
- * Moves an object.
- *
- * If motion.acceleration is defined, advance uses velocityX and velocityY.
- * Otherwise, it uses classic speed + angle movement.
+ * Moves an object on the vertical axis using an intent from -1 to 1.
+ */
+declare function move_vertical(object: RuntimeObject, intent: number): void;
+
+/**
+ * Moves an object using its current mechanics state.
  */
 declare function advance(object: RuntimeObject): void;
 
 /**
- * Rotates an object using motion.rotationSpeed.
+ * Rotates an object using the declared rotation mechanics or runtime rotationSpeed.
  *
  * @example
- * rotate(object, LEFT);
- * rotate(object, RIGHT);
+ * rotate(object, -1);
+ * rotate(object, 1);
  */
-declare function rotate(object: RuntimeObject, direction: number): void;
+declare function rotate(object: RuntimeObject, intent?: number): void;
 
 /**
  * Makes an object follow another object on the X axis.
@@ -352,34 +338,35 @@ declare function attach_active(object: RuntimeObject): boolean;
 declare function carry(object: RuntimeObject, carrier: RuntimeObject): void;
 
 /**
- * Applies a horizontal bounce by modifying the object's angle.
+ * Reflects an object across the X axis of its movement.
  */
-declare function bounce_x(object: RuntimeObject): void;
+declare function reflect_x(object: RuntimeObject): void;
 
 /**
- * Applies a vertical bounce by modifying the object's angle.
+ * Reflects an object across the Y axis of its movement.
  */
-declare function bounce_y(object: RuntimeObject): void;
+declare function reflect_y(object: RuntimeObject): void;
 
 /**
- * Increases the object's speed by the given amount.
- *
- * Classic mode.
+ * Accelerates the object using declared mechanics and moves it this frame.
  */
-declare function accelerate(object: RuntimeObject, amount: number): void;
+declare function accelerate(object: RuntimeObject, intent?: number): void;
 
 /**
- * Accelerates the object using motion.acceleration, motion.maxSpeed
- * and the current angle.
- *
- * Motion-based mode.
+ * Applies a runtime movement speed immediately.
  */
-declare function accelerate(object: RuntimeObject): void;
+declare function apply_speed(object: RuntimeObject, value: number): void;
 
 /**
- * Sends the object back to its origin and restores its initial speed.
+ * Restores the runtime movement speed declared at creation.
  */
-declare function to_origin(object: RuntimeObject): void;
+declare function restore_speed(object: RuntimeObject): void;
+
+/** Places an object at the given logical coordinates. */
+declare function position(object: RuntimeObject, x: number, y: number): void;
+
+/** Places an object at its original logical coordinates. */
+declare function position_origin(object: RuntimeObject): void;
 
 /**
  * Returns true according to a probability chance.

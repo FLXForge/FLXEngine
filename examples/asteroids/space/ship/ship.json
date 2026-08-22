@@ -13,11 +13,20 @@
       "height": 24
     }
   },
-  "motion": {
-    "rotationSpeed": 180,
-    "acceleration": 120,
-    "inertia": 0.99,
-    "maxSpeed": 180
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "limit": 180
+      },
+      "acceleration": 120,
+      "inertia": 0.99
+    },
+    "rotation": {
+      "speed": {
+        "start": 180
+      }
+    }
   },
   "bounds": {
     "mode": "wrap",

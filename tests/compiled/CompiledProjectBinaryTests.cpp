@@ -209,7 +209,7 @@ namespace
     )
     {
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 4u);
+        appendU32(bytes, 5u);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
@@ -360,7 +360,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "compiled project should read");
-        require(loaded.metadata.formatVersion == 4, "format version should be exposed");
+        require(loaded.metadata.formatVersion == 5, "format version should be exposed");
         require(!loaded.metadata.producerVersion.empty(), "producer version should be exposed");
         require(loaded.project.context.name == compiled.project.context.name, "context name should survive roundtrip");
         require(loaded.project.rootId == compiled.project.rootId, "root id should survive roundtrip");
@@ -457,7 +457,7 @@ namespace
     void testCompiledProjectRoundTripInputV4()
     {
         const std::filesystem::path root =
-            testRoot() / "roundtrip_input_v4";
+            testRoot() / "roundtrip_input_v5";
 
         std::filesystem::remove_all(root);
         std::filesystem::create_directories(root / "game");
@@ -500,7 +500,7 @@ namespace
         CompilationResult compiled =
             compile(root / "game.flx");
 
-        require(compiled.success, "input v4 project should compile");
+        require(compiled.success, "input v5 project should compile");
 
         const std::filesystem::path output =
             root / "game.flxc";
@@ -513,14 +513,14 @@ namespace
                 compiled.project,
                 writeDiagnostics
             ),
-            "input v4 project should write"
+            "input v5 project should write"
         );
 
         CompiledProjectBinaryResult loaded =
             CompiledProjectReader::read(output.generic_string());
 
-        require(loaded.success, "input v4 project should read");
-        require(loaded.metadata.formatVersion == 4, "input v4 roundtrip should use format 4");
+        require(loaded.success, "input v5 project should read");
+        require(loaded.metadata.formatVersion == 5, "input v5 roundtrip should use format 5");
         require(loaded.project.context.machine.input.systemButtons == 9, "system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 3, "player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 12, "player button count should survive roundtrip");
@@ -536,7 +536,7 @@ namespace
     void testCompiledProjectRoundTripDefaultMachineInputV4()
     {
         const std::filesystem::path root =
-            testRoot() / "roundtrip_default_input_v4";
+            testRoot() / "roundtrip_default_input_v5";
 
         std::filesystem::remove_all(root);
         std::filesystem::create_directories(root / "game");
@@ -580,7 +580,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "default input project should read");
-        require(loaded.metadata.formatVersion == 4, "default input roundtrip should use format 4");
+        require(loaded.metadata.formatVersion == 5, "default input roundtrip should use format 5");
         require(loaded.project.context.machine.input.systemButtons == 16, "default system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 16, "default player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 16, "default player button count should survive roundtrip");
@@ -662,7 +662,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 4u);
+        appendU32(bytes, 5u);
         appendU32(bytes, flx::binary::MaxStringSize + 1u);
 
         writeBinary(path, bytes);
@@ -681,7 +681,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 4u);
+        appendU32(bytes, 5u);
         appendU32(bytes, flx::binary::MaxTotalDecodedStringBytes + 1u);
 
         writeBinary(path, bytes);
@@ -793,7 +793,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 4u);
+        appendU32(bytes, 5u);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
@@ -1404,9 +1404,9 @@ int main()
 
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
 
-        { "compiled project roundtrip input v4", testCompiledProjectRoundTripInputV4 },
+        { "compiled project roundtrip input v5", testCompiledProjectRoundTripInputV4 },
 
-        { "compiled project roundtrip default machine input v4", testCompiledProjectRoundTripDefaultMachineInputV4 },
+        { "compiled project roundtrip default machine input v5", testCompiledProjectRoundTripDefaultMachineInputV4 },
 
         { "deterministic bytes", testDeterministicBytes },
 

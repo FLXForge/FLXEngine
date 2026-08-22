@@ -15,8 +15,13 @@
 
   "spawn": "manual",
 
-  "motion": {
-    "speed": 30
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 30
+      }
+    }
   },
 
   "group": "powerup",

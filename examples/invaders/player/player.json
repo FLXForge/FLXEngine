@@ -16,8 +16,13 @@
     }
   },
 
-  "motion": {
-    "speed": 90
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 90
+      }
+    }
   },
   "control": {
     "player": 1

@@ -27,7 +27,7 @@ namespace flx::binary
             0x43584C46;
 
         static constexpr uint32_t FormatVersion =
-            4;
+            5;
 
         static void write(
             BinaryWriter& writer,

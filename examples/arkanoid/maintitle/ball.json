@@ -16,9 +16,16 @@
     }
   },
 
-  "motion": {
-    "speed": 200,
-    "angle": 25
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 200
+      }
+    },
+    "rotation": {
+      "angle": 25
+    }
   },
 
   "group": "ball",

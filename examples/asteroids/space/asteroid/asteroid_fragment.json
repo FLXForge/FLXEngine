@@ -15,6 +15,14 @@
     "mode": "wrap",
     "overflow": false
   },
+  "mechanics": {
+    "type": "polar",
+    "rotation": {
+      "speed": {
+        "start": 180
+      }
+    }
+  },
   "behavior": {
     "scripts": [
       "asteroid_fragment"

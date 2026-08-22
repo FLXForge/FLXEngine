@@ -6,7 +6,7 @@
 */
 
 function motion(laser){
-    move_y(laser, DOWN);
+    advance(laser);
 
     if (laser.y > 450) {
         kill(laser);

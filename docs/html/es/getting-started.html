@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Getting Started | FLX Engine</title>
+    <title>Primeros pasos | FLX Engine</title>
     <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
     <link rel="shortcut icon" href="../favicon.ico" />
@@ -20,23 +20,23 @@
         <article class="doc-content">
 
             <p class="eyebrow">FLX Documentation</p>
-            <h1>Getting Started</h1>
+            <h1>Primeros pasos</h1>
 
             <p>
-                This section shows the minimum structure required
-                to run an FLX project.
+                Este apartado muestra la estructura mínima necesaria
+                para ejecutar un proyecto FLX.
             </p>
 
             <p>
-                The goal is to understand how a project is organized,
-                how its files relate to each other and how to execute
-                a first functional runtime.
+                El objetivo es comprender cómo se organiza un proyecto,
+                cómo se relacionan sus archivos y cómo ejecutar
+                un primer runtime funcional.
             </p>
 
-            <h2>Minimal Structure</h2>
+            <h2>Estructura mínima</h2>
 
             <p>
-                An FLX project can start with only a few files.
+                Un proyecto FLX puede comenzar con muy pocos archivos.
             </p>
 
             <div class="code-card">
@@ -51,18 +51,18 @@
             </div>
 
             <p>
-                Each file has a specific role inside the runtime.
+                Cada archivo cumple una función concreta dentro del runtime.
             </p>
 
-            <h2>Project File</h2>
+            <h2>Archivo de proyecto</h2>
 
             <p>
-                Every project starts with a <code>.flx</code> file.
+                Todo proyecto comienza con un archivo <code>.flx</code>.
             </p>
 
             <p>
-                This file defines the project metadata,
-                project entry points and root object.
+                Este archivo define los metadatos del proyecto,
+                los puntos de entrada del proyecto y el objeto raíz.
             </p>
 
             <div class="code-card">
@@ -75,15 +75,15 @@ title=My first FLX
 </code></pre>
             </div>
 
-            <h2>Root Object</h2>
+            <h2>Objeto raíz</h2>
 
             <p>
-                The root object organizes the rest of the active runtime logic and objects.
+                El objeto raíz organiza el resto de objetos y lógica activa del runtime.
             </p>
 
             <p>
-                In this example, the root object represents a world containing a single object:
-                a tofu block.
+                En este ejemplo, el objeto raíz representa el mundo que contiene un único objeto:
+                un bloque de tofu.
             </p>
 
             <div class="code-card">
@@ -97,22 +97,23 @@ title=My first FLX
 </code></pre>
             </div>
 
-            <h2>Object</h2>
+            <h2>Objeto</h2>
 
             <p>
-                Objects define data and properties used during execution.
+                Los objetos definen datos y propiedades utilizadas durante
+                la ejecución.
             </p>
 
             <p>
-                An object can contain:
+                Un objeto puede contener:
             </p>
 
             <ul>
-                <li>Shape</li>
-                <li>Movement</li>
+                <li>Forma</li>
+                <li>Movimiento</li>
                 <li>Scripts</li>
-                <li>Collisions</li>
-                <li>Custom data</li>
+                <li>Colisiones</li>
+                <li>Datos personalizados</li>
             </ul>
 
             <div class="code-card">
@@ -143,46 +144,33 @@ title=My first FLX
             <h2>Scripts</h2>
 
             <p>
-                Scripts use JavaScript to define behavior.
+                Los scripts utilizan JavaScript para definir comportamiento.
             </p>
 
             <p>
-                During runtime, FLX automatically executes
-                specific lifecycle functions.
+                Durante el runtime, FLX ejecuta automáticamente determinadas
+                funciones del ciclo de vida.
             </p>
 
             <div class="code-card">
                 <div class="code-header">tofu.js</div>
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
-function action(tofu) {
+function motion(tofu) {
     const MOVE = direction(0);
 
-    if (input_down(tofu, MOVE, UP)) {
-        move_y(tofu, UP);
-    }
-
-    if (input_down(tofu, MOVE, DOWN)) {
-        move_y(tofu, DOWN);
-    }
-
-    if (input_down(tofu, MOVE, LEFT)) {
-        move_x(tofu, LEFT);
-    }
-
-    if (input_down(tofu, MOVE, RIGHT)) {
-        move_x(tofu, RIGHT);
-    }
+    move_horizontal(tofu, input_direction(tofu, MOVE, HORIZONTAL));
+    move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));
 }
 </code></pre>
             </div>
 
-            <h2>Execution</h2>
+            <h2>Ejecución</h2>
 
             <p>
-                Once the project files are defined,
-                the runtime can be executed by indicating
-                the <code>.flx</code> file.
+                Una vez definidos los archivos del proyecto,
+                el runtime puede ejecutarse indicando el archivo
+                <code>.flx</code>.
             </p>
 
             <div class="code-card">
@@ -192,40 +180,40 @@ function action(tofu) {
             </div>
 
             <p>
-                If everything is correctly configured,
-                the runtime will load the root object,
-                initialize the objects and start
-                the execution loop.
+                Si todo está correctamente configurado,
+                el runtime cargará el objeto raíz,
+                inicializará los objetos y comenzará
+                el ciclo de ejecución.
             </p>
 
             <p>
-                Our tofu will appear in the world we created
-                and we will be able to move it using the arrow keys.
+                Nuestro tofu estará en el mundo que le hemos creado y podremos moverlo con las flechas de dirección.
             </p>
 
             <hr />
 
-            <h2>Recommended Path</h2>
+            <h2>Ruta recomendada</h2>
 
             <p>
-                The documentation is organized to introduce concepts progressively.
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
             </p>
 
             <p>
-                You are free to explore any section, but the recommended path is:
+                Puedes navegar libremente, pero el recorrido recomendado es:
             </p>
 
             <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introduction</a></li>
-                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
-                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
-                <li>↓ <a class="link" href="concepts.html">Core Concepts</a></li>
-                <li class="current">↓ Getting Started ← You are here</li>
-                <li class="recommended"><a class="link" href="scripting.html">Scripting</a> → Recommended</li>
-                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li class="current">↓ Primeros pasos ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="scripting.html">Scripting</a> → Recomendado</li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
                 <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li>↓ <a class="link" href="examples.html">Examples</a></li>
-                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
+                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
                 <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
             </ul>
         </article>

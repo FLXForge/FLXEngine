@@ -16,9 +16,16 @@
     }
   },
 
-  "motion": {
-    "speed": 200,
-    "angle": 135
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 200
+      }
+    },
+    "rotation": {
+      "angle": 135
+    }
   },
   "control": {
     "player": 1

@@ -777,11 +777,16 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
         }
     },
 
-    "motion": {
-      "rotationSpeed": 180,
-      "acceleration": 120,
-      "inertia": 0.99,
-      "maxSpeed": 180
+    "mechanics": {
+      "type": "polar",
+      "motion": {
+        "speed": { "start": 0, "limit": 180 },
+        "acceleration": 120,
+        "inertia": 0.99
+      },
+      "rotation": {
+        "speed": 180
+      }
     },
 
     "bounds": {
@@ -822,7 +827,8 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
                                 <li><a class="link" href="#origin">origin</a>: object's initial position. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#shape">shape</a>: object's visual information. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#motion">motion</a>: movement configuration, if any. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#mechanics">mechanics</a>: movement and rotation rules, if any. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#inherit">inherit</a>: live state inherited from the parent at creation time or while linked. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
@@ -1032,47 +1038,84 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
                 relative to the object's origin.
             </p>
 
-            <h2 id="motion">Motion</h2>
+            <h2 id="mechanics">Mechanics</h2>
 
             <p>
-                Defines properties related to object movement.
+                Defines movement and rotation rules. Mechanics is declarative:
+                scripts apply intent through functions such as
+                <code>move_horizontal()</code>, <code>move_vertical()</code>,
+                <code>advance()</code>, <code>accelerate()</code> and
+                <code>rotate()</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">motion</div>
-<pre><code>"motion": {
-    "inherit": "creation",
-    "speed": 90,
-    "angle": 45,
-    "rotationSpeed": 180,
-    "acceleration": 120,
-    "inertia": 0.99,
-    "maxSpeed": 180
-}
-</code></pre>
+                <div class="code-header">mechanics</div>
+<pre><code>"mechanics": {
+    "type": "polar",
+    "motion": {
+        "speed": {
+            "start": 90,
+            "limit": 150
+        },
+        "acceleration": 120,
+        "inertia": 0.99,
+        "step": 0,
+        "diagonal": "independent"
+    },
+    "rotation": {
+        "angle": 45,
+        "speed": 180,
+        "acceleration": 0,
+        "inertia": 0,
+        "step": 0
+    }
+}</code></pre>
             </div>
 
             <h3>Fields</h3>
 
             <ul>
-                <li>
-                    <code>inherit</code>: defines how the spawned object inherits movement. <i>[ Optional ]</i>
+                <li><code>type</code>: <code>direct</code> or <code>polar</code>. Default is <code>direct</code>.</li>
+                <li><code>motion.speed</code>: number shorthand or object with <code>start</code> and <code>limit</code>. A limit of <code>0</code> means unlimited.</li>
+                <li><code>motion.acceleration</code>: temporal acceleration rate. Default is <code>0</code>.</li>
+                <li><code>motion.inertia</code>: normalized persistence from <code>0</code> to <code>1</code>. Default is <code>0</code>.</li>
+                <li><code>motion.step</code>: movement quantization. <code>0</code> means continuous.</li>
+                <li><code>motion.diagonal</code>: <code>independent</code> or <code>vector</code>.</li>
+                <li><code>motion.horizontal</code> and <code>motion.vertical</code>: optional per-axis overrides for speed, acceleration, inertia and step.</li>
+                <li><code>rotation.angle</code>: initial live angle in degrees.</li>
+                <li><code>rotation.speed</code>: rotation speed as number shorthand or <code>{ "start", "limit" }</code>.</li>
+                <li><code>rotation.acceleration</code>, <code>rotation.inertia</code> and <code>rotation.step</code>: rotational equivalents of the motion fields.</li>
 
 
-                    <ul>
-                        <li><code>none</code>: does not inherit movement.</li>
-                        <li><code>creation</code>: inherits the parent angle and current velocity at spawn time. If <code>motion.angle</code> is declared, that angle has priority. If <code>motion.speed</code> is omitted and <code>motion.maxSpeed</code> exists, <code>maxSpeed</code> is used as launch speed.</li>
-                        <li><code>live</code>: currently behaves like <code>creation</code>; continuous inheritance belongs to <code>attach.angle</code>.</li>
-                    </ul>
-                </li>
-                <li><code>speed</code>: movement speed used by helpers such as <code>advance()</code>.</li>
-                <li><code>angle</code>: movement and rotation angle in degrees. If declared, it has priority over inherited parent angle.</li>
-                <li><code>rotationSpeed</code>: rotation speed.</li>
-                <li><code>acceleration</code>: acceleration applied to the object.</li>
-                <li><code>inertia</code>: movement preservation factor.</li>
-                <li><code>maxSpeed</code>: maximum speed.</li>
+            </ul>
 
+            <h2 id="inherit">Inherit</h2>
 
+            <p>
+                Defines which live state a child receives from its original parent.
+                It does not inherit declarative mechanics rules.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">inherit</div>
+<pre><code>"inherit": {
+    "creation": {
+        "angle": "copy",
+        "velocity": "compose"
+    },
+    "live": {
+        "angle": "copy"
+    }
+}</code></pre>
+            </div>
+
+            <h3>Fields</h3>
+
+            <ul>
+                <li><code>creation.angle = "copy"</code>: copies the parent angle when the child is created.</li>
+                <li><code>creation.velocity = "copy"</code>: copies the parent live velocity when the child is created.</li>
+                <li><code>creation.velocity = "compose"</code>: adds the parent live velocity to the child's own velocity when it is created.</li>
+                <li><code>live.angle = "copy"</code>: keeps the child angle synchronized with the original parent.</li>
             </ul>
 
             <h2 id="bounds">Bounds</h2>

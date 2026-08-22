@@ -6,7 +6,7 @@
 */
 
 function motion(powerup){
-    move_y(powerup, DOWN);
+    move_vertical(powerup, 1);
 
     if (powerup.y > 320) {
         kill(powerup);

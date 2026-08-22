@@ -20,7 +20,8 @@ function motion(invader){
         spawn(invader, "laser");
     }
 
-    move_x(invader, global["fleet_direction"] * speed * delta() );
+    apply_speed(invader, speed);
+    move_horizontal(invader, global["fleet_direction"]);
 
     if (invader.x < 20) {
         global["fleet_direction"] = RIGHT;

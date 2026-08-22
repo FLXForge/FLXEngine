@@ -575,7 +575,8 @@ namespace
     {
         static const std::vector<std::string> blockKeys = {
             "shape",
-            "motion",
+            "mechanics",
+            "inherit",
             "bounds",
             "collision",
             "behavior",
@@ -864,8 +865,15 @@ namespace
         rejectRootProperty(object, "size", owner, "shape");
         rejectRootProperty(object, "color", owner, "shape");
         rejectRootProperty(object, "layer", owner, "shape");
-        rejectRootProperty(object, "speed", owner, "motion");
-        rejectRootProperty(object, "angle", owner, "motion");
+        rejectRootProperty(object, "speed", owner, "mechanics");
+        rejectRootProperty(object, "angle", owner, "mechanics");
+        if (object.contains("motion"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'motion' was replaced by 'mechanics'"
+            );
+        }
     }
 
     Vector2 parseOrigin(const Json& object)
@@ -966,58 +974,284 @@ namespace
         }
     }
 
-    void parseMotion(
+    MechanicsSpeedDefinition parseMechanicsSpeed(
+        const Json& owner,
+        const MechanicsSpeedDefinition& fallback
+    )
+    {
+        MechanicsSpeedDefinition speed =
+            fallback;
+
+        if (owner.is_number())
+        {
+            speed.start =
+                owner.get<float>();
+            speed.limit =
+                0.0f;
+            return speed;
+        }
+
+        if (!owner.is_object())
+        {
+            return speed;
+        }
+
+        speed.start =
+            owner.value("start", speed.start);
+
+        speed.limit =
+            owner.value("limit", speed.limit);
+
+        if (speed.limit > 0.0f && speed.limit < speed.start)
+        {
+            Logger::warning(
+                "json",
+                "mechanics speed.limit cannot be lower than speed.start; using start as limit"
+            );
+
+            speed.limit =
+                speed.start;
+        }
+
+        return speed;
+    }
+
+    MechanicsAxisDefinition parseMechanicsAxis(
+        const Json& axis,
+        const MechanicsMotionDefinition& motion
+    )
+    {
+        MechanicsAxisDefinition result;
+        result.speed =
+            motion.speed;
+        result.acceleration =
+            motion.acceleration;
+        result.inertia =
+            motion.inertia;
+        result.step =
+            motion.step;
+
+        if (!axis.is_object())
+        {
+            return result;
+        }
+
+        if (axis.contains("speed"))
+        {
+            result.speed =
+                parseMechanicsSpeed(axis["speed"], result.speed);
+            result.hasSpeed =
+                true;
+        }
+
+        if (axis.contains("acceleration"))
+        {
+            result.acceleration =
+                axis.value("acceleration", result.acceleration);
+            result.hasAcceleration =
+                true;
+        }
+
+        if (axis.contains("inertia"))
+        {
+            result.inertia =
+                std::clamp(axis.value("inertia", result.inertia), 0.0f, 1.0f);
+            result.hasInertia =
+                true;
+        }
+
+        if (axis.contains("step"))
+        {
+            result.step =
+                axis.value("step", result.step);
+            result.hasStep =
+                true;
+        }
+
+        return result;
+    }
+
+    void parseMechanics(
         const Json& object,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("motion") || !object["motion"].is_object())
+        if (!object.contains("mechanics") || !object["mechanics"].is_object())
         {
             return;
         }
 
-        const auto& motion = object["motion"];
+        const auto& mechanics =
+            object["mechanics"];
 
-        const std::string inherit =
+        const std::string type =
             TextTools::toLower(
-                motion.value("inherit", std::string("none"))
+                mechanics.value("type", std::string("direct"))
             );
 
-        definition.inheritParentAngle =
-            inherit == "creation" ||
-            inherit == "live";
+        definition.mechanics.type =
+            type == "polar"
+                ? MechanicsType::Polar
+                : MechanicsType::Direct;
 
-        definition.rotationSpeed =
-            motion.value("rotationSpeed", definition.rotationSpeed);
-
-        definition.hasSpeed =
-            motion.contains("speed") &&
-            motion["speed"].is_number();
-
-        if (definition.hasSpeed)
+        if (mechanics.contains("motion") && mechanics["motion"].is_object())
         {
-            definition.speed =
-                motion.value("speed", definition.speed);
+            const auto& motion =
+                mechanics["motion"];
+
+            if (motion.contains("speed"))
+            {
+                definition.mechanics.motion.speed =
+                    parseMechanicsSpeed(
+                        motion["speed"],
+                        definition.mechanics.motion.speed
+                    );
+            }
+
+            definition.mechanics.motion.acceleration =
+                motion.value(
+                    "acceleration",
+                    definition.mechanics.motion.acceleration
+                );
+
+            definition.mechanics.motion.inertia =
+                std::clamp(
+                    motion.value("inertia", definition.mechanics.motion.inertia),
+                    0.0f,
+                    1.0f
+                );
+
+            definition.mechanics.motion.step =
+                motion.value("step", definition.mechanics.motion.step);
+
+            const std::string diagonal =
+                TextTools::toLower(
+                    motion.value("diagonal", std::string("independent"))
+                );
+
+            definition.mechanics.motion.diagonal =
+                diagonal == "vector"
+                    ? MechanicsDiagonalMode::Vector
+                    : MechanicsDiagonalMode::Independent;
+
+            if (motion.contains("horizontal"))
+            {
+                definition.mechanics.motion.horizontal =
+                    parseMechanicsAxis(
+                        motion["horizontal"],
+                        definition.mechanics.motion
+                    );
+            }
+            else
+            {
+                definition.mechanics.motion.horizontal =
+                    parseMechanicsAxis(Json::object(), definition.mechanics.motion);
+            }
+
+            if (motion.contains("vertical"))
+            {
+                definition.mechanics.motion.vertical =
+                    parseMechanicsAxis(
+                        motion["vertical"],
+                        definition.mechanics.motion
+                    );
+            }
+            else
+            {
+                definition.mechanics.motion.vertical =
+                    parseMechanicsAxis(Json::object(), definition.mechanics.motion);
+            }
         }
 
-        definition.hasAngle =
-            motion.contains("angle") &&
-            motion["angle"].is_number();
-
-        if (definition.hasAngle)
+        if (mechanics.contains("rotation") && mechanics["rotation"].is_object())
         {
-            definition.angle =
-                motion.value("angle", definition.angle);
+            const auto& rotation =
+                mechanics["rotation"];
+
+            definition.mechanics.rotation.angle =
+                rotation.value("angle", definition.mechanics.rotation.angle);
+
+            if (rotation.contains("speed"))
+            {
+                definition.mechanics.rotation.speed =
+                    parseMechanicsSpeed(
+                        rotation["speed"],
+                        definition.mechanics.rotation.speed
+                    );
+            }
+
+            definition.mechanics.rotation.acceleration =
+                rotation.value(
+                    "acceleration",
+                    definition.mechanics.rotation.acceleration
+                );
+
+            definition.mechanics.rotation.inertia =
+                std::clamp(
+                    rotation.value("inertia", definition.mechanics.rotation.inertia),
+                    0.0f,
+                    1.0f
+                );
+
+            definition.mechanics.rotation.step =
+                rotation.value("step", definition.mechanics.rotation.step);
+        }
+    }
+
+    void parseInherit(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("inherit") || !object["inherit"].is_object())
+        {
+            return;
         }
 
-        definition.acceleration =
-            motion.value("acceleration", definition.acceleration);
+        const auto& inherit =
+            object["inherit"];
 
-        definition.inertia =
-            motion.value("inertia", definition.inertia);
+        if (inherit.contains("creation") && inherit["creation"].is_object())
+        {
+            const auto& creation =
+                inherit["creation"];
 
-        definition.maxSpeed =
-            motion.value("maxSpeed", definition.maxSpeed);
+            const std::string angle =
+                TextTools::toLower(creation.value("angle", std::string("none")));
+
+            definition.inherit.creationAngle =
+                angle == "copy"
+                    ? InheritCreationMode::Copy
+                    : InheritCreationMode::None;
+
+            const std::string velocity =
+                TextTools::toLower(creation.value("velocity", std::string("none")));
+
+            if (velocity == "copy")
+            {
+                definition.inherit.creationVelocity =
+                    InheritCreationMode::Copy;
+            }
+            else if (velocity == "compose")
+            {
+                definition.inherit.creationVelocity =
+                    InheritCreationMode::Compose;
+            }
+        }
+
+        if (inherit.contains("live") && inherit["live"].is_object())
+        {
+            const auto& live =
+                inherit["live"];
+
+            const std::string angle =
+                TextTools::toLower(live.value("angle", std::string("none")));
+
+            definition.inherit.liveAngle =
+                angle == "copy"
+                    ? InheritLiveMode::Copy
+                    : InheritLiveMode::None;
+        }
     }
 
     void parseAttach(
@@ -2760,7 +2994,8 @@ namespace
 
         parseControl(object, definition);
         parseShape(object, definition);
-        parseMotion(object, definition);
+        parseMechanics(object, definition);
+        parseInherit(object, definition);
         parseAttach(object, definition);
         parseBounds(object, definition);
         parseBehavior(object, definition);

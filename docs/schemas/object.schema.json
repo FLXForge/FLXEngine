@@ -78,10 +78,17 @@
       ]
     },
 
-    "motion": {
+    "mechanics": {
       "oneOf": [
         { "type": "string" },
-        { "$ref": "motion.schema.json" }
+        { "$ref": "mechanics.schema.json" }
+      ]
+    },
+
+    "inherit": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "inherit.schema.json" }
       ]
     },
 
@@ -169,7 +176,8 @@
       { "required": [ "color" ] },
       { "required": [ "layer" ] },
       { "required": [ "speed" ] },
-      { "required": [ "angle" ] }
+      { "required": [ "angle" ] },
+      { "required": [ "motion" ] }
     ]
   }
 }

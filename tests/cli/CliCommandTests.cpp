@@ -24,21 +24,27 @@ namespace
         arguments.command = CliCommand::Validate;
         arguments.target = createMinimalProject("validate_command_success");
 
-        StreamCapture capture;
-        const int exitCode =
-            ValidateCommand().execute(arguments);
+        int exitCode = 0;
+        std::string output;
+        std::string error;
+
+        {
+            StreamCapture capture;
+            exitCode =
+                ValidateCommand().execute(arguments);
+            output =
+                capture.output.str();
+            error =
+                capture.error.str();
+        }
 
         require(exitCode == static_cast<int>(CliExitCode::Success), "validate command should succeed");
         require(
-            capture.output.str().find("Project is valid: ") == 0,
+            output == "Project is valid: " + arguments.target.generic_string() + "\n",
             "validate success message should be written to stdout"
         );
         require(
-            capture.error.str().find("info FLX-COMP-00000 CompInformationUnclassified: ") != std::string::npos,
-            "validate success diagnostics should be written to stderr"
-        );
-        require(
-            countOccurrences(capture.error.str(), "Project compiled") == 1,
+            countOccurrences(error, "Project compiled") == 1,
             "validate success diagnostics should not be duplicated"
         );
     }

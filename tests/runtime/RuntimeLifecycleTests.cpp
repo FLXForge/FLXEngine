@@ -687,46 +687,32 @@ namespace
         require(localValue(runtimeRoot, "mark") == 20.0, "JS local values should roundtrip as numeric state");
     }
 
-    void testJsMotionNestedPropertiesAreReadOnlySnapshot()
+    void testJsMechanicsIsNotExposedAsNestedSnapshot()
     {
         RuntimeHarness harness;
 
         harness.addScript(
-            "mutateMotionSnapshot",
+            "mechanicsSnapshotProbe",
             "function action(o) {"
-            "  o.motion.speed = 41;"
-            "  o.motion.angle = 42;"
-            "  o.motion.rotationSpeed = 43;"
-            "  o.motion.acceleration = 44;"
-            "  o.motion.inertia = 45;"
-            "  o.motion.maxSpeed = 46;"
+            "  o.local['hasMotion'] = typeof o.motion == 'undefined' ? 0 : 1;"
+            "  o.local['hasMechanics'] = typeof o.mechanics == 'undefined' ? 0 : 1;"
             "}"
         );
 
         ObjectDefinition root =
-            objectDefinition("root", "mutateMotionSnapshot");
-        root.speed = 1.0f;
-        root.angle = 2.0f;
-        root.rotationSpeed = 3.0f;
-        root.acceleration = 4.0f;
-        root.inertia = 5.0f;
-        root.maxSpeed = 6.0f;
+            objectDefinition("root", "mechanicsSnapshotProbe");
 
         harness.addObject(root);
 
-        require(harness.load().success, "runtime should load nested motion mutation project");
+        require(harness.load().success, "runtime should load mechanics exposure probe project");
 
         harness.update();
 
         RuntimeObject& runtimeRoot =
             requireObject(harness.world, "root");
 
-        require(nearlyEqual(runtimeRoot.speed, 1.0), "motion.speed write should not update runtime speed");
-        require(nearlyEqual(runtimeRoot.angle, 2.0), "motion.angle write should not update runtime angle");
-        require(nearlyEqual(runtimeRoot.rotationSpeed, 3.0), "motion.rotationSpeed write should not update runtime rotationSpeed");
-        require(nearlyEqual(runtimeRoot.acceleration, 4.0), "motion.acceleration write should not update runtime acceleration");
-        require(nearlyEqual(runtimeRoot.inertia, 5.0), "motion.inertia write should not update runtime inertia");
-        require(nearlyEqual(runtimeRoot.maxSpeed, 6.0), "motion.maxSpeed write should not update runtime maxSpeed");
+        require(localValue(runtimeRoot, "hasMotion") == 0.0, "legacy motion snapshot should not be exposed");
+        require(localValue(runtimeRoot, "hasMechanics") == 0.0, "declarative mechanics should not be exposed as a JS mirror");
     }
 
     void testJsMetadataAndIdentityAreReadableButNotAppliedBack()
@@ -761,7 +747,7 @@ namespace
         root.role = "leader";
         root.origin = Vector2{ 7.0f, 8.0f };
         root.hasOrigin = true;
-        root.speed = 9.0f;
+        root.mechanics.motion.speed.start = 9.0f;
 
         harness.addObject(root);
 
@@ -877,14 +863,14 @@ namespace
             "function born(o) {"
             "  const functions = ["
             "    'kill','show','hide','keep_only','delta','random','probability','ray',"
-            "    'exit','save','load','move_x','move_y','advance','follow_x','follow_y',"
-            "    'attach','detach','attach_active','carry','bounce_x','bounce_y','accelerate',"
-            "    'rotate','to_origin','draw_text','draw_pixel','draw_line','draw_rectangle',"
+            "    'exit','save','load','move_horizontal','move_vertical','advance','follow_x','follow_y',"
+            "    'attach','detach','attach_active','carry','reflect_x','reflect_y','accelerate',"
+            "    'rotate','position','position_origin','apply_speed','restore_speed','draw_text','draw_pixel','draw_line','draw_rectangle',"
             "    'fade_on','fade_off','fade_set','fade_active','fade_done','fade_alpha',"
             "    'play_sound','play_music','stop_music','pause_music','music_active','music_paused',"
             "    'spawn','state_to','state_current','state_active','state_entered','state_time',"
             "    'play_timer','pause_timer','stop_timer','timer_active','timer_paused','timer_done','timer_left',"
-            "    'button','direction','player','system','input_pressed','input_down','input_released'"
+            "    'button','direction','player','system','input_pressed','input_down','input_released','input_direction'"
             "  ];"
             "  let missing = 0;"
             "  for (let i = 0; i < functions.length; i = i + 1) {"
@@ -899,6 +885,13 @@ namespace
             "  if (typeof globalThis.__flx_input_system_down === 'function') missing = missing + 1;"
             "  if (typeof NEGATIVE !== 'number') missing = missing + 1;"
             "  if (typeof POSITIVE !== 'number') missing = missing + 1;"
+            "  if (typeof HORIZONTAL !== 'number') missing = missing + 1;"
+            "  if (typeof VERTICAL !== 'number') missing = missing + 1;"
+            "  if (typeof globalThis.move_x !== 'undefined') missing = missing + 1;"
+            "  if (typeof globalThis.move_y !== 'undefined') missing = missing + 1;"
+            "  if (typeof globalThis.bounce_x !== 'undefined') missing = missing + 1;"
+            "  if (typeof globalThis.bounce_y !== 'undefined') missing = missing + 1;"
+            "  if (typeof globalThis.to_origin !== 'undefined') missing = missing + 1;"
             "  if (typeof globalThis.state === 'function') missing = missing + 1;"
             "  const fire = button(0);"
             "  const move = direction(0);"
@@ -920,6 +913,92 @@ namespace
             requireObject(harness.world, "root");
 
         require(localValue(runtimeRoot, "missing") == 0.0, "public scripting functions should be registered");
+    }
+
+    void testMechanicsDiagonalVectorNormalizesCombinedAxes()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "moveBothAxes",
+            "function motion(o) {"
+            "  move_horizontal(o, 1);"
+            "  move_vertical(o, 1);"
+            "}"
+        );
+
+        ObjectDefinition independent =
+            objectDefinition("independent", "moveBothAxes");
+        independent.origin = Vector2{ 0.0f, 0.0f };
+        independent.hasOrigin = true;
+        independent.mechanics.motion.speed.start = 100.0f;
+        independent.mechanics.motion.horizontal.speed.start = 100.0f;
+        independent.mechanics.motion.vertical.speed.start = 100.0f;
+        independent.mechanics.motion.diagonal = MechanicsDiagonalMode::Independent;
+
+        ObjectDefinition vector =
+            objectDefinition("vector", "moveBothAxes");
+        vector.origin = Vector2{ 0.0f, 0.0f };
+        vector.hasOrigin = true;
+        vector.mechanics.motion.speed.start = 100.0f;
+        vector.mechanics.motion.horizontal.speed.start = 100.0f;
+        vector.mechanics.motion.vertical.speed.start = 100.0f;
+        vector.mechanics.motion.diagonal = MechanicsDiagonalMode::Vector;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["independent"] = "independent";
+        root.childResources["vector"] = "vector";
+
+        harness.addObject(root);
+        harness.addObject(independent);
+        harness.addObject(vector);
+
+        require(harness.load().success, "runtime should load mechanics diagonal project");
+
+        harness.update(1.0f);
+
+        const RuntimeObject& runtimeIndependent =
+            requireObject(harness.world, "independent");
+
+        const RuntimeObject& runtimeVector =
+            requireObject(harness.world, "vector");
+
+        require(nearlyEqual(runtimeIndependent.position.x, 100.0), "independent diagonal should keep full horizontal movement");
+        require(nearlyEqual(runtimeIndependent.position.y, 100.0), "independent diagonal should keep full vertical movement");
+        require(runtimeVector.position.x < runtimeIndependent.position.x, "vector diagonal should reduce horizontal diagonal movement");
+        require(runtimeVector.position.y < runtimeIndependent.position.y, "vector diagonal should reduce vertical diagonal movement");
+        require(nearlyEqual(runtimeVector.position.x, 70.7107), "vector diagonal should normalize horizontal movement");
+        require(nearlyEqual(runtimeVector.position.y, 70.7107), "vector diagonal should normalize vertical movement");
+    }
+
+    void testApplySpeedRespectsMechanicsLimit()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "applySpeedClamp",
+            "function born(o) {"
+            "  apply_speed(o, 200);"
+            "  o.local['speed'] = o.speed;"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "applySpeedClamp");
+        root.mechanics.type = MechanicsType::Polar;
+        root.mechanics.motion.speed.start = 50.0f;
+        root.mechanics.motion.speed.limit = 100.0f;
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load apply speed project");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(runtimeRoot.speed, 100.0), "apply_speed should clamp runtime speed to mechanics limit");
+        require(nearlyEqual(localValue(runtimeRoot, "speed"), 100.0), "apply_speed should write clamped speed back to JS");
     }
 
     void testKeepOnlyPreventsOtherObjectsFromResurrecting()
@@ -1455,7 +1534,7 @@ namespace
         parent.childResources["child"] = "child";
         parent.origin = Vector2{ 30.0f, 40.0f };
         parent.hasOrigin = true;
-        parent.angle = 20.0f;
+        parent.mechanics.rotation.angle = 20.0f;
 
         ObjectDefinition child =
             objectDefinition("child", "attachedChild");
@@ -1703,11 +1782,13 @@ int main()
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "JS flat runtime properties are mutable", testJsFlatRuntimePropertiesAreMutable },
-        { "JS motion nested properties are read-only snapshot", testJsMotionNestedPropertiesAreReadOnlySnapshot },
+        { "JS mechanics is not exposed as nested snapshot", testJsMechanicsIsNotExposedAsNestedSnapshot },
         { "JS metadata and identity are readable but not applied back", testJsMetadataAndIdentityAreReadableButNotAppliedBack },
         { "script module variables are shared between instances", testScriptModuleVariablesAreSharedBetweenInstances },
         { "collision callback receives concrete other reference", testCollisionCallbackReceivesConcreteOtherReference },
         { "public scripting functions are registered", testPublicScriptingFunctionsAreRegistered },
+        { "mechanics diagonal vector normalizes combined axes", testMechanicsDiagonalVectorNormalizesCombinedAxes },
+        { "apply_speed respects mechanics limit", testApplySpeedRespectsMechanicsLimit },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },

@@ -149,9 +149,7 @@ Runtime -> Connects both
 <pre><code>const MOVE = direction(0);
 const FIRE = button(0);
 
-if (input_down(player, MOVE, LEFT)) {
-    move_x(player, LEFT);
-}
+move_horizontal(player, input_direction(player, MOVE, HORIZONTAL));
 
 if (input_pressed(player, FIRE)) {
     spawn(player, "laser");

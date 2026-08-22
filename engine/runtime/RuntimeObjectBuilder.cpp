@@ -41,14 +41,20 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.radius = definition.radius;
     object.points = definition.points;
 
-    object.speed = definition.speed;
-    object.originSpeed = definition.speed;
-    object.angle = definition.angle;
+    object.mechanics = definition.mechanics;
+    object.inherit = definition.inherit;
+    object.mechanicsType = definition.mechanics.type;
+    object.mechanicsMotion = definition.mechanics.motion;
+    object.mechanicsRotation = definition.mechanics.rotation;
 
-    object.rotationSpeed = definition.rotationSpeed;
-    object.acceleration = definition.acceleration;
-    object.maxSpeed = definition.maxSpeed;
-    object.inertia = definition.inertia;
+    object.speed = definition.mechanics.motion.speed.start;
+    object.originSpeed = definition.mechanics.motion.speed.start;
+    object.angle = definition.mechanics.rotation.angle;
+
+    object.rotationSpeed = definition.mechanics.rotation.speed.start;
+    object.acceleration = definition.mechanics.motion.acceleration;
+    object.maxSpeed = definition.mechanics.motion.speed.limit;
+    object.inertia = definition.mechanics.motion.inertia;
 
     object.boundsMode = definition.boundsMode;
     object.boundsOverflow = definition.boundsOverflow;

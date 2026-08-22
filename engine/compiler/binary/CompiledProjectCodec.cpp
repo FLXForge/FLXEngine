@@ -415,6 +415,142 @@ namespace flx::binary
             return music;
         }
 
+        void writeMechanicsSpeed(BinaryWriter& writer, const MechanicsSpeedDefinition& speed)
+        {
+            writer.writeF32(speed.start);
+            writer.writeF32(speed.limit);
+        }
+
+        MechanicsSpeedDefinition readMechanicsSpeed(BinaryReader& reader, const std::string& field)
+        {
+            MechanicsSpeedDefinition speed;
+            speed.start = reader.readF32(field + ".start");
+            speed.limit = reader.readF32(field + ".limit");
+            return speed;
+        }
+
+        void writeMechanicsAxis(BinaryWriter& writer, const MechanicsAxisDefinition& axis)
+        {
+            writeMechanicsSpeed(writer, axis.speed);
+            writer.writeF32(axis.acceleration);
+            writer.writeF32(axis.inertia);
+            writer.writeF32(axis.step);
+            writer.writeBool(axis.hasSpeed);
+            writer.writeBool(axis.hasAcceleration);
+            writer.writeBool(axis.hasInertia);
+            writer.writeBool(axis.hasStep);
+        }
+
+        MechanicsAxisDefinition readMechanicsAxis(BinaryReader& reader, const std::string& field)
+        {
+            MechanicsAxisDefinition axis;
+            axis.speed = readMechanicsSpeed(reader, field + ".speed");
+            axis.acceleration = reader.readF32(field + ".acceleration");
+            axis.inertia = reader.readF32(field + ".inertia");
+            axis.step = reader.readF32(field + ".step");
+            axis.hasSpeed = reader.readBool(field + ".hasSpeed");
+            axis.hasAcceleration = reader.readBool(field + ".hasAcceleration");
+            axis.hasInertia = reader.readBool(field + ".hasInertia");
+            axis.hasStep = reader.readBool(field + ".hasStep");
+            return axis;
+        }
+
+        void writeMechanics(BinaryWriter& writer, const MechanicsDefinition& mechanics)
+        {
+            writer.writeU8(
+                mechanics.type == MechanicsType::Polar
+                    ? 1
+                    : 0
+            );
+            writeMechanicsSpeed(writer, mechanics.motion.speed);
+            writer.writeF32(mechanics.motion.acceleration);
+            writer.writeF32(mechanics.motion.inertia);
+            writer.writeF32(mechanics.motion.step);
+            writer.writeU8(
+                mechanics.motion.diagonal == MechanicsDiagonalMode::Vector
+                    ? 1
+                    : 0
+            );
+            writeMechanicsAxis(writer, mechanics.motion.horizontal);
+            writeMechanicsAxis(writer, mechanics.motion.vertical);
+            writer.writeF32(mechanics.rotation.angle);
+            writeMechanicsSpeed(writer, mechanics.rotation.speed);
+            writer.writeF32(mechanics.rotation.acceleration);
+            writer.writeF32(mechanics.rotation.inertia);
+            writer.writeF32(mechanics.rotation.step);
+        }
+
+        MechanicsDefinition readMechanics(BinaryReader& reader)
+        {
+            MechanicsDefinition mechanics;
+            const uint8_t type =
+                reader.readU8("object.mechanics.type");
+
+            mechanics.type =
+                type == 1
+                    ? MechanicsType::Polar
+                    : MechanicsType::Direct;
+
+            mechanics.motion.speed =
+                readMechanicsSpeed(reader, "object.mechanics.motion.speed");
+            mechanics.motion.acceleration =
+                reader.readF32("object.mechanics.motion.acceleration");
+            mechanics.motion.inertia =
+                reader.readF32("object.mechanics.motion.inertia");
+            mechanics.motion.step =
+                reader.readF32("object.mechanics.motion.step");
+
+            const uint8_t diagonalValue =
+                reader.readU8("object.mechanics.motion.diagonal");
+
+            mechanics.motion.diagonal =
+                diagonalValue == 1
+                    ? MechanicsDiagonalMode::Vector
+                    : MechanicsDiagonalMode::Independent;
+
+            mechanics.motion.horizontal =
+                readMechanicsAxis(reader, "object.mechanics.motion.horizontal");
+            mechanics.motion.vertical =
+                readMechanicsAxis(reader, "object.mechanics.motion.vertical");
+            mechanics.rotation.angle =
+                reader.readF32("object.mechanics.rotation.angle");
+            mechanics.rotation.speed =
+                readMechanicsSpeed(reader, "object.mechanics.rotation.speed");
+            mechanics.rotation.acceleration =
+                reader.readF32("object.mechanics.rotation.acceleration");
+            mechanics.rotation.inertia =
+                reader.readF32("object.mechanics.rotation.inertia");
+            mechanics.rotation.step =
+                reader.readF32("object.mechanics.rotation.step");
+
+            return mechanics;
+        }
+
+        void writeInherit(BinaryWriter& writer, const InheritDefinition& inherit)
+        {
+            writer.writeU8(static_cast<uint8_t>(inherit.creationAngle));
+            writer.writeU8(static_cast<uint8_t>(inherit.creationVelocity));
+            writer.writeU8(static_cast<uint8_t>(inherit.liveAngle));
+        }
+
+        InheritDefinition readInherit(BinaryReader& reader)
+        {
+            InheritDefinition inherit;
+            inherit.creationAngle =
+                static_cast<InheritCreationMode>(
+                    reader.readU8("object.inherit.creation.angle")
+                );
+            inherit.creationVelocity =
+                static_cast<InheritCreationMode>(
+                    reader.readU8("object.inherit.creation.velocity")
+                );
+            inherit.liveAngle =
+                static_cast<InheritLiveMode>(
+                    reader.readU8("object.inherit.live.angle")
+                );
+            return inherit;
+        }
+
         void writeObject(BinaryWriter& writer, const ObjectDefinition& object)
         {
             writer.writeString(object.id);
@@ -448,15 +584,8 @@ namespace flx::binary
                 writeVector2(writer, point);
             }
 
-            writer.writeF32(object.speed);
-            writer.writeBool(object.hasSpeed);
-            writer.writeF32(object.angle);
-            writer.writeBool(object.hasAngle);
-            writer.writeBool(object.inheritParentAngle);
-            writer.writeF32(object.rotationSpeed);
-            writer.writeF32(object.acceleration);
-            writer.writeF32(object.maxSpeed);
-            writer.writeF32(object.inertia);
+            writeMechanics(writer, object.mechanics);
+            writeInherit(writer, object.inherit);
             writer.writeString(object.boundsMode);
             writer.writeBool(object.boundsOverflow);
             writer.writeString(object.group);
@@ -587,15 +716,8 @@ namespace flx::binary
                 object.points.push_back(readVector2(reader));
             }
 
-            object.speed = reader.readF32("object.motion.speed");
-            object.hasSpeed = reader.readBool("object.motion.speed");
-            object.angle = reader.readF32("object.motion.angle");
-            object.hasAngle = reader.readBool("object.motion.angle");
-            object.inheritParentAngle = reader.readBool("object.motion.inheritParentAngle");
-            object.rotationSpeed = reader.readF32("object.motion.rotationSpeed");
-            object.acceleration = reader.readF32("object.motion.acceleration");
-            object.maxSpeed = reader.readF32("object.motion.maxSpeed");
-            object.inertia = reader.readF32("object.motion.inertia");
+            object.mechanics = readMechanics(reader);
+            object.inherit = readInherit(reader);
             object.boundsMode = reader.readString("object.bounds.mode");
             object.boundsOverflow = reader.readBool("object.bounds.overflow");
             object.group = reader.readString("object.group");

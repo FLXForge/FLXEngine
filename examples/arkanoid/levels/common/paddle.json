@@ -24,8 +24,13 @@
     }
   },
 
-  "motion": {
-    "speed": 200
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 200
+      }
+    }
   },
   "control": {
     "player": 1

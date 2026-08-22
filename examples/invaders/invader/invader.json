@@ -11,6 +11,15 @@
     }
   },
 
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 10
+      }
+    }
+  },
+
   "children": {
     "laser": {
       "like": "laser",

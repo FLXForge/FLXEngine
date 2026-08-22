@@ -193,6 +193,40 @@ Screen size, background color and default output scale come from the Machine
 video chip. For example, `--scale` overrides the Machine output scale only for
 the current execution.
 
+Objects declare movement rules through `mechanics`. Runtime scripts apply
+intent with explicit verbs:
+
+```json
+{
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": 120
+    }
+  },
+  "control": {
+    "player": 1
+  }
+}
+```
+
+```js
+const MOVE = direction(0);
+
+function motion(player) {
+    move_horizontal(
+        player,
+        input_direction(player, MOVE, HORIZONTAL)
+    );
+}
+```
+
+For polar movement, `advance(object)` moves using the object's live angle and
+speed. `accelerate(object)` changes live velocity using declared acceleration
+and moves the object during the same frame. `apply_speed()` changes live speed
+without changing the declaration, while `restore_speed()` returns it to
+`mechanics.motion.speed.start`.
+
 The normalized JavaScript input API uses an explicit mapping file:
 
 ```text
@@ -202,8 +236,9 @@ players.1.direction.right=KEY_D,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A
 ```
 
-Scripts read this through `Input.system` and `Input.player(index)`. FLX does not
-create an implicit mapping when `input.mapping` is missing.
+Scripts read this through descriptors such as `system()`, `player(index)`,
+`button(index)`, `direction(index)` and the `input_*` query functions. FLX does
+not create an implicit mapping when `input.mapping` is missing.
 
 JSON files can reference reusable project resources with FLX-root paths. The
 leading slash points to the manifest `path`, not to the operating system root:

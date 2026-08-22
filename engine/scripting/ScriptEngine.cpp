@@ -723,6 +723,9 @@ void ScriptEngine::applyJsObject(
     JSValue velocityYValue =
         JS_GetPropertyStr(context, jsObject, "velocityY");
 
+    JSValue rotationSpeedValue =
+        JS_GetPropertyStr(context, jsObject, "rotationSpeed");
+
     JSValue localValue =
         JS_GetPropertyStr(context, jsObject, "local");
 
@@ -787,6 +790,7 @@ void ScriptEngine::applyJsObject(
     double angle = source.angle;
     double velocityX = source.velocity.x;
     double velocityY = source.velocity.y;
+    double rotationSpeed = source.rotationSpeed;
     double width = source.size.x;
     double height = source.size.y;
     int32_t layer = source.layer;
@@ -797,6 +801,7 @@ void ScriptEngine::applyJsObject(
     JS_ToFloat64(context, &angle, angleValue);
     JS_ToFloat64(context, &velocityX, velocityXValue);
     JS_ToFloat64(context, &velocityY, velocityYValue);
+    JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
     JS_ToInt32(context, &layer, layerValue);
 
     if (JS_ToFloat64(context, &width, widthValue) == 0)
@@ -818,6 +823,7 @@ void ScriptEngine::applyJsObject(
     source.angle = static_cast<float>(angle);
     source.velocity.x = static_cast<float>(velocityX);
     source.velocity.y = static_cast<float>(velocityY);
+    source.rotationSpeed = static_cast<float>(rotationSpeed);
     source.layer = layer;
 
     JS_FreeValue(context, localValue);
@@ -828,6 +834,7 @@ void ScriptEngine::applyJsObject(
     JS_FreeValue(context, angleValue);
     JS_FreeValue(context, velocityXValue);
     JS_FreeValue(context, velocityYValue);
+    JS_FreeValue(context, rotationSpeedValue);
     JS_FreeValue(context, widthValue);
     JS_FreeValue(context, heightValue);
     JS_FreeValue(context, layerValue);
@@ -1091,56 +1098,11 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
         JS_NewFloat64(context, object.originSpeed)
     );
 
-    JSValue motion =
-        JS_NewObject(context);
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "speed",
-        JS_NewFloat64(context, object.speed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "angle",
-        JS_NewFloat64(context, object.angle)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "rotationSpeed",
-        JS_NewFloat64(context, object.rotationSpeed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "acceleration",
-        JS_NewFloat64(context, object.acceleration)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "inertia",
-        JS_NewFloat64(context, object.inertia)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "maxSpeed",
-        JS_NewFloat64(context, object.maxSpeed)
-    );
-
     JS_SetPropertyStr(
         context,
         self,
-        "motion",
-        motion
+        "rotationSpeed",
+        JS_NewFloat64(context, object.rotationSpeed)
     );
 
     JS_SetPropertyStr(

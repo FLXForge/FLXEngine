@@ -13,12 +13,13 @@ function motion(ball) {
 
 function collision(ball, other) {
     if (other.group == "goal") {
-        to_origin(ball);
+        position_origin(ball);
+        restore_speed(ball);
     } else if (other.group == "wall") {
-        bounce_y(ball);
+        reflect_y(ball);
     } else if (other.group == "paddle") {
-        bounce_x(ball);
-        accelerate(ball, 5);
+        reflect_x(ball);
+        apply_speed(ball, ball.speed + 5);
     }
     play_sound(ball, "beep");
 }

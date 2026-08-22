@@ -155,7 +155,7 @@
                 <li><code>originSpeed</code>: initial speed.</li>
                 <li><code>velocityX</code>: horizontal velocity.</li>
                 <li><code>velocityY</code>: vertical velocity.</li>
-                <li><code>motion</code>: motion configuration defined in JSON.</li>
+                <li><code>rotationSpeed</code>: current angular speed.</li>
             </ul>
 
             <h3>Origin</h3>
@@ -184,24 +184,20 @@
 
             <hr />
 
-            <h2>accelerate(object)</h2>
+            <h2>accelerate(object, intent)</h2>
 
             <p>
-                Applies acceleration to the object using its
-                <code>motion</code> configuration.
-                It takes into account
-                <code>acceleration</code>,
-                <code>maxSpeed</code>,
-                <code>angle</code>,
-                <code>velocityX</code>
-                and <code>velocityY</code>.
+                Applies acceleration using the object's declared
+                <code>mechanics</code> and moves it during the same frame.
+                <code>intent</code> is optional and defaults to <code>1</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">accelerate</div>
 
 
-<pre><code>accelerate(ship);</code></pre>
+<pre><code>accelerate(ship);
+accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
 
             </div>
@@ -209,28 +205,42 @@
             <h3>Configuration Used</h3>
 
             <ul>
-                <li><code>motion.acceleration</code>: acceleration force.</li>
-                <li><code>motion.maxSpeed</code>: maximum allowed speed.</li>
-                <li><code>angle</code>: object's current direction.</li>
+                <li><code>mechanics.motion.acceleration</code>: acceleration rate.</li>
+                <li><code>mechanics.motion.speed.limit</code>: maximum live speed.</li>
+                <li><code>angle</code>: object's current direction for polar mechanics.</li>
                 <li><code>velocityX</code> and <code>velocityY</code>: accumulated velocity.</li>
             </ul>
 
             <hr />
 
-            <h2>accelerate(object, amount)</h2>
+            <h2>apply_speed(object, value)</h2>
 
             <p>
-                Direct variant that adds a specific amount to <code>speed</code>.
-                It does not use the advanced <code>motion</code> configuration.
+                Applies a live speed value without changing the JSON
+                declaration. If <code>mechanics.motion.speed.limit</code> is
+                greater than zero, FLX clamps the requested value to that limit.
             </p>
 
             <div class="code-card">
-                <div class="code-header">accelerate amount</div>
+                <div class="code-header">apply_speed</div>
 
 
-<pre><code>accelerate(ball, 20);</code></pre>
+<pre><code>apply_speed(ball, ball.speed + 5);</code></pre>
 
 
+            </div>
+
+            <hr />
+
+            <h2>restore_speed(object)</h2>
+
+            <p>
+                Restores live speed to <code>mechanics.motion.speed.start</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">restore_speed</div>
+<pre><code>restore_speed(ball);</code></pre>
             </div>
 
             <hr />
@@ -238,20 +248,13 @@
             <h2>advance(object)</h2>
 
             <p>
-                Moves the object according to its current configuration.
+                Moves the object using its current mechanics state.
             </p>
 
             <p>
-                If the object has
-                <code>motion.acceleration</code>
-                greater than zero,
-                it uses
-                <code>velocityX</code>,
-                <code>velocityY</code>
-                and <code>inertia</code>.
-                Otherwise it moves using
-                <code>angle</code>
-                and <code>speed</code>.
+                For polar objects, <code>advance()</code> uses live angle and
+                speed. If live speed is zero, it can reactivate movement from
+                <code>mechanics.motion.speed.start</code>.
             </p>
 
             <div class="code-card">
@@ -267,34 +270,34 @@
 
             <hr />
 
-            <h2>bounce_x(object)</h2>
+            <h2>reflect_x(object)</h2>
 
             <p>
-                Reverses horizontal movement by modifying the object's angle.
+                Reflects the horizontal component of the object's live movement.
             </p>
 
             <div class="code-card">
-                <div class="code-header">bounce_x</div>
+                <div class="code-header">reflect_x</div>
 
 
-<pre><code>bounce_x(ball);</code></pre>
+<pre><code>reflect_x(ball);</code></pre>
 
 
             </div>
 
             <hr />
 
-            <h2>bounce_y(object)</h2>
+            <h2>reflect_y(object)</h2>
 
             <p>
-                Reverses vertical movement by modifying the object's angle.
+                Reflects the vertical component of the object's live movement.
             </p>
 
             <div class="code-card">
-                <div class="code-header">bounce_y</div>
+                <div class="code-header">reflect_y</div>
 
 
-<pre><code>bounce_y(ball);</code></pre>
+<pre><code>reflect_y(ball);</code></pre>
 
 
             </div>
@@ -702,9 +705,7 @@ if (input_pressed(system(), EXIT)) {
     exit();
 }
 
-if (input_down(player, MOVE, UP)) {
-    move_y(player, UP);
-}
+move_vertical(player, input_direction(player, MOVE, VERTICAL));
 
 if (input_pressed(player, FIRE)) {
     spawn(player, "laser");
@@ -867,43 +868,62 @@ let music = load("settings", "music", true);</code></pre>
 
             <hr />
 
-            <h2>move_x(object, direction)</h2>
+            <h2>move_horizontal(object, intent)</h2>
 
             <p>
-                Moves the object horizontally using
-                <code>speed</code>
-                and frame time.
+                Moves the object horizontally using declared mechanics and a
+                normalized intent in the <code>-1..1</code> range.
             </p>
 
             <div class="code-card">
-                <div class="code-header">move_x</div>
+                <div class="code-header">move_horizontal</div>
 
 
-<pre><code>move_x(player, LEFT);
-move_x(player, RIGHT);</code></pre>
+<pre><code>move_horizontal(player, input_direction(player, direction(0), HORIZONTAL));</code></pre>
 
 
             </div>
 
             <hr />
 
-            <h2>move_y(object, direction)</h2>
+            <h2>move_vertical(object, intent)</h2>
 
             <p>
-                Moves the object vertically using
-                <code>speed</code>
-                and frame time.
+                Moves the object vertically using declared mechanics and a
+                normalized intent in the <code>-1..1</code> range.
             </p>
 
             <div class="code-card">
-                <div class="code-header">move_y</div>
+                <div class="code-header">move_vertical</div>
 
 
-<pre><code>move_y(player, UP);
-move_y(player, DOWN);</code></pre>
+<pre><code>move_vertical(player, input_direction(player, direction(0), VERTICAL));</code></pre>
 
 
             </div>
+
+            <hr />
+
+            <h2>input_direction(subject, direction, axis)</h2>
+
+            <p>
+                Returns normalized directional intent for a logical direction:
+                <code>-1</code>, <code>0</code> or <code>1</code> in the current
+                digital input implementation.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input_direction</div>
+<pre><code>const MOVE = direction(0);
+
+move_horizontal(player, input_direction(player, MOVE, HORIZONTAL));
+move_vertical(player, input_direction(player, MOVE, VERTICAL));</code></pre>
+            </div>
+
+            <p>
+                <code>system()</code> is not a valid subject for
+                <code>input_direction()</code>.
+            </p>
 
             <hr />
 
@@ -1120,9 +1140,8 @@ asteroid.speed = random(20, 80);
             <h2>rotate(object, direction)</h2>
 
             <p>
-                Rotates the object using
-                <code>motion.rotationSpeed</code>
-                and frame time.
+                Rotates the object using declared rotation mechanics,
+                runtime <code>rotationSpeed</code> and frame time.
             </p>
 
             <div class="code-card">
@@ -1274,27 +1293,37 @@ stop_timer(paddle, "gun");
 
             <hr />
 
-            <h2>to_origin(object)</h2>
+            <h2>position(object, x, y)</h2>
 
             <p>
-                Returns the object to its origin values.
-                Restores
-                <code>x</code>,
-                <code>y</code>
-                and <code>speed</code>
-                using
-                <code>originX</code>,
-                <code>originY</code>
-                and <code>originSpeed</code>.
+                Places the object immediately at the specified logical
+                position. This does not change speed, velocity, angle, timers or
+                local state.
             </p>
 
             <div class="code-card">
-                <div class="code-header">to_origin</div>
+                <div class="code-header">position</div>
 
 
-<pre><code>to_origin(ball);</code></pre>
+<pre><code>position(ball, 160, 90);</code></pre>
 
 
+            </div>
+
+            <hr />
+
+            <h2>position_origin(object)</h2>
+
+            <p>
+                Places the object at its effective runtime origin. To also
+                restore live speed, call <code>restore_speed(object)</code>
+                explicitly.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position_origin</div>
+<pre><code>position_origin(ball);
+restore_speed(ball);</code></pre>
             </div>
 
             <hr />

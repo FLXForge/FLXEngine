@@ -91,11 +91,21 @@ public:
     std::string shapeMode;
 
     float radius;
+    MechanicsDefinition mechanics;
+    InheritDefinition inherit;
+    MechanicsType mechanicsType = MechanicsType::Direct;
+    MechanicsMotionDefinition mechanicsMotion;
+    MechanicsRotationDefinition mechanicsRotation;
+
     float speed;
     float angle;
     float originSpeed;
     
     Vector2 velocity;
+    float angularVelocity = 0.0f;
+    bool motionCommanded = false;
+    bool rotationCommanded = false;
+    Vector2 frameMotionDelta = Vector2{ 0.0f, 0.0f };
 
     float rotationSpeed;
     float acceleration;

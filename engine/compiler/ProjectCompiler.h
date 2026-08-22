@@ -25,7 +25,7 @@ private:
         const std::filesystem::path& projectRoot
     );
 
-    static ObjectDefinition compileDefinition(
+    static void compileDefinition(
         const ObjectDefinition& definition,
         const VideoChipDefinition& video,
         ResourceRegistry& registry,

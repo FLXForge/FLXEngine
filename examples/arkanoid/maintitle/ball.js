@@ -6,13 +6,13 @@ function motion(ball){
 
 function collision(ball, other) {
     if (other.group == "wall_top") {
-        bounce_y(ball);
+        reflect_y(ball);
         play_sound(ball, "paddle");
     } else if (other.group == "wall_side") {
-        bounce_x(ball);
+        reflect_x(ball);
         play_sound(ball, "paddle");
     } else if (other.group == "paddle") {
-        bounce_y(ball);
+        reflect_y(ball);
         play_sound(ball, "paddle");
     } else if (other.group == "title") {
         other.local["hit"] = 1;

@@ -14,13 +14,7 @@ function action(player){
         return;
     }
 
-    if (input_down(player, MOVE, LEFT)) {
-        move_x(player, LEFT);
-    }
-
-    if (input_down(player, MOVE, RIGHT)) {
-        move_x(player, RIGHT);
-    }
+    move_horizontal(player, input_direction(player, MOVE, HORIZONTAL));
 
     if (player.x < 20) {
         player.x = 20;

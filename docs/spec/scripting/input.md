@@ -389,8 +389,20 @@ POSITIVE
 Scripts must not depend on their numeric representation. They are not spatial
 movement multipliers.
 
-Use movement helpers such as `move_x`, `move_y`, `rotate`, `advance` or explicit
-numeric values for spatial behavior.
+Use movement helpers such as `move_horizontal`, `move_vertical`, `rotate`,
+`advance`, `accelerate` or explicit numeric values for spatial behavior.
+
+For normalized directional intent, scripts SHOULD use:
+
+```js
+input_direction(subject, direction(index), HORIZONTAL);
+input_direction(subject, direction(index), VERTICAL);
+```
+
+`input_direction()` returns `-1`, `0` or `1` for the digital input types
+implemented in v0.3.0. In a `2way` direction, both axes project onto the same
+logical way so a Machine can later expand to `4way` without forcing script
+changes.
 
 ## P. Examples
 

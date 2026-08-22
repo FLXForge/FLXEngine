@@ -69,8 +69,6 @@ Runtime -> Conecta ambos
 <pre><code>{
     "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-    "name": "Ship",
-
     "shape": {
         "type": "triangle",
         "color": "white",
@@ -80,11 +78,16 @@ Runtime -> Conecta ambos
         }
     },
 
-    "motion": {
-        "rotationSpeed": 180,
-        "acceleration": 120,
-        "inertia": 0.99,
-        "maxSpeed": 180
+    "mechanics": {
+        "type": "polar",
+        "motion": {
+            "speed": { "start": 0, "limit": 180 },
+            "acceleration": 120,
+            "inertia": 0.99
+        },
+        "rotation": {
+            "speed": 180
+        }
     }
 }
 </code></pre>

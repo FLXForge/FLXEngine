@@ -10,7 +10,7 @@ const FIRE_BUTTON = button(0);
 
 function action(ui) {
     if (global["inGame"] == 0) {
-        if (input_pressed(ui, FIRE_BUTTON)) {
+        if (input_pressed(player(1), FIRE_BUTTON)) {
             pause_music();
             global["score"] = 0;
             global["lives"] = INIT_LIVES;

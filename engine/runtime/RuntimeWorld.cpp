@@ -246,15 +246,6 @@ namespace
         {
             child.velocity =
                 parent.velocity;
-
-            if (child.mechanicsType == MechanicsType::Polar)
-            {
-                child.speed =
-                    std::sqrt(
-                        child.velocity.x * child.velocity.x +
-                        child.velocity.y * child.velocity.y
-                    );
-            }
         }
 
         if (definition.inherit.creationVelocity == InheritCreationMode::Compose)

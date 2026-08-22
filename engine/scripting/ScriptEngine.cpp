@@ -821,8 +821,17 @@ void ScriptEngine::applyJsObject(
     source.position.y = static_cast<float>(y);
     source.speed = static_cast<float>(speed);
     source.angle = static_cast<float>(angle);
+    const Vector2 previousVelocity =
+        source.velocity;
+
     source.velocity.x = static_cast<float>(velocityX);
     source.velocity.y = static_cast<float>(velocityY);
+
+    if (std::abs(source.velocity.x - previousVelocity.x) > 0.00001f ||
+        std::abs(source.velocity.y - previousVelocity.y) > 0.00001f)
+    {
+        source.motionCommanded = true;
+    }
     source.rotationSpeed = static_cast<float>(rotationSpeed);
     source.layer = layer;
 

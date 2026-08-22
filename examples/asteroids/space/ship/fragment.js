@@ -10,22 +10,12 @@ const TIME_TO_DIE = 1.5;
 function born(fragment) {
     play_timer(fragment, "life", TIME_TO_DIE);
 
-    fragment.local["mode"] = random(0, 3);
-
-    fragment.angle = random(0, 360);
-    fragment.speed = random(10, 200);
+    fragment.local["spin"] = random(0, 100) < 50 ? LEFT : RIGHT;
     fragment.rotationSpeed = random(120, 360);
 }
 
 function motion(fragment) {
-    if (fragment.local["mode"] < 1) {
-        advance(fragment);
-    } else if (fragment.local["mode"] < 2) {
-        rotate(fragment, RIGHT);
-    } else {
-        advance(fragment);
-        rotate(fragment, RIGHT);
-    }
+    rotate(fragment, fragment.local["spin"]);
 
     const factor = timer_left(fragment, "life") / TIME_TO_DIE;
 

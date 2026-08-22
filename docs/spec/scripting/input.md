@@ -404,6 +404,18 @@ implemented in v0.3.0. In a `2way` direction, both axes project onto the same
 logical way so a Machine can later expand to `4way` without forcing script
 changes.
 
+The normalized convention is:
+
+```text
+RIGHT = +1
+UP    = +1
+LEFT  = -1
+DOWN  = -1
+```
+
+This is input intent, not screen-space movement. A script that wants screen Y
+to increase downward should decide that explicitly when applying the intent.
+
 ## P. Examples
 
 Button:

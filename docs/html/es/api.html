@@ -228,6 +228,10 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
                 Aplica una velocidad viva sin cambiar la declaracion JSON. Si
                 <code>mechanics.motion.speed.limit</code> es mayor que cero, FLX
                 limita el valor solicitado a ese maximo.
+                En mecanicas polares cambia la velocidad polar propia del objeto;
+                la velocity heredada o acumulada en <code>velocityX</code>/<code>velocityY</code>
+                permanece separada. En mecanicas directas, el movimiento por eje
+                sin aceleracion usa esta velocidad viva.
             </p>
 
             <div class="code-card">
@@ -242,6 +246,7 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
             <p>
                 Restaura la velocidad viva a
                 <code>mechanics.motion.speed.start</code>.
+                No reconstruye la velocity lineal acumulada.
             </p>
 
             <div class="code-card">
@@ -261,6 +266,8 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
                 En objetos polares, <code>advance()</code> usa angulo y velocidad
                 vivos. Si la velocidad viva esta en cero, puede reactivar el
                 movimiento desde <code>mechanics.motion.speed.start</code>.
+                Cualquier velocity lineal acumulada o heredada se suma una sola
+                vez como contribucion separada.
             </p>
 
             <div class="code-card">
@@ -872,6 +879,8 @@ let music = load("settings", "music", true);</code></pre>
                 Devuelve intencion direccional normalizada para una direccion
                 logica: <code>-1</code>, <code>0</code> o <code>1</code> en la
                 implementacion digital actual.
+                <code>RIGHT</code> y <code>UP</code> son positivos;
+                <code>LEFT</code> y <code>DOWN</code> son negativos.
             </p>
 
             <div class="code-card">

@@ -139,6 +139,7 @@ namespace
     float axisVelocity(
         float currentVelocity,
         float intent,
+        float liveSpeed,
         const MechanicsAxisDefinition& axis,
         float delta
     )
@@ -158,7 +159,7 @@ namespace
                 sign * axis.acceleration * delta;
         }
 
-        return sign * axis.speed.start;
+        return sign * liveSpeed;
     }
 
     Rectangle getBox(
@@ -311,10 +312,11 @@ void RuntimeHelpers::moveHorizontal(
     const MechanicsAxisDefinition& axis =
         object.mechanicsMotion.horizontal;
 
-    float velocity =
+        float velocity =
         axisVelocity(
             object.velocity.x,
             intent,
+            object.speed,
             axis,
             delta
         );
@@ -365,10 +367,11 @@ void RuntimeHelpers::moveVertical(
     const MechanicsAxisDefinition& axis =
         object.mechanicsMotion.vertical;
 
-    float velocity =
+        float velocity =
         axisVelocity(
             object.velocity.y,
             intent,
+            object.speed,
             axis,
             delta
         );
@@ -614,17 +617,6 @@ void RuntimeHelpers::applySpeed(
     object.speed =
         speed;
 
-    if (object.mechanicsType == MechanicsType::Polar)
-    {
-        object.velocity =
-            polarVector(
-                object.angle,
-                object.speed
-            );
-
-        return;
-    }
-
     const float length =
         vectorLength(object.velocity);
 
@@ -644,15 +636,6 @@ void RuntimeHelpers::applySpeed(
 void RuntimeHelpers::restoreSpeed(RuntimeObject& object)
 {
     object.speed = object.originSpeed;
-
-    if (object.mechanicsType == MechanicsType::Polar)
-    {
-        object.velocity =
-            polarVector(
-                object.angle,
-                object.speed
-            );
-    }
 }
 
 void RuntimeHelpers::applyFreeMechanics(
@@ -685,19 +668,37 @@ void RuntimeHelpers::applyFreeMechanics(
             if (object.mechanicsMotion.horizontal.inertia <= 0.0f &&
                 object.mechanicsMotion.vertical.inertia <= 0.0f)
             {
+                object.velocity = Vector2{ 0.0f, 0.0f };
                 return;
             }
         }
         else
         {
-            object.speed *=
+            const float factor =
                 retention(object.mechanicsMotion.inertia, delta);
 
+            object.velocity.x *=
+                factor;
+
+            object.velocity.y *=
+                factor;
+
             object.velocity =
-                polarVector(
-                    object.angle,
-                    object.speed
+                clampVector(
+                    object.velocity,
+                    object.mechanicsMotion.speed.limit
                 );
+
+            if (factor <= 0.0f)
+            {
+                object.velocity = Vector2{ 0.0f, 0.0f };
+            }
+
+            if (object.mechanicsMotion.acceleration > 0.0f)
+            {
+                object.speed =
+                    vectorLength(object.velocity);
+            }
         }
 
         object.position.x +=

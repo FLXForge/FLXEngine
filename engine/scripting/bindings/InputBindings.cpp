@@ -541,11 +541,11 @@ namespace
         }
 
         const bool positive =
-            directionDown(*input, subject, directionIndex, InputComponent::Down) ||
+            directionDown(*input, subject, directionIndex, InputComponent::Up) ||
             directionDown(*input, subject, directionIndex, InputComponent::Positive);
 
         const bool negative =
-            directionDown(*input, subject, directionIndex, InputComponent::Up) ||
+            directionDown(*input, subject, directionIndex, InputComponent::Down) ||
             directionDown(*input, subject, directionIndex, InputComponent::Negative);
 
         if (positive == negative)

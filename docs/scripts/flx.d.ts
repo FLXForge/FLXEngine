@@ -280,6 +280,7 @@ declare function input_released(subject: InputReadableSubject, control: InputDir
 
 /**
  * Returns -1, 0 or 1 for a logical direction on a concrete axis.
+ * RIGHT and UP are positive; LEFT and DOWN are negative.
  */
 declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
 

@@ -1095,8 +1095,8 @@ players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
 
             <ul>
                 <li><code>creation.angle = "copy"</code>: copia el angulo del parent cuando se crea el child.</li>
-                <li><code>creation.velocity = "copy"</code>: copia la velocity viva del parent cuando se crea el child.</li>
-                <li><code>creation.velocity = "compose"</code>: suma la velocity viva del parent a la velocity propia del child al crearse.</li>
+                <li><code>creation.velocity = "copy"</code>: copia la velocity lineal viva del parent cuando se crea el child.</li>
+                <li><code>creation.velocity = "compose"</code>: suma la velocity lineal viva del parent a la velocity lineal propia del child al crearse, sin modificar su velocidad polar declarada.</li>
                 <li><code>live.angle = "copy"</code>: mantiene sincronizado el angulo del child con su parent original.</li>
             </ul>
 

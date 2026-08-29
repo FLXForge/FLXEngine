@@ -271,11 +271,12 @@ Structured Diagnostics currently cover configuration/compilation errors:
 Runtime misuse from JavaScript currently uses `Logger::warning` and returns
 `false`. Runtime Diagnostics for input calls are deliberately pending.
 
-Mapping validation currently happens while the runtime loads the embedded
-mapping text. Malformed lines, out-of-range entries and incompatible direction
-components are ignored with `Logger::warning`. They are not structured
-Diagnostics yet. This is real debt for the future mapping specification because
-a badly formatted `.input` file can degrade controls without failing compile.
+Mapping validation happens during compilation through Diagnostics v2. Malformed
+lines, unknown keys, empty bindings, duplicate keys, unknown physical tokens and
+unknown public direction components are errors. Machine/Input coverage
+differences are warnings: they do not fail compilation, do not trim the mapping
+and are consumed later according to the active Machine. `InputSystem` receives a
+compiled `InputMapping`; it does not read, parse or validate `.input` content.
 
 Practical evidence after consolidation: the Asteroids menu in 80sLike replaced
 manual direction locks with `input_pressed(player(1), direction(0), UP/DOWN/LEFT/RIGHT)`

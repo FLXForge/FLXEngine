@@ -704,9 +704,10 @@ fade_set(0, "black");</code></pre>
 
             <p>
                 Input lee controles logicos declarados en el archivo
-                <code>input.mapping</code> del proyecto y limitados por el Input
+                <code>input.mapping</code> del proyecto y consumidos por el Input
                 Chip activo. Si el manifiesto omite <code>input.mapping</code>,
-                FLX compila el mapping por defecto.
+                FLX compila el mapping por defecto. Las diferencias de cobertura
+                entre Machine e Input generan warnings, no errores de compilacion.
             </p>
 
             <div class="code-card">

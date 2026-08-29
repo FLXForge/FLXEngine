@@ -109,6 +109,7 @@ players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A
 players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
 players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+players.1.buttons.3=KEY_Z,JOY1_Y
 
 system.buttons.0=KEY_ENTER,JOY1_START
 system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
@@ -122,7 +123,9 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <code>up</code>/<code>right</code> normalize to positive intent
                 and <code>down</code>/<code>left</code> normalize to negative
                 intent. Missing, empty or invalid explicit mappings are
-                compilation errors; there is no silent fallback.
+                compilation errors; there is no silent fallback. Machine/Input
+                coverage differences produce warnings and do not trim the
+                mapping.
             </p>
 
             <h2 id="flx-references">FLX JSON References</h2>

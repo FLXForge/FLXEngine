@@ -1,6 +1,7 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProject.h"
 #include "../../engine/debug/Logger.h"
+#include "../../engine/input/InputMappingLoader.h"
 #include "../../engine/input/InputSystem.h"
 #include "../../engine/runtime/RuntimeHelpers.h"
 #include "../../engine/runtime/RuntimeObjectBuilder.h"
@@ -55,6 +56,24 @@ namespace
         std::set<int> previousKeys;
         std::set<int> currentKeys;
     };
+
+    bool loadMappingInto(
+        InputSystem& input,
+        const InputChipDefinition& chip,
+        const std::string& sourceName,
+        const std::string& content
+    )
+    {
+        const InputMappingLoadResult result =
+            InputMappingLoader::loadContent(sourceName, content, chip);
+
+        if (result.success)
+        {
+            input.setMapping(result.mapping);
+        }
+
+        return result.success;
+    }
 
     bool nearlyEqual(float left, float right, float epsilon = 0.001f)
     {
@@ -728,14 +747,19 @@ namespace
 
         harness.input.configure(harness.project.context.machine.input);
         harness.input.setPhysicalInputProvider(&harness.provider);
-        harness.input.loadMappingContent(
-            "controls.input",
-            "players.1.directions.0.up=KEY_W\n"
-            "players.1.directions.0.down=KEY_S\n"
-            "players.1.directions.0.left=KEY_A\n"
-            "players.1.directions.0.right=KEY_D\n"
-            "players.1.directions.1.down=KEY_Q\n"
-            "players.1.directions.1.up=KEY_E\n"
+        require(
+            loadMappingInto(
+                harness.input,
+                harness.project.context.machine.input,
+                "controls.input",
+                "players.1.directions.0.up=KEY_W\n"
+                "players.1.directions.0.down=KEY_S\n"
+                "players.1.directions.0.left=KEY_A\n"
+                "players.1.directions.0.right=KEY_D\n"
+                "players.1.directions.1.down=KEY_Q\n"
+                "players.1.directions.1.up=KEY_E\n"
+            ),
+            "input direction mapping should load"
         );
 
         harness.addScript(
@@ -822,12 +846,17 @@ namespace
 
         harness.input.configure(harness.project.context.machine.input);
         harness.input.setPhysicalInputProvider(&harness.provider);
-        harness.input.loadMappingContent(
-            "asteroids.input",
-            "players.1.directions.0.up=KEY_W\n"
-            "players.1.directions.0.down=KEY_S\n"
-            "players.1.directions.0.left=KEY_A\n"
-            "players.1.directions.0.right=KEY_D\n"
+        require(
+            loadMappingInto(
+                harness.input,
+                harness.project.context.machine.input,
+                "asteroids.input",
+                "players.1.directions.0.up=KEY_W\n"
+                "players.1.directions.0.down=KEY_S\n"
+                "players.1.directions.0.left=KEY_A\n"
+                "players.1.directions.0.right=KEY_D\n"
+            ),
+            "asteroids input mapping should load"
         );
 
         harness.addScript(

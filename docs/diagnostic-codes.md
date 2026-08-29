@@ -128,14 +128,15 @@ BUILD
 | FLX-INPUT-00011 | InputMappingMalformedLine | error | Una línea del input mapping no cumple la sintaxis `key=value`. |
 | FLX-INPUT-00012 | InputMappingUnknownKey | error | El input mapping contiene una clave raíz desconocida. |
 | FLX-INPUT-00013 | InputMappingInvalidKey | error | Una clave del input mapping no tiene una estructura válida. |
-| FLX-INPUT-00014 | InputMappingPlayerOutOfRange | error | El input mapping referencia un player fuera de la capacidad del Input Chip. |
-| FLX-INPUT-00015 | InputMappingButtonOutOfRange | error | El input mapping referencia un botón fuera de la capacidad del Input Chip. |
-| FLX-INPUT-00016 | InputMappingDirectionOutOfRange | error | El input mapping referencia una dirección fuera de la capacidad del Input Chip. |
+| FLX-INPUT-00014 | InputMappingPlayerOutOfRange | warning | El input mapping referencia un player que la Machine actual no consume. |
+| FLX-INPUT-00015 | InputMappingButtonOutOfRange | warning | El input mapping referencia un botón que la Machine actual no consume. |
+| FLX-INPUT-00016 | InputMappingDirectionOutOfRange | warning | El input mapping referencia una dirección que la Machine actual no consume. |
 | FLX-INPUT-00017 | InputMappingUnknownDirectionComponent | error | El input mapping referencia un componente direccional desconocido. |
 | FLX-INPUT-00018 | InputMappingUnknownPhysicalToken | error | El input mapping referencia un token físico desconocido. |
 | FLX-INPUT-00019 | InputMappingEmptyBinding | error | Una asignación del input mapping está vacía o incompleta. |
 | FLX-INPUT-00020 | InputMappingDuplicateBinding | error | El input mapping declara la misma clave lógica más de una vez. |
 | FLX-INPUT-00021 | InputMappingEmpty | error | El input mapping no contiene declaraciones efectivas. |
+| FLX-INPUT-00022 | InputMappingMachineControlUnmapped | warning | La Machine expone controles lógicos sin mapping físico declarado. |
 
 ### BINARY
 

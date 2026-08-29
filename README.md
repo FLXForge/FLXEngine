@@ -235,13 +235,18 @@ players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
 players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
 players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+players.1.buttons.3=KEY_Z,JOY1_Y
 system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT
 ```
 
 Scripts read this through descriptors such as `system()`, `player(index)`,
 `button(index)`, `direction(index)` and the `input_*` query functions. If
 `input.mapping` is missing, FLX compiles a default mapping. If it is declared
-explicitly, the file must exist and validate against the active Input Chip.
+explicitly, the file must exist and be intrinsically valid. Machine/Input
+coverage differences are reported as warnings and do not trim the mapping.
 
 JSON files can reference reusable project resources with FLX-root paths. The
 leading slash points to the manifest `path`, not to the operating system root:

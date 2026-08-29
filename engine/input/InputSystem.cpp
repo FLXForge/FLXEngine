@@ -1,6 +1,4 @@
 #include "InputSystem.h"
-#include "InputMappingLoader.h"
-#include "../debug/Logger.h"
 
 #include <raylib.h>
 
@@ -48,49 +46,6 @@ void InputSystem::setPhysicalInputProvider(
 )
 {
     provider = nextProvider;
-}
-
-bool InputSystem::loadMapping(const std::string& path)
-{
-    const InputMappingLoadResult result =
-        InputMappingLoader::loadFile(path, chip);
-
-    for (const Diagnostic& diagnostic : result.diagnostics.all())
-    {
-        Logger::warning("input", diagnostic.message);
-    }
-
-    if (!result.success)
-    {
-        return false;
-    }
-
-    setMapping(result.mapping);
-    Logger::debug("input", "Loaded input mapping: " + result.sourceName);
-    return true;
-}
-
-bool InputSystem::loadMappingContent(
-    const std::string& sourceName,
-    const std::string& content
-)
-{
-    const InputMappingLoadResult result =
-        InputMappingLoader::loadContent(sourceName, content, chip);
-
-    for (const Diagnostic& diagnostic : result.diagnostics.all())
-    {
-        Logger::warning("input", diagnostic.message);
-    }
-
-    if (!result.success)
-    {
-        return false;
-    }
-
-    setMapping(result.mapping);
-    Logger::debug("input", "Loaded input mapping: " + result.sourceName);
-    return true;
 }
 
 void InputSystem::setMapping(const InputMapping& nextMapping)

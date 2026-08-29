@@ -172,27 +172,6 @@ namespace
         return buttons;
     }
 
-    bool validPlayer(const InputChipDefinition& chip, int player)
-    {
-        return player >= 1 && player <= chip.players;
-    }
-
-    bool validSystemButton(const InputChipDefinition& chip, int button)
-    {
-        return button >= 0 && button < chip.systemButtons;
-    }
-
-    bool validPlayerButton(const InputChipDefinition& chip, int button)
-    {
-        return button >= 0 && button < chip.playerButtons;
-    }
-
-    bool validDirection(const InputChipDefinition& chip, int direction)
-    {
-        return direction >= 0 &&
-            direction < static_cast<int>(chip.directions.size());
-    }
-
     bool parsePhysicalInput(
         const std::string& token,
         PhysicalInput& input
@@ -379,6 +358,24 @@ namespace
         return InputComponent::Neutral;
     }
 
+    InputComponent normalizeComponentForChip(
+        const InputChipDefinition& chip,
+        int direction,
+        InputComponent component
+    )
+    {
+        if (direction < 0 ||
+            direction >= static_cast<int>(chip.directions.size()))
+        {
+            return component;
+        }
+
+        return normalizeComponentForDirection(
+            chip.directions[direction],
+            component
+        );
+    }
+
     void appendAction(InputAction& target, const InputAction& source)
     {
         target.alternatives.insert(
@@ -390,7 +387,6 @@ namespace
 
     void parseSystemButton(
         const ParsedLine& line,
-        const InputChipDefinition& chip,
         InputMappingLoadResult& result
     )
     {
@@ -400,11 +396,11 @@ namespace
         const int button =
             parseInt(indexText);
 
-        if (!validSystemButton(chip, button))
+        if (button < 0)
         {
             result.diagnostics.error(
-                DiagnosticCode::InputMappingButtonOutOfRange,
-                "System button is outside Input Chip capacity",
+                DiagnosticCode::InputMappingInvalidKey,
+                "Invalid system button index",
                 result.sourceName,
                 line.key,
                 lineRange(line.line)
@@ -442,11 +438,11 @@ namespace
         const int player =
             parseInt(parts[1]);
 
-        if (!validPlayer(chip, player))
+        if (player <= 0)
         {
             result.diagnostics.error(
-                DiagnosticCode::InputMappingPlayerOutOfRange,
-                "Player is outside Input Chip capacity",
+                DiagnosticCode::InputMappingInvalidKey,
+                "Invalid player index",
                 result.sourceName,
                 line.key,
                 lineRange(line.line)
@@ -460,11 +456,11 @@ namespace
             const int direction =
                 parseInt(parts[3]);
 
-            if (!validDirection(chip, direction))
+            if (direction < 0)
             {
                 result.diagnostics.error(
-                    DiagnosticCode::InputMappingDirectionOutOfRange,
-                    "Direction is outside Input Chip capacity",
+                    DiagnosticCode::InputMappingInvalidKey,
+                    "Invalid direction index",
                     result.sourceName,
                     line.key,
                     lineRange(line.line)
@@ -492,14 +488,18 @@ namespace
             PlayerMapping& playerMapping =
                 result.mapping.players[player];
 
-            if (playerMapping.directions.size() < chip.directions.size())
+            if (playerMapping.directions.size() <=
+                static_cast<size_t>(direction))
             {
-                playerMapping.directions.resize(chip.directions.size());
+                playerMapping.directions.resize(
+                    static_cast<size_t>(direction) + 1
+                );
             }
 
             const InputComponent targetComponent =
-                normalizeComponentForDirection(
-                    chip.directions[direction],
+                normalizeComponentForChip(
+                    chip,
+                    direction,
                     sourceComponent
                 );
 
@@ -516,11 +516,11 @@ namespace
             const int button =
                 parseInt(parts[3]);
 
-            if (!validPlayerButton(chip, button))
+            if (button < 0)
             {
                 result.diagnostics.error(
-                    DiagnosticCode::InputMappingButtonOutOfRange,
-                    "Player button is outside Input Chip capacity",
+                    DiagnosticCode::InputMappingInvalidKey,
+                    "Invalid player button index",
                     result.sourceName,
                     line.key,
                     lineRange(line.line)
@@ -575,6 +575,204 @@ namespace
             }
         );
     }
+
+    int mappedSystemButtonCapacity(const InputMapping& mapping)
+    {
+        int capacity = 0;
+
+        for (const auto& item : mapping.systemButtons)
+        {
+            capacity = std::max(capacity, item.first + 1);
+        }
+
+        return capacity;
+    }
+
+    int mappedPlayerCapacity(const InputMapping& mapping)
+    {
+        int capacity = 0;
+
+        for (const auto& item : mapping.players)
+        {
+            capacity = std::max(capacity, item.first);
+        }
+
+        return capacity;
+    }
+
+    int mappedPlayerButtonCapacity(const InputMapping& mapping)
+    {
+        int capacity = 0;
+
+        for (const auto& playerItem : mapping.players)
+        {
+            for (const auto& buttonItem : playerItem.second.buttons)
+            {
+                capacity = std::max(capacity, buttonItem.first + 1);
+            }
+        }
+
+        return capacity;
+    }
+
+    bool directionHasDeclarations(const DirectionMapping& direction)
+    {
+        return std::any_of(
+            direction.components.begin(),
+            direction.components.end(),
+            [](const auto& item)
+            {
+                return !item.second.alternatives.empty();
+            }
+        );
+    }
+
+    int mappedDirectionCapacity(const InputMapping& mapping)
+    {
+        int capacity = 0;
+
+        for (const auto& playerItem : mapping.players)
+        {
+            const std::vector<DirectionMapping>& directions =
+                playerItem.second.directions;
+
+            for (size_t index = 0; index < directions.size(); ++index)
+            {
+                if (directionHasDeclarations(directions[index]))
+                {
+                    capacity = std::max(
+                        capacity,
+                        static_cast<int>(index) + 1
+                    );
+                }
+            }
+        }
+
+        return capacity;
+    }
+
+    void warnCoverage(
+        InputMappingLoadResult& result,
+        DiagnosticCode code,
+        const std::string& message,
+        const std::string& field
+    )
+    {
+        result.diagnostics.warning(
+            code,
+            message,
+            result.sourceName,
+            field
+        );
+    }
+
+    void addCoverageDiagnostics(
+        const InputChipDefinition& chip,
+        InputMappingLoadResult& result
+    )
+    {
+        const int mappedPlayers =
+            mappedPlayerCapacity(result.mapping);
+
+        if (mappedPlayers > chip.players)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingPlayerOutOfRange,
+                "Input mapping defines " +
+                    std::to_string(mappedPlayers) +
+                    " players, but this Machine exposes only " +
+                    std::to_string(chip.players) + ".",
+                "players"
+            );
+        }
+
+        const int mappedPlayerButtons =
+            mappedPlayerButtonCapacity(result.mapping);
+
+        if (mappedPlayerButtons > chip.playerButtons)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingButtonOutOfRange,
+                "Input mapping defines " +
+                    std::to_string(mappedPlayerButtons) +
+                    " player buttons, but this Machine exposes only " +
+                    std::to_string(chip.playerButtons) + ".",
+                "players.buttons"
+            );
+        }
+        else if (chip.playerButtons > mappedPlayerButtons)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingMachineControlUnmapped,
+                "Machine exposes " +
+                    std::to_string(chip.playerButtons) +
+                    " player buttons, but only " +
+                    std::to_string(mappedPlayerButtons) + " are mapped.",
+                "players.buttons"
+            );
+        }
+
+        const int mappedSystemButtons =
+            mappedSystemButtonCapacity(result.mapping);
+
+        if (mappedSystemButtons > chip.systemButtons)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingButtonOutOfRange,
+                "Input mapping defines " +
+                    std::to_string(mappedSystemButtons) +
+                    " system buttons, but this Machine exposes only " +
+                    std::to_string(chip.systemButtons) + ".",
+                "system.buttons"
+            );
+        }
+        else if (chip.systemButtons > mappedSystemButtons)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingMachineControlUnmapped,
+                "Machine exposes " +
+                    std::to_string(chip.systemButtons) +
+                    " system buttons, but only " +
+                    std::to_string(mappedSystemButtons) + " are mapped.",
+                "system.buttons"
+            );
+        }
+
+        const int mappedDirections =
+            mappedDirectionCapacity(result.mapping);
+        const int machineDirections =
+            static_cast<int>(chip.directions.size());
+
+        if (mappedDirections > machineDirections)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingDirectionOutOfRange,
+                "Input mapping defines " +
+                    std::to_string(mappedDirections) +
+                    " directions, but this Machine exposes only " +
+                    std::to_string(machineDirections) + ".",
+                "players.directions"
+            );
+        }
+        else if (machineDirections > mappedDirections)
+        {
+            warnCoverage(
+                result,
+                DiagnosticCode::InputMappingMachineControlUnmapped,
+                "Machine exposes " +
+                    std::to_string(machineDirections) +
+                    " directions, but only " +
+                    std::to_string(mappedDirections) + " are mapped.",
+                "players.directions"
+            );
+        }
+    }
 }
 
 std::string InputMappingLoader::defaultMappingContent()
@@ -587,6 +785,7 @@ std::string InputMappingLoader::defaultMappingContent()
         "players.1.buttons.0=KEY_SPACE,JOY1_A\n"
         "players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B\n"
         "players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X\n"
+        "players.1.buttons.3=KEY_Z,JOY1_Y\n"
         "system.buttons.0=KEY_ENTER,JOY1_START\n"
         "system.buttons.1=KEY_ESCAPE,JOY1_SELECT\n";
 }
@@ -715,7 +914,7 @@ InputMappingLoadResult InputMappingLoader::loadContent(
 
         if (startsWith(parsed.key, "system.buttons."))
         {
-            parseSystemButton(parsed, chip, result);
+            parseSystemButton(parsed, result);
             continue;
         }
 
@@ -742,6 +941,11 @@ InputMappingLoadResult InputMappingLoader::loadContent(
             sourceName,
             "input.mapping"
         );
+    }
+
+    if (mappingHasDeclarations(result.mapping))
+    {
+        addCoverageDiagnostics(chip, result);
     }
 
     result.success =

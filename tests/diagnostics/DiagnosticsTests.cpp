@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 95, "registry should include generic codes and implemented project/resource/input/binary/runtime codes");
+        require(codes.size() == 96, "registry should include generic codes and implemented project/resource/input/binary/runtime codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;
@@ -133,6 +133,14 @@ namespace
         require(
             diagnosticCodeText(DiagnosticCode::InputMappingDuplicateBinding) == std::string("FLX-INPUT-00020"),
             "duplicate input mapping should use concrete input code"
+        );
+        require(
+            diagnosticUsualSeverity(DiagnosticCode::InputMappingButtonOutOfRange) == DiagnosticSeverity::Warning,
+            "input mapping capacity differences should be warnings"
+        );
+        require(
+            diagnosticCodeText(DiagnosticCode::InputMappingMachineControlUnmapped) == std::string("FLX-INPUT-00022"),
+            "unmapped machine controls should use concrete input warning code"
         );
         require(
             diagnosticCodeText(DiagnosticCode::EngineAlreadyRun) == std::string("FLX-RUNTIME-00010"),

@@ -386,6 +386,7 @@ players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A
 players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
 players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+players.1.buttons.3=KEY_Z,JOY1_Y
 
 system.buttons.0=KEY_ENTER,JOY1_START
 system.buttons.1=KEY_ESCAPE,JOY1_SELECT
@@ -404,8 +405,14 @@ players.1.buttons.fire=KEY_SPACE
 ```
 
 Malformed mapping lines, unknown keys, unknown physical tokens, duplicate
-logical keys and declarations outside the Input Chip capacity produce
+logical keys, empty bindings and unknown public direction components produce
 Diagnostics v2 errors.
+
+Machine Input and Input Mapping are independent scopes. The Machine declares
+which logical controls the game can consume; the Input Mapping declares which
+physical controls are available. A mapping may declare more or fewer controls
+than the current Machine exposes. Those differences produce Diagnostics v2
+warnings, but they do not invalidate the mapping and do not trim it.
 
 ## O. Constants
 

@@ -95,6 +95,7 @@ enum class DiagnosticCode
     InputMappingEmptyBinding,
     InputMappingDuplicateBinding,
     InputMappingEmpty,
+    InputMappingMachineControlUnmapped,
 
     BinaryInformationUnclassified,
     BinaryWarningUnclassified,

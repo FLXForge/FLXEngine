@@ -724,9 +724,10 @@ fade_set(0, "black");</code></pre>
 
             <p>
                 Input reads logical controls declared by the project
-                <code>input.mapping</code> file and constrained by the active
+                <code>input.mapping</code> file and consumed through the active
                 Input Chip. If the manifest omits <code>input.mapping</code>,
-                FLX compiles the default mapping.
+                FLX compiles the default mapping. Machine/Input coverage
+                differences produce warnings, not compilation errors.
             </p>
 
             <div class="code-card">

@@ -86,6 +86,42 @@ namespace
         return false;
     }
 
+    bool hasSeverity(
+        const Diagnostics& diagnostics,
+        DiagnosticCode code,
+        DiagnosticSeverity severity
+    )
+    {
+        for (const Diagnostic& diagnostic : diagnostics.all())
+        {
+            if (diagnostic.code == code &&
+                diagnostic.severity == severity)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool loadMappingInto(
+        InputSystem& input,
+        const InputChipDefinition& chip,
+        const std::string& sourceName,
+        const std::string& content
+    )
+    {
+        const InputMappingLoadResult result =
+            InputMappingLoader::loadContent(sourceName, content, chip);
+
+        if (result.success)
+        {
+            input.setMapping(result.mapping);
+        }
+
+        return result.success;
+    }
+
     MachineDefinition loadMachine(
         const std::string& name,
         const std::string& content,
@@ -127,6 +163,44 @@ namespace
             }
         };
         return chip;
+    }
+
+    InputChipDefinition capacityChip(
+        int playerButtons,
+        int systemButtons = 2,
+        int players = 1,
+        int directions = 1
+    )
+    {
+        InputChipDefinition chip;
+        chip.systemButtons = systemButtons;
+        chip.players = players;
+        chip.playerButtons = playerButtons;
+        chip.directions.clear();
+
+        for (int index = 0; index < directions; ++index)
+        {
+            chip.directions.push_back(
+                InputDirectionDefinition{ "4way", "last", 0.0f }
+            );
+        }
+
+        return chip;
+    }
+
+    std::string fourButtonMapping()
+    {
+        return
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.down=KEY_S\n"
+            "players.1.directions.0.left=KEY_A\n"
+            "players.1.directions.0.right=KEY_D\n"
+            "players.1.buttons.0=KEY_SPACE\n"
+            "players.1.buttons.1=KEY_LEFT_CONTROL\n"
+            "players.1.buttons.2=KEY_LEFT_SHIFT\n"
+            "players.1.buttons.3=KEY_Z\n"
+            "system.buttons.0=KEY_ENTER\n"
+            "system.buttons.1=KEY_ESCAPE\n";
     }
 
     void testDefaultMachineInputIsDigitalAndPermissive()
@@ -219,7 +293,7 @@ namespace
         require(result.success, "valid consolidated mapping syntax should validate");
     }
 
-    void testMappingIsConstrainedByInputChip()
+    void testMappingCapacityDifferencesAreWarnings()
     {
         const InputMappingLoadResult result =
             validateMapping(
@@ -233,11 +307,63 @@ namespace
             );
 
         require(!result.success, "invalid mapping should fail validation");
-        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingPlayerOutOfRange), "player count should constrain mapping");
-        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange), "buttons should constrain mapping");
-        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingDirectionOutOfRange), "direction count should constrain mapping");
+        require(hasSeverity(result.diagnostics, DiagnosticCode::InputMappingPlayerOutOfRange, DiagnosticSeverity::Warning), "player count differences should be warnings");
+        require(hasSeverity(result.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange, DiagnosticSeverity::Warning), "button count differences should be warnings");
+        require(hasSeverity(result.diagnostics, DiagnosticCode::InputMappingDirectionOutOfRange, DiagnosticSeverity::Warning), "direction count differences should be warnings");
         require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownDirectionComponent), "positive/negative should not be public mapping components");
         require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownPhysicalToken), "unknown physical token should fail");
+    }
+
+    void testMappingWithMorePlayerButtonsThanMachineSucceedsWithWarning()
+    {
+        const InputMappingLoadResult zeroButtons =
+            validateMapping(capacityChip(0), fourButtonMapping());
+
+        require(zeroButtons.success, "machine with zero player buttons should accept broader mapping");
+        require(hasSeverity(zeroButtons.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange, DiagnosticSeverity::Warning), "broader player button mapping should warn");
+
+        const InputMappingLoadResult twoButtons =
+            validateMapping(capacityChip(2), fourButtonMapping());
+
+        require(twoButtons.success, "machine with two player buttons should accept four-button mapping");
+        require(hasSeverity(twoButtons.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange, DiagnosticSeverity::Warning), "four buttons over two-button machine should warn");
+    }
+
+    void testMachineWithMorePlayerButtonsThanMappingSucceedsWithWarning()
+    {
+        const InputMappingLoadResult result =
+            validateMapping(capacityChip(10), fourButtonMapping());
+
+        require(result.success, "machine with more player buttons should accept smaller mapping");
+        require(hasSeverity(result.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped, DiagnosticSeverity::Warning), "unmapped machine player buttons should warn");
+    }
+
+    void testMatchingCoverageSucceedsWithoutCoverageWarnings()
+    {
+        const InputMappingLoadResult result =
+            validateMapping(capacityChip(4), fourButtonMapping());
+
+        require(result.success, "matching mapping and machine coverage should succeed");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingPlayerOutOfRange), "matching player coverage should not warn");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange), "matching button coverage should not warn");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingDirectionOutOfRange), "matching direction coverage should not warn");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped), "matching coverage should not report unmapped machine controls");
+    }
+
+    void testDefaultMappingIsCompleteAndNotTrimmedByMachine()
+    {
+        const InputMappingLoadResult zeroButtons =
+            InputMappingLoader::loadDefault(capacityChip(0));
+
+        require(zeroButtons.success, "default mapping should load over zero-button machine");
+        require(zeroButtons.content.find("players.1.buttons.3=KEY_Z,JOY1_Y") != std::string::npos, "default mapping should expose player button 3");
+        require(zeroButtons.mapping.players.at(1).buttons.contains(3), "default mapping should preserve button 3");
+
+        const InputMappingLoadResult tenButtons =
+            InputMappingLoader::loadDefault(capacityChip(10));
+
+        require(tenButtons.success, "default mapping should load over larger machine");
+        require(hasSeverity(tenButtons.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped, DiagnosticSeverity::Warning), "larger machine should warn about unmapped default buttons");
     }
 
     void testDefaultMappingLoadsForDefaultMachine()
@@ -321,7 +447,7 @@ namespace
         input.setPhysicalInputProvider(&provider);
 
         require(
-            input.loadMappingContent(
+            loadMappingInto(input, inputChip("4way"),
                 "actions.input",
                 "players.1.buttons.0=KEY_A,KEY_B\n"
                 "players.1.buttons.1=KEY_LEFT_CONTROL+KEY_C\n"
@@ -346,11 +472,14 @@ namespace
 
     void testTwoWayAcceptsPublicFourDirectionVocabulary()
     {
+        const InputChipDefinition chip =
+            inputChip("2way", "last");
+
         FakeInputProvider provider;
         InputSystem input;
-        input.configure(inputChip("2way", "last"));
+        input.configure(chip);
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, chip,
             "twoway_public.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -400,13 +529,75 @@ namespace
         require(hasCode(result.diagnostics, DiagnosticCode::InputMappingCouldNotBeOpened), "missing mapping should use input diagnostic");
     }
 
+    void testExplicitMappingCoverageWarningsDoNotFailCompilation()
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_characterization" / "coverage_compile";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+        std::filesystem::create_directories(root / "machines");
+
+        writeFile(
+            root / "game.flx",
+            "name=CoverageInput\n"
+            "path=game\n"
+            "root=root\n"
+            "machine=machines/input.machine.yml\n"
+            "input.mapping=controls.input\n"
+        );
+
+        writeFile(root / "game" / "root.json", "{}\n");
+        writeFile(root / "controls.input", fourButtonMapping());
+
+        writeFile(
+            root / "machines" / "input.machine.yml",
+            "machine:\n"
+            "  input:\n"
+            "    system:\n"
+            "      buttons: 4\n"
+            "    players:\n"
+            "      count: 1\n"
+            "      controls:\n"
+            "        buttons: 2\n"
+            "        directions:\n"
+            "          - type: 4way\n"
+        );
+
+        CompilationResult broader =
+            compile(root / "game.flx");
+
+        require(broader.success, "explicit broader mapping should compile with warnings");
+        require(hasSeverity(broader.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange, DiagnosticSeverity::Warning), "broader explicit mapping should warn");
+
+        writeFile(
+            root / "machines" / "input.machine.yml",
+            "machine:\n"
+            "  input:\n"
+            "    system:\n"
+            "      buttons: 4\n"
+            "    players:\n"
+            "      count: 1\n"
+            "      controls:\n"
+            "        buttons: 10\n"
+            "        directions:\n"
+            "          - type: 4way\n"
+        );
+
+        CompilationResult narrower =
+            compile(root / "game.flx");
+
+        require(narrower.success, "explicit narrower mapping should compile with warnings");
+        require(hasSeverity(narrower.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped, DiagnosticSeverity::Warning), "narrower explicit mapping should warn");
+    }
+
     void testButtonPressedDownReleasedAreLogicalAndIdempotent()
     {
         FakeInputProvider provider;
         InputSystem input;
         input.configure(inputChip("4way"));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "buttons.input",
             "players.1.buttons.0=KEY_SPACE\n"
             "system.buttons.0=KEY_ESCAPE\n"
@@ -439,11 +630,14 @@ namespace
 
     void testTwoWayNativeComponents()
     {
+        const InputChipDefinition chip =
+            inputChip("2way", "last");
+
         FakeInputProvider provider;
         InputSystem input;
-        input.configure(inputChip("2way", "last"));
+        input.configure(chip);
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, chip,
             "twoway.input",
             "players.1.directions.0.down=KEY_A\n"
             "players.1.directions.0.up=KEY_D\n"
@@ -474,7 +668,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "last"));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "direction.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -501,7 +695,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "last"));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "projection.input",
             "players.1.directions.0.right=KEY_D\n"
             "players.1.directions.0.down=KEY_S\n"
@@ -527,7 +721,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "neutral"));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "neutral.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -557,7 +751,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "first", 0.2f));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "first.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -584,7 +778,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "first", 0.2f));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "first_replace.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -613,7 +807,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "first", 0.0f));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "first_zero.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -640,7 +834,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "first", 0.01f));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "first_expire.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -664,7 +858,7 @@ namespace
         InputSystem neutralInput;
         neutralInput.configure(inputChip("4way", "neutral", 10.0f));
         neutralInput.setPhysicalInputProvider(&neutralProvider);
-        neutralInput.loadMappingContent(
+        loadMappingInto(neutralInput, inputChip("4way", "neutral", 10.0f),
             "neutral_buffer.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -682,7 +876,7 @@ namespace
         InputSystem lastInput;
         lastInput.configure(inputChip("4way", "last", 10.0f));
         lastInput.setPhysicalInputProvider(&lastProvider);
-        lastInput.loadMappingContent(
+        loadMappingInto(lastInput, inputChip("4way", "last", 10.0f),
             "last_buffer.input",
             "players.1.directions.0.up=KEY_W\n"
             "players.1.directions.0.right=KEY_D\n"
@@ -702,7 +896,7 @@ namespace
         InputSystem input;
         input.configure(inputChip("4way", "last"));
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, inputChip("4way"),
             "multi_source.input",
             "players.1.buttons.0=KEY_SPACE,KEY_ENTER\n"
             "players.1.directions.0.up=KEY_W,KEY_UP\n"
@@ -738,7 +932,7 @@ namespace
         InputSystem input;
         input.configure(chip);
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
+        loadMappingInto(input, chip,
             "high.input",
             "system.buttons.126=KEY_ESCAPE\n"
             "players.1.buttons.126=KEY_SPACE\n"
@@ -844,10 +1038,7 @@ namespace
         InputSystem input;
         input.configure(result.project.context.machine.input);
         input.setPhysicalInputProvider(&provider);
-        input.loadMappingContent(
-            result.project.context.inputMappingSourceName,
-            result.project.context.inputMappingContent
-        );
+        input.setMapping(result.project.context.inputMapping);
 
         ScriptEngine scripts;
         scripts.setInputSystem(&input);
@@ -890,7 +1081,11 @@ int main()
         { "input chip loads consolidated shape", testInputChipLoadsConsolidatedShape },
         { "unsupported capabilities produce diagnostics", testUnsupportedCapabilitiesProduceDiagnostics },
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
-        { "mapping is constrained by input chip", testMappingIsConstrainedByInputChip },
+        { "mapping capacity differences are warnings", testMappingCapacityDifferencesAreWarnings },
+        { "mapping with more player buttons than machine succeeds with warning", testMappingWithMorePlayerButtonsThanMachineSucceedsWithWarning },
+        { "machine with more player buttons than mapping succeeds with warning", testMachineWithMorePlayerButtonsThanMappingSucceedsWithWarning },
+        { "matching coverage succeeds without coverage warnings", testMatchingCoverageSucceedsWithoutCoverageWarnings },
+        { "default mapping is complete and not trimmed by machine", testDefaultMappingIsCompleteAndNotTrimmedByMachine },
         { "default mapping loads for default machine", testDefaultMappingLoadsForDefaultMachine },
         { "mapping validation rejects malformed and unknown lines", testMappingValidationRejectsMalformedAndUnknownLines },
         { "mapping validation rejects empty duplicate and invalid members", testMappingValidationRejectsEmptyDuplicateAndInvalidMembers },
@@ -898,6 +1093,7 @@ int main()
         { "alternatives and combinations are validated as whole actions", testAlternativesAndCombinationsAreValidatedAsWholeActions },
         { "two way accepts public four direction vocabulary", testTwoWayAcceptsPublicFourDirectionVocabulary },
         { "explicit missing mapping fails compilation", testExplicitMissingMappingFailsCompilation },
+        { "explicit mapping coverage warnings do not fail compilation", testExplicitMappingCoverageWarningsDoNotFailCompilation },
         { "button pressed down released are logical and idempotent", testButtonPressedDownReleasedAreLogicalAndIdempotent },
         { "two way native components", testTwoWayNativeComponents },
         { "four way last resolves newest logical component", testFourWayLastResolvesNewestLogicalComponent },

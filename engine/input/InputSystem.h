@@ -24,11 +24,6 @@ class InputSystem
 public:
     void configure(const InputChipDefinition& inputChip);
     void setPhysicalInputProvider(PhysicalInputProvider* nextProvider);
-    bool loadMapping(const std::string& path);
-    bool loadMappingContent(
-        const std::string& sourceName,
-        const std::string& content
-    );
     void setMapping(const InputMapping& nextMapping);
     void update(float delta);
 

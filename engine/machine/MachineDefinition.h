@@ -64,10 +64,10 @@ struct InputDirectionDefinition
 
 struct InputChipDefinition
 {
-    int systemButtons = 16;
+    int systemButtons = 2;
     int players = 16;
     std::vector<InputDirectionDefinition> directions = { InputDirectionDefinition{} };
-    int playerButtons = 16;
+    int playerButtons = 4;
 };
 
 struct MachineDefinition

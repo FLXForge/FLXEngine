@@ -734,8 +734,8 @@ namespace
             "players.1.directions.0.down=KEY_S\n"
             "players.1.directions.0.left=KEY_A\n"
             "players.1.directions.0.right=KEY_D\n"
-            "players.1.directions.1.negative=KEY_Q\n"
-            "players.1.directions.1.positive=KEY_E\n"
+            "players.1.directions.1.down=KEY_Q\n"
+            "players.1.directions.1.up=KEY_E\n"
         );
 
         harness.addScript(

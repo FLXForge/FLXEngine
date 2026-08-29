@@ -357,9 +357,43 @@ system.buttons.0=KEY_ESCAPE
 Example for a `2way` direction:
 
 ```properties
-players.1.directions.0.negative=KEY_W,KEY_UP
-players.1.directions.0.positive=KEY_S,KEY_DOWN
+players.1.directions.0.up=KEY_W,KEY_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN
 ```
+
+Mapping files only use the public directional vocabulary:
+
+```text
+up
+right
+down
+left
+```
+
+The mapping vocabulary does not expose `positive` or `negative`.
+For a `2way` Input Chip, FLX normalizes `up` and `right` to positive
+intent, and `down` and `left` to negative intent. This is a union of
+alternatives, not a requirement to press several directions at once.
+
+If `input.mapping` is absent, FLX uses the default mapping:
+
+```properties
+players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
+
+players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+
+system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT
+```
+
+If `input.mapping` is declared explicitly, only that file is used. Missing,
+empty or invalid explicit mappings are compilation errors and do not fall back
+to the default mapping.
 
 Mapping files must not define gameplay names:
 
@@ -369,9 +403,9 @@ fire=KEY_SPACE
 players.1.buttons.fire=KEY_SPACE
 ```
 
-The current implementation logs warnings and ignores invalid mapping lines.
-Structured mapping diagnostics are not part of the v0.3.0 scripting Input
-contract.
+Malformed mapping lines, unknown keys, unknown physical tokens, duplicate
+logical keys and declarations outside the Input Chip capacity produce
+Diagnostics v2 errors.
 
 ## O. Constants
 

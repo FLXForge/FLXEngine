@@ -83,8 +83,8 @@ players.1.buttons.0=KEY_SPACE,JOY1_A
 For 2way directions:
 
 ```properties
-players.1.directions.0.negative=KEY_W
-players.1.directions.0.positive=KEY_S
+players.1.directions.0.up=KEY_W
+players.1.directions.0.down=KEY_S
 ```
 
 Rules:
@@ -95,9 +95,10 @@ Rules:
 - multiple physical sources keep the logical control active while at least one
   source remains active;
 - mapping is checked against the active Input Chip;
-- out-of-range mapping lines are ignored with warnings;
-- duplicate mapping entries are currently last-wins. This is characterized
-  behavior, not a recommended authoring style.
+- invalid mapping lines produce Diagnostics v2 errors and make compilation fail;
+- duplicate mapping entries produce Diagnostics v2 errors;
+- on 2way chips, public `up` and `right` declarations are normalized to the
+  positive pole, while `down` and `left` are normalized to the negative pole.
 
 ## E. Runtime Semantics
 

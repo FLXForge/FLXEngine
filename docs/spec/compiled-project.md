@@ -109,7 +109,8 @@ Compiled context
 ├── engineRequirement
 ├── Machine efectiva
 ├── inputMappingSourceName
-└── inputMappingContent
+├── inputMappingContent
+└── inputMapping compilado
 ```
 
 `name`, `version` y `notes` se conservan como metadata libre.
@@ -124,7 +125,9 @@ Compiled context
 
 La Machine almacenada es efectiva, no una ruta YAML.
 
-El input mapping queda preparado para ejecución.
+El input mapping queda validado y normalizado para ejecución. El contenido
+original puede conservarse como procedencia, pero Runtime no debe depender de
+leer ni reinterpretar el archivo `.input` original.
 
 ---
 

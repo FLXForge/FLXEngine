@@ -227,18 +227,21 @@ and moves the object during the same frame. `apply_speed()` changes live speed
 without changing the declaration, while `restore_speed()` returns it to
 `mechanics.motion.speed.start`.
 
-The normalized JavaScript input API uses an explicit mapping file:
+The normalized JavaScript input API uses a properties-style mapping file:
 
 ```text
-system.buttons.0=KEY_ESCAPE
-players.1.direction.left=KEY_A,JOY1_LEFT
-players.1.direction.right=KEY_D,JOY1_RIGHT
+players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 players.1.buttons.0=KEY_SPACE,JOY1_A
+system.buttons.0=KEY_ENTER,JOY1_START
 ```
 
 Scripts read this through descriptors such as `system()`, `player(index)`,
-`button(index)`, `direction(index)` and the `input_*` query functions. FLX does
-not create an implicit mapping when `input.mapping` is missing.
+`button(index)`, `direction(index)` and the `input_*` query functions. If
+`input.mapping` is missing, FLX compiles a default mapping. If it is declared
+explicitly, the file must exist and validate against the active Input Chip.
 
 JSON files can reference reusable project resources with FLX-root paths. The
 leading slash points to the manifest `path`, not to the operating system root:

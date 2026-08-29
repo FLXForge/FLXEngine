@@ -40,6 +40,66 @@ namespace flx::binary
             return keys;
         }
 
+        template <typename T>
+        std::vector<int> sortedIntKeys(const std::unordered_map<int, T>& map)
+        {
+            std::vector<int> keys;
+            keys.reserve(map.size());
+
+            for (const auto& pair : map)
+            {
+                keys.push_back(pair.first);
+            }
+
+            std::sort(keys.begin(), keys.end());
+            return keys;
+        }
+
+        uint8_t physicalTypeValue(PhysicalType type)
+        {
+            return type == PhysicalType::GamepadButton
+                ? 1u
+                : 0u;
+        }
+
+        PhysicalType physicalTypeFromValue(uint8_t value)
+        {
+            if (value == 0u)
+            {
+                return PhysicalType::Key;
+            }
+
+            if (value == 1u)
+            {
+                return PhysicalType::GamepadButton;
+            }
+
+            throw BinaryException(
+                DiagnosticCode::InvalidCompiledProjectValue,
+                "Invalid input physical type",
+                "context.input.mapping.physical.type"
+            );
+        }
+
+        uint8_t componentValue(InputComponent component)
+        {
+            return static_cast<uint8_t>(component);
+        }
+
+        InputComponent componentFromValue(uint8_t value)
+        {
+            if (value <= static_cast<uint8_t>(InputComponent::Left))
+            {
+                return static_cast<InputComponent>(value);
+            }
+
+            throw BinaryException(
+                DiagnosticCode::InvalidCompiledProjectValue,
+                "Invalid input component",
+                "context.input.mapping.component"
+            );
+        }
+
         void writeColor(BinaryWriter& writer, Color color)
         {
             writer.writeU8(color.r);
@@ -261,6 +321,335 @@ namespace flx::binary
 
             input.playerButtons = reader.readI32("input.players.controls.buttons");
             return input;
+        }
+
+        void writePhysicalInput(
+            BinaryWriter& writer,
+            const PhysicalInput& input
+        )
+        {
+            writer.writeU8(physicalTypeValue(input.type));
+            writer.writeI32(input.device);
+            writer.writeI32(input.code);
+        }
+
+        PhysicalInput readPhysicalInput(BinaryReader& reader)
+        {
+            PhysicalInput input;
+            input.type =
+                physicalTypeFromValue(
+                    reader.readU8("context.input.mapping.physical.type")
+                );
+            input.device =
+                reader.readI32("context.input.mapping.physical.device");
+            input.code =
+                reader.readI32("context.input.mapping.physical.code");
+            return input;
+        }
+
+        void writeInputCombination(
+            BinaryWriter& writer,
+            const InputCombination& combination
+        )
+        {
+            writer.writeCount(
+                combination.inputs.size(),
+                MaxCollectionCount,
+                "context.input.mapping.combination"
+            );
+
+            for (const PhysicalInput& input : combination.inputs)
+            {
+                writePhysicalInput(writer, input);
+            }
+        }
+
+        InputCombination readInputCombination(BinaryReader& reader)
+        {
+            InputCombination combination;
+            const uint32_t count =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.combination"
+                );
+
+            combination.inputs.reserve(count);
+
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                combination.inputs.push_back(readPhysicalInput(reader));
+            }
+
+            return combination;
+        }
+
+        void writeInputAction(
+            BinaryWriter& writer,
+            const InputAction& action
+        )
+        {
+            writer.writeCount(
+                action.alternatives.size(),
+                MaxCollectionCount,
+                "context.input.mapping.action"
+            );
+
+            for (const InputCombination& combination : action.alternatives)
+            {
+                writeInputCombination(writer, combination);
+            }
+        }
+
+        InputAction readInputAction(BinaryReader& reader)
+        {
+            InputAction action;
+            const uint32_t count =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.action"
+                );
+
+            action.alternatives.reserve(count);
+
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                action.alternatives.push_back(readInputCombination(reader));
+            }
+
+            return action;
+        }
+
+        void writeDirectionMapping(
+            BinaryWriter& writer,
+            const DirectionMapping& direction
+        )
+        {
+            std::vector<InputComponent> components;
+            components.reserve(direction.components.size());
+
+            for (const auto& item : direction.components)
+            {
+                components.push_back(item.first);
+            }
+
+            std::sort(
+                components.begin(),
+                components.end(),
+                [](InputComponent left, InputComponent right)
+                {
+                    return componentValue(left) < componentValue(right);
+                }
+            );
+
+            writer.writeCount(
+                components.size(),
+                MaxCollectionCount,
+                "context.input.mapping.direction.components"
+            );
+
+            for (InputComponent component : components)
+            {
+                writer.writeU8(componentValue(component));
+                writeInputAction(writer, direction.components.at(component));
+            }
+        }
+
+        DirectionMapping readDirectionMapping(BinaryReader& reader)
+        {
+            DirectionMapping direction;
+            const uint32_t count =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.direction.components"
+                );
+
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                const InputComponent component =
+                    componentFromValue(
+                        reader.readU8("context.input.mapping.component")
+                    );
+
+                if (!direction.components.emplace(
+                    component,
+                    readInputAction(reader)
+                ).second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate input direction component",
+                        "context.input.mapping.direction.components"
+                    );
+                }
+            }
+
+            return direction;
+        }
+
+        void writePlayerMapping(
+            BinaryWriter& writer,
+            const PlayerMapping& player
+        )
+        {
+            writer.writeCount(
+                player.directions.size(),
+                MaxCollectionCount,
+                "context.input.mapping.player.directions"
+            );
+
+            for (const DirectionMapping& direction : player.directions)
+            {
+                writeDirectionMapping(writer, direction);
+            }
+
+            const std::vector<int> buttonKeys =
+                sortedIntKeys(player.buttons);
+
+            writer.writeCount(
+                buttonKeys.size(),
+                MaxCollectionCount,
+                "context.input.mapping.player.buttons"
+            );
+
+            for (int key : buttonKeys)
+            {
+                writer.writeI32(key);
+                writeInputAction(writer, player.buttons.at(key));
+            }
+        }
+
+        PlayerMapping readPlayerMapping(BinaryReader& reader)
+        {
+            PlayerMapping player;
+            const uint32_t directionCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.player.directions"
+                );
+
+            player.directions.reserve(directionCount);
+
+            for (uint32_t i = 0; i < directionCount; ++i)
+            {
+                player.directions.push_back(readDirectionMapping(reader));
+            }
+
+            const uint32_t buttonCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.player.buttons"
+                );
+
+            for (uint32_t i = 0; i < buttonCount; ++i)
+            {
+                const int key =
+                    reader.readI32("context.input.mapping.player.button");
+
+                if (!player.buttons.emplace(
+                    key,
+                    readInputAction(reader)
+                ).second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate input player button",
+                        "context.input.mapping.player.buttons"
+                    );
+                }
+            }
+
+            return player;
+        }
+
+        void writeInputMapping(
+            BinaryWriter& writer,
+            const InputMapping& mapping
+        )
+        {
+            const std::vector<int> systemButtonKeys =
+                sortedIntKeys(mapping.systemButtons);
+
+            writer.writeCount(
+                systemButtonKeys.size(),
+                MaxCollectionCount,
+                "context.input.mapping.systemButtons"
+            );
+
+            for (int key : systemButtonKeys)
+            {
+                writer.writeI32(key);
+                writeInputAction(writer, mapping.systemButtons.at(key));
+            }
+
+            const std::vector<int> playerKeys =
+                sortedIntKeys(mapping.players);
+
+            writer.writeCount(
+                playerKeys.size(),
+                MaxCollectionCount,
+                "context.input.mapping.players"
+            );
+
+            for (int key : playerKeys)
+            {
+                writer.writeI32(key);
+                writePlayerMapping(writer, mapping.players.at(key));
+            }
+        }
+
+        InputMapping readInputMapping(BinaryReader& reader)
+        {
+            InputMapping mapping;
+
+            const uint32_t systemButtonCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.systemButtons"
+                );
+
+            for (uint32_t i = 0; i < systemButtonCount; ++i)
+            {
+                const int key =
+                    reader.readI32("context.input.mapping.systemButton");
+
+                if (!mapping.systemButtons.emplace(
+                    key,
+                    readInputAction(reader)
+                ).second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate input system button",
+                        "context.input.mapping.systemButtons"
+                    );
+                }
+            }
+
+            const uint32_t playerCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "context.input.mapping.players"
+                );
+
+            for (uint32_t i = 0; i < playerCount; ++i)
+            {
+                const int key =
+                    reader.readI32("context.input.mapping.player");
+
+                if (!mapping.players.emplace(
+                    key,
+                    readPlayerMapping(reader)
+                ).second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate input player",
+                        "context.input.mapping.players"
+                    );
+                }
+            }
+
+            return mapping;
         }
 
         void writeMachine(BinaryWriter& writer, const MachineDefinition& machine)
@@ -872,6 +1261,7 @@ namespace flx::binary
             writer.writeString(context.title);
             writer.writeString(context.inputMappingSourceName);
             writer.writeString(context.inputMappingContent);
+            writeInputMapping(writer, context.inputMapping);
             writeMachine(writer, context.machine);
         }
 
@@ -885,6 +1275,7 @@ namespace flx::binary
             context.title = reader.readString("context.title");
             context.inputMappingSourceName = reader.readString("context.input.source");
             context.inputMappingContent = reader.readString("context.input.content");
+            context.inputMapping = readInputMapping(reader);
             context.machine = readMachine(reader);
             return context;
         }

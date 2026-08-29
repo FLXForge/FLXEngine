@@ -6,5 +6,5 @@
 
 function action(player) {
     const MOVE = direction(0);
-    move_vertical(player, input_direction(player, MOVE, VERTICAL));
+    move_vertical(player, -input_direction(player, MOVE, VERTICAL));
 }

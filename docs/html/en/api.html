@@ -725,7 +725,8 @@ fade_set(0, "black");</code></pre>
             <p>
                 Input reads logical controls declared by the project
                 <code>input.mapping</code> file and constrained by the active
-                Input Chip.
+                Input Chip. If the manifest omits <code>input.mapping</code>,
+                FLX compiles the default mapping.
             </p>
 
             <div class="code-card">
@@ -949,7 +950,11 @@ let music = load("settings", "music", true);</code></pre>
                 only <code>LEFT</code>/<code>RIGHT</code> and
                 <code>VERTICAL</code> reads only <code>UP</code>/<code>DOWN</code>.
                 In a <code>2way</code> direction, positive/negative intent can be
-                projected onto either axis.
+                projected onto either axis. Mapping files still declare only
+                <code>up</code>, <code>right</code>, <code>down</code> and
+                <code>left</code>; <code>up</code>/<code>right</code> normalize
+                to positive and <code>down</code>/<code>left</code> normalize to
+                negative for <code>2way</code> chips.
             </p>
 
             <div class="code-card">

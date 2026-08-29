@@ -705,7 +705,8 @@ fade_set(0, "black");</code></pre>
             <p>
                 Input lee controles logicos declarados en el archivo
                 <code>input.mapping</code> del proyecto y limitados por el Input
-                Chip activo.
+                Chip activo. Si el manifiesto omite <code>input.mapping</code>,
+                FLX compila el mapping por defecto.
             </p>
 
             <div class="code-card">
@@ -912,7 +913,12 @@ let music = load("settings", "music", true);</code></pre>
                 solo <code>LEFT</code>/<code>RIGHT</code> y
                 <code>VERTICAL</code> lee solo <code>UP</code>/<code>DOWN</code>.
                 En una direccion <code>2way</code>, la intencion positiva/negativa
-                puede proyectarse sobre cualquiera de los dos ejes.
+                puede proyectarse sobre cualquiera de los dos ejes. Los archivos
+                de mapping siguen declarando solo <code>up</code>,
+                <code>right</code>, <code>down</code> y <code>left</code>;
+                <code>up</code>/<code>right</code> se normalizan a positivo y
+                <code>down</code>/<code>left</code> a negativo en chips
+                <code>2way</code>.
             </p>
 
             <div class="code-card">

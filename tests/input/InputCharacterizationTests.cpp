@@ -1,5 +1,6 @@
 #include "../support/TestSupport.h"
 #include "../../engine/debug/Logger.h"
+#include "../../engine/input/InputMappingLoader.h"
 #include "../../engine/input/InputSystem.h"
 #include "../../engine/machine/MachineLoader.h"
 #include "../../engine/runtime/RuntimeWorld.h"
@@ -57,21 +58,32 @@ namespace
         std::set<int> currentKeys;
     };
 
-    std::string captureInputWarnings(
+    InputMappingLoadResult validateMapping(
         const InputChipDefinition& chip,
         const std::string& content
     )
     {
-        Logger::setConsoleEnabled(true);
-        Logger::setDebugEnabled(false);
+        return InputMappingLoader::loadContent(
+            "characterization.input",
+            content,
+            chip
+        );
+    }
 
-        StreamCapture capture;
+    bool hasCode(
+        const Diagnostics& diagnostics,
+        DiagnosticCode code
+    )
+    {
+        for (const Diagnostic& diagnostic : diagnostics.all())
+        {
+            if (diagnostic.code == code)
+            {
+                return true;
+            }
+        }
 
-        InputSystem input;
-        input.configure(chip);
-        input.loadMappingContent("characterization.input", content);
-
-        return capture.output.str();
+        return false;
     }
 
     MachineDefinition loadMachine(
@@ -191,8 +203,8 @@ namespace
 
     void testMappingAcceptsKeyboardGamepadCombinationAndDirections()
     {
-        const std::string output =
-            captureInputWarnings(
+        const InputMappingLoadResult result =
+            validateMapping(
                 inputChip("4way"),
                 "system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q\n"
                 "system.buttons.1=KEY_ENTER,JOY1_START\n"
@@ -204,28 +216,188 @@ namespace
                 "players.1.buttons.1=KEY_LEFT_CONTROL+KEY_C\n"
             );
 
-        require(output.empty(), "valid consolidated mapping syntax should not warn");
+        require(result.success, "valid consolidated mapping syntax should validate");
     }
 
     void testMappingIsConstrainedByInputChip()
     {
-        const std::string output =
-            captureInputWarnings(
+        const InputMappingLoadResult result =
+            validateMapping(
                 inputChip("2way"),
                 "players.2.buttons.0=KEY_SPACE\n"
                 "players.1.buttons.2=KEY_SPACE\n"
                 "system.buttons.2=KEY_ESCAPE\n"
-                "players.1.directions.1.negative=KEY_A\n"
-                "players.1.directions.0.up=KEY_W\n"
+                "players.1.directions.1.down=KEY_A\n"
+                "players.1.directions.0.positive=KEY_W\n"
                 "players.1.buttons.0=KEY_UNKNOWN\n"
             );
 
-        require(output.find("outside Input Chip players") != std::string::npos, "player count should constrain mapping");
-        require(output.find("player button outside Input Chip limit") != std::string::npos, "player buttons should constrain mapping");
-        require(output.find("system button outside Input Chip limit") != std::string::npos, "system buttons should constrain mapping");
-        require(output.find("direction outside Input Chip limit") != std::string::npos, "direction count should constrain mapping");
-        require(output.find("incompatible direction component") != std::string::npos, "direction type should constrain components");
-        require(output.find("unknown input token 'KEY_UNKNOWN'") != std::string::npos, "unknown physical token should warn");
+        require(!result.success, "invalid mapping should fail validation");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingPlayerOutOfRange), "player count should constrain mapping");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange), "buttons should constrain mapping");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingDirectionOutOfRange), "direction count should constrain mapping");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownDirectionComponent), "positive/negative should not be public mapping components");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownPhysicalToken), "unknown physical token should fail");
+    }
+
+    void testDefaultMappingLoadsForDefaultMachine()
+    {
+        const MachineDefinition machine =
+            MachineLoader::defaultMachine();
+
+        const InputMappingLoadResult result =
+            InputMappingLoader::loadDefault(machine.input);
+
+        require(result.success, "default mapping should validate against default machine");
+        require(result.sourceName == "<default input mapping>", "default mapping should have a stable source name");
+        require(result.content.find("players.1.directions.0.up=KEY_W") != std::string::npos, "default mapping should declare up");
+        require(result.content.find("system.buttons.0=KEY_ENTER") != std::string::npos, "default mapping should declare system confirm");
+
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(machine.input);
+        input.setPhysicalInputProvider(&provider);
+        input.setMapping(result.mapping);
+
+        provider.setKeys({ KEY_W, KEY_SPACE, KEY_ENTER });
+        input.update(0.016f);
+
+        require(input.playerDirectionPressed(1, 0, InputComponent::Up), "default mapping should expose player up");
+        require(input.playerButtonPressed(1, 0), "default mapping should expose player button 0");
+        require(input.systemButtonPressed(0), "default mapping should expose system button 0");
+    }
+
+    void testMappingValidationRejectsMalformedAndUnknownLines()
+    {
+        const InputMappingLoadResult result =
+            validateMapping(
+                inputChip("4way"),
+                "players.1.buttons.0 KEY_SPACE\n"
+                "unknown.root=KEY_SPACE\n"
+                "players.1.fire=KEY_SPACE\n"
+            );
+
+        require(!result.success, "malformed and unknown mapping should fail");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingMalformedLine), "malformed line should be diagnostic");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownKey), "unknown root should be diagnostic");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingInvalidKey), "invalid player key should be diagnostic");
+    }
+
+    void testMappingValidationRejectsEmptyDuplicateAndInvalidMembers()
+    {
+        const InputMappingLoadResult result =
+            validateMapping(
+                inputChip("4way"),
+                "players.1.buttons.0=\n"
+                "players.1.buttons.0=KEY_SPACE\n"
+                "players.1.buttons.1=KEY_SPACE,\n"
+                "players.1.directions.0.up=KEY_W+KEY_UNKNOWN\n"
+            );
+
+        require(!result.success, "empty duplicate and invalid members should fail");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingEmptyBinding), "empty rhs or member should be diagnostic");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingDuplicateBinding), "duplicate key should be diagnostic");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownPhysicalToken), "invalid combination member should be diagnostic");
+    }
+
+    void testEmptyMappingFailsValidation()
+    {
+        const InputMappingLoadResult result =
+            validateMapping(
+                inputChip("4way"),
+                "# only comments\n"
+                "\n"
+            );
+
+        require(!result.success, "empty explicit mapping should fail");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingEmpty), "empty mapping should be diagnostic");
+    }
+
+    void testAlternativesAndCombinationsAreValidatedAsWholeActions()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("4way"));
+        input.setPhysicalInputProvider(&provider);
+
+        require(
+            input.loadMappingContent(
+                "actions.input",
+                "players.1.buttons.0=KEY_A,KEY_B\n"
+                "players.1.buttons.1=KEY_LEFT_CONTROL+KEY_C\n"
+            ),
+            "valid alternatives and combinations should load"
+        );
+
+        provider.setKeys({ KEY_A });
+        input.update(0.016f);
+        require(input.playerButtonPressed(1, 0), "first alternative should activate");
+
+        provider.setKeys({});
+        input.update(0.016f);
+        provider.setKeys({ KEY_LEFT_CONTROL });
+        input.update(0.016f);
+        require(!input.playerButtonDown(1, 1), "partial combination should not activate");
+
+        provider.setKeys({ KEY_LEFT_CONTROL, KEY_C });
+        input.update(0.016f);
+        require(input.playerButtonPressed(1, 1), "complete combination should activate");
+    }
+
+    void testTwoWayAcceptsPublicFourDirectionVocabulary()
+    {
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(inputChip("2way", "last"));
+        input.setPhysicalInputProvider(&provider);
+        input.loadMappingContent(
+            "twoway_public.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+            "players.1.directions.0.down=KEY_S\n"
+            "players.1.directions.0.left=KEY_A\n"
+        );
+
+        provider.setKeys({ KEY_W });
+        input.update(0.016f);
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "2way up should normalize to positive");
+
+        provider.setKeys({ KEY_D });
+        input.update(0.016f);
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "2way right should normalize to positive");
+
+        provider.setKeys({ KEY_S });
+        input.update(0.016f);
+        require(input.playerDirectionDown(1, 0, InputComponent::Negative), "2way down should normalize to negative");
+
+        provider.setKeys({ KEY_A });
+        input.update(0.016f);
+        require(input.playerDirectionDown(1, 0, InputComponent::Negative), "2way left should normalize to negative");
+    }
+
+    void testExplicitMissingMappingFailsCompilation()
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_characterization" / "missing_mapping";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=MissingInput\n"
+            "path=game\n"
+            "root=root\n"
+            "input.mapping=missing.input\n"
+        );
+
+        writeFile(root / "game" / "root.json", "{}\n");
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(!result.success, "explicit missing input mapping should fail compilation");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingCouldNotBeOpened), "missing mapping should use input diagnostic");
     }
 
     void testButtonPressedDownReleasedAreLogicalAndIdempotent()
@@ -273,8 +445,8 @@ namespace
         input.setPhysicalInputProvider(&provider);
         input.loadMappingContent(
             "twoway.input",
-            "players.1.directions.0.negative=KEY_A\n"
-            "players.1.directions.0.positive=KEY_D\n"
+            "players.1.directions.0.down=KEY_A\n"
+            "players.1.directions.0.up=KEY_D\n"
         );
 
         provider.setKeys({});
@@ -571,7 +743,7 @@ namespace
             "system.buttons.126=KEY_ESCAPE\n"
             "players.1.buttons.126=KEY_SPACE\n"
             "players.2.buttons.126=KEY_ENTER\n"
-            "players.1.directions.0.positive=KEY_D\n"
+            "players.1.directions.0.right=KEY_D\n"
             "players.1.directions.1.up=KEY_W\n"
             "players.2.directions.1.down=KEY_S\n"
         );
@@ -605,16 +777,17 @@ namespace
 
     void testMappingDoesNotExposeGameplayNames()
     {
-        const std::string output =
-            captureInputWarnings(
+        const InputMappingLoadResult result =
+            validateMapping(
                 inputChip("4way"),
                 "players.1.buttons.fire=KEY_SPACE\n"
                 "players.1.fire=KEY_SPACE\n"
                 "fire=KEY_SPACE\n"
             );
 
-        require(output.find("invalid player mapping") != std::string::npos, "gameplay button names should not be accepted as player mapping");
-        require(output.find("unknown mapping key 'fire'") != std::string::npos, "gameplay action names should not be top-level mapping keys");
+        require(!result.success, "gameplay names should not be accepted as input mapping");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingInvalidKey), "gameplay button names should not be accepted as player mapping");
+        require(hasCode(result.diagnostics, DiagnosticCode::InputMappingUnknownKey), "gameplay action names should not be top-level mapping keys");
     }
 
     void testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject()
@@ -718,6 +891,13 @@ int main()
         { "unsupported capabilities produce diagnostics", testUnsupportedCapabilitiesProduceDiagnostics },
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
         { "mapping is constrained by input chip", testMappingIsConstrainedByInputChip },
+        { "default mapping loads for default machine", testDefaultMappingLoadsForDefaultMachine },
+        { "mapping validation rejects malformed and unknown lines", testMappingValidationRejectsMalformedAndUnknownLines },
+        { "mapping validation rejects empty duplicate and invalid members", testMappingValidationRejectsEmptyDuplicateAndInvalidMembers },
+        { "empty mapping fails validation", testEmptyMappingFailsValidation },
+        { "alternatives and combinations are validated as whole actions", testAlternativesAndCombinationsAreValidatedAsWholeActions },
+        { "two way accepts public four direction vocabulary", testTwoWayAcceptsPublicFourDirectionVocabulary },
+        { "explicit missing mapping fails compilation", testExplicitMissingMappingFailsCompilation },
         { "button pressed down released are logical and idempotent", testButtonPressedDownReleasedAreLogicalAndIdempotent },
         { "two way native components", testTwoWayNativeComponents },
         { "four way last resolves newest logical component", testFourWayLastResolvesNewestLogicalComponent },

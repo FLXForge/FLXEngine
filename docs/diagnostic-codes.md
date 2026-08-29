@@ -36,6 +36,7 @@ PROJECT
 COMP
 RESOURCE
 MACHINE
+INPUT
 BINARY
 RUNTIME
 BUILD
@@ -113,6 +114,28 @@ BUILD
 | FLX-MACHINE-00002 | MachineErrorUnclassified | error | Error no clasificado de Machine. |
 | FLX-MACHINE-00003 | MachineUnexpectedInternalError | error | Error interno inesperado de Machine. |
 | FLX-MACHINE-00004 | MachineDeprecatedFunctionality | warning | Funcionalidad obsoleta de Machine. |
+
+### INPUT
+
+| Código | Identifier | Severity | Descripción |
+| --- | --- | --- | --- |
+| FLX-INPUT-00000 | InputInformationUnclassified | info | Diagnóstico informativo no clasificado de Input. |
+| FLX-INPUT-00001 | InputWarningUnclassified | warning | Advertencia no clasificada de Input. |
+| FLX-INPUT-00002 | InputErrorUnclassified | error | Error no clasificado de Input. |
+| FLX-INPUT-00003 | InputUnexpectedInternalError | error | Error interno inesperado de Input. |
+| FLX-INPUT-00004 | InputDeprecatedFunctionality | warning | Funcionalidad obsoleta de Input. |
+| FLX-INPUT-00010 | InputMappingCouldNotBeOpened | error | No se ha podido abrir el archivo de input mapping. |
+| FLX-INPUT-00011 | InputMappingMalformedLine | error | Una línea del input mapping no cumple la sintaxis `key=value`. |
+| FLX-INPUT-00012 | InputMappingUnknownKey | error | El input mapping contiene una clave raíz desconocida. |
+| FLX-INPUT-00013 | InputMappingInvalidKey | error | Una clave del input mapping no tiene una estructura válida. |
+| FLX-INPUT-00014 | InputMappingPlayerOutOfRange | error | El input mapping referencia un player fuera de la capacidad del Input Chip. |
+| FLX-INPUT-00015 | InputMappingButtonOutOfRange | error | El input mapping referencia un botón fuera de la capacidad del Input Chip. |
+| FLX-INPUT-00016 | InputMappingDirectionOutOfRange | error | El input mapping referencia una dirección fuera de la capacidad del Input Chip. |
+| FLX-INPUT-00017 | InputMappingUnknownDirectionComponent | error | El input mapping referencia un componente direccional desconocido. |
+| FLX-INPUT-00018 | InputMappingUnknownPhysicalToken | error | El input mapping referencia un token físico desconocido. |
+| FLX-INPUT-00019 | InputMappingEmptyBinding | error | Una asignación del input mapping está vacía o incompleta. |
+| FLX-INPUT-00020 | InputMappingDuplicateBinding | error | El input mapping declara la misma clave lógica más de una vez. |
+| FLX-INPUT-00021 | InputMappingEmpty | error | El input mapping no contiene declaraciones efectivas. |
 
 ### BINARY
 

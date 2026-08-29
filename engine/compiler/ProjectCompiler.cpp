@@ -1,6 +1,7 @@
 #include "ProjectCompiler.h"
 #include "CompiledProjectValidator.h"
 #include "../loading/JsonLoader.h"
+#include "../input/InputMappingLoader.h"
 #include "../machine/MachineLoader.h"
 #include "../machine/VideoColorProcessor.h"
 #include "../project/ProjectManifestLoader.h"
@@ -494,6 +495,25 @@ void ProjectCompiler::compileInputMapping(
 {
     if (inputMappingPath.empty())
     {
+        const InputMappingLoadResult mappingResult =
+            InputMappingLoader::loadDefault(context.machine.input);
+
+        diagnostics.append(mappingResult.diagnostics);
+
+        if (!mappingResult.success)
+        {
+            return;
+        }
+
+        context.inputMappingSourceName =
+            mappingResult.sourceName;
+
+        context.inputMappingContent =
+            mappingResult.content;
+
+        context.inputMapping =
+            mappingResult.mapping;
+
         return;
     }
 
@@ -505,13 +525,34 @@ void ProjectCompiler::compileInputMapping(
 
     if (!std::filesystem::exists(resolvedPath))
     {
-        diagnostics.error(
-            DiagnosticCode::ResourceErrorUnclassified,
-            "Input mapping does not exist",
-            resolvedPath.generic_string(),
-            "input.mapping"
+        const InputMappingLoadResult mappingResult =
+            InputMappingLoader::loadFile(
+                resolvedPath.generic_string(),
+                context.machine.input
+            );
+
+        diagnostics.append(mappingResult.diagnostics);
+
+        return;
+    }
+
+    const std::string content =
+        readTextFile(resolvedPath.generic_string());
+
+    const InputMappingLoadResult mappingResult =
+        InputMappingLoader::loadContent(
+            relativeSourceName(
+                resolvedPath.generic_string(),
+                manifestDirectory
+            ),
+            content,
+            context.machine.input
         );
 
+    diagnostics.append(mappingResult.diagnostics);
+
+    if (!mappingResult.success)
+    {
         return;
     }
 
@@ -522,6 +563,9 @@ void ProjectCompiler::compileInputMapping(
         );
 
     context.inputMappingContent =
-        readTextFile(resolvedPath.generic_string());
+        content;
+
+    context.inputMapping =
+        mappingResult.mapping;
 }
 

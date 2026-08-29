@@ -207,6 +207,9 @@ add_executable(flx
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/input/InputMapping.h
+    engine/input/InputMappingLoader.h
+    engine/input/InputMappingLoader.cpp
     engine/input/InputSystem.h
     engine/input/InputSystem.cpp
     engine/tools/ColorParser.h

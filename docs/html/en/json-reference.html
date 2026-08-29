@@ -78,7 +78,7 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: root JSON object compiled as the world entry point. <i>[ Required ]</i></li>
                 <li><code>title</code>: window title. <i>[ Optional ]</i></li>
                 <li><code>machine</code>: YAML Machine definition used by the project. If omitted, FLX uses an internal default Machine. <i>[ Optional ]</i></li>
-                <li><code>input.mapping</code>: properties-style input mapping used by the logical input API. If omitted, mapped controls are not generated. <i>[ Optional ]</i></li>
+                <li><code>input.mapping</code>: properties-style input mapping used by the logical input API. If omitted, FLX uses the default input mapping. <i>[ Optional ]</i></li>
                 <li><code>notes</code>: free project notes. <i>[ Optional ]</i></li>
             </ul>
 
@@ -101,21 +101,28 @@ notes=FLX example with spawn and basic UI
 
             <div class="code-card">
                 <div class="code-header">input/default.input</div>
-<pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
-system.buttons.1=KEY_ENTER,JOY1_START
+<pre><code>players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 
-players.1.directions.0.up=KEY_W,JOY1_UP
-players.1.directions.0.down=KEY_S,JOY1_DOWN
-players.1.directions.0.left=KEY_A,JOY1_LEFT
-players.1.directions.0.right=KEY_D,JOY1_RIGHT
-players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
+players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+
+system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </div>
 
             <p>
                 In <code>.input</code> files, commas separate alternatives and
-                <code>+</code> joins simultaneous inputs. The mapping is validated
-                against the Input Chip. Unknown tokens, players or buttons outside
-                the chip limits are ignored with warnings.
+                <code>+</code> joins simultaneous inputs. Direction keys use only
+                <code>up</code>, <code>right</code>, <code>down</code> and
+                <code>left</code>. For a <code>2way</code> Input Chip,
+                <code>up</code>/<code>right</code> normalize to positive intent
+                and <code>down</code>/<code>left</code> normalize to negative
+                intent. Missing, empty or invalid explicit mappings are
+                compilation errors; there is no silent fallback.
             </p>
 
             <h2 id="flx-references">FLX JSON References</h2>

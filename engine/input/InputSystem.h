@@ -1,34 +1,12 @@
 #pragma once
 
+#include "InputMapping.h"
 #include "../machine/MachineDefinition.h"
 
 #include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-enum class InputComponent
-{
-    Neutral = 0,
-    Negative,
-    Positive,
-    Up,
-    Right,
-    Down,
-    Left
-};
-
-enum class InputSubjectKind
-{
-    Player,
-    System
-};
-
-struct InputSubject
-{
-    InputSubjectKind kind = InputSubjectKind::Player;
-    int index = 1;
-};
 
 class PhysicalInputProvider
 {
@@ -46,11 +24,12 @@ class InputSystem
 public:
     void configure(const InputChipDefinition& inputChip);
     void setPhysicalInputProvider(PhysicalInputProvider* nextProvider);
-    void loadMapping(const std::string& path);
-    void loadMappingContent(
+    bool loadMapping(const std::string& path);
+    bool loadMappingContent(
         const std::string& sourceName,
         const std::string& content
     );
+    void setMapping(const InputMapping& nextMapping);
     void update(float delta);
 
     bool systemButtonPressed(int button) const;
@@ -84,40 +63,6 @@ public:
     bool componentAllowed(int direction, InputComponent component) const;
 
 private:
-    enum class PhysicalType
-    {
-        Key,
-        GamepadButton
-    };
-
-    struct PhysicalInput
-    {
-        PhysicalType type = PhysicalType::Key;
-        int device = 0;
-        int code = 0;
-    };
-
-    struct InputCombination
-    {
-        std::vector<PhysicalInput> inputs;
-    };
-
-    struct InputAction
-    {
-        std::vector<InputCombination> alternatives;
-    };
-
-    struct DirectionMapping
-    {
-        std::unordered_map<InputComponent, InputAction> components;
-    };
-
-    struct PlayerMapping
-    {
-        std::vector<DirectionMapping> directions;
-        std::unordered_map<int, InputAction> buttons;
-    };
-
     struct ButtonState
     {
         bool previous = false;
@@ -147,44 +92,6 @@ private:
     bool combinationPressed(const InputCombination& combination) const;
     bool physicalDown(const PhysicalInput& input) const;
     bool physicalPressed(const PhysicalInput& input) const;
-
-    void parseLine(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    void parseSystemButton(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    void parsePlayerInput(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    InputAction parseAction(
-        const std::string& value,
-        int lineNumber
-    ) const;
-
-    bool parsePhysicalInput(
-        const std::string& token,
-        PhysicalInput& input
-    ) const;
-
-    bool mappingPlayerValid(int player, int lineNumber) const;
-    bool mappingPlayerButtonValid(int button, int lineNumber) const;
-    bool mappingSystemButtonValid(int button, int lineNumber) const;
-    bool mappingDirectionValid(int direction, int lineNumber) const;
-    bool mappingComponentValid(
-        int direction,
-        InputComponent component,
-        int lineNumber
-    ) const;
 
     void resizeRuntimeState();
     ButtonState buttonState(
@@ -226,17 +133,10 @@ private:
         InputComponent query
     ) const;
 
-    static std::string trim(const std::string& value);
-    static std::vector<std::string> split(
-        const std::string& value,
-        char separator
-    );
-    static InputComponent componentFromString(const std::string& value);
     static int componentIndex(InputComponent component);
 
     InputChipDefinition chip;
-    std::unordered_map<int, InputAction> systemButtons;
-    std::unordered_map<int, PlayerMapping> players;
+    InputMapping mapping;
     std::unordered_map<int, ButtonState> systemButtonStates;
     std::unordered_map<int, PlayerState> playerStates;
     PhysicalInputProvider* provider = nullptr;

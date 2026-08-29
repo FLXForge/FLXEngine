@@ -209,13 +209,16 @@ namespace
     )
     {
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 5u);
+        appendU32(bytes, 6u);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
         {
             appendString(bytes, "");
         }
+
+        appendU32(bytes, 0u);
+        appendU32(bytes, 0u);
 
         appendI32(bytes, 640);
         appendI32(bytes, 480);
@@ -360,7 +363,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "compiled project should read");
-        require(loaded.metadata.formatVersion == 5, "format version should be exposed");
+        require(loaded.metadata.formatVersion == 6, "format version should be exposed");
         require(!loaded.metadata.producerVersion.empty(), "producer version should be exposed");
         require(loaded.project.context.name == compiled.project.context.name, "context name should survive roundtrip");
         require(loaded.project.rootId == compiled.project.rootId, "root id should survive roundtrip");
@@ -454,10 +457,10 @@ namespace
         require(rootObject(loaded.project).creationMode == "grid", "grid creation mode should survive");
     }
 
-    void testCompiledProjectRoundTripInputV4()
+    void testCompiledProjectRoundTripInputV6()
     {
         const std::filesystem::path root =
-            testRoot() / "roundtrip_input_v5";
+            testRoot() / "roundtrip_input_v6";
 
         std::filesystem::remove_all(root);
         std::filesystem::create_directories(root / "game");
@@ -500,7 +503,7 @@ namespace
         CompilationResult compiled =
             compile(root / "game.flx");
 
-        require(compiled.success, "input v5 project should compile");
+        require(compiled.success, "input v6 project should compile");
 
         const std::filesystem::path output =
             root / "game.flxc";
@@ -513,14 +516,14 @@ namespace
                 compiled.project,
                 writeDiagnostics
             ),
-            "input v5 project should write"
+            "input v6 project should write"
         );
 
         CompiledProjectBinaryResult loaded =
             CompiledProjectReader::read(output.generic_string());
 
-        require(loaded.success, "input v5 project should read");
-        require(loaded.metadata.formatVersion == 5, "input v5 roundtrip should use format 5");
+        require(loaded.success, "input v6 project should read");
+        require(loaded.metadata.formatVersion == 6, "input v6 roundtrip should use format 6");
         require(loaded.project.context.machine.input.systemButtons == 9, "system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 3, "player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 12, "player button count should survive roundtrip");
@@ -530,13 +533,18 @@ namespace
         require(loaded.project.context.machine.input.directions[0].buffer == 0.25f, "direction buffer should survive roundtrip");
         require(loaded.project.context.machine.input.directions[1].type == "4way", "second direction type should survive roundtrip");
         require(loaded.project.context.machine.input.directions[1].simultaneous == "neutral", "second direction simultaneous policy should survive roundtrip");
+        require(loaded.project.context.inputMapping.players.count(1) == 1, "compiled input mapping player should survive roundtrip");
+        require(loaded.project.context.inputMapping.players.at(1).directions.size() == 2, "compiled input mapping directions should match chip");
+        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Positive) == 1, "2way default up/right should be normalized to positive in compiled mapping");
+        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Negative) == 1, "2way default down/left should be normalized to negative in compiled mapping");
+        require(loaded.project.context.inputMapping.systemButtons.count(0) == 1, "compiled system mapping should survive roundtrip");
         require(rootObject(loaded.project).controlPlayer == 2, "control.player should survive roundtrip");
     }
 
-    void testCompiledProjectRoundTripDefaultMachineInputV4()
+    void testCompiledProjectRoundTripDefaultMachineInputV6()
     {
         const std::filesystem::path root =
-            testRoot() / "roundtrip_default_input_v5";
+            testRoot() / "roundtrip_default_input_v6";
 
         std::filesystem::remove_all(root);
         std::filesystem::create_directories(root / "game");
@@ -580,7 +588,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "default input project should read");
-        require(loaded.metadata.formatVersion == 5, "default input roundtrip should use format 5");
+        require(loaded.metadata.formatVersion == 6, "default input roundtrip should use format 6");
         require(loaded.project.context.machine.input.systemButtons == 16, "default system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 16, "default player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 16, "default player button count should survive roundtrip");
@@ -588,6 +596,9 @@ namespace
         require(loaded.project.context.machine.input.directions[0].type == "4way", "default direction type should survive roundtrip");
         require(loaded.project.context.machine.input.directions[0].simultaneous == "last", "default direction policy should survive roundtrip");
         require(loaded.project.context.machine.input.directions[0].buffer == 0.0f, "default direction buffer should survive roundtrip");
+        require(loaded.project.context.inputMapping.players.count(1) == 1, "default compiled input mapping should survive roundtrip");
+        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Up) == 1, "default up mapping should survive roundtrip");
+        require(loaded.project.context.inputMapping.players.at(1).buttons.count(2) == 1, "default player button 2 mapping should survive roundtrip");
     }
 
     void testInvalidCompiledMagic()
@@ -662,7 +673,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 5u);
+        appendU32(bytes, 6u);
         appendU32(bytes, flx::binary::MaxStringSize + 1u);
 
         writeBinary(path, bytes);
@@ -681,7 +692,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 5u);
+        appendU32(bytes, 6u);
         appendU32(bytes, flx::binary::MaxTotalDecodedStringBytes + 1u);
 
         writeBinary(path, bytes);
@@ -793,13 +804,16 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 5u);
+        appendU32(bytes, 6u);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
         {
             appendString(bytes, "");
         }
+
+        appendU32(bytes, 0u);
+        appendU32(bytes, 0u);
 
         appendI32(bytes, 640);
         appendI32(bytes, 480);
@@ -813,7 +827,13 @@ namespace
 
         require(!result.success, "invalid bool should fail");
         require(result.diagnostics.hasErrors(), "invalid bool should report diagnostics");
-        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::InvalidCompiledProjectValue), "invalid bool should use invalid value diagnostic");
+        require(
+            hasDiagnosticCode(result.diagnostics, DiagnosticCode::InvalidCompiledProjectValue),
+            "invalid bool should use invalid value diagnostic, got " +
+            result.diagnostics.all().front().identifier +
+            " at " +
+            result.diagnostics.all().front().field
+        );
     }
 
     void testTrailingBytes()
@@ -1404,9 +1424,9 @@ int main()
 
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
 
-        { "compiled project roundtrip input v5", testCompiledProjectRoundTripInputV4 },
+        { "compiled project roundtrip input v6", testCompiledProjectRoundTripInputV6 },
 
-        { "compiled project roundtrip default machine input v5", testCompiledProjectRoundTripDefaultMachineInputV4 },
+        { "compiled project roundtrip default machine input v6", testCompiledProjectRoundTripDefaultMachineInputV6 },
 
         { "deterministic bytes", testDeterministicBytes },
 

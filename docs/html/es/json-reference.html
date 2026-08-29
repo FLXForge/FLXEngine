@@ -78,7 +78,7 @@ notes=FLX example with spawn and basic UI
                 <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
                 <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
-                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, no se generan controles mapeados. <i>[ Opcional ]</i></li>
+                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, FLX usa el mapping por defecto. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -101,21 +101,28 @@ notes=FLX example with spawn and basic UI
 
             <div class="code-card">
                 <div class="code-header">input/default.input</div>
-<pre><code>system.buttons.0=KEY_ESCAPE,KEY_LEFT_ALT+KEY_Q
-system.buttons.1=KEY_ENTER,JOY1_START
+<pre><code>players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
 
-players.1.directions.0.up=KEY_W,JOY1_UP
-players.1.directions.0.down=KEY_S,JOY1_DOWN
-players.1.directions.0.left=KEY_A,JOY1_LEFT
-players.1.directions.0.right=KEY_D,JOY1_RIGHT
-players.1.buttons.0=KEY_SPACE,JOY1_A</code></pre>
+players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+
+system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </div>
 
             <p>
                 En archivos <code>.input</code>, la coma separa alternativas y
-                <code>+</code> une entradas simultaneas. El mapping se valida
-                contra el Input Chip. Tokens, jugadores o botones fuera de los
-                limites del chip se ignoran con warnings.
+                <code>+</code> une entradas simultaneas. Las direcciones usan
+                solo <code>up</code>, <code>right</code>, <code>down</code> y
+                <code>left</code>. En un Input Chip <code>2way</code>,
+                <code>up</code>/<code>right</code> se normalizan a intento
+                positivo y <code>down</code>/<code>left</code> a intento
+                negativo. Un mapping explicito ausente, vacio o invalido es un
+                error de compilacion; no hay fallback silencioso.
             </p>
 
             <h2 id="flx-references">Referencias JSON FLX</h2>

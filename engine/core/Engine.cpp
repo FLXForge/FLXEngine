@@ -248,14 +248,7 @@ bool Engine::loadProject(
     audioSystem.init();
     audioInitialized = true;
     inputSystem.configure(context.machine.input);
-
-    if (!context.inputMappingContent.empty())
-    {
-        inputSystem.loadMappingContent(
-            context.inputMappingSourceName,
-            context.inputMappingContent
-        );
-    }
+    inputSystem.setMapping(context.inputMapping);
 
     scriptEngine.setScreenScale(1);
     configureScriptEngine();

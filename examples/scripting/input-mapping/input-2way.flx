@@ -1,0 +1,14 @@
+# Game data
+title=Input Mapping Demo - 2way
+name=input-demo-2way
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=input-demo
+machine=../../machines/pongMachine.yml
+input.mapping=shared.input
+
+# Notes
+notes=Same Input Mapping and JavaScript projected through a 2way Machine

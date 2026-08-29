@@ -1,35 +1,53 @@
 # FLX Input Mapping microexample
 
-This microexample demonstrates the separation between Machine Input and Input
-Mapping in FLX v0.3.0.
+Minimal v0.3.0 language example for `examples/language/input`.
 
-It is intentionally not a game.
+This is not a game. Its purpose is to demonstrate that Machine Input and Input
+Mapping are separate concerns.
 
 ## Files
 
-- `shared.input`: one physical mapping used unchanged by both Machines.
-- `machine-2way.yml`: a Machine with one `2way` direction.
-- `machine-4way.yml`: the same logical capacity expanded to `4way`.
-- `input.js`: one script used unchanged with either Machine.
+- `input-4way.flx` — uses the v0.3.0 Default Machine (`direction(0)` is 4way).
+- `input-2way.flx` — uses `../../machines/pongMachine.yml` (`direction(0)` is 2way).
+- `input-demo.json` — the same RuntimeObject definition for both projects.
+- `input-demo.js` — the same JavaScript for both projects.
+- `shared.input` — the same physical mapping for both projects.
 
-## Shared mapping
+## Run
 
-The public `.input` vocabulary always declares physical directional intent as:
+From `examples/language/input`:
 
 ```text
-up
-right
-down
-left
+flx input-4way.flx
+flx input-2way.flx
 ```
 
-It does not declare `positive` or `negative`.
+Both projects use the same:
 
-The same `shared.input` file is used with both Machine definitions.
+```text
+input-demo.json
+input-demo.js
+shared.input
+```
 
-## With `machine-4way.yml`
+Only the Machine changes.
 
-The four mapped directions preserve their identity:
+## Shared directional mapping
+
+```properties
+players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
+```
+
+The public `.input` vocabulary always uses `up`, `right`, `down` and `left`.
+
+## 4way
+
+`input-4way.flx` uses the Default Machine.
+
+The mapping keeps all four logical directions:
 
 ```text
 UP    -> UP
@@ -38,51 +56,58 @@ DOWN  -> DOWN
 LEFT  -> LEFT
 ```
 
-`input_direction(..., HORIZONTAL)` observes LEFT/RIGHT.
+Therefore:
 
-`input_direction(..., VERTICAL)` observes UP/DOWN.
+```js
+input_direction(object, MOVE, HORIZONTAL)
+```
 
-## With `machine-2way.yml`
+reads LEFT/RIGHT, while:
 
-The same mapping is projected onto the two logical poles:
+```js
+input_direction(object, MOVE, VERTICAL)
+```
+
+reads UP/DOWN.
+
+## 2way
+
+`input-2way.flx` changes only the Machine:
+
+```text
+machine=../../machines/pongMachine.yml
+```
+
+The same public mapping is projected onto the two logical poles:
 
 ```text
 UP / RIGHT   -> POSITIVE / +1
 DOWN / LEFT  -> NEGATIVE / -1
 ```
 
-The mapping file does not change.
+For a 2way direction, both HORIZONTAL and VERTICAL observe that same logical
+axis.
 
-The JavaScript file does not change.
+No `.input` change is required.
+No JSON change is required.
+No JavaScript change is required.
 
-For a `2way` direction, both `HORIZONTAL` and `VERTICAL` project the same
-logical way. This is intentional: the Machine exposes only two logical poles.
-
-## Buttons
-
-The mapping also provides the v0.3.0 default four player buttons and two system
-buttons:
+## Contract demonstrated
 
 ```text
-button(0): Space / Joy A
-button(1): Left or Right Control / Joy B
-button(2): Left or Right Shift / Joy X
-button(3): Z / Joy Y
-
-system button(0): Enter / Joy Start
-system button(1): Escape / Joy Select
+Machine:     changes 2way <-> 4way
+Mapping:     unchanged
+JSON:        unchanged
+JavaScript:  unchanged
 ```
 
-Machine capacity and mapping coverage are independent. A Machine may expose
-more or fewer controls than this mapping. A coverage difference may produce a
-warning, but it does not invalidate or trim the mapping.
+That independence is the point of the example.
 
-## What this example demonstrates
+The 2way project expects this directory to be placed at:
 
 ```text
-Machine changes: 2way <-> 4way
-Mapping changes: no
-JavaScript changes: no
+examples/language/input
 ```
 
-That is the contract being demonstrated by this microexample.
+inside the FLXEngine repository so that the relative Machine reference resolves
+to the existing canonical `examples/machines/pongMachine.yml`.

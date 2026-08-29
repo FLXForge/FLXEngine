@@ -1,0 +1,13 @@
+# Game data
+title=Input Mapping Demo - 4way
+name=input-demo-4way
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=input-demo
+input.mapping=shared.input
+
+# Notes
+notes=Input Mapping microexample using the Default Machine 4way direction

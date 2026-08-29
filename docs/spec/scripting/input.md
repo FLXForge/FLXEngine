@@ -29,7 +29,6 @@ The subject determines which logical context is queried:
 - `system()`.
 
 The Scripting Input API observes the logical controls.
-
 Gameplay meaning belongs to script code:
 
 ```js
@@ -324,9 +323,9 @@ of the current version.
 For Input in v0.3.0, the Default Machine provides:
 
 ```text
-system.buttons = 16
+system.buttons = 2
 players.count = 16
-players.controls.buttons = 16
+players.controls.buttons = 4
 
 direction(0):
 type = 4way
@@ -334,14 +333,41 @@ simultaneous = last
 buffer = 0
 ```
 
+These values define the logical Input capacity of the Default Machine. They do
+not define physical bindings.
+
 This document is not the full Default Machine specification. A future
 `spec/default-machine.md` should define the complete default behavior.
 
 ## N. Input Mapping
 
+Input Mapping connects physical input sources to logical Input controls.
+
+Machine Input and Input Mapping are independent scopes:
+
+```text
+Machine Input                    Input Mapping
+-------------                    -------------
+logical capacity                 physical bindings
+what the game can consume        what is physically available
+```
+
+Neither scope is required to have the same capacity as the other.
+
+A mapping may provide controls that the current Machine does not consume, and a
+Machine may expose logical controls for which the current mapping provides no
+physical binding.
+
+These differences do not invalidate or trim either declaration.
+
+### Mapping syntax
+
 Input mapping files use a properties-like syntax.
 
-Example for a `4way` direction:
+A logical control is declared on the left side of `=` and one or more physical
+sources are declared on the right side.
+
+Example:
 
 ```properties
 players.1.directions.0.up=KEY_W,KEY_UP
@@ -354,14 +380,19 @@ players.1.buttons.0=KEY_SPACE
 system.buttons.0=KEY_ESCAPE
 ```
 
-Example for a `2way` direction:
+Mapping files must not define gameplay names:
 
 ```properties
-players.1.directions.0.up=KEY_W,KEY_UP
-players.1.directions.0.down=KEY_S,KEY_DOWN
+# Not part of v0.3.0 mapping
+fire=KEY_SPACE
+players.1.buttons.fire=KEY_SPACE
 ```
 
-Mapping files only use the public directional vocabulary:
+Gameplay meaning belongs to scripting.
+
+### Direction vocabulary
+
+The public directional vocabulary of an Input Mapping is:
 
 ```text
 up
@@ -370,12 +401,65 @@ down
 left
 ```
 
-The mapping vocabulary does not expose `positive` or `negative`.
-For a `2way` Input Chip, FLX normalizes `up` and `right` to positive
-intent, and `down` and `left` to negative intent. This is a union of
-alternatives, not a requirement to press several directions at once.
+The mapping format does not expose `positive` or `negative`.
 
-If `input.mapping` is absent, FLX uses the default mapping:
+The same directional mapping can be used with a `2way` or `4way` Machine
+direction.
+
+For `4way`, the components retain their native logical meaning:
+
+```text
+up    -> UP
+right -> RIGHT
+down  -> DOWN
+left  -> LEFT
+```
+
+For `2way`, FLX projects the four public mapping components onto the two logical
+poles:
+
+```text
+up    ┐
+right ├-> POSITIVE
+
+down  ┐
+left  ├-> NEGATIVE
+```
+
+The physical sources of `up` and `right` become alternatives for the positive
+pole. The physical sources of `down` and `left` become alternatives for the
+negative pole.
+
+This projection does not require several physical directions to be active at
+the same time.
+
+The loss of distinction between `UP` and `RIGHT`, or between `DOWN` and `LEFT`,
+is inherent to the lower logical capacity of a `2way` direction.
+
+### Alternatives and combinations
+
+`,` declares alternative physical sources. Any alternative can activate the
+logical control:
+
+```properties
+players.1.buttons.0=KEY_SPACE,JOY1_A
+```
+
+`+` declares a physical combination. Every member of that combination must be
+active:
+
+```properties
+players.1.buttons.0=KEY_LEFT_CONTROL+KEY_A
+```
+
+Alternatives and combinations may coexist in the same binding.
+
+### Default Input Mapping
+
+If `input.mapping` is absent, FLX uses the Default Input Mapping of the current
+version.
+
+For v0.3.0:
 
 ```properties
 players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
@@ -392,27 +476,103 @@ system.buttons.0=KEY_ENTER,JOY1_START
 system.buttons.1=KEY_ESCAPE,JOY1_SELECT
 ```
 
-If `input.mapping` is declared explicitly, only that file is used. Missing,
-empty or invalid explicit mappings are compilation errors and do not fall back
-to the default mapping.
+The Default Input Mapping is the useful default for the current FLX version. It
+is not a permanent hardware profile and may evolve as Machine Input gains new
+capabilities in future versions.
 
-Mapping files must not define gameplay names:
+If `input.mapping` is declared explicitly, only that mapping is used.
 
-```properties
-# Not part of v0.3.0 mapping
-fire=KEY_SPACE
-players.1.buttons.fire=KEY_SPACE
+A missing, unreadable, empty or invalid explicit mapping is a compilation error.
+FLX does not fall back to the Default Input Mapping when an explicitly selected
+mapping fails.
+
+### Mapping validation
+
+Input Mapping validity is intrinsic to the mapping declaration.
+
+Errors include:
+
+- a mapping file that cannot be opened;
+- malformed `key=value` syntax;
+- unknown or structurally invalid mapping keys;
+- unknown public direction components;
+- unknown physical input tokens;
+- empty or incomplete bindings;
+- duplicate logical bindings;
+- an explicit mapping with no effective declarations.
+
+An invalid member of an alternative or combination makes the mapping invalid.
+FLX does not silently preserve only the portions of an invalid declaration that
+it can understand.
+
+Mapping errors are reported through Diagnostics v2 and make the corresponding
+operation fail.
+
+### Machine coverage
+
+Machine capacity does not determine whether an Input Mapping is valid.
+
+When Machine Input and Input Mapping expose different coverage, FLX may report
+Diagnostics v2 warnings to inform the developer.
+
+Examples include:
+
+```text
+Machine exposes 2 player buttons
+Mapping provides 4 player buttons
+-> valid mapping
+-> warning
 ```
 
-Malformed mapping lines, unknown keys, unknown physical tokens, duplicate
-logical keys, empty bindings and unknown public direction components produce
-Diagnostics v2 errors.
+and:
 
-Machine Input and Input Mapping are independent scopes. The Machine declares
-which logical controls the game can consume; the Input Mapping declares which
-physical controls are available. A mapping may declare more or fewer controls
-than the current Machine exposes. Those differences produce Diagnostics v2
-warnings, but they do not invalidate the mapping and do not trim it.
+```text
+Machine exposes 4 player buttons
+Mapping provides 2 player buttons
+-> valid mapping
+-> warning
+```
+
+Coverage warnings do not make the operation fail. They do not remove mappings,
+add bindings or otherwise modify either declaration.
+
+The relevant v0.3.0 Input Mapping diagnostics are:
+
+| Code | Identifier | Severity |
+| --- | --- | --- |
+| `FLX-INPUT-00010` | `InputMappingCouldNotBeOpened` | error |
+| `FLX-INPUT-00011` | `InputMappingMalformedLine` | error |
+| `FLX-INPUT-00012` | `InputMappingUnknownKey` | error |
+| `FLX-INPUT-00013` | `InputMappingInvalidKey` | error |
+| `FLX-INPUT-00014` | `InputMappingPlayerOutOfRange` | warning |
+| `FLX-INPUT-00015` | `InputMappingButtonOutOfRange` | warning |
+| `FLX-INPUT-00016` | `InputMappingDirectionOutOfRange` | warning |
+| `FLX-INPUT-00017` | `InputMappingUnknownDirectionComponent` | error |
+| `FLX-INPUT-00018` | `InputMappingUnknownPhysicalToken` | error |
+| `FLX-INPUT-00019` | `InputMappingEmptyBinding` | error |
+| `FLX-INPUT-00020` | `InputMappingDuplicateBinding` | error |
+| `FLX-INPUT-00021` | `InputMappingEmpty` | error |
+| `FLX-INPUT-00022` | `InputMappingMachineControlUnmapped` | warning |
+
+The `OutOfRange` identifiers are coverage diagnostics. Their names do not imply
+that the mapping is invalid.
+
+### Compilation boundary
+
+Input Mapping source is resolved before Runtime execution.
+
+During source compilation, FLX loads and validates the effective mapping and
+prepares the logical mapping used by the project.
+
+Runtime does not reopen or reparse the `.input` source file. `InputSystem`
+receives the already prepared mapping and is responsible only for runtime input
+state and resolution.
+
+Compiled `.flxc` execution uses the compiled mapping rather than returning to
+the original `.input` source.
+
+Source execution and compiled execution therefore share the same effective
+Input Mapping contract.
 
 ## O. Constants
 

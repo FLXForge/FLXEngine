@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace flx::test;
@@ -172,6 +173,32 @@ namespace
         RuntimeObject* object = world.findByName(name);
         require(object != nullptr, "runtime object should exist: " + name);
         return *object;
+    }
+
+    double read_local(
+        RuntimeObject& object,
+        const std::string& key
+    )
+    {
+        const auto it =
+            object.local.find(key);
+
+        if (it == object.local.end())
+        {
+            return 0.0;
+        }
+
+        if (const auto* number = std::get_if<double>(&it->second))
+        {
+            return *number;
+        }
+
+        if (const auto* boolean = std::get_if<bool>(&it->second))
+        {
+            return *boolean ? 1.0 : 0.0;
+        }
+
+        return 0.0;
     }
 
     const ObjectDefinition& requireCompiledObject(
@@ -645,7 +672,7 @@ namespace
                     {
                         "fragment.js",
                         "function born(fragment) {\n"
-                        "  fragment.rotationSpeed = 180;\n"
+                        "  apply_rotation_speed(fragment, 180);\n"
                         "}\n"
                     }
                 }
@@ -767,11 +794,11 @@ namespace
             "const MOVE = direction(0);"
             "const THROTTLE = direction(1);"
             "function action(o) {"
-            "  o.local['horizontal'] = input_direction(o, MOVE, HORIZONTAL);"
-            "  o.local['vertical'] = input_direction(o, MOVE, VERTICAL);"
-            "  o.local['twoWayHorizontal'] = input_direction(o, THROTTLE, HORIZONTAL);"
-            "  o.local['twoWayVertical'] = input_direction(o, THROTTLE, VERTICAL);"
-            "  o.local['system'] = input_direction(system(), MOVE, HORIZONTAL);"
+            "  write_local(o, 'horizontal', input_direction(o, MOVE, HORIZONTAL));"
+            "  write_local(o, 'vertical', input_direction(o, MOVE, VERTICAL));"
+            "  write_local(o, 'twoWayHorizontal', input_direction(o, THROTTLE, HORIZONTAL));"
+            "  write_local(o, 'twoWayVertical', input_direction(o, THROTTLE, VERTICAL));"
+            "  write_local(o, 'system', input_direction(system(), MOVE, HORIZONTAL));"
             "}"
         );
 
@@ -788,51 +815,51 @@ namespace
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "4way up should not leak into horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 1.0f), "4way up should be positive vertical");
-        require(nearlyEqual(static_cast<float>(rootObject.local["system"]), 0.0f), "system subject should reject directional intent");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 0.0f), "4way up should not leak into horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 1.0f), "4way up should be positive vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "system")), 0.0f), "system subject should reject directional intent");
 
         harness.provider.setKeys({ KEY_D });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 1.0f), "4way right should be positive horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "4way right should not leak into vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 1.0f), "4way right should be positive horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 0.0f), "4way right should not leak into vertical");
 
         harness.provider.setKeys({ KEY_S });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "4way down should not leak into horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), -1.0f), "4way down should be negative vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 0.0f), "4way down should not leak into horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), -1.0f), "4way down should be negative vertical");
 
         harness.provider.setKeys({ KEY_A });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), -1.0f), "4way left should be negative horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "4way left should not leak into vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), -1.0f), "4way left should be negative horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 0.0f), "4way left should not leak into vertical");
 
         harness.provider.setKeys({ KEY_E });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayHorizontal"]), 1.0f), "2way positive should project as positive horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayVertical"]), 1.0f), "2way positive should project as positive vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayHorizontal")), 1.0f), "2way positive should project as positive horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayVertical")), 1.0f), "2way positive should project as positive vertical");
 
         harness.provider.setKeys({ KEY_Q });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayHorizontal"]), -1.0f), "2way negative should project as negative horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["twoWayVertical"]), -1.0f), "2way negative should project as negative vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayHorizontal")), -1.0f), "2way negative should project as negative horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayVertical")), -1.0f), "2way negative should project as negative vertical");
 
         harness.provider.setKeys({});
         harness.input.update(0.016f);
         harness.update(0.016f);
 
-        require(nearlyEqual(static_cast<float>(rootObject.local["horizontal"]), 0.0f), "neutral should return zero horizontal");
-        require(nearlyEqual(static_cast<float>(rootObject.local["vertical"]), 0.0f), "neutral should return zero vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 0.0f), "neutral should return zero horizontal");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 0.0f), "neutral should return zero vertical");
     }
 
     void testAsteroidsInputIntentDoesNotCrossAxes()

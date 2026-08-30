@@ -11,6 +11,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <variant>
 #include <raylib.h>
 
 namespace
@@ -48,6 +49,23 @@ namespace
 
         return escaped;
     }
+
+    void defineRuntimeViewValue(
+        JSContext* context,
+        JSValue object,
+        const char* name,
+        JSValue value
+    )
+    {
+        JS_DefinePropertyValueStr(
+            context,
+            object,
+            name,
+            value,
+            JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE
+        );
+    }
+
 }
 
 ScriptEngine::ScriptEngine()
@@ -59,6 +77,7 @@ ScriptEngine::ScriptEngine()
         context,
         this
     );
+
 }
 
 ScriptEngine::~ScriptEngine()
@@ -121,11 +140,6 @@ void ScriptEngine::callScriptFunction(
     JSValue global =
         JS_GetGlobalObject(context);
 
-    JSValue globalObject =
-        createGlobalObject();
-
-    exposeGlobalObject(globalObject);
-
     JSValue result =
         JS_Call(
             context,
@@ -162,10 +176,7 @@ void ScriptEngine::callScriptFunction(
         JS_FreeValue(context, exception);
     }
 
-    applyGlobalObject(globalObject);
-
     JS_FreeValue(context, result);
-    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -189,12 +200,13 @@ void ScriptEngine::callScriptFunction(
     JSValue self =
         createJsObject(object);
 
-    JSValue globalObject =
-        createGlobalObject();
-
-    exposeGlobalObject(globalObject);
+    const std::string objectRuntimeId =
+        object.runtimeId;
 
     JSValue args[1] = { self };
+
+    activeScriptObjects[objectRuntimeId] =
+        &object;
 
     JSValue result =
         JS_Call(
@@ -232,12 +244,10 @@ void ScriptEngine::callScriptFunction(
         JS_FreeValue(context, exception);
     }
 
-    applyJsObject(object, self);
-    applyGlobalObject(globalObject);
+    activeScriptObjects.erase(objectRuntimeId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
-    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -265,15 +275,21 @@ void ScriptEngine::callScriptFunction(
     JSValue otherObject =
         createJsObject(other);
 
-    JSValue globalObject =
-        createGlobalObject();
+    const std::string objectRuntimeId =
+        object.runtimeId;
 
-    exposeGlobalObject(globalObject);
+    const std::string otherRuntimeId =
+        other.runtimeId;
 
     JSValue args[2] = {
         self,
         otherObject
     };
+
+    activeScriptObjects[objectRuntimeId] =
+        &object;
+    activeScriptObjects[otherRuntimeId] =
+        &other;
 
     JSValue result =
         JS_Call(
@@ -311,14 +327,12 @@ void ScriptEngine::callScriptFunction(
         JS_FreeValue(context, exception);
     }
 
-    applyJsObject(object, self);
-    applyJsObject(other, otherObject);
-    applyGlobalObject(globalObject);
+    activeScriptObjects.erase(objectRuntimeId);
+    activeScriptObjects.erase(otherRuntimeId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
     JS_FreeValue(context, otherObject);
-    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -556,6 +570,14 @@ RuntimeObject* ScriptEngine::findObjectByRuntimeId(
     const std::string& id
 )
 {
+    const auto active =
+        activeScriptObjects.find(id);
+
+    if (active != activeScriptObjects.end())
+    {
+        return active->second;
+    }
+
     if (!findObjectById)
     {
         return nullptr;
@@ -697,438 +719,53 @@ void ScriptEngine::hideObject(const std::string& runtimeId)
     hideObjectFunction(runtimeId);
 }
 
-void ScriptEngine::applyJsObject(
-    RuntimeObject& source,
-    JSValue jsObject
-)
-{
-    JSValue attachedValue =
-        JS_GetPropertyStr(context, jsObject, "attached");
-
-    JSValue xValue =
-        JS_GetPropertyStr(context, jsObject, "x");
-
-    JSValue yValue =
-        JS_GetPropertyStr(context, jsObject, "y");
-
-    JSValue speedValue =
-        JS_GetPropertyStr(context, jsObject, "speed");
-
-    JSValue angleValue =
-        JS_GetPropertyStr(context, jsObject, "angle");
-
-    JSValue velocityXValue =
-        JS_GetPropertyStr(context, jsObject, "velocityX");
-
-    JSValue velocityYValue =
-        JS_GetPropertyStr(context, jsObject, "velocityY");
-
-    JSValue rotationSpeedValue =
-        JS_GetPropertyStr(context, jsObject, "rotationSpeed");
-
-    JSValue localValue =
-        JS_GetPropertyStr(context, jsObject, "local");
-
-    JSValue widthValue =
-        JS_GetPropertyStr(context, jsObject, "width");
-
-    JSValue heightValue =
-        JS_GetPropertyStr(context, jsObject, "height");
-
-    JSValue layerValue =
-        JS_GetPropertyStr(context, jsObject, "layer");
-
-    if (JS_IsObject(localValue))
-    {
-        source.local.clear();
-
-        JSPropertyEnum* properties = nullptr;
-        uint32_t propertyCount = 0;
-
-        if (JS_GetOwnPropertyNames(
-            context,
-            &properties,
-            &propertyCount,
-            localValue,
-            JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
-        ) >= 0)
-        {
-            for (uint32_t i = 0; i < propertyCount; ++i)
-            {
-                JSAtom atom =
-                    properties[i].atom;
-
-                const char* key =
-                    JS_AtomToCString(context, atom);
-
-                JSValue value =
-                    JS_GetProperty(context, localValue, atom);
-
-                double number = 0.0;
-
-                if (key != nullptr && JS_ToFloat64(context, &number, value) == 0)
-                {
-                    source.local[key] = number;
-                }
-
-                JS_FreeValue(context, value);
-                if (key != nullptr)
-                {
-                    JS_FreeCString(context, key);
-                }
-                JS_FreeAtom(context, atom);
-            }
-
-            js_free(context, properties);
-        }
-    }
-
-    bool attached = JS_ToBool(context, attachedValue);
-    double x = source.position.x;
-    double y = source.position.y;
-    double speed = source.speed;
-    double angle = source.angle;
-    double velocityX = source.velocity.x;
-    double velocityY = source.velocity.y;
-    double rotationSpeed = source.rotationSpeed;
-    double width = source.size.x;
-    double height = source.size.y;
-    int32_t layer = source.layer;
-
-    JS_ToFloat64(context, &x, xValue);
-    JS_ToFloat64(context, &y, yValue);
-    JS_ToFloat64(context, &speed, speedValue);
-    JS_ToFloat64(context, &angle, angleValue);
-    JS_ToFloat64(context, &velocityX, velocityXValue);
-    JS_ToFloat64(context, &velocityY, velocityYValue);
-    JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
-    JS_ToInt32(context, &layer, layerValue);
-
-    if (JS_ToFloat64(context, &width, widthValue) == 0)
-    {
-        source.size.x =
-            static_cast<float>(width);
-    }
-
-    if (JS_ToFloat64(context, &height, heightValue) == 0)
-    {
-        source.size.y =
-            static_cast<float>(height);
-    }
-
-    source.attached = attached;
-    source.position.x = static_cast<float>(x);
-    source.position.y = static_cast<float>(y);
-    source.speed = static_cast<float>(speed);
-    source.angle = static_cast<float>(angle);
-    const Vector2 previousVelocity =
-        source.velocity;
-
-    source.velocity.x = static_cast<float>(velocityX);
-    source.velocity.y = static_cast<float>(velocityY);
-
-    if (std::abs(source.velocity.x - previousVelocity.x) > 0.00001f ||
-        std::abs(source.velocity.y - previousVelocity.y) > 0.00001f)
-    {
-        source.motionCommanded = true;
-    }
-    source.rotationSpeed = static_cast<float>(rotationSpeed);
-    source.layer = layer;
-
-    JS_FreeValue(context, localValue);
-    JS_FreeValue(context, attachedValue);
-    JS_FreeValue(context, xValue);
-    JS_FreeValue(context, yValue);
-    JS_FreeValue(context, speedValue);
-    JS_FreeValue(context, angleValue);
-    JS_FreeValue(context, velocityXValue);
-    JS_FreeValue(context, velocityYValue);
-    JS_FreeValue(context, rotationSpeedValue);
-    JS_FreeValue(context, widthValue);
-    JS_FreeValue(context, heightValue);
-    JS_FreeValue(context, layerValue);
-}
-
-void ScriptEngine::applyGlobalObject(JSValue globalObject)
-{
-    if (!JS_IsObject(globalObject))
-    {
-        return;
-    }
-
-    globalState.clear();
-
-    JSPropertyEnum* properties = nullptr;
-    uint32_t propertyCount = 0;
-
-    if (JS_GetOwnPropertyNames(
-        context,
-        &properties,
-        &propertyCount,
-        globalObject,
-        JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
-    ) < 0)
-    {
-        return;
-    }
-
-    for (uint32_t i = 0; i < propertyCount; ++i)
-    {
-        JSAtom atom =
-            properties[i].atom;
-
-        const char* key =
-            JS_AtomToCString(context, atom);
-
-        JSValue value =
-            JS_GetProperty(context, globalObject, atom);
-
-        double number = 0.0;
-
-        if (
-            key != nullptr &&
-            JS_ToFloat64(context, &number, value) == 0
-            )
-        {
-            globalState[key] = number;
-        }
-
-        JS_FreeValue(context, value);
-
-        if (key != nullptr)
-        {
-            JS_FreeCString(context, key);
-        }
-
-        JS_FreeAtom(context, atom);
-    }
-
-    js_free(context, properties);
-}
-
-void ScriptEngine::exposeGlobalObject(JSValue globalObject)
-{
-    JSValue jsGlobal =
-        JS_GetGlobalObject(context);
-
-    JS_SetPropertyStr(
-        context,
-        jsGlobal,
-        "global",
-        JS_DupValue(context, globalObject)
-    );
-
-    JS_FreeValue(context, jsGlobal);
-}
-
-JSValue ScriptEngine::createGlobalObject()
-{
-    JSValue globalObject =
-        JS_NewObject(context);
-
-    for (const auto& entry : globalState)
-    {
-        JS_SetPropertyStr(
-            context,
-            globalObject,
-            entry.first.c_str(),
-            JS_NewFloat64(
-                context,
-                entry.second
-            )
-        );
-    }
-
-    return globalObject;
-}
-
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
 {
     JSValue self =
         JS_NewObject(context);
 
-    JSValue local =
-        JS_NewObject(context);
-
-    for (const auto& pair : object.local)
-    {
-        JS_SetPropertyStr(
-            context,
-            local,
-            pair.first.c_str(),
-            JS_NewFloat64(context, pair.second)
-        );
-    }
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "local",
-        local
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "name",
-        JS_NewString(context, object.name.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "id",
-        JS_NewString(context, object.runtimeId.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "alive",
-        JS_NewBool(context, object.alive)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "visible",
-        JS_NewBool(context, object.visible)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "attached",
-        JS_NewBool(context, object.attached)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "group",
-        JS_NewString(context, object.group.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "role",
-        JS_NewString(context, object.role.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "controlPlayer",
-        JS_NewInt32(context, object.controlPlayer)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "layer",
-        JS_NewInt32(context, object.layer)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "x",
-        JS_NewFloat64(context, object.position.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "previousX",
-        JS_NewFloat64(context, object.previousPosition.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "y",
-        JS_NewFloat64(context, object.position.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "previousY",
-        JS_NewFloat64(context, object.previousPosition.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "width",
-        JS_NewFloat64(context, object.size.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "height",
-        JS_NewFloat64(context, object.size.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "speed",
-        JS_NewFloat64(context, object.speed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "angle",
-        JS_NewFloat64(context, object.angle)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originX",
-        JS_NewFloat64(context, object.origin.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originY",
-        JS_NewFloat64(context, object.origin.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originSpeed",
-        JS_NewFloat64(context, object.originSpeed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "rotationSpeed",
-        JS_NewFloat64(context, object.rotationSpeed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "velocityX",
-        JS_NewFloat64(context, object.velocity.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "velocityY",
-        JS_NewFloat64(context, object.velocity.y)
-    );
+    defineRuntimeViewValue(context, self, "id", JS_NewString(context, object.runtimeId.c_str()));
+    defineRuntimeViewValue(context, self, "name", JS_NewString(context, object.name.c_str()));
+    defineRuntimeViewValue(context, self, "group", JS_NewString(context, object.group.c_str()));
+    defineRuntimeViewValue(context, self, "role", JS_NewString(context, object.role.c_str()));
+    defineRuntimeViewValue(context, self, "alive", JS_NewBool(context, object.alive));
+    defineRuntimeViewValue(context, self, "visible", JS_NewBool(context, object.visible));
+    defineRuntimeViewValue(context, self, "x", JS_NewFloat64(context, object.position.x));
+    defineRuntimeViewValue(context, self, "y", JS_NewFloat64(context, object.position.y));
+    defineRuntimeViewValue(context, self, "width", JS_NewFloat64(context, object.size.x));
+    defineRuntimeViewValue(context, self, "height", JS_NewFloat64(context, object.size.y));
+    defineRuntimeViewValue(context, self, "speed", JS_NewFloat64(context, object.speed));
+    defineRuntimeViewValue(context, self, "angle", JS_NewFloat64(context, object.angle));
+    defineRuntimeViewValue(context, self, "velocityX", JS_NewFloat64(context, object.velocity.x));
+    defineRuntimeViewValue(context, self, "velocityY", JS_NewFloat64(context, object.velocity.y));
+    defineRuntimeViewValue(context, self, "rotationSpeed", JS_NewFloat64(context, object.rotationSpeed));
+    JS_PreventExtensions(context, self);
 
     return self;
+}
+
+void ScriptEngine::writeGlobalValue(
+    const std::string& key,
+    const ScriptValue& value
+)
+{
+    globalState[key] =
+        value;
+}
+
+std::optional<ScriptValue> ScriptEngine::readGlobalValue(
+    const std::string& key
+) const
+{
+    const auto it =
+        globalState.find(key);
+
+    if (it == globalState.end())
+    {
+        return std::nullopt;
+    }
+
+    return it->second;
 }
 
 void ScriptEngine::setScreenScale(int scale)

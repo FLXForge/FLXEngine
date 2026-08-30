@@ -342,28 +342,30 @@ function born(laser) {
             <h3>Object Scope</h3>
 
             <p>
-                Every object provides its own storage area:
+                Every object provides its own storage area through explicit
+                functions:
             </p>
 
             <div class="code-card">
                 <div class="code-header">Object scope</div>
 <pre><code>function born(laser) {
-    laser.local["lifetime"] = 0;
+    write_local(laser, "lifetime", 0);
 }
 </code></pre>
             </div>
 
             <p>
-                Data stored inside <code>object.local</code>
+                Data stored with <code>write_local()</code>
                 belongs exclusively to that object.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Object scope</div>
 <pre><code>function motion(laser) {
-    laser.local["lifetime"] += delta();
+    const lifetime = (read_local(laser, "lifetime") || 0) + delta();
+    write_local(laser, "lifetime", lifetime);
 
-    if (laser.local["lifetime"] > 2) {
+    if (lifetime > 2) {
         kill(laser);
     }
 }
@@ -378,19 +380,19 @@ function born(laser) {
                 <li>Temporary state belongs to the function.</li>
                 <li>State shared by objects using the same script belongs to the script.</li>
                 <li>Individual state belongs to the object.</li>
-                <li>State shared by the whole runtime belongs to <code>global</code>.</li>
+                <li>State shared by the whole runtime is managed with <code>read_global()</code> and <code>write_global()</code>.</li>
             </ul>
 
             <h3>Global Scope</h3>
 
             <p>
-                FLX provides a shared global scope through
-                <code>global</code>.
+                FLX provides shared runtime state through
+                <code>read_global()</code> and <code>write_global()</code>.
             </p>
 
             <p>
-                Values stored in
-                <code>global</code>
+                Values stored with
+                <code>write_global()</code>
                 are available to all scripts
                 during runtime execution.
             </p>
@@ -398,12 +400,12 @@ function born(laser) {
             <div class="code-card">
                 <div class="code-header">Global scope</div>
 <pre><code>function born(game) {
-    global["score"] = 0;
-    global["lives"] = 3;
+    write_global("score", 0);
+    write_global("lives", 3);
 }
 
 function collision(player, asteroid) {
-    global["lives"] -= 1;
+    write_global("lives", read_global("lives") - 1);
 }
 </code></pre>
             </div>
@@ -414,9 +416,10 @@ function collision(player, asteroid) {
             </p>
 
             <p>
-                Unlike <code>object.local</code>,
+                Unlike <code>read_local()</code>,
                 which belongs to a specific instance,
-                <code>global</code> belongs to the runtime.
+                <code>read_global()</code> and <code>write_global()</code>
+                access shared runtime state.
             </p>
 
             <hr />
@@ -446,7 +449,7 @@ function collision(player, asteroid) {
 
                 <li>Use scripts to define behavior.</li>
 
-                <li>Use <code>object.local</code> for per-object state.</li>
+                <li>Use <code>read_local()</code> and <code>write_local()</code> for per-object state.</li>
 
                 <li>Use script variables only for shared state.</li>
 
@@ -454,7 +457,7 @@ function collision(player, asteroid) {
 
                 <li>Use <code>kill()</code> for safe object destruction.</li>
 
-                <li>Use <code>global</code> for shared runtime state.</li>
+                <li>Use <code>read_global()</code> and <code>write_global()</code> for shared runtime state.</li>
             </ul>
 
             <hr />

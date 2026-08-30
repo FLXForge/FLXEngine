@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace flx::test;
@@ -177,7 +178,17 @@ namespace
             return 0.0;
         }
 
-        return it->second;
+        if (const auto* number = std::get_if<double>(&it->second))
+        {
+            return *number;
+        }
+
+        if (const auto* boolean = std::get_if<bool>(&it->second))
+        {
+            return *boolean ? 1.0 : 0.0;
+        }
+
+        return 0.0;
     }
 
     bool nearlyEqual(
@@ -271,11 +282,11 @@ namespace
         harness.addScript(
             "recordBorn",
             "function born(o) {"
-            "  if (global['order'] == null) global['order'] = 0;"
-            "  if (o.local['bornCount'] == null) o.local['bornCount'] = 0;"
-            "  o.local['bornOrder'] = global['order'];"
-            "  o.local['bornCount'] = o.local['bornCount'] + 1;"
-            "  global['order'] = global['order'] + 1;"
+            "  if (read_global('order') == null) write_global('order', 0);"
+            "  if (read_local(o, 'bornCount') == null) write_local(o, 'bornCount', 0);"
+            "  write_local(o, 'bornOrder', read_global('order'));"
+            "  write_local(o, 'bornCount', read_local(o, 'bornCount') + 1);"
+            "  write_global('order', read_global('order') + 1);"
             "}"
         );
 
@@ -327,14 +338,14 @@ namespace
         harness.addScript(
             "spawnerBorn",
             "function born(o) { spawn(o, 'manual'); }"
-            "function action(o) { o.local['actionCount'] = (o.local['actionCount'] || 0) + 1; }"
+            "function action(o) { write_local(o, 'actionCount', (read_local(o, 'actionCount') || 0) + 1); }"
         );
 
         harness.addScript(
             "spawnedProbe",
-            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; }"
-            "function action(o) { o.local['actionCount'] = (o.local['actionCount'] || 0) + 1; }"
-            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+            "function born(o) { write_local(o, 'bornCount', (read_local(o, 'bornCount') || 0) + 1); }"
+            "function action(o) { write_local(o, 'actionCount', (read_local(o, 'actionCount') || 0) + 1); }"
+            "function motion(o) { write_local(o, 'motionCount', (read_local(o, 'motionCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -376,12 +387,12 @@ namespace
 
         harness.addScript(
             "spawnB",
-            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; spawn(o, 'b'); }"
+            "function born(o) { write_local(o, 'bornCount', (read_local(o, 'bornCount') || 0) + 1); spawn(o, 'b'); }"
         );
 
         harness.addScript(
             "bornProbe",
-            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; }"
+            "function born(o) { write_local(o, 'bornCount', (read_local(o, 'bornCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -441,16 +452,16 @@ namespace
 
         harness.addScript(
             "phaseSpawner",
-            "function action(o) { if (o.local['a'] == null) { o.local['a'] = 1; spawn(o, 'actionChild'); } }"
-            "function motion(o) { if (o.local['m'] == null) { o.local['m'] = 1; spawn(o, 'motionChild'); } }"
-            "function collision(o, other) { if (o.local['c'] == null) { o.local['c'] = 1; spawn(o, 'collisionChild'); } }"
+            "function action(o) { if (read_local(o, 'a') == null) { write_local(o, 'a', 1); spawn(o, 'actionChild'); } }"
+            "function motion(o) { if (read_local(o, 'm') == null) { write_local(o, 'm', 1); spawn(o, 'motionChild'); } }"
+            "function collision(o, other) { if (read_local(o, 'c') == null) { write_local(o, 'c', 1); spawn(o, 'collisionChild'); } }"
         );
 
         harness.addScript(
             "phaseProbe",
-            "function born(o) { o.local['bornCount'] = (o.local['bornCount'] || 0) + 1; }"
-            "function action(o) { o.local['actionCount'] = (o.local['actionCount'] || 0) + 1; }"
-            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+            "function born(o) { write_local(o, 'bornCount', (read_local(o, 'bornCount') || 0) + 1); }"
+            "function action(o) { write_local(o, 'actionCount', (read_local(o, 'actionCount') || 0) + 1); }"
+            "function motion(o) { write_local(o, 'motionCount', (read_local(o, 'motionCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -540,27 +551,27 @@ namespace
 
         harness.addScript(
             "rootDeadCounter",
-            "function action(o) { o.local['deadCount'] = global['deadCount'] || 0; }"
+            "function action(o) { write_local(o, 'deadCount', read_global('deadCount') || 0); }"
         );
 
         harness.addScript(
             "killInAction",
             "function action(o) { kill(o); }"
-            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
-            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
+            "function motion(o) { write_local(o, 'motionCount', (read_local(o, 'motionCount') || 0) + 1); }"
+            "function dead(o) { write_global('deadCount', (read_global('deadCount') || 0) + 1); o.alive = true; }"
         );
 
         harness.addScript(
             "killInMotion",
             "function motion(o) { kill(o); }"
-            "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
-            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
+            "function collision(o, other) { write_local(o, 'collisionCount', (read_local(o, 'collisionCount') || 0) + 1); }"
+            "function dead(o) { write_global('deadCount', (read_global('deadCount') || 0) + 1); o.alive = true; }"
         );
 
         harness.addScript(
             "killInCollision",
             "function collision(o, other) { kill(o); }"
-            "function dead(o) { global['deadCount'] = (global['deadCount'] || 0) + 1; o.alive = true; }"
+            "function dead(o) { write_global('deadCount', (read_global('deadCount') || 0) + 1); o.alive = true; }"
         );
 
         ObjectDefinition root =
@@ -622,7 +633,7 @@ namespace
         harness.addScript(
             "writeAlive",
             "function action(o) { o.alive = false; }"
-            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
+            "function motion(o) { write_local(o, 'motionCount', (read_local(o, 'motionCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -641,12 +652,12 @@ namespace
         require(localValue(runtimeRoot, "motionCount") == 1.0, "object should keep participating after ignored alive write");
     }
 
-    void testJsFlatRuntimePropertiesAreMutable()
+    void testJsRuntimeObjectViewIsReadonlyAndLive()
     {
         RuntimeHarness harness;
 
         harness.addScript(
-            "mutateFlatProperties",
+            "runtimeViewContract",
             "function action(o) {"
             "  o.x = 11;"
             "  o.y = 12;"
@@ -658,33 +669,60 @@ namespace
             "  o.height = 18;"
             "  o.layer = 19;"
             "  o.attached = true;"
-            "  o.local['mark'] = 20;"
+            "  write_local(o, 'removedLocal', typeof o.local == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'removedLayer', typeof o.layer == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'removedAttached', typeof o.attached == 'undefined' ? 1 : 0);"
+            "  position_x(o, 21);"
+            "  position_y(o, 22);"
+            "  apply_speed(o, 23);"
+            "  apply_angle(o, 24);"
+            "  apply_velocity(o, 25, 26);"
+            "  apply_rotation_speed(o, 27);"
+            "  resize(o, 28, 29);"
+            "  write_local(o, 'liveX', o.x);"
+            "  write_local(o, 'liveY', o.y);"
+            "  write_local(o, 'liveSpeed', o.speed);"
+            "  write_local(o, 'liveAngle', o.angle);"
+            "  write_local(o, 'liveVelocityX', o.velocityX);"
+            "  write_local(o, 'liveVelocityY', o.velocityY);"
+            "  write_local(o, 'liveRotationSpeed', o.rotationSpeed);"
+            "  write_local(o, 'liveWidth', o.width);"
+            "  write_local(o, 'liveHeight', o.height);"
             "}"
         );
 
         ObjectDefinition root =
-            objectDefinition("root", "mutateFlatProperties");
+            objectDefinition("root", "runtimeViewContract");
 
         harness.addObject(root);
 
-        require(harness.load().success, "runtime should load flat property mutation project");
+        require(harness.load().success, "runtime should load runtime object view project");
 
         harness.update();
 
         RuntimeObject& runtimeRoot =
             requireObject(harness.world, "root");
 
-        require(nearlyEqual(runtimeRoot.position.x, 11.0), "JS x write should update runtime position x");
-        require(nearlyEqual(runtimeRoot.position.y, 12.0), "JS y write should update runtime position y");
-        require(nearlyEqual(runtimeRoot.speed, 13.0), "JS speed write should update runtime speed");
-        require(nearlyEqual(runtimeRoot.angle, 14.0), "JS angle write should update runtime angle");
-        require(nearlyEqual(runtimeRoot.velocity.x, 15.0), "JS velocityX write should update runtime velocity x");
-        require(nearlyEqual(runtimeRoot.velocity.y, 16.0), "JS velocityY write should update runtime velocity y");
-        require(nearlyEqual(runtimeRoot.size.x, 17.0), "JS width write should update runtime size x");
-        require(nearlyEqual(runtimeRoot.size.y, 18.0), "JS height write should update runtime size y");
-        require(runtimeRoot.layer == 19, "JS layer write should update runtime layer");
-        require(runtimeRoot.attached, "JS attached write should update runtime attached");
-        require(localValue(runtimeRoot, "mark") == 20.0, "JS local values should roundtrip as numeric state");
+        require(nearlyEqual(runtimeRoot.position.x, 21.0), "position_x should update runtime position x");
+        require(nearlyEqual(runtimeRoot.position.y, 22.0), "position_y should update runtime position y");
+        require(nearlyEqual(runtimeRoot.speed, 23.0), "apply_speed should update runtime speed");
+        require(nearlyEqual(runtimeRoot.angle, 24.0), "apply_angle should update runtime angle");
+        require(nearlyEqual(runtimeRoot.size.x, 28.0), "resize should update runtime width");
+        require(nearlyEqual(runtimeRoot.size.y, 29.0), "resize should update runtime height");
+        require(runtimeRoot.layer == 0, "JS layer write should not update runtime layer");
+        require(!runtimeRoot.attached, "JS attached write should not update runtime attached");
+        require(localValue(runtimeRoot, "removedLocal") == 1.0, "local should not exist on runtime object view");
+        require(localValue(runtimeRoot, "removedLayer") == 1.0, "layer should not exist on runtime object view");
+        require(localValue(runtimeRoot, "removedAttached") == 1.0, "attached should not exist on runtime object view");
+        require(localValue(runtimeRoot, "liveX") == 21.0, "x getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveY") == 22.0, "y getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveSpeed") == 23.0, "speed getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveAngle") == 24.0, "angle getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveVelocityX") != 15.0, "velocityX assignment should not be copied back");
+        require(localValue(runtimeRoot, "liveVelocityY") != 16.0, "velocityY assignment should not be copied back");
+        require(localValue(runtimeRoot, "liveRotationSpeed") == 27.0, "rotationSpeed getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveWidth") == 28.0, "width getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveHeight") == 29.0, "height getter should read updated value in same callback");
     }
 
     void testJsMechanicsIsNotExposedAsNestedSnapshot()
@@ -694,8 +732,8 @@ namespace
         harness.addScript(
             "mechanicsSnapshotProbe",
             "function action(o) {"
-            "  o.local['hasMotion'] = typeof o.motion == 'undefined' ? 0 : 1;"
-            "  o.local['hasMechanics'] = typeof o.mechanics == 'undefined' ? 0 : 1;"
+            "  write_local(o, 'hasMotion', typeof o.motion == 'undefined' ? 0 : 1);"
+            "  write_local(o, 'hasMechanics', typeof o.mechanics == 'undefined' ? 0 : 1);"
             "}"
         );
 
@@ -715,20 +753,20 @@ namespace
         require(localValue(runtimeRoot, "hasMechanics") == 0.0, "declarative mechanics should not be exposed as a JS mirror");
     }
 
-    void testJsMetadataAndIdentityAreReadableButNotAppliedBack()
+    void testJsIdentityAndPublicMetadataAreReadonly()
     {
         RuntimeHarness harness;
 
         harness.addScript(
             "metadataProbe",
             "function action(o) {"
-            "  o.local['idIsRuntime'] = o.id != o.name ? 1 : 0;"
-            "  o.local['nameRead'] = o.name == 'root' ? 1 : 0;"
-            "  o.local['groupRead'] = o.group == 'actor' ? 1 : 0;"
-            "  o.local['roleRead'] = o.role == 'leader' ? 1 : 0;"
-            "  o.local['originRead'] = o.originX == 7 && o.originY == 8 ? 1 : 0;"
-            "  o.local['originSpeedRead'] = o.originSpeed == 9 ? 1 : 0;"
-            "  o.local['previousRead'] = o.previousX == 7 && o.previousY == 8 ? 1 : 0;"
+            "  write_local(o, 'idIsRuntime', o.id != o.name ? 1 : 0);"
+            "  write_local(o, 'nameRead', o.name == 'root' ? 1 : 0);"
+            "  write_local(o, 'groupRead', o.group == 'actor' ? 1 : 0);"
+            "  write_local(o, 'roleRead', o.role == 'leader' ? 1 : 0);"
+            "  write_local(o, 'originHidden', typeof o.originX == 'undefined' && typeof o.originY == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'originSpeedHidden', typeof o.originSpeed == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'previousHidden', typeof o.previousX == 'undefined' && typeof o.previousY == 'undefined' ? 1 : 0);"
             "  o.id = 'changed_id';"
             "  o.name = 'changed_name';"
             "  o.group = 'changed_group';"
@@ -762,9 +800,9 @@ namespace
         require(localValue(runtimeRoot, "nameRead") == 1.0, "JS name should expose logical instance name");
         require(localValue(runtimeRoot, "groupRead") == 1.0, "JS group should be readable");
         require(localValue(runtimeRoot, "roleRead") == 1.0, "JS role should be readable");
-        require(localValue(runtimeRoot, "originRead") == 1.0, "JS origin should be readable");
-        require(localValue(runtimeRoot, "originSpeedRead") == 1.0, "JS originSpeed should be readable");
-        require(localValue(runtimeRoot, "previousRead") == 1.0, "JS previous position should be readable");
+        require(localValue(runtimeRoot, "originHidden") == 1.0, "JS origin should not be exposed");
+        require(localValue(runtimeRoot, "originSpeedHidden") == 1.0, "JS originSpeed should not be exposed");
+        require(localValue(runtimeRoot, "previousHidden") == 1.0, "JS previous position should not be exposed");
         require(runtimeRoot.runtimeId != "changed_id", "JS id write should not update runtimeId");
         require(runtimeRoot.name == "root", "JS name write should not update runtime name");
         require(runtimeRoot.group == "actor", "JS group write should not update runtime group");
@@ -783,7 +821,7 @@ namespace
             "var shared = 0;"
             "function born(o) {"
             "  shared = shared + 1;"
-            "  o.local['sharedValue'] = shared;"
+            "  write_local(o, 'sharedValue', shared);"
             "}"
         );
 
@@ -815,10 +853,10 @@ namespace
         harness.addScript(
             "collisionReferenceProbe",
             "function collision(o, other) {"
-            "  o.local['otherName'] = other.name == 'target' ? 1 : 0;"
-            "  o.local['otherGroup'] = other.group == 'targetGroup' ? 1 : 0;"
-            "  other.x = 44;"
-            "  other.local['touched'] = 1;"
+            "  write_local(o, 'otherName', other.name == 'target' ? 1 : 0);"
+            "  write_local(o, 'otherGroup', other.group == 'targetGroup' ? 1 : 0);"
+            "  position_x(other, 44);"
+            "  write_local(other, 'touched', 1);"
             "}"
         );
 
@@ -898,7 +936,7 @@ namespace
             "  const p1 = player(1);"
             "  const sys = system();"
             "  if (fire == null || move == null || p1 == null || sys == null) missing = missing + 1;"
-            "  o.local['missing'] = missing;"
+            "  write_local(o, 'missing', missing);"
             "}"
         );
 
@@ -980,7 +1018,7 @@ namespace
             "applySpeedClamp",
             "function born(o) {"
             "  apply_speed(o, 200);"
-            "  o.local['speed'] = o.speed;"
+            "  write_local(o, 'speed', o.speed);"
             "}"
         );
 
@@ -1007,12 +1045,12 @@ namespace
 
         harness.addScript(
             "keepOnlyRoot",
-            "function action(o) { if (o.local['done'] == null) { o.local['done'] = 1; keep_only(o); } }"
+            "function action(o) { if (read_local(o, 'done') == null) { write_local(o, 'done', 1); keep_only(o); } }"
         );
 
         harness.addScript(
             "resurrectInDead",
-            "function dead(o) { o.local['deadCount'] = (o.local['deadCount'] || 0) + 1; o.alive = true; }"
+            "function dead(o) { write_local(o, 'deadCount', (read_local(o, 'deadCount') || 0) + 1); o.alive = true; }"
         );
 
         ObjectDefinition root =
@@ -1044,13 +1082,13 @@ namespace
             "visibilityProbe",
             "function born(o) { play_timer(o, 'life', 1.0); }"
             "function action(o) {"
-            "  o.local['actionCount'] = (o.local['actionCount'] || 0) + 1;"
-            "  if (o.local['actionCount'] == 1) hide(o);"
-            "  if (o.local['actionCount'] == 2) show(o);"
+            "  write_local(o, 'actionCount', (read_local(o, 'actionCount') || 0) + 1);"
+            "  if (read_local(o, 'actionCount') == 1) hide(o);"
+            "  if (read_local(o, 'actionCount') == 2) show(o);"
             "}"
-            "function motion(o) { o.local['motionCount'] = (o.local['motionCount'] || 0) + 1; }"
-            "function collision(o, other) { o.local['collisionCount'] = (o.local['collisionCount'] || 0) + 1; }"
-            "function draw(o) { o.local['drawCount'] = (o.local['drawCount'] || 0) + 1; }"
+            "function motion(o) { write_local(o, 'motionCount', (read_local(o, 'motionCount') || 0) + 1); }"
+            "function collision(o, other) { write_local(o, 'collisionCount', (read_local(o, 'collisionCount') || 0) + 1); }"
+            "function draw(o) { write_local(o, 'drawCount', (read_local(o, 'drawCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -1132,7 +1170,7 @@ namespace
         harness.addScript(
             "writeVisible",
             "function action(o) { o.visible = false; }"
-            "function draw(o) { o.local['drawCount'] = (o.local['drawCount'] || 0) + 1; }"
+            "function draw(o) { write_local(o, 'drawCount', (read_local(o, 'drawCount') || 0) + 1); }"
         );
 
         ObjectDefinition root =
@@ -1161,9 +1199,9 @@ namespace
         harness.addScript(
             "drawProbe",
             "function draw(o) {"
-            "  if (global['drawOrder'] == null) global['drawOrder'] = 0;"
-            "  o.local['drawOrder'] = global['drawOrder'];"
-            "  global['drawOrder'] = global['drawOrder'] + 1;"
+            "  if (read_global('drawOrder') == null) write_global('drawOrder', 0);"
+            "  write_local(o, 'drawOrder', read_global('drawOrder'));"
+            "  write_global('drawOrder', read_global('drawOrder') + 1);"
             "}"
         );
 
@@ -1255,8 +1293,8 @@ namespace
             "timeProbe",
             "function born(o) { play_timer(o, 'life', 1.0); }"
             "function action(o) {"
-            "  if (o.local['firstStateTime'] == null) o.local['firstStateTime'] = state_time(o);"
-            "  if (o.local['firstTimerLeft'] == null) o.local['firstTimerLeft'] = timer_left(o, 'life');"
+            "  if (read_local(o, 'firstStateTime') == null) write_local(o, 'firstStateTime', state_time(o));"
+            "  if (read_local(o, 'firstTimerLeft') == null) write_local(o, 'firstTimerLeft', timer_left(o, 'life'));"
             "}"
         );
 
@@ -1294,25 +1332,25 @@ namespace
         harness.addScript(
             "stateProbe",
             "function action(o) {"
-            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
-            "  if (o.local['frame'] == 1) {"
-            "    o.local['initialIsIntro'] = state_current(o) == 'intro' ? 1 : 0;"
-            "    o.local['initialActive'] = state_active(o, 'intro') ? 1 : 0;"
-            "    o.local['initialEntered'] = state_entered(o) ? 1 : 0;"
-            "    o.local['initialTime'] = state_time(o);"
+            "  write_local(o, 'frame', (read_local(o, 'frame') || 0) + 1);"
+            "  if (read_local(o, 'frame') == 1) {"
+            "    write_local(o, 'initialIsIntro', state_current(o) == 'intro' ? 1 : 0);"
+            "    write_local(o, 'initialActive', state_active(o, 'intro') ? 1 : 0);"
+            "    write_local(o, 'initialEntered', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'initialTime', state_time(o));"
             "    state_to(o, 'missing');"
-            "    o.local['afterInvalidStillIntro'] = state_current(o) == 'intro' ? 1 : 0;"
+            "    write_local(o, 'afterInvalidStillIntro', state_current(o) == 'intro' ? 1 : 0);"
             "    state_to(o, 'gameover');"
-            "    o.local['afterValidIsGameover'] = state_current(o) == 'gameover' ? 1 : 0;"
-            "    o.local['enteredImmediatelyAfterState'] = state_entered(o) ? 1 : 0;"
-            "    o.local['timeImmediatelyAfterState'] = state_time(o);"
+            "    write_local(o, 'afterValidIsGameover', state_current(o) == 'gameover' ? 1 : 0);"
+            "    write_local(o, 'enteredImmediatelyAfterState', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'timeImmediatelyAfterState', state_time(o));"
             "  }"
-            "  if (o.local['frame'] == 2) {"
-            "    o.local['terminalEnteredNextFrame'] = state_entered(o) ? 1 : 0;"
-            "    o.local['terminalActive'] = state_active(o, 'gameover') ? 1 : 0;"
-            "    o.local['terminalTimeSeen'] = state_time(o);"
+            "  if (read_local(o, 'frame') == 2) {"
+            "    write_local(o, 'terminalEnteredNextFrame', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'terminalActive', state_active(o, 'gameover') ? 1 : 0);"
+            "    write_local(o, 'terminalTimeSeen', state_time(o));"
             "    state_to(o, 'intro');"
-            "    o.local['afterTerminalInvalidStillGameover'] = state_current(o) == 'gameover' ? 1 : 0;"
+            "    write_local(o, 'afterTerminalInvalidStillGameover', state_current(o) == 'gameover' ? 1 : 0);"
             "  }"
             "}"
         );
@@ -1320,18 +1358,18 @@ namespace
         harness.addScript(
             "singleStateProbe",
             "function action(o) {"
-            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
-            "  if (o.local['frame'] == 1) {"
-            "    o.local['currentIsSolo'] = state_current(o) == 'solo' ? 1 : 0;"
-            "    o.local['activeSolo'] = state_active(o, 'solo') ? 1 : 0;"
-            "    o.local['enteredSolo'] = state_entered(o) ? 1 : 0;"
+            "  write_local(o, 'frame', (read_local(o, 'frame') || 0) + 1);"
+            "  if (read_local(o, 'frame') == 1) {"
+            "    write_local(o, 'currentIsSolo', state_current(o) == 'solo' ? 1 : 0);"
+            "    write_local(o, 'activeSolo', state_active(o, 'solo') ? 1 : 0);"
+            "    write_local(o, 'enteredSolo', state_entered(o) ? 1 : 0);"
             "    state_to(o, 'solo');"
-            "    o.local['sameStateStillSolo'] = state_current(o) == 'solo' ? 1 : 0;"
-            "    o.local['selfEnteredImmediately'] = state_entered(o) ? 1 : 0;"
+            "    write_local(o, 'sameStateStillSolo', state_current(o) == 'solo' ? 1 : 0);"
+            "    write_local(o, 'selfEnteredImmediately', state_entered(o) ? 1 : 0);"
             "  }"
-            "  if (o.local['frame'] == 2) {"
-            "    o.local['selfEnteredNextFrame'] = state_entered(o) ? 1 : 0;"
-            "    o.local['selfTimeSeen'] = state_time(o);"
+            "  if (read_local(o, 'frame') == 2) {"
+            "    write_local(o, 'selfEnteredNextFrame', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'selfTimeSeen', state_time(o));"
             "  }"
             "}"
         );
@@ -1339,12 +1377,12 @@ namespace
         harness.addScript(
             "noStateProbe",
             "function action(o) {"
-            "  o.local['currentEmpty'] = state_current(o) == '' ? 1 : 0;"
-            "  o.local['activeEmptyName'] = state_active(o, '') ? 1 : 0;"
-            "  o.local['entered'] = state_entered(o) ? 1 : 0;"
-            "  o.local['time'] = state_time(o);"
+            "  write_local(o, 'currentEmpty', state_current(o) == '' ? 1 : 0);"
+            "  write_local(o, 'activeEmptyName', state_active(o, '') ? 1 : 0);"
+            "  write_local(o, 'entered', state_entered(o) ? 1 : 0);"
+            "  write_local(o, 'time', state_time(o));"
             "  state_to(o, 'anything');"
-            "  o.local['stillEmpty'] = state_current(o) == '' ? 1 : 0;"
+            "  write_local(o, 'stillEmpty', state_current(o) == '' ? 1 : 0);"
             "}"
         );
 
@@ -1423,17 +1461,17 @@ namespace
         harness.addScript(
             "stateFromMotion",
             "function action(o) {"
-            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
-            "  if (o.local['frame'] == 2) {"
-            "    o.local['enteredAfterMotion'] = state_entered(o) ? 1 : 0;"
-            "    o.local['currentAfterMotion'] = state_current(o) == 'b' ? 1 : 0;"
-            "    o.local['timeAfterMotion'] = state_time(o);"
+            "  write_local(o, 'frame', (read_local(o, 'frame') || 0) + 1);"
+            "  if (read_local(o, 'frame') == 2) {"
+            "    write_local(o, 'enteredAfterMotion', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'currentAfterMotion', state_current(o) == 'b' ? 1 : 0);"
+            "    write_local(o, 'timeAfterMotion', state_time(o));"
             "  }"
             "}"
             "function motion(o) {"
-            "  if (o.local['frame'] == 1) {"
+            "  if (read_local(o, 'frame') == 1) {"
             "    state_to(o, 'b');"
-            "    o.local['enteredInMotion'] = state_entered(o) ? 1 : 0;"
+            "    write_local(o, 'enteredInMotion', state_entered(o) ? 1 : 0);"
             "  }"
             "}"
         );
@@ -1441,17 +1479,17 @@ namespace
         harness.addScript(
             "stateFromCollision",
             "function action(o) {"
-            "  o.local['frame'] = (o.local['frame'] || 0) + 1;"
-            "  if (o.local['frame'] == 2) {"
-            "    o.local['enteredAfterCollision'] = state_entered(o) ? 1 : 0;"
-            "    o.local['currentAfterCollision'] = state_current(o) == 'b' ? 1 : 0;"
-            "    o.local['timeAfterCollision'] = state_time(o);"
+            "  write_local(o, 'frame', (read_local(o, 'frame') || 0) + 1);"
+            "  if (read_local(o, 'frame') == 2) {"
+            "    write_local(o, 'enteredAfterCollision', state_entered(o) ? 1 : 0);"
+            "    write_local(o, 'currentAfterCollision', state_current(o) == 'b' ? 1 : 0);"
+            "    write_local(o, 'timeAfterCollision', state_time(o));"
             "  }"
             "}"
             "function collision(o, other) {"
-            "  if (o.local['frame'] == 1) {"
+            "  if (read_local(o, 'frame') == 1) {"
             "    state_to(o, 'b');"
-            "    o.local['enteredInCollision'] = state_entered(o) ? 1 : 0;"
+            "    write_local(o, 'enteredInCollision', state_entered(o) ? 1 : 0);"
             "  }"
             "}"
         );
@@ -1516,13 +1554,13 @@ namespace
 
         harness.addScript(
             "parentMotion",
-            "function motion(o) { o.x = o.x + 10; o.y = o.y + 5; o.angle = o.angle + 15; }"
+            "function motion(o) { position_x(o, o.x + 10); position_y(o, o.y + 5); apply_angle(o, o.angle + 15); }"
         );
 
         harness.addScript(
             "attachedChild",
-            "function motion(o) { o.local['motionX'] = o.x; o.local['motionY'] = o.y; o.local['motionAngle'] = o.angle; }"
-            "function collision(o, other) { o.local['collisionX'] = o.x; o.local['collisionY'] = o.y; o.local['collisionAngle'] = o.angle; }"
+            "function motion(o) { write_local(o, 'motionX', o.x); write_local(o, 'motionY', o.y); write_local(o, 'motionAngle', o.angle); }"
+            "function collision(o, other) { write_local(o, 'collisionX', o.x); write_local(o, 'collisionY', o.y); write_local(o, 'collisionAngle', o.angle); }"
         );
 
         ObjectDefinition root =
@@ -1580,7 +1618,7 @@ namespace
 
         harness.addScript(
             "spawnOnce",
-            "function action(o) { if (o.local['done'] == null) { o.local['done'] = 1; spawn(o, 'dup'); } }"
+            "function action(o) { if (read_local(o, 'done') == null) { write_local(o, 'done', 1); spawn(o, 'dup'); } }"
         );
 
         ObjectDefinition root =
@@ -1640,11 +1678,11 @@ namespace
         harness.addScript(
             "throwEverywhere",
             "function born(o) { throw new Error('born failure'); }"
-            "function action(o) { o.local['actionBeforeThrow'] = 1; throw new Error('action failure'); }"
-            "function motion(o) { o.local['motionBeforeThrow'] = 1; throw new Error('motion failure'); }"
-            "function collision(o, other) { o.local['collisionBeforeThrow'] = 1; throw new Error('collision failure'); }"
-            "function draw(o) { o.local['drawBeforeThrow'] = 1; throw new Error('draw failure'); }"
-            "function dead(o) { o.local['deadBeforeThrow'] = 1; throw new Error('dead failure'); }"
+            "function action(o) { write_local(o, 'actionBeforeThrow', 1); throw new Error('action failure'); }"
+            "function motion(o) { write_local(o, 'motionBeforeThrow', 1); throw new Error('motion failure'); }"
+            "function collision(o, other) { write_local(o, 'collisionBeforeThrow', 1); throw new Error('collision failure'); }"
+            "function draw(o) { write_local(o, 'drawBeforeThrow', 1); throw new Error('draw failure'); }"
+            "function dead(o) { write_local(o, 'deadBeforeThrow', 1); throw new Error('dead failure'); }"
         );
 
         ObjectDefinition root =
@@ -1781,9 +1819,9 @@ int main()
         { "spawn during action motion and collision phases", testSpawnDuringActionMotionAndCollisionPhases },
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
-        { "JS flat runtime properties are mutable", testJsFlatRuntimePropertiesAreMutable },
+        { "JS runtime object view is readonly and live", testJsRuntimeObjectViewIsReadonlyAndLive },
         { "JS mechanics is not exposed as nested snapshot", testJsMechanicsIsNotExposedAsNestedSnapshot },
-        { "JS metadata and identity are readable but not applied back", testJsMetadataAndIdentityAreReadableButNotAppliedBack },
+        { "JS identity and public metadata are readonly", testJsIdentityAndPublicMetadataAreReadonly },
         { "script module variables are shared between instances", testScriptModuleVariablesAreSharedBetweenInstances },
         { "collision callback receives concrete other reference", testCollisionCallbackReceivesConcreteOtherReference },
         { "public scripting functions are registered", testPublicScriptingFunctionsAreRegistered },

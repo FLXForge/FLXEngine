@@ -22,16 +22,16 @@ function action(game){
     handle_return_to_title(game);
     handle_transition(game);
     draw_hud();
-    global["level"] = currentLevel;
+    write_global("level", currentLevel);
 }
 
 function reset_game(){
-    global["lives"] = INIT_LIVES;
-    global["score"] = 0;
-    global["show_hud"] = 0;
-    global["game_over"] = 0;
-    global["congratulations"] = 0;
-    global["briks"] = 0;
+    write_global("lives", INIT_LIVES);
+    write_global("score", 0);
+    write_global("show_hud", 0);
+    write_global("game_over", 0);
+    write_global("congratulations", 0);
+    write_global("briks", 0);
 
     currentLevel = 0;
     nextLevel = 0;
@@ -41,7 +41,7 @@ function handle_title_start(game){
 
     if (currentLevel == 0 && input_pressed(game, FIRE_BUTTON)){
         nextLevel = 1;
-        game.local["transition"] = 1;
+        write_local(game, "transition", 1);
         fade_on();
     }
 }
@@ -52,21 +52,21 @@ function handle_level_completed(game){
         return;
     }
 
-    if (global["briks"] > 0){
+    if (read_global("briks") > 0){
         return;
     }
 
-    if (game.local["transition"] == 1){
+    if (read_local(game, "transition") == 1){
         return;
     }
 
     if (currentLevel < MAX_LEVEL){
         nextLevel = currentLevel + 1;
-        game.local["transition"] = 1;
-        global["show_hud"] = 0;
+        write_local(game, "transition", 1);
+        write_global("show_hud", 0);
         fade_on();
     } else {
-        global["show_hud"] = 0;
+        write_global("show_hud", 0);
         keep_only(game);
         spawn(game, "congratulations");
 
@@ -80,12 +80,12 @@ function handle_level_completed(game){
 
 function handle_game_over(game){
 
-    if (global["game_over"] != 1){
+    if (read_global("game_over") != 1){
         return;
     }
 
-    global["game_over"] = 2;
-    global["show_hud"] = 0;
+    write_global("game_over", 2);
+    write_global("show_hud", 0);
 
     keep_only(game);
     spawn(game, "gameover");
@@ -100,8 +100,8 @@ function handle_game_over(game){
 function handle_return_to_title(game){
 
     if (
-        global["game_over"] != 3
-        && global["congratulations"] != 2
+        read_global("game_over") != 3
+        && read_global("congratulations") != 2
     ){
         return;
     }
@@ -117,7 +117,7 @@ function handle_return_to_title(game){
 
 function handle_transition(game){
 
-    if (game.local["transition"] != 1){
+    if (read_local(game, "transition") != 1){
         return;
     }
 
@@ -129,28 +129,28 @@ function handle_transition(game){
 
     if (nextLevel == 1){
         spawn(game, "level1");
-        global["briks"] = 39;
+        write_global("briks", 39);
     }
 
     if (nextLevel == 2){
         spawn(game, "level2");
-        global["briks"] = 65;
+        write_global("briks", 65);
     }
 
     if (nextLevel == 3){
         spawn(game, "level3");
-        global["briks"] = 59;
+        write_global("briks", 59);
     }
 
     if (nextLevel == 4){
         spawn(game, "level4");
-        global["briks"] = 104;
+        write_global("briks", 104);
     }
 
     currentLevel = nextLevel;
     nextLevel = 0;
 
-    game.local["transition"] = 0;
+    write_local(game, "transition", 0);
 
     fade_set(1);
     fade_off();
@@ -158,20 +158,20 @@ function handle_transition(game){
 
 function draw_hud(){
 
-    if (global["show_hud"] != 1){
+    if (read_global("show_hud") != 1){
         return;
     }
 
     let lives = "";
 
-    for(let i = 0; i < global["lives"]; i++){
+    for(let i = 0; i < read_global("lives"); i++){
         lives += " o";
     }
 
     draw_text(
         40,
         300,
-        "SCORE: " + global["score"],
+        "SCORE: " + read_global("score"),
         16,
         "white"
     );

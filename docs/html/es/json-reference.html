@@ -848,6 +848,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><code>control</code>: vinculacion opcional de input para este objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo logico asociado al objeto. <i>[ Opcional ]</i></li>
                 <li><code>role</code>: papel opcional dentro del grupo del objeto. <i>[ Opcional ]</i></li>
+                <li><code>local</code>: estado local inicial de cada instancia. Solo admite valores string, number y boolean. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: configuracion de colision asociada al objeto <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
@@ -865,6 +866,13 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 Por ejemplo, Pong puede usar <code>group: "wall"</code> con <code>role: "top"</code>
                 o <code>role: "bottom"</code>, sin crear grupos artificiales como
                 <code>wall_top</code> y <code>wall_bottom</code>.
+            </p>
+
+            <p>
+                <code>local</code> inicializa el estado propio de cada instancia.
+                En JavaScript se accede mediante <code>read_local(object, key)</code>
+                y <code>write_local(object, key, value)</code>; no existe
+                <code>object.local</code> como propiedad mutable.
             </p>
 
             <h2 id="attach">Attach</h2>

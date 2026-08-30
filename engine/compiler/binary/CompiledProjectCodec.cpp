@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace flx::binary
@@ -53,6 +54,61 @@ namespace flx::binary
 
             std::sort(keys.begin(), keys.end());
             return keys;
+        }
+
+        void writeScriptValue(
+            BinaryWriter& writer,
+            const ScriptValue& value
+        )
+        {
+            if (std::holds_alternative<double>(value))
+            {
+                writer.writeU8(0u);
+                writer.writeF32(static_cast<float>(std::get<double>(value)));
+                return;
+            }
+
+            if (std::holds_alternative<bool>(value))
+            {
+                writer.writeU8(1u);
+                writer.writeBool(std::get<bool>(value));
+                return;
+            }
+
+            writer.writeU8(2u);
+            writer.writeString(std::get<std::string>(value));
+        }
+
+        ScriptValue readScriptValue(
+            BinaryReader& reader,
+            const std::string& field
+        )
+        {
+            const uint8_t type =
+                reader.readU8(field + ".type");
+
+            if (type == 0u)
+            {
+                return static_cast<double>(
+                    reader.readF32(field + ".number")
+                );
+            }
+
+            if (type == 1u)
+            {
+                return reader.readBool(field + ".boolean");
+            }
+
+            if (type == 2u)
+            {
+                return reader.readString(field + ".string");
+            }
+
+            throw BinaryException(
+                DiagnosticCode::InvalidCompiledProjectValue,
+                "Invalid script value type",
+                field
+            );
         }
 
         uint8_t physicalTypeValue(PhysicalType type)
@@ -980,6 +1036,22 @@ namespace flx::binary
             writer.writeString(object.group);
             writer.writeString(object.role);
             writer.writeI32(object.controlPlayer);
+
+            const auto localKeys =
+                sortedKeys(object.local);
+
+            writer.writeCount(
+                localKeys.size(),
+                MaxCollectionCount,
+                "object.local"
+            );
+
+            for (const std::string& key : localKeys)
+            {
+                writer.writeString(key);
+                writeScriptValue(writer, object.local.at(key));
+            }
+
             writer.writeString(object.collisionType);
             writer.writeBool(object.collisionActive);
             writer.writeF32(object.collisionRadius);
@@ -1112,6 +1184,39 @@ namespace flx::binary
             object.group = reader.readString("object.group");
             object.role = reader.readString("object.role");
             object.controlPlayer = reader.readI32("object.control.player");
+
+            const uint32_t localCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "object.local"
+                );
+
+            for (uint32_t i = 0; i < localCount; ++i)
+            {
+                const std::string key =
+                    reader.readString("object.local.id");
+
+                auto inserted =
+                    object.local.insert(
+                        {
+                            key,
+                            readScriptValue(
+                                reader,
+                                "object.local." + key
+                            )
+                        }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate local entry in compiled object",
+                        "object.local." + key
+                    );
+                }
+            }
+
             object.collisionType = reader.readString("object.collision.type");
             object.collisionActive = reader.readBool("object.collision.active");
             object.collisionRadius = reader.readF32("object.collision.radius");

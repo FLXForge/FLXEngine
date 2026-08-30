@@ -342,28 +342,30 @@ function born(laser) {
             <h3>Ámbito de objeto</h3>
 
             <p>
-                Cada objeto dispone de un espacio propio para almacenar datos:
+                Cada objeto dispone de un espacio propio para almacenar datos
+                mediante funciones explícitas:
             </p>
 
             <div class="code-card">
                 <div class="code-header">Object scope</div>
 <pre><code>function born(laser) {
-    laser.local["lifetime"] = 0;
+    write_local(laser, "lifetime", 0);
 }
 </code></pre>
             </div>
 
             <p>
-                Los datos almacenados en <code>object.local</code>
+                Los datos almacenados con <code>write_local()</code>
                 pertenecen exclusivamente a ese objeto.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Object scope</div>
 <pre><code>function motion(laser) {
-    laser.local["lifetime"] += delta();
+    const lifetime = (read_local(laser, "lifetime") || 0) + delta();
+    write_local(laser, "lifetime", lifetime);
 
-    if (laser.local["lifetime"] > 2) {
+    if (lifetime > 2) {
         kill(laser);
     }
 }
@@ -378,19 +380,19 @@ function born(laser) {
                 <li>El estado temporal pertenece a la función.</li>
                 <li>El estado compartido entre objetos del mismo script pertenece al script.</li>
                 <li>El estado individual pertenece al objeto.</li>
-                <li>El estado compartido por todo el runtime pertenece a <code>global</code>.</li>
+                <li>El estado compartido por todo el runtime se gestiona con <code>read_global()</code> y <code>write_global()</code>.</li>
             </ul>
 
             <h3>Ámbito global</h3>
 
             <p>
-                FLX proporciona un ámbito global compartido mediante
-                <code>global</code>.
+                FLX proporciona un estado global compartido mediante
+                <code>read_global()</code> y <code>write_global()</code>.
             </p>
 
             <p>
-                Los valores almacenados en
-                <code>global</code>
+                Los valores almacenados con
+                <code>write_global()</code>
                 están disponibles para todos los scripts
                 durante la ejecución del runtime.
             </p>
@@ -398,12 +400,12 @@ function born(laser) {
             <div class="code-card">
                 <div class="code-header">Global scope</div>
 <pre><code>function born(game) {
-    global["score"] = 0;
-    global["lives"] = 3;
+    write_global("score", 0);
+    write_global("lives", 3);
 }
 
 function collision(player, asteroid) {
-    global["lives"] -= 1;
+    write_global("lives", read_global("lives") - 1);
 }
 </code></pre>
             </div>
@@ -414,9 +416,10 @@ function collision(player, asteroid) {
             </p>
 
             <p>
-                A diferencia de <code>object.local</code>,
+                A diferencia de <code>read_local()</code>,
                 que pertenece a una instancia concreta,
-                <code>global</code> pertenece al runtime.
+                <code>read_global()</code> y <code>write_global()</code>
+                acceden al estado compartido del runtime.
             </p>
 
             <hr />
@@ -445,7 +448,7 @@ function collision(player, asteroid) {
 
                 <li>Utiliza scripts para definir comportamiento.</li>
 
-                <li>Utiliza <code>object.local</code> para estado individual.</li>
+                <li>Utiliza <code>read_local()</code> y <code>write_local()</code> para estado individual.</li>
 
                 <li>Utiliza variables de script únicamente para estado compartido.</li>
 
@@ -453,7 +456,7 @@ function collision(player, asteroid) {
 
                 <li>Utiliza <code>kill()</code> para destruir objetos de forma segura.</li>
 
-                <li>Utiliza <code>global</code> para estado compartido del runtime.</li>
+                <li>Utiliza <code>read_global()</code> y <code>write_global()</code> para estado compartido del runtime.</li>
             </ul>
 
             <hr />

@@ -7,12 +7,12 @@ function born(asteroid) {
         random(40, 100)
     );
 
-    asteroid.rotationSpeed = random(-180, 180);
-    asteroid.local["destroyed_by_laser"] = 0;
+    apply_rotation_speed(asteroid, random(-180, 180));
+    write_local(asteroid, "destroyed_by_laser", 0);
 }
 
 function motion(asteroid) {
-    if (global["inGame"] == 0){
+    if (read_global("inGame") == 0){
         kill(asteroid);
         return;
     }
@@ -29,7 +29,7 @@ function collision(asteroid, other) {
     }
 
     if (other.group === "laser") {
-        asteroid.local["destroyed_by_laser"] = 1;
+        write_local(asteroid, "destroyed_by_laser", 1);
         kill(asteroid);
         kill(other);
     }
@@ -41,18 +41,18 @@ function collision(asteroid, other) {
 }
 
 function dead(asteroid) {
-    global["asteroids"]--;
+    write_global("asteroids", read_global("asteroids") - 1);
     
     play_sound(asteroid, "pff");
 
     spawn(asteroid, "fragment");
     spawn(asteroid, "fragment");
 
-    if (asteroid.local["destroyed_by_laser"] !== 1) {
+    if (read_local(asteroid, "destroyed_by_laser") !== 1) {
         return;
     }
 
-    global["score"] += 300;
+    write_global("score", read_global("score") + 300);
 
     spawn(asteroid, "fragment");
     spawn(asteroid, "fragment");

@@ -14,7 +14,7 @@ function action(gameover){
 
         if (screenTime >= 2){
             end = 1;
-            global["game_over"] = 3;
+            write_global("game_over", 3);
         }
     }
 }
@@ -35,7 +35,7 @@ function draw(gameover){
         draw_text(
             260,
             200,
-            "-- SCORE: " + global["score"] + " --",
+            "-- SCORE: " + read_global("score") + " --",
             12
         );
     }

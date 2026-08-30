@@ -10,6 +10,7 @@
 
 #include <optional>
 #include <string>
+#include <variant>
 
 namespace
 {
@@ -60,6 +61,139 @@ namespace
         }
 
         return object;
+    }
+
+    RuntimeObject* runtimeObjectFromArgument(
+        JSContext* context,
+        JSValueConst value
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (scriptEngine == nullptr)
+        {
+            return nullptr;
+        }
+
+        JSValue idValue =
+            JS_GetPropertyStr(context, value, "id");
+
+        const char* id =
+            JS_ToCString(context, idValue);
+
+        if (id == nullptr)
+        {
+            JS_FreeValue(context, idValue);
+            return nullptr;
+        }
+
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        JS_FreeCString(context, id);
+        JS_FreeValue(context, idValue);
+
+        return object;
+    }
+
+    bool jsValueToScriptValue(
+        JSContext* context,
+        JSValueConst value,
+        ScriptValue& scriptValue
+    )
+    {
+        if (JS_IsBool(value))
+        {
+            scriptValue =
+                JS_ToBool(context, value) != 0;
+
+            return true;
+        }
+
+        if (JS_IsNumber(value))
+        {
+            double number = 0.0;
+
+            if (JS_ToFloat64(context, &number, value) != 0)
+            {
+                return false;
+            }
+
+            scriptValue =
+                number;
+
+            return true;
+        }
+
+        if (JS_IsString(value))
+        {
+            const char* text =
+                JS_ToCString(context, value);
+
+            if (text == nullptr)
+            {
+                return false;
+            }
+
+            scriptValue =
+                std::string(text);
+
+            JS_FreeCString(context, text);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    JSValue scriptValueToJs(
+        JSContext* context,
+        const ScriptValue& value
+    )
+    {
+        if (std::holds_alternative<bool>(value))
+        {
+            return JS_NewBool(
+                context,
+                std::get<bool>(value)
+            );
+        }
+
+        if (std::holds_alternative<std::string>(value))
+        {
+            return JS_NewString(
+                context,
+                std::get<std::string>(value).c_str()
+            );
+        }
+
+        return JS_NewFloat64(
+            context,
+            std::get<double>(value)
+        );
+    }
+
+    bool readKeyArgument(
+        JSContext* context,
+        JSValueConst value,
+        std::string& key
+    )
+    {
+        const char* text =
+            JS_ToCString(context, value);
+
+        if (text == nullptr)
+        {
+            return false;
+        }
+
+        key =
+            text;
+
+        JS_FreeCString(context, text);
+
+        return true;
     }
 
     JSValue consoleLog(
@@ -128,6 +262,14 @@ namespace
 
         scriptEngine->killObject(id);
 
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        if (object != nullptr)
+        {
+            refreshRuntimeObjectView(context, argv[0], *object);
+        }
+
         JS_FreeCString(context, id);
         JS_FreeValue(context, idValue);
 
@@ -169,6 +311,14 @@ namespace
 
         scriptEngine->showObject(id);
 
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        if (object != nullptr)
+        {
+            refreshRuntimeObjectView(context, argv[0], *object);
+        }
+
         JS_FreeCString(context, id);
         JS_FreeValue(context, idValue);
 
@@ -209,6 +359,14 @@ namespace
         }
 
         scriptEngine->hideObject(id);
+
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        if (object != nullptr)
+        {
+            refreshRuntimeObjectView(context, argv[0], *object);
+        }
 
         JS_FreeCString(context, id);
         JS_FreeValue(context, idValue);
@@ -682,6 +840,136 @@ namespace
             loaded.value()
         );
     }
+
+    JSValue jsReadLocal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        std::string key;
+
+        if (object == nullptr || !readKeyArgument(context, argv[1], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        const auto it =
+            object->local.find(key);
+
+        if (it == object->local.end())
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptValueToJs(context, it->second);
+    }
+
+    JSValue jsWriteLocal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        std::string key;
+        ScriptValue value;
+
+        if (object == nullptr || !readKeyArgument(context, argv[1], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        if (!jsValueToScriptValue(context, argv[2], value))
+        {
+            Logger::warning(
+                "script",
+                "write_local() supports only boolean, number and string values"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        object->local[key] =
+            value;
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsReadGlobal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string key;
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        std::optional<ScriptValue> value =
+            scriptEngine->readGlobalValue(key);
+
+        if (!value.has_value())
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptValueToJs(context, value.value());
+    }
+
+    JSValue jsWriteGlobal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string key;
+        ScriptValue value;
+
+        if (scriptEngine == nullptr ||
+            argc < 2 ||
+            !readKeyArgument(context, argv[0], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        if (!jsValueToScriptValue(context, argv[1], value))
+        {
+            Logger::warning(
+                "script",
+                "write_global() supports only boolean, number and string values"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->writeGlobalValue(
+            key,
+            value
+        );
+
+        return JS_UNDEFINED;
+    }
 }
 
 void CoreBindings::registerAll(JSContext* context)
@@ -782,6 +1070,34 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "load",
         JS_NewCFunction(context, jsLoad, "load", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "read_local",
+        JS_NewCFunction(context, jsReadLocal, "read_local", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "write_local",
+        JS_NewCFunction(context, jsWriteLocal, "write_local", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "read_global",
+        JS_NewCFunction(context, jsReadGlobal, "read_global", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "write_global",
+        JS_NewCFunction(context, jsWriteGlobal, "write_global", 2)
     );
 
     JS_FreeValue(context, global);

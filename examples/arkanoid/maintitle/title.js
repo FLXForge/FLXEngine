@@ -7,25 +7,31 @@
 
 const HIT_TIME = 1;
 
+function born(title) {
+    write_local(title, "originY", title.y);
+}
+
 function motion(title) {
-    if (title.local["hit"] != 1) {
+    if (read_local(title, "hit") != 1) {
         return;
     }
 
-    if (title.local["hit_running"] != 1) {
-        title.local["hit_running"] = 1;
+    if (read_local(title, "hit_running") != 1) {
+        write_local(title, "hit_running", 1);
         play_timer(title, "hit", HIT_TIME);
     }
 
     let t = HIT_TIME - timer_left(title, "hit");
 
-    title.y =
-        title.originY
-        - Math.sin(t * 20) * 6 * (1 - t);
+    position_y(
+        title,
+        read_local(title, "originY")
+        - Math.sin(t * 20) * 6 * (1 - t)
+    );
 
     if (!timer_active(title, "hit")) {
-        title.local["hit"] = 0;
-        title.local["hit_running"] = 0;
-        title.y = title.originY;
+        write_local(title, "hit", 0);
+        write_local(title, "hit_running", 0);
+        position_y(title, read_local(title, "originY"));
     }
 }

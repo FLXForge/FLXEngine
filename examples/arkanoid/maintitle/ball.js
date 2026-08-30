@@ -15,7 +15,7 @@ function collision(ball, other) {
         reflect_y(ball);
         play_sound(ball, "paddle");
     } else if (other.group == "title") {
-        other.local["hit"] = 1;
-        other.local["hitTime"] = 0;
+        write_local(other, "hit", 1);
+        write_local(other, "hitTime", 0);
     }
 }

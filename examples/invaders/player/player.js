@@ -10,18 +10,18 @@ const FIRE_BUTTON = button(0);
 const MOVE = direction(0);
 
 function action(player){
-    if (global["game_over"] == 1 || global["victory"] == 1) {
+    if (read_global("game_over") == 1 || read_global("victory") == 1) {
         return;
     }
 
     move_horizontal(player, input_direction(player, MOVE, HORIZONTAL));
 
     if (player.x < 20) {
-        player.x = 20;
+        position_x(player, 20);
     }
 
     if (player.x > 596) {
-        player.x = 596;
+        position_x(player, 596);
     }
 
     if (input_pressed(player, FIRE_BUTTON) && !timer_active(player, "shot")) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include "ScriptValue.h"
 
 #include <string>
 #include <raylib.h>
@@ -32,7 +33,7 @@ public:
         Color color
     );
 
-    std::unordered_map<std::string, double> local;
+    std::unordered_map<std::string, ScriptValue> local;
 
     std::unordered_map<std::string, ObjectDefinition> children;
     std::unordered_map<std::string, std::string> childResources;

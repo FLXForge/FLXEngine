@@ -10,11 +10,11 @@ const INIT_LIVES = 3;
 let stars = [];
 
 function born(game) {
-    global["score"] = 0;
-    global["lives"] = INIT_LIVES;
-    global["asteroids"] = 0;
-    global["inGame"] = 0;
-    global["shipDead"] = 0;
+    write_global("score", 0);
+    write_global("lives", INIT_LIVES);
+    write_global("asteroids", 0);
+    write_global("inGame", 0);
+    write_global("shipDead", 0);
 
     play_music(game, "menu");
 

@@ -17,7 +17,7 @@ function born(level){
 function action(level){
     if (state_active(level, "intro")) {
         if (!timer_active(level, "intro")) {
-            global["show_hud"] = 1;
+            write_global("show_hud", 1);
 
             spawn(level, "background");
             spawn(level, "board");
@@ -49,7 +49,7 @@ function draw(level){
     draw_text(
         270,
         140,
-        "LEVEL " + global["level"],
+        "LEVEL " + read_global("level"),
         28,
         "#" + hex + hex + "ff"
     );

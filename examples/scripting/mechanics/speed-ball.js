@@ -2,23 +2,23 @@
 
 function born(ball)
 {
-    ball.local["elapsed"] = 0;
-    ball.local["fast"] = 0;
+    write_local(ball, "elapsed", 0);
+    write_local(ball, "fast", 0);
 }
 
 function action(ball)
 {
-    ball.local["elapsed"] += delta();
+    write_local(ball, "elapsed", read_local(ball, "elapsed") + delta());
 
-    if (ball.local["fast"] == 0 && ball.local["elapsed"] >= 2.0) {
+    if (read_local(ball, "fast") == 0 && read_local(ball, "elapsed") >= 2.0) {
         apply_speed(ball, 80);
-        ball.local["fast"] = 1;
-        ball.local["elapsed"] = 0;
+        write_local(ball, "fast", 1);
+        write_local(ball, "elapsed", 0);
     }
-    else if (ball.local["fast"] == 1 && ball.local["elapsed"] >= 2.0) {
+    else if (read_local(ball, "fast") == 1 && read_local(ball, "elapsed") >= 2.0) {
         restore_speed(ball);
-        ball.local["fast"] = 0;
-        ball.local["elapsed"] = 0;
+        write_local(ball, "fast", 0);
+        write_local(ball, "elapsed", 0);
     }
 }
 

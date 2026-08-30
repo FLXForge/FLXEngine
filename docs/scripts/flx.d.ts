@@ -38,6 +38,7 @@ type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
 type AudioMovementType = "none" | "rise" | "fall" | "pulse" | "wobble" | "scatter" | "random";
 type AudioSpaceMode = "mono" | "stereo";
 type MusicLength = "1/1" | "1/2" | "1/4" | "1/8" | "1/16";
+type ScriptValue = number | boolean | string;
 
 interface AudioSourceConfig {
     type?: AudioSourceType;
@@ -118,22 +119,16 @@ interface MusicChannelConfig {
  */
 interface RuntimeObject {
     /** Unique runtime instance identifier. */
-    id: string;
+    readonly id: string;
     
     /** Logical instance name assigned by the parent children map. */
-    name: string;
-
-    /**
-     * Runtime local state for this object.
-     * Values persist while the object exists.
-     */
-    local: Record<string, number>;
+    readonly name: string;
 
     /** Collision group identifier. */
-    group: string;
+    readonly group: string;
 
     /** Optional role inside the collision group. */
-    role: string;
+    readonly role: string;
 
     /** True while the object is alive. Read-only from JavaScript. Use kill(object). */
     readonly alive: boolean;
@@ -141,41 +136,20 @@ interface RuntimeObject {
     /** True while the object can produce visual output. Read-only from JavaScript. Use show(object) and hide(object). */
     readonly visible: boolean;
 
-    /** Draw layer. Lower values are drawn first. */
-    layer: number;
-
-    /** True while the object is attached to its original parent. */
-    attached: boolean;
-
-    /**
-     * Player index declared by control.player in JSON.
-     * A value of 0 means this object is not bound to a player.
-     */
-    readonly controlPlayer: number;
-
     /** Current X position. */
-    x: number;
-
-    /** X position at the beginning of the current frame. */
-    previousX: number;
+    readonly x: number;
 
     /** Current Y position. */
-    y: number;
-
-    /** Y position at the beginning of the current frame. */
-    previousY: number;
+    readonly y: number;
 
     /** Runtime object width. */
-    width: number;
+    readonly width: number;
 
     /** Runtime object height. */
-    height: number;
+    readonly height: number;
 
     /** Current movement speed. Used by classic speed + angle movement. */
-    speed: number;
-
-    /** Initial movement speed. */
-    originSpeed: number;
+    readonly speed: number;
 
     /**
      * Current object rotation in degrees.
@@ -186,23 +160,16 @@ interface RuntimeObject {
      * 180 = down
      * 270 = left
      */
-    angle: number;
+    readonly angle: number;
 
     /** Current horizontal velocity. Used by motion-based movement. */
-    velocityX: number;
+    readonly velocityX: number;
 
     /** Current vertical velocity. Used by motion-based movement. */
-    velocityY: number;
+    readonly velocityY: number;
 
     /** Runtime rotation speed in degrees per second. */
-    rotationSpeed: number;
-
-    /** Initial X position. */
-    originX: number;
-
-    /** Initial Y position. */
-    originY: number;
-
+    readonly rotationSpeed: number;
 }
 
 /**
@@ -224,17 +191,6 @@ interface RayResult {
     /** Impact Y coordinate in logical FLX space. */
     y?: number;
 }
-
-/**
- * Shared numeric game state available to all scripts.
- *
- * Unlike object.local, global is shared across the whole game.
- *
- * @example
- * global["score"] = 0;
- * global["lives"] = 3;
- */
-declare const global: Record<string, number>;
 
 interface InputButton {
     readonly __flxInputControl?: "button";
@@ -285,6 +241,18 @@ declare function input_released(subject: InputReadableSubject, control: InputDir
  * In 2way, POSITIVE/NEGATIVE project onto either axis.
  */
 declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
+
+/** Reads a value from the local state owned by one runtime object. */
+declare function read_local(object: RuntimeObject, key: string): ScriptValue | undefined;
+
+/** Writes a number, boolean or string into the local state owned by one runtime object. */
+declare function write_local(object: RuntimeObject, key: string, value: ScriptValue): void;
+
+/** Reads a value from the shared runtime state. */
+declare function read_global(key: string): ScriptValue | undefined;
+
+/** Writes a number, boolean or string into the shared runtime state. */
+declare function write_global(key: string, value: ScriptValue): void;
 
 /**
  * Moves an object on the horizontal axis using an intent from -1 to 1.
@@ -360,6 +328,12 @@ declare function accelerate(object: RuntimeObject, intent?: number): void;
  */
 declare function apply_speed(object: RuntimeObject, value: number): void;
 
+/** Applies a runtime angle immediately. */
+declare function apply_angle(object: RuntimeObject, angle: number): void;
+
+/** Applies a runtime rotation speed immediately. */
+declare function apply_rotation_speed(object: RuntimeObject, speed: number): void;
+
 /**
  * Replaces the live linear velocity vector using a direction and magnitude.
  * Does not change angle, rotation, declared speed, acceleration or inertia.
@@ -377,6 +351,21 @@ declare function restore_speed(object: RuntimeObject): void;
 
 /** Places an object at the given logical coordinates. */
 declare function position(object: RuntimeObject, x: number, y: number): void;
+
+/** Places an object on the X axis. */
+declare function position_x(object: RuntimeObject, x: number): void;
+
+/** Places an object on the Y axis. */
+declare function position_y(object: RuntimeObject, y: number): void;
+
+/** Resizes an object. */
+declare function resize(object: RuntimeObject, width: number, height: number): void;
+
+/** Changes only the runtime object width. */
+declare function resize_width(object: RuntimeObject, width: number): void;
+
+/** Changes only the runtime object height. */
+declare function resize_height(object: RuntimeObject, height: number): void;
 
 /** Places an object at its original logical coordinates. */
 declare function position_origin(object: RuntimeObject): void;
@@ -402,7 +391,7 @@ declare function probability(chance: number, base?: number): boolean;
  * Returns a random number between min and max.
  *
  * @example
- * asteroid.angle = random(0, 360);
+ * apply_angle(asteroid, random(0, 360));
  */
 declare function random(min: number, max: number): number;
 
@@ -561,10 +550,10 @@ declare function timer_left(
  * This is a screen-space helper; use shape.type = "text" for world text.
  *
  * @example
- * draw_text(10, 10, "SCORE: " + global["score"]);
+ * draw_text(10, 10, "SCORE: " + read_global("score"));
  *
  * @example
- * draw_text(10, 25, "LIVES: " + global["lives"], 8);
+ * draw_text(10, 25, "LIVES: " + read_global("lives"), 8);
  *
  * @example
  * draw_text(10, 40, "READY", 10, "#ffffff");

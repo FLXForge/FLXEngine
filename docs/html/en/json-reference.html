@@ -848,6 +848,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><code>control</code>: optional input subject binding for this object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
                 <li><code>role</code>: optional role inside the object's group. <i>[ Optional ]</i></li>
+                <li><code>local</code>: initial local state for each instance. Only string, number and boolean values are supported. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
@@ -864,6 +865,13 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 For example, Pong can use <code>group: "wall"</code> with <code>role: "top"</code>
                 or <code>role: "bottom"</code>, without creating artificial groups such as
                 <code>wall_top</code> and <code>wall_bottom</code>.
+            </p>
+
+            <p>
+                <code>local</code> initializes per-instance state. JavaScript reads
+                and writes it with <code>read_local(object, key)</code> and
+                <code>write_local(object, key, value)</code>; there is no mutable
+                <code>object.local</code> property.
             </p>
 
             <h2 id="attach">Attach</h2>

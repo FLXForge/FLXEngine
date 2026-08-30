@@ -189,6 +189,7 @@ add_executable(flx
     engine/compiler/ProjectCompiler.cpp
 
     engine/runtime/RuntimeObject.h
+    engine/runtime/ScriptValue.h
     engine/runtime/RuntimeObject.cpp 
     engine/runtime/ObjectDefinition.h
     engine/runtime/RuntimeObjectBuilder.h

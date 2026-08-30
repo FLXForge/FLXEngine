@@ -110,21 +110,18 @@
 <pre><code>console.log(ship.name);</code></pre>
             </div>
 
-            <h3>local</h3>
+            <h3>Local State</h3>
 
             <p>
-                Persistent state associated with a specific object instance.
-            </p>
-
-            <p>
-                Values stored inside
-                <code>object.local</code>
-                remain available while the object exists.
+                Persistent state for one instance is read and written with
+                <code>read_local()</code> and <code>write_local()</code>.
+                The JavaScript object does not expose <code>object.local</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">local</div>
-<pre><code>ship.local["timer"] += delta();
+                <div class="code-header">local state</div>
+<pre><code>const timer = (read_local(ship, "timer") || 0) + delta();
+write_local(ship, "timer", timer);
 </code></pre>
             </div>
 
@@ -141,6 +138,13 @@
 
             <h3>Position and Size</h3>
 
+            <p>
+                These properties are a live read-only view. To change position
+                or size, use <code>position()</code>, <code>position_x()</code>,
+                <code>position_y()</code>, <code>resize()</code>,
+                <code>resize_width()</code> or <code>resize_height()</code>.
+            </p>
+
             <ul>
                 <li><code>x</code>: horizontal position.</li>
                 <li><code>y</code>: vertical position.</li>
@@ -150,19 +154,18 @@
 
             <h3>Movement</h3>
 
+            <p>
+                These properties are read-only too. To change live movement
+                state, use explicit functions such as <code>apply_speed()</code>,
+                <code>apply_angle()</code>, <code>apply_velocity()</code> or
+                <code>apply_rotation_speed()</code>.
+            </p>
+
             <ul>
                 <li><code>speed</code>: current speed.</li>
-                <li><code>originSpeed</code>: initial speed.</li>
                 <li><code>velocityX</code>: horizontal velocity.</li>
                 <li><code>velocityY</code>: vertical velocity.</li>
                 <li><code>rotationSpeed</code>: current angular speed.</li>
-            </ul>
-
-            <h3>Origin</h3>
-
-            <ul>
-                <li><code>originX</code>: initial X position.</li>
-                <li><code>originY</code>: initial Y position.</li>
             </ul>
 
             <h3>angle</h3>
@@ -262,6 +265,33 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
             <hr />
 
+            <h2>apply_angle(object, angle)</h2>
+
+            <p>
+                Changes the object's live angle without modifying its JSON
+                declaration.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_angle</div>
+<pre><code>apply_angle(ball, -45);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>apply_rotation_speed(object, speed)</h2>
+
+            <p>
+                Changes the object's live angular speed.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_rotation_speed</div>
+<pre><code>apply_rotation_speed(fragment, 180);</code></pre>
+            </div>
+
+            <hr />
+
             <h2>restore_speed(object)</h2>
 
             <p>
@@ -299,6 +329,38 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 }</code></pre>
 
 
+            </div>
+
+            <hr />
+
+            <h2>position(object, x, y)</h2>
+
+            <p>
+                Places an object using logical coordinates. Use
+                <code>position_x(object, x)</code> and
+                <code>position_y(object, y)</code> to modify one axis.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position</div>
+<pre><code>position(player, 160, 120);
+position_x(player, player.x + 4);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>resize(object, width, height)</h2>
+
+            <p>
+                Changes the object's live size. Use
+                <code>resize_width(object, width)</code> and
+                <code>resize_height(object, height)</code> for one dimension.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">resize</div>
+<pre><code>resize(paddle, 48, paddle.height);
+resize_width(paddle, paddle.width + 8);</code></pre>
             </div>
 
             <hr />
@@ -375,11 +437,12 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
 <pre><code>function motion(spawner) {
 
-    spawner.local["timer"] += delta();
+    const timer = (read_local(spawner, "timer") || 0) + delta();
+    write_local(spawner, "timer", timer);
 
-    if (spawner.local["timer"] > 3) {
+    if (timer > 3) {
         spawn(spawner, "asteroid");
-        spawner.local["timer"] = 0;
+        write_local(spawner, "timer", 0);
     }
 }
 </code></pre>
@@ -605,11 +668,11 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">safe transition</div>
 <pre><code>function action(title) {
     if (input_pressed(title, button(0))) {
-        title.local["leaving"] = 1;
+        write_local(title, "leaving", 1);
         fade_on();
     }
 
-    if (title.local["leaving"] == 1 && fade_done()) {
+    if (read_local(title, "leaving") == 1 && fade_done()) {
         // load next scene
     }
 }</code></pre>
@@ -692,7 +755,7 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">detach</div>
 <pre><code>if (attach_active(ball) && input_pressed(ball, button(0))) {
     detach(ball);
-    ball.angle = -45;
+    apply_angle(ball, -45);
 }</code></pre>
             </div>
 
@@ -840,7 +903,7 @@ if (input_pressed(player, FIRE)) {
             <div class="code-card">
                 <div class="code-header">scene transition</div>
 <pre><code>function action(game) {
-    if (global["startLevel"] == 1) {
+    if (read_global("startLevel") == 1) {
         keep_only(game);
         spawn(game, "level1");
     }
@@ -1166,9 +1229,8 @@ if (probability(1, 1000)) {
                 <div class="code-header">random</div>
 
 
-<pre><code>asteroid.angle = random(0, 360);
-
-asteroid.speed = random(20, 80);
+<pre><code>apply_angle(asteroid, random(0, 360));
+apply_speed(asteroid, random(20, 80));
 </code></pre>
 
 

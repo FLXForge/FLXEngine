@@ -16,8 +16,7 @@ function motion(laser) {
 
     const factor = timer_left(laser, "life") / MAX_LIFE_TIME;
 
-    laser.width = 1 * factor;
-    laser.height = 10 * factor;
+    resize(laser, 1 * factor, 10 * factor);
 
     if (!timer_active(laser, "life")) {
         kill(laser);

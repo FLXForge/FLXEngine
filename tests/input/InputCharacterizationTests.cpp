@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace flx::test;
@@ -102,6 +103,32 @@ namespace
         }
 
         return false;
+    }
+
+    double localNumber(
+        const RuntimeObject& object,
+        const std::string& key
+    )
+    {
+        const auto it =
+            object.local.find(key);
+
+        if (it == object.local.end())
+        {
+            return 0.0;
+        }
+
+        if (const auto* number = std::get_if<double>(&it->second))
+        {
+            return *number;
+        }
+
+        if (const auto* boolean = std::get_if<bool>(&it->second))
+        {
+            return *boolean ? 1.0 : 0.0;
+        }
+
+        return 0.0;
     }
 
     bool loadMappingInto(
@@ -1016,11 +1043,11 @@ namespace
             "const MOVE = direction(0);\n"
             "const FIRE = button(0);\n"
             "function action(root) {\n"
-            "  if (input_pressed(player(1), MOVE, UP)) root.local['upPressed'] = 1;\n"
-            "  if (input_down(player(1), MOVE, UP)) root.local['upDown'] = 1;\n"
-            "  if (input_released(player(1), MOVE, UP)) root.local['upReleased'] = 1;\n"
-            "  if (input_pressed(player(1), FIRE)) root.local['firePressed'] = 1;\n"
-            "  if (input_pressed(root, MOVE, UP)) root.local['objectSubjectPressed'] = 1;\n"
+            "  if (input_pressed(player(1), MOVE, UP)) write_local(root, 'upPressed', 1);\n"
+            "  if (input_down(player(1), MOVE, UP)) write_local(root, 'upDown', 1);\n"
+            "  if (input_released(player(1), MOVE, UP)) write_local(root, 'upReleased', 1);\n"
+            "  if (input_pressed(player(1), FIRE)) write_local(root, 'firePressed', 1);\n"
+            "  if (input_pressed(root, MOVE, UP)) write_local(root, 'objectSubjectPressed', 1);\n"
             "}\n"
         );
 
@@ -1060,17 +1087,17 @@ namespace
         scripts.setFrameDelta(0.016f);
         world.update(scripts, 640.0f, 480.0f, 0.016f);
 
-        require(runtimeRoot->local["upPressed"] == 1.0, "player(1) direction should report pressed without control.player");
-        require(runtimeRoot->local["upDown"] == 1.0, "player(1) direction should report down without control.player");
-        require(runtimeRoot->local["firePressed"] == 1.0, "player(1) button should still work under default machine");
-        require(runtimeRoot->local["objectSubjectPressed"] == 0.0, "RuntimeObject subject should still require control.player");
+        require(localNumber(*runtimeRoot, "upPressed") == 1.0, "player(1) direction should report pressed without control.player");
+        require(localNumber(*runtimeRoot, "upDown") == 1.0, "player(1) direction should report down without control.player");
+        require(localNumber(*runtimeRoot, "firePressed") == 1.0, "player(1) button should still work under default machine");
+        require(localNumber(*runtimeRoot, "objectSubjectPressed") == 0.0, "RuntimeObject subject should still require control.player");
 
         provider.setKeys({});
         input.update(0.016f);
         scripts.setFrameDelta(0.016f);
         world.update(scripts, 640.0f, 480.0f, 0.016f);
 
-        require(runtimeRoot->local["upReleased"] == 1.0, "player(1) direction should report released without control.player");
+        require(localNumber(*runtimeRoot, "upReleased") == 1.0, "player(1) direction should report released without control.player");
     }
 }
 

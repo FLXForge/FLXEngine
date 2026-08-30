@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace flx::test;
@@ -131,6 +132,45 @@ namespace
             result.project.context.inputMappingContent.find("system.buttons.0=KEY_ESCAPE") != std::string::npos,
             "input mapping content should be embedded"
         );
+    }
+
+    void testLocalStateCompiles()
+    {
+        const std::filesystem::path root =
+            testRoot() / "local_state_compile";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=LocalState\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"local\": {\n"
+            "    \"score\": 42,\n"
+            "    \"ready\": true,\n"
+            "    \"label\": \"title\"\n"
+            "  }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "project with local state should compile");
+
+        const ObjectDefinition& compiledRoot =
+            rootObject(result.project);
+
+        require(std::get<double>(compiledRoot.local.at("score")) == 42.0, "numeric local value should compile");
+        require(std::get<bool>(compiledRoot.local.at("ready")), "boolean local value should compile");
+        require(std::get<std::string>(compiledRoot.local.at("label")) == "title", "string local value should compile");
     }
 
     void testControlPlayerOutsideInputChipFails()
@@ -421,6 +461,8 @@ int main()
         { "external machine", testExternalMachine },
 
         { "input mapping is compiled from manifest directory", testInputMappingIsCompiledFromManifestDirectory },
+
+        { "local state compiles", testLocalStateCompiles },
 
         { "control player outside input chip fails", testControlPlayerOutsideInputChipFails },
 

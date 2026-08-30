@@ -10,7 +10,7 @@ const LIVE_TIME = 0.5;
 function born(tail) {
     play_timer(tail, "life", LIVE_TIME);
 
-    tail.speed = 10;
+    apply_speed(tail, 10);
 }
 
 function motion(tail) {
@@ -19,8 +19,7 @@ function motion(tail) {
 
     const factor = timer_left(tail, "life") / LIVE_TIME;
 
-    tail.width = 6 * factor;
-    tail.height = 8 * factor;
+    resize(tail, 6 * factor, 8 * factor);
 
     if (!timer_active(tail, "life")) {
         kill(tail);

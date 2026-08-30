@@ -10,17 +10,16 @@ const TIME_TO_DIE = 1.5;
 function born(fragment) {
     play_timer(fragment, "life", TIME_TO_DIE);
 
-    fragment.local["spin"] = random(0, 100) < 50 ? LEFT : RIGHT;
-    fragment.rotationSpeed = random(120, 360);
+    write_local(fragment, "spin", random(0, 100) < 50 ? LEFT : RIGHT);
+    apply_rotation_speed(fragment, random(120, 360));
 }
 
 function motion(fragment) {
-    rotate(fragment, fragment.local["spin"]);
+    rotate(fragment, read_local(fragment, "spin"));
 
     const factor = timer_left(fragment, "life") / TIME_TO_DIE;
 
-    fragment.width = 1 * factor;
-    fragment.height = 10 * factor;
+    resize(fragment, 1 * factor, 10 * factor);
 
     if (!timer_active(fragment, "life")) {
         kill(fragment);

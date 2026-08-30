@@ -268,7 +268,7 @@
 
                 <li>Per-instance initialization through <code>born()</code>.</li>
 
-                <li>Persistent per-object state through <code>object.local</code>.</li>
+                <li>Persistent per-object state through <code>read_local()</code> and <code>write_local()</code>.</li>
 
                 <li>Real frame timing through <code>delta()</code>.</li>
 
@@ -276,7 +276,7 @@
                     Scope model:
                     function scope,
                     script scope,
-                    <code>object.local</code>
+                    <code>read_local()</code>/<code>write_local()</code>
                     and future global scope.
                 </li>
 
@@ -322,7 +322,7 @@
 
                 <li>
                     Periodic spawning driven by timers through
-                    <code>object.local</code>.
+                    <code>read_local()</code> and <code>write_local()</code>.
                 </li>
 
                 <li>
@@ -438,7 +438,7 @@
                 <li>Normalize Pong to the new <code>shape</code>/<code>motion</code> schema.</li>
 
                 <li>
-                    Extend <code>object.local</code>.
+                    Extend <code>read_local()</code> and <code>write_local()</code>.
                     It currently supports only numeric values;
                     types such as <code>bool</code>,
                     <code>string</code>

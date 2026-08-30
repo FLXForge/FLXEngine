@@ -14,7 +14,7 @@ function action(congratulations){
 
         if (screenTime >= 6){
             end = 1;
-            global["congratulations"] = 2;
+            write_global("congratulations", 2);
         }
     }
 }
@@ -35,7 +35,7 @@ function draw(congratulations){
         draw_text(
             260,
             200,
-            "-- SCORE: " + global["score"] + " --",
+            "-- SCORE: " + read_global("score") + " --",
             12
         );
     }

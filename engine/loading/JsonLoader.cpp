@@ -2795,6 +2795,63 @@ namespace
             control.value("player", definition.controlPlayer);
     }
 
+    void parseLocal(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        definition.local.clear();
+
+        if (!object.contains("local"))
+        {
+            return;
+        }
+
+        if (!object["local"].is_object())
+        {
+            Logger::warning(
+                "loading",
+                "Invalid local declaration in '" + definition.id +
+                "': expected object"
+            );
+
+            return;
+        }
+
+        for (auto it = object["local"].begin();
+            it != object["local"].end();
+            ++it)
+        {
+            if (it.value().is_boolean())
+            {
+                definition.local[it.key()] =
+                    it.value().get<bool>();
+                continue;
+            }
+
+            if (it.value().is_number())
+            {
+                definition.local[it.key()] =
+                    it.value().get<double>();
+                continue;
+            }
+
+            if (it.value().is_string())
+            {
+                definition.local[it.key()] =
+                    it.value().get<std::string>();
+                continue;
+            }
+
+            Logger::warning(
+                "loading",
+                "Invalid local value '" + it.key() + "' in '" +
+                definition.id +
+                "': expected boolean, number or string"
+            );
+        }
+    }
+
     ObjectDefinition parseDefinition(
         JsonLoadSession& session,
         const Json& object,
@@ -2992,6 +3049,7 @@ namespace
         definition.visible =
             object.value("visible", definition.visible);
 
+        parseLocal(object, definition);
         parseControl(object, definition);
         parseShape(object, definition);
         parseMechanics(object, definition);

@@ -6,15 +6,15 @@
 */
 
 function born(ui){
-    ui.local["time"] = 0;
+    write_local(ui, "time", 0);
 }
 
 function draw(ui){
-    ui.local["time"] += delta();
+    write_local(ui, "time", read_local(ui, "time") + delta());
 
     let intensity =
         Math.floor(
-            64 + Math.sin(ui.local["time"] * 2) * 64
+            64 + Math.sin(read_local(ui, "time") * 2) * 64
         );
 
     let hex =

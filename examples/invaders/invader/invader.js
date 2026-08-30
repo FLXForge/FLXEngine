@@ -8,11 +8,11 @@
 let speed = 10;
 
 function born(invader) {
-    global["invaders"]++;
+    write_global("invaders", (read_global("invaders") || 0) + 1);
 }
 
 function motion(invader){
-    if (global["game_over"] == 1 || global["victory"] == 1) {
+    if (read_global("game_over") == 1 || read_global("victory") == 1) {
         return;
     }
 
@@ -21,25 +21,25 @@ function motion(invader){
     }
 
     apply_speed(invader, speed);
-    move_horizontal(invader, global["fleet_direction"]);
+    move_horizontal(invader, read_global("fleet_direction"));
 
     if (invader.x < 20) {
-        global["fleet_direction"] = RIGHT;
-        global["fleet_drop"] = global["invaders"];
+        write_global("fleet_direction", RIGHT);
+        write_global("fleet_drop", read_global("invaders"));
     }
 
     if (invader.x > 600) {
-        global["fleet_direction"] = LEFT;
-        global["fleet_drop"] = global["invaders"];
+        write_global("fleet_direction", LEFT);
+        write_global("fleet_drop", read_global("invaders"));
     }
 
-    if (global["fleet_drop"] >= 1) {
-        invader.y += 8;
-        global["fleet_drop"] --;
+    if (read_global("fleet_drop") >= 1) {
+        position_y(invader, invader.y + 8);
+        write_global("fleet_drop", read_global("fleet_drop") - 1);
     }
 
     if (invader.y > 450) {
-        global["game_over"] = 1;
+        write_global("game_over", 1);
     }
 }
 
@@ -48,8 +48,8 @@ function collision(invader, other){
         kill(other);
         kill(invader);
 
-        global["score"] += 100;
-        global["invaders"] -= 1;
+        write_global("score", read_global("score") + 100);
+        write_global("invaders", read_global("invaders") - 1);
     }
 }
 

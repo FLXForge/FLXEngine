@@ -4,6 +4,7 @@
 
 #include "../audio/MusicDefinition.h"
 #include "../audio/SoundDefinition.h"
+#include "ScriptValue.h"
 
 #include <string>
 #include <unordered_map>
@@ -134,6 +135,7 @@ struct ObjectDefinition
     std::string group;
     std::string role;
     int controlPlayer = 0;
+    std::unordered_map<std::string, ScriptValue> local;
     std::string collisionType = "none";
     bool collisionActive = false;
     float collisionRadius = 0.0f;

@@ -7,12 +7,33 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 using namespace flx::test;
 
 namespace
 {
+    double localNumber(
+        RuntimeObject& object,
+        const std::string& key
+    )
+    {
+        const auto it =
+            object.local.find(key);
+
+        if (it == object.local.end())
+        {
+            return 0.0;
+        }
+
+        if (const auto* number = std::get_if<double>(&it->second))
+        {
+            return *number;
+        }
+
+        return 0.0;
+    }
 
     void testRuntimeLoadsFromRegistryAfterJsonRemoval()
     {
@@ -93,7 +114,7 @@ namespace
 
         writeFile(
             root / "game" / "scripts" / "root.js",
-            "function born(root) { root.local[\"ready\"] = 1; }\n"
+            "function born(root) { write_local(root, \"ready\", 1); }\n"
         );
 
         CompilationResult compiled =
@@ -138,7 +159,7 @@ namespace
             world.findByName("root");
 
         require(runtimeRoot != nullptr, "compiled script runtime should create root");
-        require(runtimeRoot->local["ready"] == 1.0, "compiled script should run from embedded source");
+        require(localNumber(*runtimeRoot, "ready") == 1.0, "compiled script should run from embedded source");
     }
 
 }
@@ -184,4 +205,3 @@ int main()
     return 0;
 
 }
-

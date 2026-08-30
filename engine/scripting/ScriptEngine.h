@@ -2,6 +2,7 @@
 
 #include "../runtime/RuntimeObject.h"
 #include "../runtime/ObjectDefinition.h"
+#include "../runtime/ScriptValue.h"
 #include "../runtime/RayCastResult.h"
 #include "../machine/MachineDefinition.h"
 #include "../persistence/PersistenceSystem.h"
@@ -184,12 +185,17 @@ public:
         const std::string& key
     );
 
+    void writeGlobalValue(
+        const std::string& key,
+        const ScriptValue& value
+    );
+
+    std::optional<ScriptValue> readGlobalValue(
+        const std::string& key
+    ) const;
+
 private:
     JSValue createJsObject(RuntimeObject& object);
-    void applyJsObject(RuntimeObject& source, JSValue jsObject);
-    JSValue createGlobalObject();
-    void applyGlobalObject(JSValue globalObject);
-    void exposeGlobalObject(JSValue globalObject);
     void cacheScriptModule(const std::string& path);
     JSValue getCachedFunction(
         const std::string& script,
@@ -202,7 +208,8 @@ private:
     const VideoChipDefinition* videoChip = nullptr;
     JSRuntime* runtime;
     JSContext* context;
-    std::unordered_map<std::string, double> globalState;
+    std::unordered_map<std::string, ScriptValue> globalState;
+    std::unordered_map<std::string, RuntimeObject*> activeScriptObjects;
     std::unordered_set<std::string> loadedScripts;
     std::unordered_map<
         std::string,

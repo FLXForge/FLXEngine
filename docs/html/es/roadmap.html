@@ -194,13 +194,13 @@
 
                 <li>Inicialización por instancia mediante <code>born()</code>.</li>
 
-                <li>Estado local persistente por objeto mediante <code>object.local</code>.</li>
+                <li>Estado local persistente por objeto mediante <code>read_local()</code> y <code>write_local()</code>.</li>
 
                 <li>Tiempo real de frame mediante <code>delta()</code>.</li>
 
                 <li>
                     Modelo de ámbitos:
-                    función, script, <code>object.local</code> y futuro ámbito global.
+                    función, script, estado local funcional y estado global funcional.
                 </li>
 
                 <li>
@@ -245,7 +245,7 @@
 
                 <li>
                     Spawn periódico basado en temporizadores mediante
-                    <code>object.local</code>.
+                    <code>read_local()</code> y <code>write_local()</code>.
                 </li>
 
                 <li>
@@ -353,7 +353,7 @@
                 <li>Normalizar Pong al nuevo esquema <code>shape</code>/<code>motion</code>.</li>
 
                 <li>
-                    Extender <code>object.local</code>.
+                    Extender <code>read_local()</code> y <code>write_local()</code>.
                     Actualmente solo soporta valores numéricos;
                     quedan pendientes tipos como <code>bool</code>,
                     <code>string</code>

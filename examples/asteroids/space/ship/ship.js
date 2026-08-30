@@ -36,12 +36,12 @@ function action(ship) {
 
 function dead(ship) {
     play_sound(ship, "dead");
-    if (global["lives"] >= 2) {
-        global["shipDead"] = 1;
-        global["lives"]--;
+    if (read_global("lives") >= 2) {
+        write_global("shipDead", 1);
+        write_global("lives", read_global("lives") - 1);
     } else {
-        global["inGame"] = 0;
-        global["lives"] = 0;
+        write_global("inGame", 0);
+        write_global("lives", 0);
         pause_music();
     }
     spawn(ship, "fragment");

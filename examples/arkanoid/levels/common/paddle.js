@@ -20,8 +20,8 @@ function born(paddle){
     normalWidth = paddle.width;
     targetWidth = normalWidth;
 
-    global["activeBroken"] = 0;
-    global["activeGun"] = 0;
+    write_global("activeBroken", 0);
+    write_global("activeGun", 0);
 
     state_to(paddle, "playing");
 }
@@ -35,8 +35,8 @@ function action(paddle){
 }
 
 function update_powerup_flags(paddle){
-    global["activeBroken"] = timer_active(paddle, "broken") ? 1 : 0;
-    global["activeGun"] = timer_active(paddle, "gun") ? 1 : 0;
+    write_global("activeBroken", timer_active(paddle, "broken") ? 1 : 0);
+    write_global("activeGun", timer_active(paddle, "gun") ? 1 : 0);
 }
 
 function update_target_width(paddle){
@@ -55,18 +55,18 @@ function update_target_width(paddle){
 
 function update_resize(paddle){
     if (paddle.width < targetWidth) {
-        paddle.width += RESIZE_SPEED * delta();
+        resize_width(paddle, paddle.width + RESIZE_SPEED * delta());
 
         if (paddle.width > targetWidth) {
-            paddle.width = targetWidth;
+            resize_width(paddle, targetWidth);
         }
     }
 
     if (paddle.width > targetWidth) {
-        paddle.width -= RESIZE_SPEED * delta();
+        resize_width(paddle, paddle.width - RESIZE_SPEED * delta());
 
         if (paddle.width < targetWidth) {
-            paddle.width = targetWidth;
+            resize_width(paddle, targetWidth);
         }
     }
 }
@@ -77,16 +77,16 @@ function update_movement(paddle){
 }
 
 function update_respawn(paddle){
-    if (global["ball_lost"] == 1) {
-        global["ball_lost"] = 0;
+    if (read_global("ball_lost") == 1) {
+        write_global("ball_lost", 0);
 
-        if (global["lives"] > 0) {
+        if (read_global("lives") > 0) {
             stop_timer(paddle, "respawn");
             play_timer(paddle, "respawn", RESPAWN_TIME);
             state_to(paddle, "respawn");
         } else {
-            global["show_hud"] = 0;
-            global["game_over"] = 1;
+            write_global("show_hud", 0);
+            write_global("game_over", 1);
         }
     }
 
@@ -103,9 +103,9 @@ function update_respawn(paddle){
 function collision(paddle, other) {
     if (other.group == "wall_side") {
         if (paddle.x < other.x) {
-            paddle.x = other.x - paddle.width;
+            position_x(paddle, other.x - paddle.width);
         } else {
-            paddle.x = other.x + other.width;
+            position_x(paddle, other.x + other.width);
         }
 
         return;

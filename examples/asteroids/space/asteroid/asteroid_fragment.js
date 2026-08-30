@@ -9,9 +9,9 @@ const LIVE_TIME = 1.2;
 function born(fragment) {
     play_timer(fragment, "life", LIVE_TIME);
 
-    fragment.angle = random(0, 360);
-    fragment.speed = random(20, 120);
-    fragment.rotationSpeed = random(120, 360);
+    apply_angle(fragment, random(0, 360));
+    apply_speed(fragment, random(20, 120));
+    apply_rotation_speed(fragment, random(120, 360));
 }
 
 function motion(fragment) {
@@ -23,8 +23,7 @@ function motion(fragment) {
 
     const factor = timer_left(fragment, "life") / LIVE_TIME;
 
-    fragment.width = 1 * factor;
-    fragment.height = 10 * factor;
+    resize(fragment, 1 * factor, 10 * factor);
 
     if (!timer_active(fragment, "life")) {
         kill(fragment);

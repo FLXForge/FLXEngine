@@ -10,10 +10,10 @@ const DETACH_COOLDOWN = 0.2;
 const FIRE_BUTTON = button(0);
 
 function motion(ball){
-    if (ball.attached) {
+    if (attach_active(ball)) {
         if (input_pressed(ball, FIRE_BUTTON)) {
             detach(ball);
-            ball.angle = 135;
+            apply_angle(ball, 135);
             play_timer(ball, "detach", DETACH_COOLDOWN);
         }
 
@@ -23,8 +23,8 @@ function motion(ball){
     advance(ball);
 
     if (ball.y > 320) {
-        global["lives"] -= 1;
-        global["ball_lost"] = 1;
+        write_global("lives", read_global("lives") - 1);
+        write_global("ball_lost", 1);
 
         play_sound(ball, "lost");
         kill(ball);
@@ -32,7 +32,7 @@ function motion(ball){
 }
 
 function collision(ball, other) {
-    if (ball.attached) {
+    if (attach_active(ball)) {
         return;
     }
 
@@ -50,38 +50,38 @@ function collision(ball, other) {
 
     if (other.group == "paddle") {
         if (
-            global["activeGun"] == 1
+            read_global("activeGun") == 1
             && !timer_active(ball, "detach")
         ){
             attach(ball);
             return;
         }
 
-        ball.y = other.y - ball.height - 1;
+        position_y(ball, other.y - ball.height - 1);
 
         let center = other.x + other.width / 2;
         let hit = ball.x - center;
         let factor = hit / (other.width / 2);
 
-        ball.angle = factor * 60;
+        apply_angle(ball, factor * 60);
 
         play_sound(ball, "paddle");
         return;
     }
 
     if (other.group == "brick") {
-        if (global["activeBroken"] == 0) {
+        if (read_global("activeBroken") == 0) {
             reflect_y(ball);
         }
 
         kill(other);
 
-        global["score"] += 100;
-        global["briks"] -= 1;
+        write_global("score", read_global("score") + 100);
+        write_global("briks", read_global("briks") - 1);
 
         play_sound(ball, "paddle");
 
-        if (global["briks"] <= 0) {
+        if (read_global("briks") <= 0) {
             kill(ball);
             return;
         }

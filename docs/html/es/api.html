@@ -109,21 +109,18 @@
 <pre><code>console.log(ship.name);</code></pre>
             </div>
 
-            <h3>local</h3>
+            <h3>Estado local</h3>
 
             <p>
-                Estado persistente asociado a una instancia concreta.
-            </p>
-
-            <p>
-                Los valores almacenados en
-                <code>object.local</code>
-                permanecen mientras el objeto exista.
+                El estado persistente de una instancia se consulta y modifica
+                mediante <code>read_local()</code> y <code>write_local()</code>.
+                El objeto JavaScript no expone <code>object.local</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">local</div>
-<pre><code>ship.local["timer"] += delta();
+                <div class="code-header">local state</div>
+<pre><code>const timer = (read_local(ship, "timer") || 0) + delta();
+write_local(ship, "timer", timer);
 </code></pre>
             </div>
 
@@ -140,6 +137,14 @@
 
             <h3>Posición y tamaño</h3>
 
+            <p>
+                Estas propiedades son una vista viva de solo lectura. Para
+                cambiar la posición o el tamaño usa <code>position()</code>,
+                <code>position_x()</code>, <code>position_y()</code>,
+                <code>resize()</code>, <code>resize_width()</code> o
+                <code>resize_height()</code>.
+            </p>
+
             <ul>
                 <li><code>x</code>: posición horizontal.</li>
                 <li><code>y</code>: posición vertical.</li>
@@ -149,19 +154,19 @@
 
             <h3>Movimiento</h3>
 
+            <p>
+                Estas propiedades también son de solo lectura. Para cambiar el
+                estado vivo usa funciones explícitas como
+                <code>apply_speed()</code>, <code>apply_angle()</code>,
+                <code>apply_velocity()</code> o
+                <code>apply_rotation_speed()</code>.
+            </p>
+
             <ul>
                 <li><code>speed</code>: velocidad actual.</li>
-                <li><code>originSpeed</code>: velocidad inicial.</li>
                 <li><code>velocityX</code>: velocidad horizontal.</li>
                 <li><code>velocityY</code>: velocidad vertical.</li>
                 <li><code>rotationSpeed</code>: velocidad angular actual.</li>
-            </ul>
-
-            <h3>Origen</h3>
-
-            <ul>
-                <li><code>originX</code>: posición inicial X.</li>
-                <li><code>originY</code>: posición inicial Y.</li>
             </ul>
 
             <h3>angle</h3>
@@ -268,6 +273,32 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 
             <hr />
 
+            <h2>apply_angle(object, angle)</h2>
+
+            <p>
+                Cambia el ángulo vivo del objeto sin modificar su declaración JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_angle</div>
+<pre><code>apply_angle(ball, -45);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>apply_rotation_speed(object, speed)</h2>
+
+            <p>
+                Cambia la velocidad angular viva del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_rotation_speed</div>
+<pre><code>apply_rotation_speed(fragment, 180);</code></pre>
+            </div>
+
+            <hr />
+
             <h2>restore_speed(object)</h2>
 
             <p>
@@ -302,6 +333,38 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
 <pre><code>function motion(ship) {
     advance(ship);
 }</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>position(object, x, y)</h2>
+
+            <p>
+                Coloca un objeto en coordenadas lógicas. También existen
+                <code>position_x(object, x)</code> y
+                <code>position_y(object, y)</code> para modificar un solo eje.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position</div>
+<pre><code>position(player, 160, 120);
+position_x(player, player.x + 4);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>resize(object, width, height)</h2>
+
+            <p>
+                Cambia el tamaño vivo del objeto. También existen
+                <code>resize_width(object, width)</code> y
+                <code>resize_height(object, height)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">resize</div>
+<pre><code>resize(paddle, 48, paddle.height);
+resize_width(paddle, paddle.width + 8);</code></pre>
             </div>
 
             <hr />
@@ -368,11 +431,12 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
                 <div class="code-header">timer</div>
 <pre><code>function motion(spawner) {
 
-    spawner.local["timer"] += delta();
+    const timer = (read_local(spawner, "timer") || 0) + delta();
+    write_local(spawner, "timer", timer);
 
-    if (spawner.local["timer"] > 3) {
+    if (timer > 3) {
         spawn(spawner, "asteroid");
-        spawner.local["timer"] = 0;
+        write_local(spawner, "timer", 0);
     }
 }
 </code></pre>
@@ -593,11 +657,11 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">transicion segura</div>
 <pre><code>function action(title) {
     if (input_pressed(title, button(0))) {
-        title.local["leaving"] = 1;
+        write_local(title, "leaving", 1);
         fade_on();
     }
 
-    if (title.local["leaving"] == 1 && fade_done()) {
+    if (read_local(title, "leaving") == 1 && fade_done()) {
         // cargar siguiente escena
     }
 }</code></pre>
@@ -672,7 +736,7 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">detach</div>
 <pre><code>if (attach_active(ball) && input_pressed(ball, button(0))) {
     detach(ball);
-    ball.angle = -45;
+    apply_angle(ball, -45);
 }</code></pre>
             </div>
 
@@ -814,7 +878,7 @@ if (input_pressed(player, FIRE)) {
             <div class="code-card">
                 <div class="code-header">transicion de escena</div>
 <pre><code>function action(game) {
-    if (global["startLevel"] == 1) {
+    if (read_global("startLevel") == 1) {
         keep_only(game);
         spawn(game, "level1");
     }
@@ -1122,9 +1186,8 @@ if (probability(1, 1000)) {
 
             <div class="code-card">
                 <div class="code-header">random</div>
-<pre><code>asteroid.angle = random(0, 360);
-
-asteroid.speed = random(20, 80);
+<pre><code>apply_angle(asteroid, random(0, 360));
+apply_speed(asteroid, random(20, 80));
 </code></pre>
             </div>
 

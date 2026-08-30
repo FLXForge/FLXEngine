@@ -13,7 +13,7 @@ function born(space) {
 }
 
 function motion(space) {
-    if (global["inGame"] == 0) {
+    if (read_global("inGame") == 0) {
         stop_timer(space, "spawn");
         play_timer(space, "spawn", SPAWN_INTERVAL);
         return;
@@ -23,7 +23,7 @@ function motion(space) {
         return;
     }
 
-    if (global["asteroids"] >= ASTEROID_LIMIT) {
+    if (read_global("asteroids") >= ASTEROID_LIMIT) {
         play_timer(space, "spawn", SPAWN_INTERVAL);
         return;
     }
@@ -36,7 +36,7 @@ function motion(space) {
         spawn(space, "Asteroid_a");
     }
 
-    global["asteroids"] += 2;
+    write_global("asteroids", read_global("asteroids") + 2);
 
     play_timer(space, "spawn", SPAWN_INTERVAL);
 }

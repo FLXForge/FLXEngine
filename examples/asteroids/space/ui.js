@@ -9,13 +9,13 @@ const INIT_LIVES = 3;
 const FIRE_BUTTON = button(0);
 
 function action(ui) {
-    if (global["inGame"] == 0) {
+    if (read_global("inGame") == 0) {
         if (input_pressed(player(1), FIRE_BUTTON)) {
             pause_music();
-            global["score"] = 0;
-            global["lives"] = INIT_LIVES;
-            global["inGame"] = 1;
-            global["asteroids"] = 0;
+            write_global("score", 0);
+            write_global("lives", INIT_LIVES);
+            write_global("inGame", 1);
+            write_global("asteroids", 0);
 
             spawn(ui, "ship");   //no usa origin, le he tenido que añadir el offset
         }
@@ -23,15 +23,15 @@ function action(ui) {
 }
 
 function motion(ui){
-    if (global["shipDead"] == 1) {
+    if (read_global("shipDead") == 1) {
         spawn(ui, "ship");   //no usa origin, le he tenido que añadir el offset
-        global["shipDead"] = 0;
+        write_global("shipDead", 0);
     }
 }
 
 function draw(ui){
-    if (global["inGame"] == 0) {
-        if (global["lives"] == 0){
+    if (read_global("inGame") == 0) {
+        if (read_global("lives") == 0){
             draw_text(
                 250,
                 100,
@@ -42,7 +42,7 @@ function draw(ui){
             draw_text(
                 250,
                 140,
-                "SCORE: " + global["score"],
+                "SCORE: " + read_global("score"),
                 15
             );
         }
@@ -55,12 +55,12 @@ function draw(ui){
         draw_text(
                 10,
                 10,
-                "SCORE: " + global["score"]
+                "SCORE: " + read_global("score")
             );
         draw_text(
                 10,
                 20,
-                "LIVES: " + global["lives"]
+                "LIVES: " + read_global("lives")
             );
     }
 }

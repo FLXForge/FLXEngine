@@ -212,12 +212,11 @@ namespace
             return true;
         }
 
-        JSValue controlValue =
-            JS_GetPropertyStr(context, value, "controlPlayer");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, value);
 
-        int controlPlayer = 0;
-        JS_ToInt32(context, &controlPlayer, controlValue);
-        JS_FreeValue(context, controlValue);
+        const int controlPlayer =
+            object == nullptr ? 0 : object->controlPlayer;
 
         if (controlPlayer <= 0)
         {

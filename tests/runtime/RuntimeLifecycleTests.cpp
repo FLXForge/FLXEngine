@@ -191,6 +191,32 @@ namespace
         return 0.0;
     }
 
+    double globalValue(
+        ScriptEngine& scripts,
+        const std::string& key
+    )
+    {
+        const auto value =
+            scripts.readGlobalValue(key);
+
+        if (!value)
+        {
+            return 0.0;
+        }
+
+        if (const auto* number = std::get_if<double>(&*value))
+        {
+            return *number;
+        }
+
+        if (const auto* boolean = std::get_if<bool>(&*value))
+        {
+            return *boolean ? 1.0 : 0.0;
+        }
+
+        return 0.0;
+    }
+
     bool nearlyEqual(
         double left,
         double right,
@@ -673,12 +699,18 @@ namespace
             "  write_local(o, 'removedLayer', typeof o.layer == 'undefined' ? 1 : 0);"
             "  write_local(o, 'removedAttached', typeof o.attached == 'undefined' ? 1 : 0);"
             "  position_x(o, 21);"
+            "  write_local(o, 'liveXAfterPositionX', o.x);"
             "  position_y(o, 22);"
             "  apply_speed(o, 23);"
+            "  write_local(o, 'liveSpeedAfterApplySpeed', o.speed);"
             "  apply_angle(o, 24);"
+            "  write_local(o, 'liveAngleAfterApplyAngle', o.angle);"
             "  apply_velocity(o, 25, 26);"
             "  apply_rotation_speed(o, 27);"
             "  resize(o, 28, 29);"
+            "  resize_width(o, 30);"
+            "  write_local(o, 'liveWidthAfterResizeWidth', o.width);"
+            "  resize_height(o, 31);"
             "  write_local(o, 'liveX', o.x);"
             "  write_local(o, 'liveY', o.y);"
             "  write_local(o, 'liveSpeed', o.speed);"
@@ -707,13 +739,17 @@ namespace
         require(nearlyEqual(runtimeRoot.position.y, 22.0), "position_y should update runtime position y");
         require(nearlyEqual(runtimeRoot.speed, 23.0), "apply_speed should update runtime speed");
         require(nearlyEqual(runtimeRoot.angle, 24.0), "apply_angle should update runtime angle");
-        require(nearlyEqual(runtimeRoot.size.x, 28.0), "resize should update runtime width");
-        require(nearlyEqual(runtimeRoot.size.y, 29.0), "resize should update runtime height");
+        require(nearlyEqual(runtimeRoot.size.x, 30.0), "resize_width should update runtime width");
+        require(nearlyEqual(runtimeRoot.size.y, 31.0), "resize_height should update runtime height");
         require(runtimeRoot.layer == 0, "JS layer write should not update runtime layer");
         require(!runtimeRoot.attached, "JS attached write should not update runtime attached");
         require(localValue(runtimeRoot, "removedLocal") == 1.0, "local should not exist on runtime object view");
         require(localValue(runtimeRoot, "removedLayer") == 1.0, "layer should not exist on runtime object view");
         require(localValue(runtimeRoot, "removedAttached") == 1.0, "attached should not exist on runtime object view");
+        require(localValue(runtimeRoot, "liveXAfterPositionX") == 21.0, "position_x should be visible through same JS object immediately");
+        require(localValue(runtimeRoot, "liveSpeedAfterApplySpeed") == 23.0, "apply_speed should be visible through same JS object immediately");
+        require(localValue(runtimeRoot, "liveAngleAfterApplyAngle") == 24.0, "apply_angle should be visible through same JS object immediately");
+        require(localValue(runtimeRoot, "liveWidthAfterResizeWidth") == 30.0, "resize_width should be visible through same JS object immediately");
         require(localValue(runtimeRoot, "liveX") == 21.0, "x getter should read updated value in same callback");
         require(localValue(runtimeRoot, "liveY") == 22.0, "y getter should read updated value in same callback");
         require(localValue(runtimeRoot, "liveSpeed") == 23.0, "speed getter should read updated value in same callback");
@@ -721,8 +757,35 @@ namespace
         require(localValue(runtimeRoot, "liveVelocityX") != 15.0, "velocityX assignment should not be copied back");
         require(localValue(runtimeRoot, "liveVelocityY") != 16.0, "velocityY assignment should not be copied back");
         require(localValue(runtimeRoot, "liveRotationSpeed") == 27.0, "rotationSpeed getter should read updated value in same callback");
-        require(localValue(runtimeRoot, "liveWidth") == 28.0, "width getter should read updated value in same callback");
-        require(localValue(runtimeRoot, "liveHeight") == 29.0, "height getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveWidth") == 30.0, "width getter should read updated value in same callback");
+        require(localValue(runtimeRoot, "liveHeight") == 31.0, "height getter should read updated value in same callback");
+    }
+
+    void testJsRuntimeObjectViewReadsKilledStateInSameCallback()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "killViewContract",
+            "function action(o) {"
+            "  kill(o);"
+            "  write_global('aliveAfterKill', o.alive === false ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "killViewContract");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load kill view project");
+
+        harness.update();
+
+        require(
+            globalValue(harness.scripts, "aliveAfterKill") == 1.0,
+            "kill should be visible through same JS object immediately"
+        );
     }
 
     void testJsMechanicsIsNotExposedAsNestedSnapshot()
@@ -1820,6 +1883,7 @@ int main()
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "JS runtime object view is readonly and live", testJsRuntimeObjectViewIsReadonlyAndLive },
+        { "JS runtime object view reads killed state in same callback", testJsRuntimeObjectViewReadsKilledStateInSameCallback },
         { "JS mechanics is not exposed as nested snapshot", testJsMechanicsIsNotExposedAsNestedSnapshot },
         { "JS identity and public metadata are readonly", testJsIdentityAndPublicMetadataAreReadonly },
         { "script module variables are shared between instances", testScriptModuleVariablesAreSharedBetweenInstances },

@@ -50,20 +50,137 @@ namespace
         return escaped;
     }
 
-    void defineRuntimeViewValue(
+    enum RuntimeViewProperty
+    {
+        RuntimeViewId,
+        RuntimeViewName,
+        RuntimeViewGroup,
+        RuntimeViewRole,
+        RuntimeViewAlive,
+        RuntimeViewVisible,
+        RuntimeViewX,
+        RuntimeViewY,
+        RuntimeViewWidth,
+        RuntimeViewHeight,
+        RuntimeViewSpeed,
+        RuntimeViewAngle,
+        RuntimeViewVelocityX,
+        RuntimeViewVelocityY,
+        RuntimeViewRotationSpeed
+    };
+
+    JSValue runtimeViewGetter(
         JSContext* context,
-        JSValue object,
-        const char* name,
-        JSValue value
+        JSValueConst,
+        int,
+        JSValueConst*,
+        int magic,
+        JSValueConst* data
     )
     {
-        JS_DefinePropertyValueStr(
+        const char* idText =
+            JS_ToCString(context, data[0]);
+
+        const std::string runtimeId =
+            idText == nullptr ? "" : idText;
+
+        if (idText != nullptr)
+        {
+            JS_FreeCString(context, idText);
+        }
+
+        if (magic == RuntimeViewId)
+        {
+            return JS_NewString(context, runtimeId.c_str());
+        }
+
+        ScriptEngine* scriptEngine =
+            static_cast<ScriptEngine*>(
+                JS_GetContextOpaque(context)
+            );
+
+        RuntimeObject* object =
+            scriptEngine == nullptr || runtimeId.empty()
+                ? nullptr
+                : scriptEngine->findObjectByRuntimeId(runtimeId);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        switch (magic)
+        {
+        case RuntimeViewName:
+            return JS_NewString(context, object->name.c_str());
+        case RuntimeViewGroup:
+            return JS_NewString(context, object->group.c_str());
+        case RuntimeViewRole:
+            return JS_NewString(context, object->role.c_str());
+        case RuntimeViewAlive:
+            return JS_NewBool(context, object->alive);
+        case RuntimeViewVisible:
+            return JS_NewBool(context, object->visible);
+        case RuntimeViewX:
+            return JS_NewFloat64(context, object->position.x);
+        case RuntimeViewY:
+            return JS_NewFloat64(context, object->position.y);
+        case RuntimeViewWidth:
+            return JS_NewFloat64(context, object->size.x);
+        case RuntimeViewHeight:
+            return JS_NewFloat64(context, object->size.y);
+        case RuntimeViewSpeed:
+            return JS_NewFloat64(context, object->speed);
+        case RuntimeViewAngle:
+            return JS_NewFloat64(context, object->angle);
+        case RuntimeViewVelocityX:
+            return JS_NewFloat64(context, object->velocity.x);
+        case RuntimeViewVelocityY:
+            return JS_NewFloat64(context, object->velocity.y);
+        case RuntimeViewRotationSpeed:
+            return JS_NewFloat64(context, object->rotationSpeed);
+        default:
+            return JS_UNDEFINED;
+        }
+    }
+
+    void defineRuntimeViewGetter(
+        JSContext* context,
+        JSValueConst object,
+        const char* name,
+        const std::string& runtimeId,
+        RuntimeViewProperty property
+    )
+    {
+        JSValue data[1] = {
+            JS_NewString(context, runtimeId.c_str())
+        };
+
+        JSValue getter =
+            JS_NewCFunctionData(
+                context,
+                runtimeViewGetter,
+                0,
+                property,
+                1,
+                data
+            );
+
+        JS_FreeValue(context, data[0]);
+
+        JSAtom atom =
+            JS_NewAtom(context, name);
+
+        JS_DefinePropertyGetSet(
             context,
             object,
-            name,
-            value,
+            atom,
+            getter,
+            JS_UNDEFINED,
             JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE
         );
+
+        JS_FreeAtom(context, atom);
     }
 
 }
@@ -724,21 +841,21 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JSValue self =
         JS_NewObject(context);
 
-    defineRuntimeViewValue(context, self, "id", JS_NewString(context, object.runtimeId.c_str()));
-    defineRuntimeViewValue(context, self, "name", JS_NewString(context, object.name.c_str()));
-    defineRuntimeViewValue(context, self, "group", JS_NewString(context, object.group.c_str()));
-    defineRuntimeViewValue(context, self, "role", JS_NewString(context, object.role.c_str()));
-    defineRuntimeViewValue(context, self, "alive", JS_NewBool(context, object.alive));
-    defineRuntimeViewValue(context, self, "visible", JS_NewBool(context, object.visible));
-    defineRuntimeViewValue(context, self, "x", JS_NewFloat64(context, object.position.x));
-    defineRuntimeViewValue(context, self, "y", JS_NewFloat64(context, object.position.y));
-    defineRuntimeViewValue(context, self, "width", JS_NewFloat64(context, object.size.x));
-    defineRuntimeViewValue(context, self, "height", JS_NewFloat64(context, object.size.y));
-    defineRuntimeViewValue(context, self, "speed", JS_NewFloat64(context, object.speed));
-    defineRuntimeViewValue(context, self, "angle", JS_NewFloat64(context, object.angle));
-    defineRuntimeViewValue(context, self, "velocityX", JS_NewFloat64(context, object.velocity.x));
-    defineRuntimeViewValue(context, self, "velocityY", JS_NewFloat64(context, object.velocity.y));
-    defineRuntimeViewValue(context, self, "rotationSpeed", JS_NewFloat64(context, object.rotationSpeed));
+    defineRuntimeViewGetter(context, self, "id", object.runtimeId, RuntimeViewId);
+    defineRuntimeViewGetter(context, self, "name", object.runtimeId, RuntimeViewName);
+    defineRuntimeViewGetter(context, self, "group", object.runtimeId, RuntimeViewGroup);
+    defineRuntimeViewGetter(context, self, "role", object.runtimeId, RuntimeViewRole);
+    defineRuntimeViewGetter(context, self, "alive", object.runtimeId, RuntimeViewAlive);
+    defineRuntimeViewGetter(context, self, "visible", object.runtimeId, RuntimeViewVisible);
+    defineRuntimeViewGetter(context, self, "x", object.runtimeId, RuntimeViewX);
+    defineRuntimeViewGetter(context, self, "y", object.runtimeId, RuntimeViewY);
+    defineRuntimeViewGetter(context, self, "width", object.runtimeId, RuntimeViewWidth);
+    defineRuntimeViewGetter(context, self, "height", object.runtimeId, RuntimeViewHeight);
+    defineRuntimeViewGetter(context, self, "speed", object.runtimeId, RuntimeViewSpeed);
+    defineRuntimeViewGetter(context, self, "angle", object.runtimeId, RuntimeViewAngle);
+    defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, RuntimeViewVelocityX);
+    defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, RuntimeViewVelocityY);
+    defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, RuntimeViewRotationSpeed);
     JS_PreventExtensions(context, self);
 
     return self;

@@ -15,6 +15,7 @@
 #include <functional>
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include <quickjs.h>
 
 class FadeSystem;
@@ -60,6 +61,15 @@ public:
     using FindObjectByIdFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
+    using FindObjectsByNameFunction =
+        std::function<std::vector<RuntimeObject*> (const std::string&)>;
+
+    using FindParentFunction =
+        std::function<RuntimeObject* (const std::string&)>;
+
+    using FindChildrenFunction =
+        std::function<std::vector<RuntimeObject*> (const std::string&)>;
+
     using FindObjectDefinitionFunction =
         std::function<const ObjectDefinition* (const std::string&)>;
 
@@ -83,8 +93,14 @@ public:
         std::function<void(const std::string&)>;
 
     void setFindObjectFunction(FindObjectFunction function);
+    void setFindObjectsByNameFunction(FindObjectsByNameFunction function);
+    void setFindParentFunction(FindParentFunction function);
+    void setFindChildrenFunction(FindChildrenFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
+    std::vector<RuntimeObject*> findObjectsByName(const std::string& name);
+    RuntimeObject* findParent(const std::string& runtimeId);
+    std::vector<RuntimeObject*> findChildren(const std::string& runtimeId);
 
     void setSpawnObjectFunction(SpawnObjectFunction function);
 
@@ -121,6 +137,17 @@ public:
     RuntimeObject* findObjectByRuntimeId(
         const std::string& id
     );
+
+    RuntimeObject* resolveRuntimeObjectReference(
+        const std::string& id,
+        uint64_t invocationId
+    );
+
+    bool isCurrentScriptInvocation(uint64_t invocationId) const;
+    uint64_t currentScriptInvocationId() const;
+    bool hasActiveScriptInvocation() const;
+
+    JSValue createRuntimeObjectView(RuntimeObject& object);
 
     void setFindObjectDefinitionFunction(
         FindObjectDefinitionFunction function
@@ -196,6 +223,8 @@ public:
 
 private:
     JSValue createJsObject(RuntimeObject& object);
+    uint64_t beginScriptInvocation();
+    void endScriptInvocation(uint64_t invocationId);
     void cacheScriptModule(const std::string& path);
     JSValue getCachedFunction(
         const std::string& script,
@@ -210,6 +239,9 @@ private:
     JSContext* context;
     std::unordered_map<std::string, ScriptValue> globalState;
     std::unordered_map<std::string, RuntimeObject*> activeScriptObjects;
+    std::unordered_set<std::string> invalidScriptObjectReferences;
+    uint64_t nextScriptInvocationId = 1;
+    uint64_t activeScriptInvocationId = 0;
     std::unordered_set<std::string> loadedScripts;
     std::unordered_map<
         std::string,
@@ -223,6 +255,9 @@ private:
     KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
+    FindObjectsByNameFunction findObjectsByNameFunction;
+    FindParentFunction findParentFunction;
+    FindChildrenFunction findChildrenFunction;
     FindObjectDefinitionFunction findObjectDefinitionById;
     FadeSystem* fadeSystem = nullptr;
     AudioSystem* audioSystem = nullptr;

@@ -314,6 +314,7 @@ int main()
     {
         try
         {
+            std::cout << "[RUN] " << test.first << std::endl;
             test.second();
             std::cout << "[PASS] " << test.first << std::endl;
         }

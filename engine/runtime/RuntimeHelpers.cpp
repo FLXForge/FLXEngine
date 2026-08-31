@@ -215,10 +215,11 @@ namespace
         const Rectangle bBox =
             getBox(b);
 
-        return CheckCollisionRecs(
-            aBox,
-            bBox
-        );
+        return
+            aBox.x < bBox.x + bBox.width &&
+            aBox.x + aBox.width > bBox.x &&
+            aBox.y < bBox.y + bBox.height &&
+            aBox.y + aBox.height > bBox.y;
     }
 
     bool circleIntersects(

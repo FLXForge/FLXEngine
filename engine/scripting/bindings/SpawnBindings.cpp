@@ -30,33 +30,12 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
-
-        const char* objectId =
-            JS_ToCString(context, idValue);
-
-        if (objectId == nullptr)
-        {
-            JS_FreeCString(context, spawnName);
-            JS_FreeValue(context, idValue);
-            return JS_UNDEFINED;
-        }
-
         RuntimeObject* source =
-            scriptEngine->findObjectByRuntimeId(objectId);
+            runtimeObjectViewFromArgument(context, argv[0]);
 
         if (source == nullptr)
         {
-            Logger::warning(
-                "spawn",
-                "Spawner object not found: " + std::string(objectId)
-            );
-
             JS_FreeCString(context, spawnName);
-            JS_FreeCString(context, objectId);
-            JS_FreeValue(context, idValue);
-
             return JS_UNDEFINED;
         }
 
@@ -68,12 +47,10 @@ namespace
             Logger::warning(
                 "spawn",
                 "Child not found: " + std::string(spawnName) +
-                " in " + std::string(objectId)
+                " in " + source->runtimeId
             );
 
             JS_FreeCString(context, spawnName);
-            JS_FreeCString(context, objectId);
-            JS_FreeValue(context, idValue);
 
             return JS_UNDEFINED;
         }
@@ -89,8 +66,6 @@ namespace
         );
 
         JS_FreeCString(context, spawnName);
-        JS_FreeCString(context, objectId);
-        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }

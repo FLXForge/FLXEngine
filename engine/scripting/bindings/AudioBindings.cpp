@@ -22,45 +22,18 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
-
-        const char* objectId =
-            JS_ToCString(context, idValue);
-
         const char* soundId =
             JS_ToCString(context, argv[1]);
 
-        if (objectId == nullptr || soundId == nullptr)
-        {
-            if (objectId != nullptr)
-            {
-                JS_FreeCString(context, objectId);
-            }
+        RuntimeObject* source =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
+        if (source == nullptr || soundId == nullptr)
+        {
             if (soundId != nullptr)
             {
                 JS_FreeCString(context, soundId);
             }
-
-            JS_FreeValue(context, idValue);
-
-            return JS_UNDEFINED;
-        }
-
-        RuntimeObject* source =
-            scriptEngine->findObjectByRuntimeId(objectId);
-
-        if (source == nullptr)
-        {
-            Logger::warning(
-                "audio",
-                "Sound source object not found: " + std::string(objectId)
-            );
-
-            JS_FreeCString(context, objectId);
-            JS_FreeCString(context, soundId);
-            JS_FreeValue(context, idValue);
 
             return JS_UNDEFINED;
         }
@@ -70,9 +43,7 @@ namespace
             soundId
         );
 
-        JS_FreeCString(context, objectId);
         JS_FreeCString(context, soundId);
-        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }
@@ -92,45 +63,18 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
-
-        const char* objectId =
-            JS_ToCString(context, idValue);
-
         const char* musicId =
             JS_ToCString(context, argv[1]);
 
-        if (objectId == nullptr || musicId == nullptr)
-        {
-            if (objectId != nullptr)
-            {
-                JS_FreeCString(context, objectId);
-            }
+        RuntimeObject* source =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
+        if (source == nullptr || musicId == nullptr)
+        {
             if (musicId != nullptr)
             {
                 JS_FreeCString(context, musicId);
             }
-
-            JS_FreeValue(context, idValue);
-
-            return JS_UNDEFINED;
-        }
-
-        RuntimeObject* source =
-            scriptEngine->findObjectByRuntimeId(objectId);
-
-        if (source == nullptr)
-        {
-            Logger::warning(
-                "audio",
-                "Music source object not found: " + std::string(objectId)
-            );
-
-            JS_FreeCString(context, objectId);
-            JS_FreeCString(context, musicId);
-            JS_FreeValue(context, idValue);
 
             return JS_UNDEFINED;
         }
@@ -140,9 +84,7 @@ namespace
             musicId
         );
 
-        JS_FreeCString(context, objectId);
         JS_FreeCString(context, musicId);
-        JS_FreeValue(context, idValue);
 
         return JS_UNDEFINED;
     }

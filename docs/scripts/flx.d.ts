@@ -116,6 +116,10 @@ interface MusicChannelConfig {
 
 /**
  * Runtime representation of an object created by FLX.
+ *
+ * RuntimeObject is a temporary live view for the current script hook.
+ * Do not store it in local/global state. Store its id string and resolve it
+ * again with find_id() when needed.
  */
 interface RuntimeObject {
     /** Unique runtime instance identifier. */
@@ -255,6 +259,26 @@ declare function read_global(key: string): ScriptValue | undefined;
 declare function write_global(key: string, value: ScriptValue): void;
 
 /**
+ * Resolves a live runtime object by runtime id during the current hook.
+ */
+declare function find_id(id: string): RuntimeObject | undefined;
+
+/**
+ * Returns all live runtime objects with the given logical instance name, in world order.
+ */
+declare function find_name(name: string): RuntimeObject[];
+
+/**
+ * Returns the live parent of an object, when it still exists.
+ */
+declare function find_parent(object: RuntimeObject): RuntimeObject | undefined;
+
+/**
+ * Returns the live direct children of an object, in world order.
+ */
+declare function find_children(object: RuntimeObject): RuntimeObject[];
+
+/**
  * Moves an object on the horizontal axis using an intent from -1 to 1.
  */
 declare function move_horizontal(object: RuntimeObject, intent: number): void;
@@ -281,12 +305,12 @@ declare function rotate(object: RuntimeObject, intent?: number): void;
 /**
  * Makes an object follow another object on the X axis.
  */
-declare function follow_x(object: RuntimeObject, targetName: string): void;
+declare function follow_x(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Makes an object follow another object on the Y axis.
  */
-declare function follow_y(object: RuntimeObject, targetName: string): void;
+declare function follow_y(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Enables declared attach rules for an object and its original parent.

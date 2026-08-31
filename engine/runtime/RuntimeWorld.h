@@ -53,6 +53,10 @@ public:
     void hide(const std::string& runtimeId);
     RuntimeObject* findByName(const std::string& name);
     RuntimeObject* findByRuntimeId(const std::string& id);
+    RuntimeObject* findLiveByRuntimeId(const std::string& id);
+    std::vector<RuntimeObject*> findAllLiveByName(const std::string& name);
+    RuntimeObject* findLiveParent(const std::string& runtimeId);
+    std::vector<RuntimeObject*> findLiveChildren(const std::string& runtimeId);
     void keepOnly(const std::string& runtimeId);
     RayCastResult rayCast(
         const RuntimeObject& source,

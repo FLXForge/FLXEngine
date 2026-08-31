@@ -15,33 +15,7 @@ namespace
         JSValueConst value
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (scriptEngine == nullptr)
-        {
-            return nullptr;
-        }
-
-        JSValue idValue =
-            JS_GetPropertyStr(context, value, "id");
-
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
-        {
-            JS_FreeValue(context, idValue);
-            return nullptr;
-        }
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
-
-        return object;
+        return runtimeObjectViewFromArgument(context, value);
     }
 
     const ObjectDefinition* definitionFor(

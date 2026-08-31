@@ -669,46 +669,95 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
-            <h2>follow_x(object, targetName)</h2>
+            <h2>find_id(id)</h2>
+
+            <p>
+                Resuelve un objeto vivo por runtime id durante el hook actual.
+                Los valores <code>RuntimeObject</code> son vistas vivas temporales;
+                si una referencia debe sobrevivir entre hooks, guarda su id como
+                string y vuelve a resolverlo con <code>find_id()</code>.
+            </p>
+
+            <h2>find_name(name)</h2>
+
+            <p>
+                Devuelve todos los objetos vivos con el nombre logico indicado,
+                en orden de mundo desde el mas antiguo al mas nuevo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">find_name</div>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
+            </div>
+
+            <h2>find_parent(object)</h2>
+
+            <p>
+                Devuelve el parent vivo de un objeto, o <code>undefined</code>
+                si el objeto no tiene parent vivo.
+            </p>
+
+            <h2>find_children(object)</h2>
+
+            <p>
+                Devuelve los hijos directos vivos de un objeto en orden de mundo.
+                No devuelve capacidades de spawn manual ni objetos pendientes.
+            </p>
+
+            <hr />
+
+            <h2>follow_x(object, target)</h2>
 
             <p>
                 Mueve un objeto horizontalmente hacia otro objeto.
-                El objetivo se resuelve internamente por nombre.
+                El objetivo debe ser un <code>RuntimeObject</code> vivo.
                 Solo modifica la posicion X del objeto.
             </p>
 
             <div class="code-card">
                 <div class="code-header">follow_x</div>
-<pre><code>follow_x(cursor, "ball");</code></pre>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_x(cursor, balls[0]);
+}</code></pre>
             </div>
 
             <h3>Configuracion utilizada</h3>
 
             <ul>
                 <li><code>object</code>: objeto que se mueve.</li>
-                <li><code>targetName</code>: nombre logico de la instancia seguida.</li>
+                <li><code>target</code>: objeto vivo que se sigue.</li>
             </ul>
 
             <hr />
 
-            <h2>follow_y(object, targetName)</h2>
+            <h2>follow_y(object, target)</h2>
 
             <p>
                 Mueve un objeto verticalmente hacia otro objeto.
-                El objetivo se resuelve internamente por nombre.
+                El objetivo debe ser un <code>RuntimeObject</code> vivo.
                 Solo modifica la posicion Y del objeto.
             </p>
 
             <div class="code-card">
                 <div class="code-header">follow_y</div>
-<pre><code>follow_y(enemy, "ball");</code></pre>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
             </div>
 
             <h3>Configuración utilizada</h3>
 
             <ul>
                 <li><code>object</code>: objeto que se mueve.</li>
-                <li><code>targetName</code>: nombre logico de la instancia seguida.</li>
+                <li><code>target</code>: objeto vivo que se sigue.</li>
             </ul>
 
             <hr />

@@ -794,6 +794,8 @@ namespace
             "const MOVE = direction(0);"
             "const THROTTLE = direction(1);"
             "function action(o) {"
+            "  write_local(o, 'moveIndex', MOVE.index);"
+            "  write_local(o, 'playerVertical', input_direction(player(1), MOVE, VERTICAL));"
             "  write_local(o, 'horizontal', input_direction(o, MOVE, HORIZONTAL));"
             "  write_local(o, 'vertical', input_direction(o, MOVE, VERTICAL));"
             "  write_local(o, 'twoWayHorizontal', input_direction(o, THROTTLE, HORIZONTAL));"
@@ -810,11 +812,15 @@ namespace
         harness.addObject(root);
         require(harness.load().success, "runtime should load input direction probe");
         RuntimeObject& rootObject = requireObject(harness.world, "root");
+        require(rootObject.controlPlayer == 1, "runtime object should keep control player");
 
         harness.provider.setKeys({ KEY_W });
         harness.input.update(0.016f);
+        require(harness.input.playerDirectionDown(1, 0, InputComponent::Up), "fixture should expose W as player up");
         harness.update(0.016f);
 
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "moveIndex")), 0.0f), "direction descriptor should keep index");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "playerVertical")), 1.0f), "explicit player subject should read vertical");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 0.0f), "4way up should not leak into horizontal");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 1.0f), "4way up should be positive vertical");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "system")), 0.0f), "system subject should reject directional intent");
@@ -973,8 +979,9 @@ int main()
     {
         try
         {
+            std::cout << "[RUN] " << test.first << std::endl;
             test.second();
-            std::cout << "[PASS] " << test.first << "\n";
+            std::cout << "[PASS] " << test.first << std::endl;
         }
         catch (const std::exception& error)
         {

@@ -61,7 +61,6 @@ public:
     std::string runtimeId;
     std::string definitionId;
     std::string parentId;
-    std::string originalParentId;
     std::string sourcePath;
     std::string group;
     std::string role;

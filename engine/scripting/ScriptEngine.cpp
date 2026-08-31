@@ -16,6 +16,12 @@
 
 namespace
 {
+    constexpr const char* RuntimeViewInternalId =
+        "__flxRuntimeId";
+
+    constexpr const char* RuntimeViewInternalInvocation =
+        "__flxInvocationId";
+
     std::string toJsStringLiteral(const std::string& value)
     {
         std::string escaped = "'";
@@ -89,10 +95,9 @@ namespace
             JS_FreeCString(context, idText);
         }
 
-        if (magic == RuntimeViewId)
-        {
-            return JS_NewString(context, runtimeId.c_str());
-        }
+        int64_t invocationId = 0;
+
+        JS_ToInt64(context, &invocationId, data[1]);
 
         ScriptEngine* scriptEngine =
             static_cast<ScriptEngine*>(
@@ -102,7 +107,10 @@ namespace
         RuntimeObject* object =
             scriptEngine == nullptr || runtimeId.empty()
                 ? nullptr
-                : scriptEngine->findObjectByRuntimeId(runtimeId);
+                : scriptEngine->resolveRuntimeObjectReference(
+                    runtimeId,
+                    static_cast<uint64_t>(invocationId)
+                );
 
         if (object == nullptr)
         {
@@ -111,6 +119,8 @@ namespace
 
         switch (magic)
         {
+        case RuntimeViewId:
+            return JS_NewString(context, object->runtimeId.c_str());
         case RuntimeViewName:
             return JS_NewString(context, object->name.c_str());
         case RuntimeViewGroup:
@@ -149,11 +159,13 @@ namespace
         JSValueConst object,
         const char* name,
         const std::string& runtimeId,
+        uint64_t invocationId,
         RuntimeViewProperty property
     )
     {
-        JSValue data[1] = {
-            JS_NewString(context, runtimeId.c_str())
+        JSValue data[2] = {
+            JS_NewString(context, runtimeId.c_str()),
+            JS_NewInt64(context, static_cast<int64_t>(invocationId))
         };
 
         JSValue getter =
@@ -162,11 +174,12 @@ namespace
                 runtimeViewGetter,
                 0,
                 property,
-                1,
+                2,
                 data
             );
 
         JS_FreeValue(context, data[0]);
+        JS_FreeValue(context, data[1]);
 
         JSAtom atom =
             JS_NewAtom(context, name);
@@ -181,6 +194,22 @@ namespace
         );
 
         JS_FreeAtom(context, atom);
+    }
+
+    void defineRuntimeViewInternalValue(
+        JSContext* context,
+        JSValueConst object,
+        const char* name,
+        JSValue value
+    )
+    {
+        JS_DefinePropertyValueStr(
+            context,
+            object,
+            name,
+            value,
+            JS_PROP_CONFIGURABLE
+        );
     }
 
 }
@@ -212,6 +241,8 @@ ScriptEngine::~ScriptEngine()
     }
 
     scriptModules.clear();
+
+    JS_SetContextOpaque(context, nullptr);
 
     JS_FreeContext(context);
     JS_FreeRuntime(runtime);
@@ -300,7 +331,7 @@ void ScriptEngine::callScriptFunction(
 void ScriptEngine::callScriptFunction(
     const std::string& script,
     const std::string& function,
-    RuntimeObject& object
+        RuntimeObject& object
 )
 {
     JSValue func =
@@ -313,6 +344,9 @@ void ScriptEngine::callScriptFunction(
 
     JSValue global =
         JS_GetGlobalObject(context);
+
+    const uint64_t invocationId =
+        beginScriptInvocation();
 
     JSValue self =
         createJsObject(object);
@@ -362,6 +396,7 @@ void ScriptEngine::callScriptFunction(
     }
 
     activeScriptObjects.erase(objectRuntimeId);
+    endScriptInvocation(invocationId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
@@ -385,6 +420,9 @@ void ScriptEngine::callScriptFunction(
 
     JSValue global =
         JS_GetGlobalObject(context);
+
+    const uint64_t invocationId =
+        beginScriptInvocation();
 
     JSValue self =
         createJsObject(object);
@@ -446,6 +484,7 @@ void ScriptEngine::callScriptFunction(
 
     activeScriptObjects.erase(objectRuntimeId);
     activeScriptObjects.erase(otherRuntimeId);
+    endScriptInvocation(invocationId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
@@ -657,6 +696,27 @@ void ScriptEngine::setFindObjectFunction(
     findObject = function;
 }
 
+void ScriptEngine::setFindObjectsByNameFunction(
+    FindObjectsByNameFunction function
+)
+{
+    findObjectsByNameFunction = function;
+}
+
+void ScriptEngine::setFindParentFunction(
+    FindParentFunction function
+)
+{
+    findParentFunction = function;
+}
+
+void ScriptEngine::setFindChildrenFunction(
+    FindChildrenFunction function
+)
+{
+    findChildrenFunction = function;
+}
+
 void ScriptEngine::setFindObjectByIdFunction(
     FindObjectByIdFunction function
 )
@@ -703,6 +763,77 @@ RuntimeObject* ScriptEngine::findObjectByRuntimeId(
     return findObjectById(id);
 }
 
+RuntimeObject* ScriptEngine::resolveRuntimeObjectReference(
+    const std::string& id,
+    uint64_t invocationId
+)
+{
+    if (!isCurrentScriptInvocation(invocationId))
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject reference is no longer valid. Store its `id` and resolve it with `find_id()` in the current hook."
+        );
+
+        return nullptr;
+    }
+
+    if (invalidScriptObjectReferences.contains(id))
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    RuntimeObject* object =
+        findObjectByRuntimeId(id);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    if (!object->alive &&
+        activeScriptObjects.find(id) == activeScriptObjects.end())
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    return object;
+}
+
+bool ScriptEngine::isCurrentScriptInvocation(
+    uint64_t invocationId
+) const
+{
+    return
+        activeScriptInvocationId != 0 &&
+        invocationId == activeScriptInvocationId;
+}
+
+uint64_t ScriptEngine::currentScriptInvocationId() const
+{
+    return activeScriptInvocationId;
+}
+
+bool ScriptEngine::hasActiveScriptInvocation() const
+{
+    return activeScriptInvocationId != 0;
+}
+
 RuntimeObject* ScriptEngine::findObjectByName(
     const std::string& name
 )
@@ -713,6 +844,42 @@ RuntimeObject* ScriptEngine::findObjectByName(
     }
 
     return findObject(name);
+}
+
+std::vector<RuntimeObject*> ScriptEngine::findObjectsByName(
+    const std::string& name
+)
+{
+    if (!findObjectsByNameFunction)
+    {
+        return {};
+    }
+
+    return findObjectsByNameFunction(name);
+}
+
+RuntimeObject* ScriptEngine::findParent(
+    const std::string& runtimeId
+)
+{
+    if (!findParentFunction)
+    {
+        return nullptr;
+    }
+
+    return findParentFunction(runtimeId);
+}
+
+std::vector<RuntimeObject*> ScriptEngine::findChildren(
+    const std::string& runtimeId
+)
+{
+    if (!findChildrenFunction)
+    {
+        return {};
+    }
+
+    return findChildrenFunction(runtimeId);
 }
 
 void ScriptEngine::setSpawnObjectFunction(
@@ -798,6 +965,11 @@ void ScriptEngine::killObject(const std::string& runtimeId)
     }
 
     killObjectFunction(runtimeId);
+
+    if (hasActiveScriptInvocation())
+    {
+        invalidScriptObjectReferences.insert(runtimeId);
+    }
 }
 
 void ScriptEngine::setShowObjectFunction(
@@ -836,29 +1008,75 @@ void ScriptEngine::hideObject(const std::string& runtimeId)
     hideObjectFunction(runtimeId);
 }
 
+uint64_t ScriptEngine::beginScriptInvocation()
+{
+    const uint64_t invocationId =
+        nextScriptInvocationId++;
+
+    activeScriptInvocationId =
+        invocationId;
+
+    return invocationId;
+}
+
+void ScriptEngine::endScriptInvocation(
+    uint64_t invocationId
+)
+{
+    if (activeScriptInvocationId == invocationId)
+    {
+        activeScriptInvocationId = 0;
+    }
+
+    activeScriptObjects.clear();
+    invalidScriptObjectReferences.clear();
+}
+
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
 {
     JSValue self =
         JS_NewObject(context);
 
-    defineRuntimeViewGetter(context, self, "id", object.runtimeId, RuntimeViewId);
-    defineRuntimeViewGetter(context, self, "name", object.runtimeId, RuntimeViewName);
-    defineRuntimeViewGetter(context, self, "group", object.runtimeId, RuntimeViewGroup);
-    defineRuntimeViewGetter(context, self, "role", object.runtimeId, RuntimeViewRole);
-    defineRuntimeViewGetter(context, self, "alive", object.runtimeId, RuntimeViewAlive);
-    defineRuntimeViewGetter(context, self, "visible", object.runtimeId, RuntimeViewVisible);
-    defineRuntimeViewGetter(context, self, "x", object.runtimeId, RuntimeViewX);
-    defineRuntimeViewGetter(context, self, "y", object.runtimeId, RuntimeViewY);
-    defineRuntimeViewGetter(context, self, "width", object.runtimeId, RuntimeViewWidth);
-    defineRuntimeViewGetter(context, self, "height", object.runtimeId, RuntimeViewHeight);
-    defineRuntimeViewGetter(context, self, "speed", object.runtimeId, RuntimeViewSpeed);
-    defineRuntimeViewGetter(context, self, "angle", object.runtimeId, RuntimeViewAngle);
-    defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, RuntimeViewVelocityX);
-    defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, RuntimeViewVelocityY);
-    defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, RuntimeViewRotationSpeed);
+    const uint64_t invocationId =
+        currentScriptInvocationId();
+
+    defineRuntimeViewInternalValue(
+        context,
+        self,
+        RuntimeViewInternalId,
+        JS_NewString(context, object.runtimeId.c_str())
+    );
+
+    defineRuntimeViewInternalValue(
+        context,
+        self,
+        RuntimeViewInternalInvocation,
+        JS_NewInt64(context, static_cast<int64_t>(invocationId))
+    );
+
+    defineRuntimeViewGetter(context, self, "id", object.runtimeId, invocationId, RuntimeViewId);
+    defineRuntimeViewGetter(context, self, "name", object.runtimeId, invocationId, RuntimeViewName);
+    defineRuntimeViewGetter(context, self, "group", object.runtimeId, invocationId, RuntimeViewGroup);
+    defineRuntimeViewGetter(context, self, "role", object.runtimeId, invocationId, RuntimeViewRole);
+    defineRuntimeViewGetter(context, self, "alive", object.runtimeId, invocationId, RuntimeViewAlive);
+    defineRuntimeViewGetter(context, self, "visible", object.runtimeId, invocationId, RuntimeViewVisible);
+    defineRuntimeViewGetter(context, self, "x", object.runtimeId, invocationId, RuntimeViewX);
+    defineRuntimeViewGetter(context, self, "y", object.runtimeId, invocationId, RuntimeViewY);
+    defineRuntimeViewGetter(context, self, "width", object.runtimeId, invocationId, RuntimeViewWidth);
+    defineRuntimeViewGetter(context, self, "height", object.runtimeId, invocationId, RuntimeViewHeight);
+    defineRuntimeViewGetter(context, self, "speed", object.runtimeId, invocationId, RuntimeViewSpeed);
+    defineRuntimeViewGetter(context, self, "angle", object.runtimeId, invocationId, RuntimeViewAngle);
+    defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, invocationId, RuntimeViewVelocityX);
+    defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, invocationId, RuntimeViewVelocityY);
+    defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, invocationId, RuntimeViewRotationSpeed);
     JS_PreventExtensions(context, self);
 
     return self;
+}
+
+JSValue ScriptEngine::createRuntimeObjectView(RuntimeObject& object)
+{
+    return createJsObject(object);
 }
 
 void ScriptEngine::writeGlobalValue(

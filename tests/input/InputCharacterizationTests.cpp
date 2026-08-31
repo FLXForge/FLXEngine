@@ -1143,7 +1143,7 @@ int main()
         try
         {
             test.second();
-            std::cout << "[PASS] " << test.first << "\n";
+            std::cout << "[PASS] " << test.first << std::endl;
         }
         catch (const std::exception& exception)
         {

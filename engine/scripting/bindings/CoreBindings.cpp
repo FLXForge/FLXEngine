@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace
 {
@@ -63,40 +64,6 @@ namespace
         return object;
     }
 
-    RuntimeObject* runtimeObjectFromArgument(
-        JSContext* context,
-        JSValueConst value
-    )
-    {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (scriptEngine == nullptr)
-        {
-            return nullptr;
-        }
-
-        JSValue idValue =
-            JS_GetPropertyStr(context, value, "id");
-
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
-        {
-            JS_FreeValue(context, idValue);
-            return nullptr;
-        }
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
-
-        return object;
-    }
-
     bool jsValueToScriptValue(
         JSContext* context,
         JSValueConst value,
@@ -145,6 +112,14 @@ namespace
         }
 
         return false;
+    }
+
+    void warnRuntimeObjectCannotBePersisted()
+    {
+        Logger::warning(
+            "script",
+            "Cannot persist a live RuntimeObject. Store its `id` and resolve it with `find_id()` when needed."
+        );
     }
 
     JSValue scriptValueToJs(
@@ -242,36 +217,20 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
+        if (object == nullptr)
         {
             Logger::warning(
                 "runtime",
                 "kill called without a valid object"
             );
 
-            JS_FreeValue(context, idValue);
-
             return JS_UNDEFINED;
         }
 
-        scriptEngine->killObject(id);
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        if (object != nullptr)
-        {
-            refreshRuntimeObjectView(context, argv[0], *object);
-        }
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+        scriptEngine->killObject(object->runtimeId);
 
         return JS_UNDEFINED;
     }
@@ -291,36 +250,20 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
+        if (object == nullptr)
         {
             Logger::warning(
                 "runtime",
                 "show called without a valid object"
             );
 
-            JS_FreeValue(context, idValue);
-
             return JS_UNDEFINED;
         }
 
-        scriptEngine->showObject(id);
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        if (object != nullptr)
-        {
-            refreshRuntimeObjectView(context, argv[0], *object);
-        }
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+        scriptEngine->showObject(object->runtimeId);
 
         return JS_UNDEFINED;
     }
@@ -340,36 +283,20 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
+        if (object == nullptr)
         {
             Logger::warning(
                 "runtime",
                 "hide called without a valid object"
             );
 
-            JS_FreeValue(context, idValue);
-
             return JS_UNDEFINED;
         }
 
-        scriptEngine->hideObject(id);
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        if (object != nullptr)
-        {
-            refreshRuntimeObjectView(context, argv[0], *object);
-        }
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+        scriptEngine->hideObject(object->runtimeId);
 
         return JS_UNDEFINED;
     }
@@ -389,28 +316,20 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
+        if (object == nullptr)
         {
             Logger::warning(
                 "runtime",
                 "keep_only called without a valid object"
             );
 
-            JS_FreeValue(context, idValue);
-
             return JS_UNDEFINED;
         }
 
-        scriptEngine->keepOnly(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+        scriptEngine->keepOnly(object->runtimeId);
 
         return JS_UNDEFINED;
     }
@@ -525,27 +444,8 @@ namespace
             );
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
-
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
-        {
-            JS_FreeValue(context, idValue);
-
-            return createRayResult(
-                context,
-                RayCastResult{}
-            );
-        }
-
         RuntimeObject* source =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+            runtimeObjectViewFromArgument(context, argv[0]);
 
         if (source == nullptr)
         {
@@ -554,32 +454,6 @@ namespace
                 RayCastResult{}
             );
         }
-
-        RuntimeObject querySource =
-            *source;
-
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
-
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
-
-        double x =
-            querySource.position.x;
-
-        double y =
-            querySource.position.y;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &y, yValue);
-
-        querySource.position = Vector2{
-            static_cast<float>(x),
-            static_cast<float>(y)
-        };
-
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, yValue);
 
         double angle = 0.0;
         double distance = 0.0;
@@ -590,7 +464,7 @@ namespace
         return createRayResult(
             context,
             scriptEngine->rayCast(
-                querySource,
+                *source,
                 static_cast<float>(angle),
                 static_cast<float>(distance)
             )
@@ -849,7 +723,7 @@ namespace
     )
     {
         RuntimeObject* object =
-            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
 
         std::string key;
 
@@ -877,13 +751,20 @@ namespace
     )
     {
         RuntimeObject* object =
-            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+            argc < 3 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
 
         std::string key;
         ScriptValue value;
 
         if (object == nullptr || !readKeyArgument(context, argv[1], key))
         {
+            return JS_UNDEFINED;
+        }
+
+        if (isRuntimeObjectView(context, argv[2]))
+        {
+            warnRuntimeObjectCannotBePersisted();
+
             return JS_UNDEFINED;
         }
 
@@ -953,6 +834,13 @@ namespace
             return JS_UNDEFINED;
         }
 
+        if (isRuntimeObjectView(context, argv[1]))
+        {
+            warnRuntimeObjectCannotBePersisted();
+
+            return JS_UNDEFINED;
+        }
+
         if (!jsValueToScriptValue(context, argv[1], value))
         {
             Logger::warning(
@@ -969,6 +857,154 @@ namespace
         );
 
         return JS_UNDEFINED;
+    }
+
+    JSValue jsFindId(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string id;
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], id))
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        if (object == nullptr || !object->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptEngine->createRuntimeObjectView(*object);
+    }
+
+    JSValue jsFindName(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string name;
+
+        JSValue array =
+            JS_NewArray(context);
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], name))
+        {
+            return array;
+        }
+
+        std::vector<RuntimeObject*> matches =
+            scriptEngine->findObjectsByName(name);
+
+        uint32_t index = 0;
+
+        for (RuntimeObject* object : matches)
+        {
+            if (object == nullptr || !object->alive)
+            {
+                continue;
+            }
+
+            JS_SetPropertyUint32(
+                context,
+                array,
+                index++,
+                scriptEngine->createRuntimeObjectView(*object)
+            );
+        }
+
+        return array;
+    }
+
+    JSValue jsFindParent(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* parent =
+            scriptEngine->findParent(object->runtimeId);
+
+        if (parent == nullptr || !parent->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptEngine->createRuntimeObjectView(*parent);
+    }
+
+    JSValue jsFindChildren(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        JSValue array =
+            JS_NewArray(context);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            return array;
+        }
+
+        std::vector<RuntimeObject*> children =
+            scriptEngine->findChildren(object->runtimeId);
+
+        uint32_t index = 0;
+
+        for (RuntimeObject* child : children)
+        {
+            if (child == nullptr || !child->alive)
+            {
+                continue;
+            }
+
+            JS_SetPropertyUint32(
+                context,
+                array,
+                index++,
+                scriptEngine->createRuntimeObjectView(*child)
+            );
+        }
+
+        return array;
     }
 }
 
@@ -1098,6 +1134,34 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "write_global",
         JS_NewCFunction(context, jsWriteGlobal, "write_global", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_id",
+        JS_NewCFunction(context, jsFindId, "find_id", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_name",
+        JS_NewCFunction(context, jsFindName, "find_name", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_parent",
+        JS_NewCFunction(context, jsFindParent, "find_parent", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_children",
+        JS_NewCFunction(context, jsFindChildren, "find_children", 1)
     );
 
     JS_FreeValue(context, global);

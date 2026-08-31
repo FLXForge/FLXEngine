@@ -22,8 +22,9 @@ ya eliminados.
 - Si el volcado de spawn durante carga supera ese limite, la carga falla y el
   loop de `Engine` no debe empezar.
 - Los runtime ids son unicos por instancia.
-- `parentId` y `originalParentId` se inicializan con el runtime id del parent
-  original cuando un objeto nace como child.
+- `parentId` se inicializa con el runtime id del parent original cuando un
+  objeto nace como child. FLX v0.3.0 no implementa reparenting, asi que esta
+  relacion permanece estable durante toda la vida de la instancia.
 
 ### Spawn Durante Update
 

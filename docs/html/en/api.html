@@ -680,11 +680,51 @@ fade_set(0, "black");</code></pre>
 
             <hr />
 
-            <h2>follow_x(object, targetName)</h2>
+            <h2>find_id(id)</h2>
+
+            <p>
+                Resolves a live object by runtime id during the current script hook.
+                RuntimeObject values are temporary live views; store ids as strings
+                if a reference must survive between hooks.
+            </p>
+
+            <h2>find_name(name)</h2>
+
+            <p>
+                Returns all live objects with the given logical instance name, in
+                world order from oldest to newest.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">find_name</div>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
+            </div>
+
+            <h2>find_parent(object)</h2>
+
+            <p>
+                Returns the live parent of an object, or <code>undefined</code>
+                if the object has no live parent.
+            </p>
+
+            <h2>find_children(object)</h2>
+
+            <p>
+                Returns the live direct children of an object in world order.
+                Manual spawn capabilities and pending objects are not returned.
+            </p>
+
+            <hr />
+
+            <h2>follow_x(object, target)</h2>
 
             <p>
                 Moves an object horizontally toward another object.
-                The target is resolved internally by name.
+                The target must be a live <code>RuntimeObject</code>.
                 It only modifies the object's X position.
             </p>
 
@@ -692,7 +732,11 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">follow_x</div>
 
 
-<pre><code>follow_x(cursor, "ball");</code></pre>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_x(cursor, balls[0]);
+}</code></pre>
 
 
             </div>
@@ -701,16 +745,16 @@ fade_set(0, "black");</code></pre>
 
             <ul>
                 <li><code>object</code>: object that moves.</li>
-                <li><code>targetName</code>: logical instance name to follow.</li>
+                <li><code>target</code>: live object to follow.</li>
             </ul>
 
             <hr />
 
-            <h2>follow_y(object, targetName)</h2>
+            <h2>follow_y(object, target)</h2>
 
             <p>
                 Moves an object vertically toward another object.
-                The target is resolved internally by name.
+                The target must be a live <code>RuntimeObject</code>.
                 It only modifies the object's Y position.
             </p>
 
@@ -718,7 +762,11 @@ fade_set(0, "black");</code></pre>
                 <div class="code-header">follow_y</div>
 
 
-<pre><code>follow_y(enemy, "ball");</code></pre>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
 
 
             </div>
@@ -727,7 +775,7 @@ fade_set(0, "black");</code></pre>
 
             <ul>
                 <li><code>object</code>: object that moves.</li>
-                <li><code>targetName</code>: logical instance name to follow.</li>
+                <li><code>target</code>: live object to follow.</li>
             </ul>
 
             <hr />

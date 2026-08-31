@@ -30,33 +30,7 @@ namespace
         JSValueConst value
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (scriptEngine == nullptr)
-        {
-            return nullptr;
-        }
-
-        JSValue idValue =
-            JS_GetPropertyStr(context, value, "id");
-
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
-        {
-            JS_FreeValue(context, idValue);
-            return nullptr;
-        }
-
-        RuntimeObject* object =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
-
-        return object;
+        return runtimeObjectViewFromArgument(context, value);
     }
 
     JSValue jsMoveHorizontal(
@@ -257,10 +231,7 @@ namespace
         JSValueConst* argv
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (argc < 2 || scriptEngine == nullptr)
+        if (argc < 2)
         {
             return JS_UNDEFINED;
         }
@@ -268,52 +239,23 @@ namespace
         RuntimeObject* source =
             runtimeObjectFromArgument(context, argv[0]);
 
-        if (source == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
-
-        const char* targetName =
-            JS_ToCString(context, argv[1]);
-
-        if (targetName == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
-
         RuntimeObject* target =
-            scriptEngine->findObjectByName(targetName);
+            runtimeObjectFromArgument(context, argv[1]);
 
-        JS_FreeCString(context, targetName);
-
-        if (target == nullptr)
+        if (source == nullptr || target == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
-
-        JSValue heightValue =
-            JS_GetPropertyStr(context, argv[0], "height");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double y = 0.0;
-        double height = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &y, yValue);
-        JS_ToFloat64(context, &height, heightValue);
-        JS_ToFloat64(context, &speed, speedValue);
+        double y =
+            source->position.y;
 
         const double distance =
             (target->position.y + target->size.y / 2.0) -
-            (y + height / 2.0);
+            (source->position.y + source->size.y / 2.0);
 
         const double maxStep =
-            std::abs(speed) * frameDelta(context);
+            std::abs(source->speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {
@@ -340,10 +282,6 @@ namespace
             *source
         );
 
-        JS_FreeValue(context, yValue);
-        JS_FreeValue(context, heightValue);
-        JS_FreeValue(context, speedValue);
-
         return JS_UNDEFINED;
     }
 
@@ -354,10 +292,7 @@ namespace
         JSValueConst* argv
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (argc < 2 || scriptEngine == nullptr)
+        if (argc < 2)
         {
             return JS_UNDEFINED;
         }
@@ -365,52 +300,23 @@ namespace
         RuntimeObject* source =
             runtimeObjectFromArgument(context, argv[0]);
 
-        if (source == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
-
-        const char* targetName =
-            JS_ToCString(context, argv[1]);
-
-        if (targetName == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
-
         RuntimeObject* target =
-            scriptEngine->findObjectByName(targetName);
+            runtimeObjectFromArgument(context, argv[1]);
 
-        JS_FreeCString(context, targetName);
-
-        if (target == nullptr)
+        if (source == nullptr || target == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
-
-        JSValue widthValue =
-            JS_GetPropertyStr(context, argv[0], "width");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double x = 0.0;
-        double width = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &width, widthValue);
-        JS_ToFloat64(context, &speed, speedValue);
+        double x =
+            source->position.x;
 
         const double distance =
             (target->position.x + target->size.x / 2.0) -
-            (x + width / 2.0);
+            (source->position.x + source->size.x / 2.0);
 
         const double maxStep =
-            std::abs(speed) * frameDelta(context);
+            std::abs(source->speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {
@@ -436,10 +342,6 @@ namespace
             argv[0],
             *source
         );
-
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, widthValue);
-        JS_FreeValue(context, speedValue);
 
         return JS_UNDEFINED;
     }

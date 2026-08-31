@@ -20,7 +20,7 @@ Clasificacion provisional:
 
 | Campo RuntimeObject | Tipo | Origen | Cambia en runtime | Lectores principales | Modificadores principales | Clase |
 | --- | --- | --- | --- | --- | --- | --- |
-| `local` | `unordered_map<string,double>` | runtime vacio | si | scripts via JS, tests | JS `object.local`, `applyJsObject` | A |
+| `local` | `unordered_map<string,ScriptValue>` | runtime vacio | si | scripts via JS, tests | `read_local`/`write_local` | A |
 | `children` | `unordered_map<string,ObjectDefinition>` | `ObjectDefinition.children` | no esperado | legado/runtime indirecto | builder | F |
 | `childResources` | `unordered_map<string,string>` | `ObjectDefinition.childResources` | no esperado | spawn, auto/grid creation | builder | C/F |
 | `music` | `unordered_map<string,MusicDefinition>` | `ObjectDefinition.music` | no esperado | `play_music(object,id)` | builder | C/F |
@@ -35,18 +35,17 @@ Clasificacion provisional:
 | `runtimeId` | `string` | runtime allocation | no | JS `id`, findByRuntimeId, APIs | builder/runtime allocation | B/D |
 | `definitionId` | `string` | resource id passed by runtime | no | runtime defensive cycle/load | RuntimeWorld creation path | E |
 | `parentId` | `string` | parent runtime id | no esperado | JS APIs indirectly, attachments | builder | D |
-| `originalParentId` | `string` | original parent runtime id | no esperado | attachments | builder | D |
 | `sourcePath` | `string` | `ObjectDefinition.sourcePath` | no esperado | diagnostics/debug | builder | C/E |
 | `group` | `string` | `ObjectDefinition.group` | no esperado | collision, JS | builder | C/F |
 | `role` | `string` | `ObjectDefinition.role` | no esperado | JS/game logic | builder | C/F |
 | `state` | `string` | `ObjectDefinition.initialState` | si | state bindings | state bindings | A |
 | `stateTime` | `float` | runtime zero | si | state_time, tests | update time/state change | A |
 | `stateEnteredFrame` | `uint64_t` | runtime zero | si | state_entered | state change/runtime frame | A/E |
-| `visible` | `bool` | `ObjectDefinition.visible` | si | draw, JS snapshot | show/hide runtime API | A |
-| `alive` | `bool` | runtime true | si | all phases, JS snapshot | kill/keep_only/runtime cleanup | A |
+| `visible` | `bool` | `ObjectDefinition.visible` | si | draw, JS readonly live view | show/hide runtime API | A |
+| `alive` | `bool` | runtime true | si | all phases, JS readonly live view | kill/keep_only/runtime cleanup | A |
 | `deadCalled` | `bool` | runtime false | si | dead phase | dead phase | E |
-| `attached` | `bool` | `ObjectDefinition.attachOnCreate` | si | attachments, JS | JS direct write, attach/detach | A/D |
-| `layer` | `int` | `ObjectDefinition.layer` | si | draw sorting, JS | JS direct write | A/C |
+| `attached` | `bool` | `ObjectDefinition.attachOnCreate` | si | attachments, attach_active | attach/detach | A/D |
+| `layer` | `int` | `ObjectDefinition.layer` | no esperado | draw sorting | builder | C |
 | `origin` | `Vector2` | `ObjectDefinition.origin` | no esperado | JS originX/Y, to_origin, attach math | builder | C/F |
 | `position` | `Vector2` | `ObjectDefinition.origin` | si | draw, collision, motion, JS | JS x/y, movement, attach, carry | A |
 | `previousPosition` | `Vector2` | initial origin | si | carry, JS previousX/Y | beginFrame | A |
@@ -87,8 +86,8 @@ Clasificacion provisional:
   instanciar.
 - `definitionId` ya apunta hacia la definicion compilada, pero la instancia aun
   conserva muchas copias locales de esa definicion.
-- Algunos campos parecen metadata pero hoy son estado mutable real:
-  `size`, `layer`, `speed`, `angle`, `attached`.
+- Algunos campos parecen metadata pero hoy son estado vivo real:
+  `size`, `speed`, `angle`, `attached`.
 
 ## B. RuntimeObjectBuilder
 
@@ -103,7 +102,6 @@ operaciones:
 | `runtimeId` | usa el argumento `runtimeId`. |
 | `definitionId` | se inicializa con `definition.id`; despues RuntimeWorld puede sobrescribirlo con ResourceId. |
 | `parentId` | usa el argumento `parentId`. |
-| `originalParentId` | usa el argumento `parentId`. |
 | `position` | se inicializa desde `definition.origin`. |
 | `previousPosition` | se inicializa desde `definition.origin`. |
 | `originSpeed` | se inicializa desde `definition.speed`. |
@@ -149,44 +147,48 @@ operaciones:
 
 ## C. Contrato JavaScript actual
 
-`ScriptEngine::createJsObject()` crea un objeto nuevo por callback. Al terminar
-el callback, `applyJsObject()` copia de vuelta solo algunas propiedades.
+`ScriptEngine::createJsObject()` crea una vista temporal por callback. La vista
+es readonly, caduca al terminar la invocacion actual y sus propiedades publicas
+se resuelven contra el `RuntimeObject` vivo mientras la invocacion sigue activa.
+No existe copy-back desde JS hacia C++; las mutaciones reales se hacen mediante
+funciones de la API (`position_x`, `apply_speed`, `resize_width`, `kill`, etc.).
 
 | JS property | Readable | Writable real | Documented | Runtime source | Observacion |
 | --- | --- | --- | --- | --- | --- |
-| `local` | si | si, numerico | si | `RuntimeObject.local` | Solo persisten valores convertibles a number. |
+| `local` | no | no | no | `RuntimeObject.local` | Se accede mediante `read_local`/`write_local`. |
 | `name` | si | no | si | `RuntimeObject.name` | Nombre logico de instancia. |
 | `id` | si | no | si | `RuntimeObject.runtimeId` | Expone runtime id, aunque se llama `id`. |
-| `alive` | si | no | si | `RuntimeObject.alive` | Escritura ignorada; usar `kill()`. |
-| `visible` | si | no | si | `RuntimeObject.visible` | Escritura ignorada; usar `show()/hide()`. |
-| `attached` | si | si | si | `RuntimeObject.attached` | Mutable real, ademas de `attach()/detach()`. |
+| `alive` | si | no | si | `RuntimeObject.alive` | Vista viva; usar `kill()`. |
+| `visible` | si | no | si | `RuntimeObject.visible` | Vista viva; usar `show()`/`hide()`. |
+| `attached` | no | no | no | `RuntimeObject.attached` | Usar `attach()`/`detach()`/`attach_active()`. |
 | `group` | si | no | si | `RuntimeObject.group` | Metadata de collision/logica. |
 | `role` | si | no | si | `RuntimeObject.role` | Metadata logica dentro de group. |
-| `layer` | si | si | si | `RuntimeObject.layer` | Cambia orden de dibujo runtime. |
-| `x` | si | si | si | `RuntimeObject.position.x` | Estado vivo. |
-| `previousX` | si | no | si | `RuntimeObject.previousPosition.x` | Escritura ignorada. |
-| `y` | si | si | si | `RuntimeObject.position.y` | Estado vivo. |
-| `previousY` | si | no | si | `RuntimeObject.previousPosition.y` | Escritura ignorada. |
-| `width` | si | si | si | `RuntimeObject.size.x` | Estado vivo/tamano de draw/collision. |
-| `height` | si | si | si | `RuntimeObject.size.y` | Estado vivo/tamano de draw/collision. |
-| `speed` | si | si | si | `RuntimeObject.speed` | Usado por movimiento clasico. |
-| `angle` | si | si | si | `RuntimeObject.angle` | Usado por movimiento/draw/ray. |
-| `originX` | si | no | si | `RuntimeObject.origin.x` | Escritura ignorada. |
-| `originY` | si | no | si | `RuntimeObject.origin.y` | Escritura ignorada. |
-| `originSpeed` | si | no | si | `RuntimeObject.originSpeed` | Escritura ignorada. |
-| `motion` | si | no real | si | snapshot de varios campos | Es objeto anidado nuevo; sus escrituras no se aplican. |
-| `motion.speed` | si | no | si | `RuntimeObject.speed` | Duplicado de `speed`, solo snapshot. |
-| `motion.angle` | si | no | si | `RuntimeObject.angle` | Duplicado de `angle`, solo snapshot. |
-| `motion.rotationSpeed` | si | no | si | `RuntimeObject.rotationSpeed` | Escritura ignorada. |
-| `motion.acceleration` | si | no | si | `RuntimeObject.acceleration` | Escritura ignorada. |
-| `motion.inertia` | si | no | si | `RuntimeObject.inertia` | Escritura ignorada. |
-| `motion.maxSpeed` | si | no | si | `RuntimeObject.maxSpeed` | Escritura ignorada. |
-| `velocityX` | si | si | si | `RuntimeObject.velocity.x` | Estado vivo. |
-| `velocityY` | si | si | si | `RuntimeObject.velocity.y` | Estado vivo. |
+| `layer` | no | no | si | `RuntimeObject.layer` | No se expone como propiedad publica en la vista actual. |
+| `x` | si | no | si | `RuntimeObject.position.x` | Vista viva; modificar con `position_x()`/`position()`. |
+| `previousX` | no | no | si | `RuntimeObject.previousPosition.x` | No se expone como propiedad publica en la vista actual. |
+| `y` | si | no | si | `RuntimeObject.position.y` | Vista viva; modificar con `position_y()`/`position()`. |
+| `previousY` | no | no | si | `RuntimeObject.previousPosition.y` | No se expone como propiedad publica en la vista actual. |
+| `width` | si | no | si | `RuntimeObject.size.x` | Vista viva; modificar con `resize_width()`/`resize()`. |
+| `height` | si | no | si | `RuntimeObject.size.y` | Vista viva; modificar con `resize_height()`/`resize()`. |
+| `speed` | si | no | si | `RuntimeObject.speed` | Vista viva; modificar con `apply_speed()`/`restore_speed()`. |
+| `angle` | si | no | si | `RuntimeObject.angle` | Vista viva; modificar con `apply_angle()`/`rotate()`. |
+| `originX` | no | no | si | `RuntimeObject.origin.x` | No se expone como propiedad publica en la vista actual. |
+| `originY` | no | no | si | `RuntimeObject.origin.y` | No se expone como propiedad publica en la vista actual. |
+| `originSpeed` | no | no | si | `RuntimeObject.originSpeed` | No se expone como propiedad publica en la vista actual. |
+| `motion` | no | no | si | `RuntimeObject` / `ObjectDefinition` | El subobjeto anidado ya no forma parte de la vista JS runtime. |
+| `motion.speed` | no | no | si | `RuntimeObject.speed` | Sustituido por `speed` readonly + funciones. |
+| `motion.angle` | no | no | si | `RuntimeObject.angle` | Sustituido por `angle` readonly + funciones. |
+| `motion.rotationSpeed` | no | no | si | `RuntimeObject.rotationSpeed` | Sustituido por `rotationSpeed` readonly. |
+| `motion.acceleration` | no | no | si | `RuntimeObject.acceleration` | No se expone como propiedad publica en la vista actual. |
+| `motion.inertia` | no | no | si | `RuntimeObject.inertia` | No se expone como propiedad publica en la vista actual. |
+| `motion.maxSpeed` | no | no | si | `RuntimeObject.maxSpeed` | No se expone como propiedad publica en la vista actual. |
+| `velocityX` | si | no | si | `RuntimeObject.velocity.x` | Vista viva; modificar con `apply_velocity()` o mecanicas. |
+| `velocityY` | si | no | si | `RuntimeObject.velocity.y` | Vista viva; modificar con `apply_velocity()` o mecanicas. |
+| `rotationSpeed` | si | no | si | `RuntimeObject.rotationSpeed` | Vista viva; modificar con `apply_rotation_speed()`. |
 
 ### Propiedades C++ no expuestas a JS
 
-No se exponen directamente: `definitionId`, `parentId`, `originalParentId`,
+No se exponen directamente: `definitionId`, `parentId`,
 `sourcePath`, `state`, `stateTime`, `stateEnteredFrame`, `deadCalled`,
 `origin`, `position`, `previousPosition`, `size`, `originalOffset`,
 `attachFollowX/Y/Angle`, `hasOrigin`, `color`, `shapeMode`, `radius`,
@@ -208,15 +210,16 @@ Algunas de estas capacidades se exponen mediante funciones:
 
 | Duplicidad | Comportamiento actual |
 | --- | --- |
-| `speed` vs `motion.speed` | `speed` es mutable real; `motion.speed` es snapshot ignorado. |
-| `angle` vs `motion.angle` | `angle` es mutable real; `motion.angle` es snapshot ignorado. |
-| `width/height` vs `shape.size` JSON | JS modifica `RuntimeObject.size`; no modifica definicion. |
-| `x/y` vs `originX/originY` | `x/y` son posicion viva; `originX/originY` son snapshot de origen. |
-| `attached` vs `attach()/detach()` | Ambos modifican `RuntimeObject.attached`; la funcion expresa mejor la intencion. |
+| `speed` vs `motion.speed` | La duplicidad publica se ha eliminado: solo `speed` se expone como vista readonly. |
+| `angle` vs `motion.angle` | La duplicidad publica se ha eliminado: solo `angle` se expone como vista readonly. |
+| `width/height` vs `shape.size` JSON | JS modifica `RuntimeObject.size` mediante funciones; no modifica definicion. |
+| `x/y` vs `originX/originY` | Solo `x/y` se exponen como posicion viva; `originX/originY` no son API runtime. |
+| `attached` vs `attach()/detach()` | Solo se expone mediante funciones; no hay propiedad mutable directa. |
 | `id` vs `name` | `id` es runtime id unico; `name` es id logico de instancia. |
 
-La duplicidad mas peligrosa es `motion`: parece una configuracion viva, esta
-documentada como `MotionConfig`, pero `applyJsObject()` no lee el subobjeto.
+La duplicidad mas peligrosa (`motion` como subobjeto aparente de runtime) queda
+fuera del contrato publico actual. La vista JS no reproduce la estructura
+declarativa JSON.
 
 ## E. Identidad expuesta
 
@@ -229,7 +232,7 @@ No se expone:
 
 - `runtimeId` con ese nombre.
 - `definitionId`.
-- `parentId` u `originalParentId`.
+- `parentId`.
 - `sourcePath`.
 
 Usos reales:
@@ -277,23 +280,21 @@ Conteo aproximado de propiedades JS relevantes encontradas en `examples`:
 | `speed` | 5 | inicializacion aleatoria/efectos. |
 | `height` | 5 | resize/colision manual. |
 | `name` | 4 | powerups de Arkanoid. |
-| `attached` | 2 | logica de bola en Arkanoid. |
-| `originY` | 2 | retorno de titulo en Arkanoid. |
+| `attached` | 2 | logica de bola en Arkanoid antes de la consolidacion; ahora se consulta con `attach_active`. |
+| `originY` | 2 | retorno de titulo en Arkanoid antes de la consolidacion; ya no forma parte de la vista publica runtime. |
 
-Propiedades expuestas pero sin uso claro en `examples`: `id`, `visible`, `layer`,
-`previousX`, `previousY`, `originX`, `originSpeed`, `motion.*`, `velocityX`,
-`velocityY`, `role`.
+Propiedades expuestas pero sin uso claro en `examples`: `id`, `visible`,
+`velocityX`, `velocityY`, `role`.
 
 ## H. Inconsistencias
 
-- El objeto JS parece un espejo parcial de `RuntimeObject`, pero solo algunas
-  escrituras se aplican.
-- `motion` parece editable por estructura, pero no tiene semantica real de
-  escritura.
-- `alive` y `visible` aparecen como propiedades, pero la semantica real es
-  funcional (`kill`, `show`, `hide`).
-- `attached` contradice parcialmente esa regla: existe API funcional
-  (`attach/detach/attach_active`) pero tambien escritura directa real.
+- El objeto JS ya no es un espejo mutable de `RuntimeObject`: es una vista
+  temporal readonly.
+- `motion` ya no se expone como estructura runtime.
+- `alive` y `visible` aparecen como propiedades de lectura; la semantica de
+  cambio es funcional (`kill`, `show`, `hide`).
+- `attached` queda fuera de la vista directa; se opera con
+  `attach/detach/attach_active`.
 - `group` y `role` son metadata copiadas a cada instancia y expuestas como
   propiedades planas, aunque no se pueden cambiar realmente desde JS.
 - `layer` procede de definicion pero se comporta como estado vivo mutable.
@@ -320,7 +321,7 @@ futuro, si el coste y ergonomia lo permiten:
 
 Campos que claramente deben seguir siendo locales por instancia:
 
-- `runtimeId`, `name`, `parentId`, `originalParentId`.
+- `runtimeId`, `name`, `parentId`.
 - `local`.
 - `position`, `previousPosition`, `velocity`.
 - `speed`, `angle` si siguen siendo estado vivo de movimiento.
@@ -383,19 +384,18 @@ Propiedades que representan estado local natural y tienen uso real:
 - `previousX` / `previousY`: utiles para `carry` y debug, pero pueden ser
   detalle de ciclo.
 - `originSpeed`: poco usado y no mutable; parece detalle de reset.
-- `motion` anidado: expone estructura declarativa sin escritura real.
-- `layer`: hoy mutable, pero conceptualmente podria pertenecer a renderer/API
-  funcional en el futuro.
+- `motion` anidado: resuelto; ya no se expone como objeto runtime.
+- `layer`: resuelto para v0.3.0 como metadata declarativa no expuesta
+  directamente a JS.
 
 ## M. Preguntas de diseno pendientes
 
 1. Debe existir una propiedad publica `runtimeId`, o `id` debe seguir
    significando runtime id?
 2. `name` debe llamarse `name`, `instance`, `instanceId` o similar?
-3. Queremos permitir mutacion directa de `attached`, o solo API funcional?
-4. `layer` debe ser estado vivo mutable o metadata declarativa?
-5. `motion.*` debe eliminarse de JS, hacerse realmente mutable, o marcarse como
-   snapshot readonly?
+3. Resuelto para v0.3.0: `attached` se controla solo mediante API funcional.
+4. Resuelto para v0.3.0: `layer` queda como metadata declarativa de dibujo.
+5. Resuelto para v0.3.0: `motion.*` no forma parte de la vista JS runtime.
 6. `group` y `role` deben ser readonly explicitos en typings?
 7. `width/height` deben seguir modificando tambien collision, o separar shape
    size y collision size?

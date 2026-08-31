@@ -1,11 +1,13 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProject.h"
+#include "../../engine/runtime/RuntimeHelpers.h"
 #include "../../engine/runtime/RuntimeWorld.h"
 #include "../../engine/scripting/ScriptEngine.h"
 
 #include <cmath>
 #include <functional>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -45,6 +47,27 @@ namespace
                 [this](const std::string& runtimeId)
                 {
                     return world.findByRuntimeId(runtimeId);
+                }
+            );
+
+            scripts.setFindObjectsByNameFunction(
+                [this](const std::string& name)
+                {
+                    return world.findAllLiveByName(name);
+                }
+            );
+
+            scripts.setFindParentFunction(
+                [this](const std::string& runtimeId)
+                {
+                    return world.findLiveParent(runtimeId);
+                }
+            );
+
+            scripts.setFindChildrenFunction(
+                [this](const std::string& runtimeId)
+                {
+                    return world.findLiveChildren(runtimeId);
                 }
             );
 
@@ -217,6 +240,23 @@ namespace
         return 0.0;
     }
 
+    std::string collisionSnapshot(
+        const RuntimeObject& root,
+        const RuntimeObject& target
+    )
+    {
+        std::ostringstream out;
+        out
+            << "root type=" << root.collisionType
+            << " pos=" << root.position.x << "," << root.position.y
+            << " size=" << root.size.x << "," << root.size.y
+            << " target type=" << target.collisionType
+            << " pos=" << target.position.x << "," << target.position.y
+            << " size=" << target.size.x << "," << target.size.y;
+
+        return out.str();
+    }
+
     bool nearlyEqual(
         double left,
         double right,
@@ -354,7 +394,6 @@ namespace
         require(runtimeRoot.runtimeId != runtimeParent.runtimeId, "root and parent ids should differ");
         require(runtimeParent.runtimeId != runtimeChild.runtimeId, "parent and child ids should differ");
         require(runtimeChild.parentId == runtimeParent.runtimeId, "child parentId should point to parent");
-        require(runtimeChild.originalParentId == runtimeParent.runtimeId, "child originalParentId should point to parent");
     }
 
     void testSpawnDuringBornIsStabilizedBeforeLoadReturns()
@@ -478,9 +517,9 @@ namespace
 
         harness.addScript(
             "phaseSpawner",
-            "function action(o) { if (read_local(o, 'a') == null) { write_local(o, 'a', 1); spawn(o, 'actionChild'); } }"
-            "function motion(o) { if (read_local(o, 'm') == null) { write_local(o, 'm', 1); spawn(o, 'motionChild'); } }"
-            "function collision(o, other) { if (read_local(o, 'c') == null) { write_local(o, 'c', 1); spawn(o, 'collisionChild'); } }"
+            "function action(o) { if (read_local(o, 'a') == null) { write_local(o, 'a', 1); spawn(o, 'actionChild'); } }\n"
+            "function motion(o) { if (read_local(o, 'm') == null) { write_local(o, 'm', 1); spawn(o, 'motionChild'); } }\n"
+            "function collision(o, other) { write_global('collisionRan', 1); if (read_local(o, 'c') == null) { write_local(o, 'c', 1); spawn(o, 'collisionChild'); } }"
         );
 
         harness.addScript(
@@ -497,22 +536,20 @@ namespace
         root.childResources["collisionChild"] = "collisionChild";
         root.childResources["target"] = "target";
         root.collisionActive = true;
-        root.collisionType = "circle";
+        root.collisionType = "box";
         root.collisionWith.push_back("target");
         root.group = "source";
         root.origin = Vector2{ 20.0f, 20.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 10.0f };
-        root.collisionRadius = 8.0f;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "circle";
+        target.collisionType = "box";
         target.offset = Vector2{ 0.0f, 0.0f };
         target.hasOffset = true;
-        target.size = Vector2{ 10.0f, 10.0f };
-        target.collisionRadius = 8.0f;
+        target.size = Vector2{ 100.0f, 100.0f };
 
         ObjectDefinition actionChild =
             objectDefinition("actionChild", "phaseProbe");
@@ -531,21 +568,51 @@ namespace
         harness.addObject(collisionChild);
 
         require(harness.load().success, "runtime should load phase spawn project");
-        RuntimeObject& loadedRoot =
-            requireObject(harness.world, "root");
-        RuntimeObject& loadedTarget =
-            requireObject(harness.world, "target");
-        require(loadedRoot.collisionActive, "root collision should be active");
-        require(loadedRoot.collisionType == "circle", "root collision should be circle");
-        require(loadedTarget.collisionType == "circle", "target collision should be circle");
-        require(loadedTarget.group == "target", "target group should be target");
-        require(loadedRoot.position.x == loadedTarget.position.x, "root and target x should match");
-        require(loadedRoot.position.y == loadedTarget.position.y, "root and target y should match");
+        {
+            const RuntimeObject& loadedRoot =
+                requireObject(harness.world, "root");
+            const RuntimeObject& loadedTarget =
+                requireObject(harness.world, "target");
+
+            require(loadedRoot.collisionActive, "root collision should be active");
+            require(loadedRoot.collisionType == "box", "root collision should be box");
+            require(loadedTarget.collisionType == "box", "target collision should be box");
+            require(loadedTarget.group == "target", "target group should be target");
+            require(
+                RuntimeHelpers::intersects(loadedRoot, loadedTarget),
+                "root and target should intersect after load: " +
+                collisionSnapshot(loadedRoot, loadedTarget)
+            );
+        }
 
         harness.update();
 
         RuntimeObject& updatedRoot =
             requireObject(harness.world, "root");
+        RuntimeObject& updatedTarget =
+            requireObject(harness.world, "target");
+        require(localValue(updatedRoot, "a") == 1.0, "action callback should run");
+        require(localValue(updatedRoot, "m") == 1.0, "motion callback should run");
+        require(
+            RuntimeHelpers::intersects(updatedRoot, updatedTarget),
+            "root and target should intersect before collision callback assertion: " +
+            collisionSnapshot(updatedRoot, updatedTarget)
+        );
+        require(updatedRoot.collisionActive, "root collision should still be active");
+        require(!updatedRoot.collisionWith.empty(), "root collision filter should still exist");
+        require(
+            updatedRoot.collisionWith.front() == "target",
+            "root collision filter should still target target group"
+        );
+        require(
+            updatedRoot.resolvedScriptPaths.size() == 1 &&
+            updatedRoot.resolvedScriptPaths.front() == "phaseSpawner",
+            "root script should still be phaseSpawner"
+        );
+        require(
+            globalValue(harness.scripts, "collisionRan") == 1.0,
+            "collision callback should be invoked"
+        );
         require(
             localValue(updatedRoot, "c") == 1.0,
             "collision callback should run"
@@ -769,7 +836,7 @@ namespace
             "killViewContract",
             "function action(o) {"
             "  kill(o);"
-            "  write_global('aliveAfterKill', o.alive === false ? 1 : 0);"
+            "  write_global('aliveAfterKill', typeof o.alive == 'undefined' ? 1 : 0);"
             "}"
         );
 
@@ -784,8 +851,285 @@ namespace
 
         require(
             globalValue(harness.scripts, "aliveAfterKill") == 1.0,
-            "kill should be visible through same JS object immediately"
+            "kill should invalidate the same JS object immediately"
         );
+    }
+
+    void testFindFunctionsUseLiveWorldAndCreationOrder()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "findContract",
+            "function action(o) {"
+            "  if (read_local(o, 'done') == 1) return;"
+            "  write_local(o, 'done', 1);"
+            "  write_local(o, 'rootParentMissing', typeof find_parent(o) == 'undefined' ? 1 : 0);"
+            "  const directBefore = find_children(o);"
+            "  write_local(o, 'directBefore', directBefore.length);"
+            "  write_local(o, 'firstDirectName', directBefore[0].name == 'parentA' ? 1 : 0);"
+            "  write_local(o, 'secondDirectName', directBefore[1].name == 'parentB' ? 1 : 0);"
+            "  const shared = find_name('shared');"
+            "  write_local(o, 'sharedCount', shared.length);"
+            "  write_local(o, 'sharedOrder', find_parent(shared[0]).name == 'parentA' && find_parent(shared[1]).name == 'parentB' ? 1 : 0);"
+            "  write_local(o, 'missingNameCount', find_name('missing').length);"
+            "  write_local(o, 'missingId', typeof find_id('missing') == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'findIdAlive', find_id(shared[0].id).id == shared[0].id ? 1 : 0);"
+            "  write_local(o, 'grandIsNotDirect', directBefore.length == 2 ? 1 : 0);"
+            "  spawn(o, 'manual');"
+            "  write_local(o, 'pendingExcluded', find_children(o).length);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "findContract");
+        root.childResources["parentA"] = "parentA";
+        root.childResources["parentB"] = "parentB";
+        root.childResources["manual"] = "manual";
+
+        ObjectDefinition parentA =
+            objectDefinition("parentA");
+        parentA.childResources["shared"] = "shared";
+
+        ObjectDefinition parentB =
+            objectDefinition("parentB");
+        parentB.childResources["shared"] = "shared";
+        parentB.childResources["grand"] = "grand";
+
+        ObjectDefinition shared =
+            objectDefinition("shared");
+
+        ObjectDefinition grand =
+            objectDefinition("grand");
+
+        ObjectDefinition manual =
+            objectDefinition("manual");
+        manual.spawnMode = "manual";
+
+        harness.addObject(root);
+        harness.addObject(parentA);
+        harness.addObject(parentB);
+        harness.addObject(shared);
+        harness.addObject(grand);
+        harness.addObject(manual);
+
+        require(harness.load().success, "runtime should load find contract project");
+
+        harness.update();
+
+        const std::string rootRuntimeId =
+            requireObject(harness.world, "root").runtimeId;
+
+        RuntimeObject* runtimeRoot =
+            harness.world.findByRuntimeId(rootRuntimeId);
+
+        require(runtimeRoot != nullptr, "root should remain alive after find contract update");
+
+        require(localValue(*runtimeRoot, "rootParentMissing") == 1.0, "root should not have parent");
+        require(localValue(*runtimeRoot, "directBefore") == 2.0, "find_children should return only direct instantiated children");
+        require(localValue(*runtimeRoot, "firstDirectName") == 1.0, "find_children should preserve entry order for first child");
+        require(localValue(*runtimeRoot, "secondDirectName") == 1.0, "find_children should preserve entry order for second child");
+        require(localValue(*runtimeRoot, "sharedCount") == 2.0, "find_name should return all live objects with the name");
+        require(localValue(*runtimeRoot, "sharedOrder") == 1.0, "find_name should preserve world entry order across parents");
+        require(localValue(*runtimeRoot, "missingNameCount") == 0.0, "find_name should return empty array for missing name");
+        require(localValue(*runtimeRoot, "missingId") == 1.0, "find_id should return undefined for missing id");
+        require(localValue(*runtimeRoot, "findIdAlive") == 1.0, "find_id should return a live object");
+        require(localValue(*runtimeRoot, "grandIsNotDirect") == 1.0, "find_children should not include grandchildren");
+        require(localValue(*runtimeRoot, "pendingExcluded") == 2.0, "find_children should not include pending spawn objects");
+
+        harness.update();
+
+        require(
+            harness.world.findLiveChildren(rootRuntimeId).size() == 3,
+            "manual child should enter the world after spawn flush"
+        );
+    }
+
+    void testFindFunctionsExcludeDeadObjectsAndDeadParents()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentKiller",
+            "function action(o) { kill(o); }"
+        );
+
+        harness.addScript(
+            "childProbe",
+            "function action(o) {"
+            "  write_local(o, 'parentAfterKill', typeof find_parent(o) == 'undefined' ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentKiller");
+        parent.childResources["child"] = "child";
+
+        ObjectDefinition child =
+            objectDefinition("child", "childProbe");
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load dead parent project");
+
+        harness.update();
+
+        RuntimeObject& runtimeChild =
+            requireObject(harness.world, "child");
+
+        require(localValue(runtimeChild, "parentAfterKill") == 1.0, "find_parent should return undefined when parent is dead");
+    }
+
+    void testRuntimeObjectReferencesExpireAcrossHooks()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "expiredReference",
+            "let storedTarget;"
+            "function born(o) {"
+            "  const targets = find_name('target');"
+            "  if (targets.length > 0) storedTarget = targets[0];"
+            "}"
+            "function action(o) {"
+            "  write_local(o, 'expiredGetter', typeof storedTarget.x == 'undefined' ? 1 : 0);"
+            "  follow_y(o, storedTarget);"
+            "  write_local(o, 'yAfterExpiredFollow', o.y);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "expiredReference");
+        root.childResources["target"] = "target";
+        root.origin = Vector2{ 0.0f, 0.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 10.0f, 10.0f };
+        root.mechanics.motion.speed.start = 100.0f;
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.origin = Vector2{ 0.0f, 100.0f };
+        target.hasOrigin = true;
+        target.size = Vector2{ 10.0f, 10.0f };
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load expired reference project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "expiredGetter") == 1.0, "getter on previous-hook reference should be rejected");
+        require(localValue(runtimeRoot, "yAfterExpiredFollow") == 0.0, "binding should reject previous-hook reference");
+    }
+
+    void testRuntimeObjectReferencesInvalidateAfterKill()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "deadReference",
+            "function action(o) {"
+            "  const targets = find_name('target');"
+            "  const target = targets[0];"
+            "  const targetId = target.id;"
+            "  write_local(o, 'idBeforeKillIsString', typeof targetId == 'string' ? 1 : 0);"
+            "  kill(target);"
+            "  write_local(o, 'snapshotLength', targets.length);"
+            "  write_local(o, 'deadGetter', typeof target.x == 'undefined' ? 1 : 0);"
+            "  follow_y(o, target);"
+            "  write_local(o, 'yAfterDeadFollow', o.y);"
+            "  write_local(o, 'deadFindNameCount', find_name('target').length);"
+            "  write_local(o, 'deadFindId', typeof find_id(targetId) == 'undefined' ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "deadReference");
+        root.childResources["target"] = "target";
+        root.origin = Vector2{ 0.0f, 0.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 10.0f, 10.0f };
+        root.mechanics.motion.speed.start = 100.0f;
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.origin = Vector2{ 0.0f, 100.0f };
+        target.hasOrigin = true;
+        target.size = Vector2{ 10.0f, 10.0f };
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load dead reference project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "idBeforeKillIsString") == 1.0, "id read before kill should be a persistable string");
+        require(localValue(runtimeRoot, "snapshotLength") == 1.0, "array snapshot should keep its length after kill");
+        require(localValue(runtimeRoot, "deadGetter") == 1.0, "getter on killed reference should be rejected immediately");
+        require(localValue(runtimeRoot, "yAfterDeadFollow") == 0.0, "binding should reject killed reference immediately");
+        require(localValue(runtimeRoot, "deadFindNameCount") == 0.0, "find_name should not return dead objects");
+        require(localValue(runtimeRoot, "deadFindId") == 1.0, "find_id should not return dead objects");
+    }
+
+    void testRuntimeObjectCannotBePersistedInScriptState()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "persistReference",
+            "function action(o) {"
+            "  const target = find_name('target')[0];"
+            "  write_local(o, 'targetObject', target);"
+            "  write_global('targetObject', target);"
+            "  write_local(o, 'localRejected', typeof read_local(o, 'targetObject') == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'globalRejected', typeof read_global('targetObject') == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'targetId', target.id);"
+            "  write_global('targetId', target.id);"
+            "  write_local(o, 'localIdAccepted', typeof read_local(o, 'targetId') == 'string' ? 1 : 0);"
+            "  write_local(o, 'globalIdAccepted', typeof read_global('targetId') == 'string' ? 1 : 0);"
+            "  write_local(o, 'arrayRejectedBefore', typeof read_local(o, 'arrayValue') == 'undefined' ? 1 : 0);"
+            "  write_local(o, 'arrayValue', []);"
+            "  write_local(o, 'arrayRejectedAfter', typeof read_local(o, 'arrayValue') == 'undefined' ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "persistReference");
+        root.childResources["target"] = "target";
+
+        ObjectDefinition target =
+            objectDefinition("target");
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load persist reference project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(localValue(runtimeRoot, "localRejected") == 1.0, "write_local should reject RuntimeObject values");
+        require(localValue(runtimeRoot, "globalRejected") == 1.0, "write_global should reject RuntimeObject values");
+        require(localValue(runtimeRoot, "localIdAccepted") == 1.0, "write_local should accept string ids");
+        require(localValue(runtimeRoot, "globalIdAccepted") == 1.0, "write_global should accept string ids");
+        require(localValue(runtimeRoot, "arrayRejectedBefore") == 1.0, "array key should start missing");
+        require(localValue(runtimeRoot, "arrayRejectedAfter") == 1.0, "write_local should keep rejecting generic arrays");
     }
 
     void testJsMechanicsIsNotExposedAsNestedSnapshot()
@@ -964,6 +1308,7 @@ namespace
             "function born(o) {"
             "  const functions = ["
             "    'kill','show','hide','keep_only','delta','random','probability','ray',"
+            "    'find_id','find_name','find_parent','find_children',"
             "    'exit','save','load','move_horizontal','move_vertical','advance','follow_x','follow_y',"
             "    'attach','detach','attach_active','carry','reflect_x','reflect_y','accelerate',"
             "    'rotate','position','position_origin','apply_speed','restore_speed','draw_text','draw_pixel','draw_line','draw_rectangle',"
@@ -1884,6 +2229,11 @@ int main()
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "JS runtime object view is readonly and live", testJsRuntimeObjectViewIsReadonlyAndLive },
         { "JS runtime object view reads killed state in same callback", testJsRuntimeObjectViewReadsKilledStateInSameCallback },
+        { "find functions use live world and creation order", testFindFunctionsUseLiveWorldAndCreationOrder },
+        { "find functions exclude dead objects and dead parents", testFindFunctionsExcludeDeadObjectsAndDeadParents },
+        { "RuntimeObject references expire across hooks", testRuntimeObjectReferencesExpireAcrossHooks },
+        { "RuntimeObject references invalidate after kill", testRuntimeObjectReferencesInvalidateAfterKill },
+        { "RuntimeObject cannot be persisted in script state", testRuntimeObjectCannotBePersistedInScriptState },
         { "JS mechanics is not exposed as nested snapshot", testJsMechanicsIsNotExposedAsNestedSnapshot },
         { "JS identity and public metadata are readonly", testJsIdentityAndPublicMetadataAreReadonly },
         { "script module variables are shared between instances", testScriptModuleVariablesAreSharedBetweenInstances },

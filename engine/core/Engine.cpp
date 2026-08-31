@@ -486,10 +486,31 @@ void Engine::configureScriptEngine()
         }
     );
 
+    scriptEngine.setFindObjectsByNameFunction(
+        [this](const std::string& name)
+        {
+            return world->findAllLiveByName(name);
+        }
+    );
+
     scriptEngine.setFindObjectByIdFunction(
         [this](const std::string& id)
         {
             return world->findByRuntimeId(id);
+        }
+    );
+
+    scriptEngine.setFindParentFunction(
+        [this](const std::string& runtimeId)
+        {
+            return world->findLiveParent(runtimeId);
+        }
+    );
+
+    scriptEngine.setFindChildrenFunction(
+        [this](const std::string& runtimeId)
+        {
+            return world->findLiveChildren(runtimeId);
         }
     );
 

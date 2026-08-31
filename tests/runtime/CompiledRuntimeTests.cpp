@@ -184,9 +184,11 @@ int main()
 
         {
 
+            std::cout << "[RUN] " << test.first << std::endl;
+
             test.second();
 
-            std::cout << "[PASS] " << test.first << "\n";
+            std::cout << "[PASS] " << test.first << std::endl;
 
         }
 

@@ -822,6 +822,73 @@ RuntimeObject* RuntimeWorld::findByRuntimeId(const std::string& id)
     return nullptr;
 }
 
+RuntimeObject* RuntimeWorld::findLiveByRuntimeId(const std::string& id)
+{
+    RuntimeObject* object =
+        findByRuntimeId(id);
+
+    return object != nullptr && object->alive
+        ? object
+        : nullptr;
+}
+
+std::vector<RuntimeObject*> RuntimeWorld::findAllLiveByName(
+    const std::string& name
+)
+{
+    std::vector<RuntimeObject*> matches;
+
+    for (auto& object : objects)
+    {
+        if (object.alive && object.name == name)
+        {
+            matches.push_back(&object);
+        }
+    }
+
+    return matches;
+}
+
+RuntimeObject* RuntimeWorld::findLiveParent(
+    const std::string& runtimeId
+)
+{
+    RuntimeObject* object =
+        findLiveByRuntimeId(runtimeId);
+
+    if (object == nullptr || object->parentId.empty())
+    {
+        return nullptr;
+    }
+
+    return findLiveByRuntimeId(object->parentId);
+}
+
+std::vector<RuntimeObject*> RuntimeWorld::findLiveChildren(
+    const std::string& runtimeId
+)
+{
+    std::vector<RuntimeObject*> children;
+
+    RuntimeObject* parent =
+        findLiveByRuntimeId(runtimeId);
+
+    if (parent == nullptr)
+    {
+        return children;
+    }
+
+    for (auto& object : objects)
+    {
+        if (object.alive && object.parentId == runtimeId)
+        {
+            children.push_back(&object);
+        }
+    }
+
+    return children;
+}
+
 void RuntimeWorld::keepOnly(const std::string& runtimeId)
 {
     bool found =
@@ -1495,13 +1562,13 @@ void RuntimeWorld::applyAttachments()
             continue;
         }
 
-        if (object.originalParentId.empty())
+        if (object.parentId.empty())
         {
             continue;
         }
 
         RuntimeObject* parent =
-            findByRuntimeId(object.originalParentId);
+            findByRuntimeId(object.parentId);
 
         if (parent == nullptr || !parent->alive)
         {

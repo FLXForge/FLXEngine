@@ -305,7 +305,6 @@ RuntimeObject::RuntimeObject(
       runtimeId(name),
       definitionId(""),
       parentId(""),
-      originalParentId(""),
       sourcePath(""),
       visible(true),
       alive(true),

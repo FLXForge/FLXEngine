@@ -67,20 +67,31 @@ Observaciones:
 
 | Nombre JS | Firma real | Retorno | Subsistema | RuntimeObject | Necesita id runtime | Modifica runtime | d.ts | Docs | Usos examples |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
-| `move_x` | `move_x(object, direction)` | `undefined` | movement | si | no | si, escribe `x` JS | si | si | 5 |
-| `move_y` | `move_y(object, direction)` | `undefined` | movement | si | no | si, escribe `y` JS | si | si | 4 |
-| `advance` | `advance(object)` | `undefined` | movement | si | no | si, escribe `x/y` y a veces `velocityX/Y` | si | si | 16 |
-| `follow_x` | `follow_x(object, target)` | `undefined` | movement | si, dos refs | no | si, escribe `x` runtime | si | si | 1 |
+| `move_horizontal` | `move_horizontal(object, intent)` | `undefined` | movement | si | no | si, escribe posicion runtime | si | si | 6 |
+| `move_vertical` | `move_vertical(object, intent)` | `undefined` | movement | si | no | si, escribe posicion runtime | si | si | 2 |
+| `advance` | `advance(object)` | `undefined` | movement | si | no | si, escribe `x/y` y a veces `velocityX/Y` runtime | si | si | 17 |
+| `follow_x` | `follow_x(object, target)` | `undefined` | movement | si, dos refs | no | si, escribe `x` runtime | si | si | 3 |
 | `follow_y` | `follow_y(object, target)` | `undefined` | movement | si, dos refs | no | si, escribe `y` runtime | si | si | 1 |
 | `attach` | `attach(object)` | `undefined` | relation/movement | si | no | si, cambia `RuntimeObject.attached` | si | si | 1 |
 | `detach` | `detach(object)` | `undefined` | relation/movement | si | no | si, cambia `RuntimeObject.attached` | si | si | 1 |
-| `attach_active` | `attach_active(object)` | boolean | relation query | si | no | no | si | si | 0 |
+| `attach_active` | `attach_active(object)` | boolean | relation query | si | no | no | si | si | 2 |
 | `carry` | `carry(object, carrier)` | `undefined` | relation/movement | si, dos refs | no | si, cambia posicion runtime | si | si | 0 |
-| `bounce_x` | `bounce_x(object)` | `undefined` | movement | si | no | si, escribe `angle` JS | si | si | 3 |
-| `bounce_y` | `bounce_y(object)` | `undefined` | movement | si | no | si, escribe `angle` JS | si | si | 5 |
+| `reflect_x` | `reflect_x(object)` | `undefined` | movement | si | no | si, escribe `angle` runtime | si | si | 5 |
+| `reflect_y` | `reflect_y(object)` | `undefined` | movement | si | no | si, escribe `angle` runtime | si | si | 5 |
 | `accelerate` | `accelerate(object, amount?)` | `undefined` | movement | si | no | si, escribe `speed` o `velocityX/Y` | si | si | 2 |
 | `rotate` | `rotate(object, direction)` | `undefined` | movement | si | no | si, escribe `angle` runtime | si | si | 7 |
-| `to_origin` | `to_origin(object)` | `undefined` | movement/reset | si | no | si, escribe `x/y/speed` runtime | si | si | 1 |
+| `position` | `position(object, x, y)` | `undefined` | movement/position | si | no | si, escribe `x/y` runtime | si | si | 5 |
+| `position_x` | `position_x(object, x)` | `undefined` | movement/position | si | no | si, escribe `x` runtime | si | si | 4 |
+| `position_y` | `position_y(object, y)` | `undefined` | movement/position | si | no | si, escribe `y` runtime | si | si | 4 |
+| `position_origin` | `position_origin(object)` | `undefined` | movement/reset | si | no | si, escribe `x/y` runtime | si | si | 1 |
+| `apply_speed` | `apply_speed(object, value)` | `undefined` | movement | si | no | si, escribe `speed` runtime | si | si | 5 |
+| `apply_angle` | `apply_angle(object, angle)` | `undefined` | movement | si | no | si, escribe `angle` runtime | si | si | 3 |
+| `apply_rotation_speed` | `apply_rotation_speed(object, speed)` | `undefined` | movement | si | no | si, escribe `rotationSpeed` runtime | si | si | 4 |
+| `apply_velocity` | `apply_velocity(object, angle, speed)` | `undefined` | movement | si | no | si, escribe `velocityX/Y` runtime | si | si | 3 |
+| `resize` | `resize(object, width, height)` | `undefined` | movement/size | si | no | si, escribe `width/height` runtime | si | si | 4 |
+| `resize_width` | `resize_width(object, width)` | `undefined` | movement/size | si | no | si, escribe `width` runtime | si | si | 4 |
+| `resize_height` | `resize_height(object, height)` | `undefined` | movement/size | si | no | si, escribe `height` runtime | si | si | 0 |
+| `restore_speed` | `restore_speed(object)` | `undefined` | movement/reset | si | no | si, escribe `speed` runtime | si | si | 2 |
 
 Notas:
 
@@ -181,8 +192,8 @@ superficie publica consolidada.
 | lifecycle | `born`, `action`, `motion`, `collision`, `draw`, `dead`, `kill`, `keep_only` |
 | visibility | `show`, `hide`, `visible` |
 | spawn | `spawn` |
-| movement | `move_x`, `move_y`, `advance`, `rotate`, `accelerate`, `bounce_x`, `bounce_y`, `follow_x`, `follow_y`, `to_origin`, propiedades `x/y/speed/angle/velocityX/velocityY` |
-| relation | `attach`, `detach`, `attach_active`, `carry`, `attached` |
+| movement | `move_horizontal`, `move_vertical`, `advance`, `rotate`, `accelerate`, `reflect_x`, `reflect_y`, `follow_x`, `follow_y`, `position*`, `resize*`, `apply_*`, `restore_speed`, propiedades readonly `x/y/speed/angle/velocityX/velocityY/rotationSpeed` |
+| relation | `attach`, `detach`, `attach_active`, `carry` |
 | state | `state_to`, `state_current`, `state_active`, `state_entered`, `state_time` |
 | timer | `play_timer`, `pause_timer`, `stop_timer`, `timer_active`, `timer_paused`, `timer_done`, `timer_left` |
 | collision/raycast | callback `collision`, `ray`, `group`, `role` |
@@ -192,7 +203,7 @@ superficie publica consolidada.
 | persistence | `save`, `load` |
 | runtime control | `exit` |
 | randomness/time | `delta`, `random`, `probability` |
-| shared state | `global`, variables de modulo, `object.local` |
+| shared state | `read_global`, `write_global`, variables de modulo, `read_local`, `write_local` |
 
 Casos repartidos entre bindings:
 
@@ -216,16 +227,16 @@ Casos repartidos entre bindings:
 | `ray` | collision | - | ray | sustantivo | medio | consulta/accion sin verbo |
 | `exit` | runtime | exit | - | verbo | si | claro |
 | `save` / `load` | persistence | save/load | - | verbos opuestos | si | claro |
-| `move_x` / `move_y` | movement | move | x/y | verbo_eje | si | claro |
-| `advance` | movement | advance | - | verbo | si | depende de `motion` snapshot |
+| `move_horizontal` / `move_vertical` | movement | move | horizontal/vertical | verbo_eje | si | claro |
+| `advance` | movement | advance | - | verbo | si | consume estado runtime y mecanicas declarativas |
 | `follow_x` / `follow_y` | movement | follow | x/y | verbo_eje | si | segundo argumento es `RuntimeObject` |
-| `attach` / `detach` | relation | attach/detach | - | verbos opuestos | si | tambien existe `attached` mutable |
-| `attach_active` | relation | attach | active | sustantivo_estado | medio | no sigue `is_attached`; pero ya esta alineado con `*_active` |
+| `attach` / `detach` | relation | attach/detach | - | verbos opuestos | si | no acepta target arbitrario |
+| `attach_active` | relation | attach | active | sustantivo_estado | medio | alineado con la familia `*_active` |
 | `carry` | relation | carry | - | verbo | si | efecto solo del frame actual |
-| `bounce_x` / `bounce_y` | movement | bounce | x/y | verbo_eje | si | modifica angle, no posicion |
+| `reflect_x` / `reflect_y` | movement | reflect | x/y | verbo_eje | si | modifica angle, no posicion |
 | `accelerate` | movement | accelerate | - | verbo | si | sobrecarga por argc |
 | `rotate` | movement | rotate | - | verbo | si | claro |
-| `to_origin` | movement/reset | to | origin | direccion_destino | bajo | no empieza por verbo de accion claro |
+| `position_origin` | movement/reset | position | origin | verbo_destino | si | usa origen declarado |
 | `draw_text` | drawing | draw | text | verbo_objeto | si | claro |
 | `draw_pixel` | drawing | draw | pixel | verbo_objeto | si | claro |
 | `draw_line` | drawing | draw | line | verbo_objeto | si | claro |
@@ -261,7 +272,7 @@ Casos repartidos entre bindings:
 ## D. Inconsistencias de nomenclatura
 
 - Algunas familias usan `verbo_complemento`: `draw_text`, `play_sound`,
-  `move_x`.
+  `move_horizontal`.
 - Otras invierten el orden: `fade_set`, `state_current`.
 - Timer ya no usa el sustantivo `timer` como accion. La operacion se expresa
   con `play_timer`, `pause_timer` y `stop_timer`.
@@ -270,7 +281,8 @@ Casos repartidos entre bindings:
 - `fade_done` y `timer_done` comparten el significado de proceso terminado.
 - `pause_music` alterna pausa/reanuda, pero el nombre solo expresa una mitad.
 - `follow_x/follow_y` reciben target objeto igual que `carry(object, carrier)`.
-- `to_origin` expresa destino, no accion (`reset`, `return`, etc.).
+- `position_origin` expresa una accion de posicionamiento hacia el origen
+  declarado.
 - Input usa `pressed` para botones y sistema, pero no para direcciones.
 
 ## E. Contrato actual del objeto JS
@@ -326,10 +338,13 @@ APIs que dependen del `id` visible:
 - `state*`, `timer*`.
 - `ray`.
 
-APIs que usan referencias JS directas sin busqueda runtime:
+APIs que operan sobre el `RuntimeObject` recibido tras validar su referencia:
 
-- `move_x`, `move_y`, `advance`, `rotate`, `accelerate`, `bounce_x`,
-  `bounce_y`, `attach`, `detach`, `attach_active`, `carry`, `to_origin`.
+- `move_horizontal`, `move_vertical`, `advance`, `rotate`, `accelerate`,
+  `reflect_x`, `reflect_y`, `position`, `position_x`, `position_y`,
+  `position_origin`, `resize`, `resize_width`, `resize_height`,
+  `apply_speed`, `apply_angle`, `apply_rotation_speed`, `apply_velocity`,
+  `restore_speed`, `attach`, `detach`, `attach_active` y `carry`.
 
 APIs que localizan objetos:
 
@@ -341,11 +356,12 @@ APIs que localizan objetos:
 APIs globales:
 
 - `fade_*`, `music_*`, `delta`, `random`, `probability`, `exit`,
-  `save/load`, `draw_*`, `Input`.
+  `save/load`, `draw_*` e input funcional.
 
 Conclusiones de caracterizacion:
 
-- El desarrollador no usa `object.id` en los ejemplos actuales.
+- El desarrollador usa `object.id` de forma puntual en un ejemplo de resolucion
+  mediante `find_id`.
 - El motor si lo necesita internamente para reencontrar el `RuntimeObject`
   despues de recibir un objeto JS.
 - Tecnicamente podria ocultarse detras de una representacion JS opaca en el
@@ -388,56 +404,64 @@ Principio observado:
 
 ## H. API realmente utilizada
 
-Conteo aproximado en `examples/*.js`:
+Conteo aproximado en los scripts versionados de `examples`:
 
 | API | Usos |
 | --- | ---: |
-| `spawn` | 44 |
-| `random` | 24 |
-| `kill` | 23 |
-| `play_timer` | 17 |
-| `advance` | 16 |
-| `draw_text` | 16 |
+| `draw_text` | 52 |
+| `spawn` | 43 |
+| `kill` | 27 |
+| `play_timer` | 22 |
+| `random` | 20 |
+| `advance` | 17 |
 | `play_sound` | 15 |
-| `timer_active` | 14 |
-| `input_down` | ejemplos migrados |
-| `input_pressed` | ejemplos migrados |
+| `timer_active` | 15 |
+| `input_pressed` | 12 |
+| `stop_timer` | 10 |
+| `timer_left` | 8 |
 | `rotate` | 7 |
 | `probability` | 7 |
 | `delta` | 6 |
 | `fade_off` | 6 |
 | `fade_set` | 6 |
-| `timer_left` | 6 |
-| `move_x` | 5 |
-| `bounce_y` | 5 |
+| `move_horizontal` | 6 |
+| `reflect_x` | 5 |
+| `reflect_y` | 5 |
+| `position` | 5 |
+| `apply_speed` | 5 |
 | `keep_only` | 4 |
-| `move_y` | 4 |
-| `state_to` | 4 |
-| `bounce_x` | 3 |
+| `input_down` | 4 |
+| `state_to` | 6 |
+| `position_x` | 4 |
+| `position_y` | 4 |
+| `resize` | 4 |
+| `resize_width` | 4 |
+| `apply_rotation_speed` | 4 |
+| `follow_x` | 3 |
 | `draw_line` | 3 |
-| `state_active` | 3 |
+| `apply_angle` | 3 |
+| `apply_velocity` | 3 |
 | `draw_pixel` | 2 |
 | `fade_on` | 2 |
 | `pause_music` | 2 |
-| `stop_timer` | 7 |
 | `accelerate` | 2 |
-| `follow_x`, `follow_y`, `attach`, `detach`, `to_origin`, `fade_done`, `play_music` | 1 cada una |
+| `move_vertical` | 2 |
+| `restore_speed` | 2 |
+| `attach_active` | 2 |
+| `follow_y`, `attach`, `detach`, `position_origin`, `fade_done`, `play_music` | 1 cada una |
 
 Propiedades de objeto usadas en `examples/*.js`:
 
 | Propiedad | Usos |
 | --- | ---: |
-| `local` | 24 |
 | `group` | 20 |
-| `width` | 17 |
-| `x` | 12 |
-| `y` | 10 |
-| `angle` | 10 |
-| `speed` | 5 |
-| `height` | 5 |
-| `name` | 4 |
-| `attached` | 2 |
-| `originY` | 2 |
+| `x` | 29 |
+| `y` | 17 |
+| `width` | 11 |
+| `name` | 5 |
+| `speed` | 1 |
+| `height` | 1 |
+| `id` | 1 |
 
 Nota: los conteos son busquedas textuales aproximadas, no un AST JS.
 
@@ -452,7 +476,6 @@ Implementada y documentada, pero sin uso claro en `examples`:
 - `exit`
 - `save`
 - `load`
-- `attach_active`
 - `carry`
 - `draw_rectangle`
 - `fade_active`
@@ -467,15 +490,11 @@ Implementada y documentada, pero sin uso claro en `examples`:
 
 Propiedades expuestas sin uso claro en `examples`:
 
-- `id`
 - `alive`
 - `visible`
 - `role`
-- `layer`
-- `previousX`
-- `previousY`
-- `originX`
-- `originSpeed`
+- `angle`
+- `rotationSpeed`
 - `velocityX`
 - `velocityY`
 
@@ -492,10 +511,8 @@ API retirada o no implementada:
 | funciones principales | si | si | si | alineadas en lo esencial |
 | callbacks | capturados por wrapper | declarados como funciones | si | correcto para authoring |
 | `console.log` | implementado | no declarado localmente | ambiental TS | aceptable, pero no propio FLX |
-| `global` | solo numeros persistentes | `Record<string, number>` | si | alineado |
-| `local` | solo numeros persistentes | `Record<string, number>` | si | alineado |
 | `id/name/group/role/x/y/width/height/speed/angle/velocity*/rotationSpeed` | vista viva readonly | readonly | si | alineado tras refactor |
-| `origin*/previous*/layer/motion.*` | no expuesto | no | parcialmente historico | retirar restos documentales antiguos |
+| `origin*/previous*/layer/motion.*` | no expuesto | no | no | alineado tras retirar restos documentales antiguos |
 | `attached` | API funcional | no directo | si | alineado con `attach_active()` |
 | `Input.*` / `Key.*` / `__flx_input_*` | retirado | no | no actual | ejemplos migrados |
 | audio config types | tipos d.ts | no son objetos runtime JS | JSON authoring | no forman API runtime directa |
@@ -530,17 +547,16 @@ No son decisiones, solo candidatos segun el tipo de efecto:
 - `id` como runtime id publico: hoy es necesario para bindings, pero no aparece
   como dato de juego en ejemplos.
 - `motion.*`: estructura declarativa; ya no debe aparecer como objeto runtime.
-- `previousX/previousY`: util para `carry`, pero puede ser detalle interno si
-  no hay caso de gameplay directo.
-- `originSpeed`: parece soporte de `to_origin`, no necesariamente API publica.
+- `previousPosition`: util para `carry`, pero no expuesto como propiedad JS.
+- `originSpeed`: soporte interno de `restore_speed`, no API publica.
 
 ## N. Familias que requieren mini-auditoria propia
 
 - Input: quedan pendientes 8way, analog, pointer, text y remapeo avanzado.
 - Movimiento: convivencia entre speed/angle, velocity, acceleration y metadata
   declarativa.
-- Identidad/referencias: si `id` debe existir, si se exponen parent/children, y
-  como obtener referencias a otras instancias sin busqueda global.
+- Identidad/referencias: si `id` debe seguir llamandose asi y si se necesita
+  una alternativa a busqueda global para obtener otras instancias.
 - Drawing/video layers: relacion futura entre `draw_*`, callbacks de mundo y
   capas de video superiores.
 - Audio/music: nomenclatura `play_music` vs `music_active`, pausa toggle, y
@@ -558,18 +574,11 @@ No son decisiones, solo candidatos segun el tipo de efecto:
    reemplazado por otra palabra?
 4. `group` y `role` deben seguir como propiedades readonly o migrar hacia API
    funcional?
-5. Resuelto para v0.3.0: `attached` se controla solo mediante
-   `attach/detach/attach_active`.
-6. Resuelto para v0.3.0: `layer` queda como declaracion de orden de dibujo, no
-   como propiedad mutable de scripting.
-7. Resuelto para v0.3.0: `motion.*` no forma parte de la vista JS runtime.
-8. Debe existir una forma publica de obtener parent, children o ultima instancia
-   spawneada?
-9. Resuelto: `follow_x/follow_y` reciben una referencia viva de `RuntimeObject`.
-10. Como se normaliza la nomenclatura de consultas: `*_active`, `is_*`,
+5. Debe existir una forma publica de obtener la ultima instancia spawneada?
+6. Como se normaliza la nomenclatura de consultas: `*_active`, `is_*`,
     `*_done`, `*_left`, `*_current`?
-11. Debe exponerse en el futuro una API de remapeo o introspeccion de controles?
-12. Debe existir un sistema de nombres de acciones por encima de los controles
+7. Debe exponerse en el futuro una API de remapeo o introspeccion de controles?
+8. Debe existir un sistema de nombres de acciones por encima de los controles
     logicos numerados?
 
 ## Tests de caracterizacion anadidos
@@ -581,10 +590,11 @@ La suite `flx-runtime-lifecycle-tests` incorpora:
   modulo.
 - `collision callback receives concrete other reference`: confirma que el
   segundo argumento de `collision(object, other)` representa la instancia
-  concreta y que sus escrituras aplican al `RuntimeObject` correspondiente.
+  concreta y que las operaciones funcionales aplican al `RuntimeObject`
+  correspondiente.
 - `public scripting functions are registered`: confirma que las funciones
-  principales, `console.log` e `Input` existen en el contexto JS.
+  principales y `console.log` existen en el contexto JS.
 
 Estas pruebas se suman a las de `docs/runtime-object-characterization.md` sobre
-propiedades mutables reales, propiedades aparentemente mutables pero ignoradas,
-identidad, metadata, `alive`, `visible` y `attached`.
+vista readonly viva, referencias temporales, identidad, metadata, `alive`,
+`visible`, `attached` mediante API funcional y contexto final de `dead(object)`.

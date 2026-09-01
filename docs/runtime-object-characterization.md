@@ -46,10 +46,10 @@ Clasificacion provisional:
 | `deadCalled` | `bool` | runtime false | si | dead phase | dead phase | E |
 | `attached` | `bool` | `ObjectDefinition.attachOnCreate` | si | attachments, attach_active | attach/detach | A/D |
 | `layer` | `int` | `ObjectDefinition.layer` | no esperado | draw sorting | builder | C |
-| `origin` | `Vector2` | `ObjectDefinition.origin` | no esperado | JS originX/Y, to_origin, attach math | builder | C/F |
-| `position` | `Vector2` | `ObjectDefinition.origin` | si | draw, collision, motion, JS | JS x/y, movement, attach, carry | A |
-| `previousPosition` | `Vector2` | initial origin | si | carry, JS previousX/Y | beginFrame | A |
-| `size` | `Vector2` | `ObjectDefinition.size` | si | draw/collision/JS | JS width/height | A/C |
+| `origin` | `Vector2` | `ObjectDefinition.origin` | no esperado | position_origin, attach math | builder | C/F |
+| `position` | `Vector2` | `ObjectDefinition.origin` | si | draw, collision, motion, JS readonly view | position APIs, movement, attach, carry | A |
+| `previousPosition` | `Vector2` | initial origin | si | carry | beginFrame | A |
+| `size` | `Vector2` | `ObjectDefinition.size` | si | draw/collision/JS readonly view | resize APIs | A/C |
 | `originalOffset` | `Vector2` | `ObjectDefinition.offset` | no esperado | attachments | builder | D |
 | `attachFollowX` | `bool` | `ObjectDefinition.attachFollowX` | no esperado | attachments | builder | C/F |
 | `attachFollowY` | `bool` | `ObjectDefinition.attachFollowY` | no esperado | attachments | builder | C/F |
@@ -58,10 +58,10 @@ Clasificacion provisional:
 | `color` | `Color` | `ObjectDefinition.color` | no esperado | draw | builder | C/F |
 | `shapeMode` | `string` | `ObjectDefinition.shapeMode` | no esperado | draw | builder | C/F |
 | `radius` | `float` | `ObjectDefinition.radius` | no esperado | draw/collision | builder | C/F |
-| `speed` | `float` | `ObjectDefinition.speed` | si | motion helpers, JS | JS speed, movement helpers | A |
-| `angle` | `float` | `ObjectDefinition.angle` | si | draw/motion/ray, JS | JS angle, movement helpers | A |
-| `originSpeed` | `float` | `ObjectDefinition.speed` | no esperado | JS, to_origin | builder | C/F |
-| `velocity` | `Vector2` | runtime zero/inheritance | si | motion/carry/JS | JS velocity, motion helpers | A |
+| `speed` | `float` | `ObjectDefinition.speed` | si | motion helpers, JS readonly view | apply_speed/restore_speed, movement helpers | A |
+| `angle` | `float` | `ObjectDefinition.angle` | si | draw/motion/ray, JS readonly view | apply_angle/rotate, movement helpers | A |
+| `originSpeed` | `float` | `ObjectDefinition.speed` | no esperado | restore_speed | builder | C/F |
+| `velocity` | `Vector2` | runtime zero/inheritance | si | motion/carry/JS readonly view | apply_velocity, motion helpers | A |
 | `rotationSpeed` | `float` | `ObjectDefinition.rotationSpeed` | no via JS actual | motion helpers | builder | C/F |
 | `acceleration` | `float` | `ObjectDefinition.acceleration` | no via JS actual | accelerate/advance | builder | C/F |
 | `maxSpeed` | `float` | `ObjectDefinition.maxSpeed` | no via JS actual | accelerate/advance | builder | C/F |
@@ -87,7 +87,7 @@ Clasificacion provisional:
 - `definitionId` ya apunta hacia la definicion compilada, pero la instancia aun
   conserva muchas copias locales de esa definicion.
 - Algunos campos parecen metadata pero hoy son estado vivo real:
-  `size`, `speed`, `angle`, `attached`.
+  `size`, `speed`, `angle`, `velocity`, `visible`, `alive` y `attached`.
 
 ## B. RuntimeObjectBuilder
 
@@ -172,25 +172,25 @@ siguen devolviendo solo objetos vivos.
 | `attached` | no | no | no | `RuntimeObject.attached` | Usar `attach()`/`detach()`/`attach_active()`. |
 | `group` | si | no | si | `RuntimeObject.group` | Metadata de collision/logica. |
 | `role` | si | no | si | `RuntimeObject.role` | Metadata logica dentro de group. |
-| `layer` | no | no | si | `RuntimeObject.layer` | No se expone como propiedad publica en la vista actual. |
+| `layer` | no | no | no | `RuntimeObject.layer` | No se expone como propiedad publica en la vista actual. |
 | `x` | si | no | si | `RuntimeObject.position.x` | Vista viva; modificar con `position_x()`/`position()`. |
-| `previousX` | no | no | si | `RuntimeObject.previousPosition.x` | No se expone como propiedad publica en la vista actual. |
+| `previousX` | no | no | no | `RuntimeObject.previousPosition.x` | No se expone como propiedad publica en la vista actual. |
 | `y` | si | no | si | `RuntimeObject.position.y` | Vista viva; modificar con `position_y()`/`position()`. |
-| `previousY` | no | no | si | `RuntimeObject.previousPosition.y` | No se expone como propiedad publica en la vista actual. |
+| `previousY` | no | no | no | `RuntimeObject.previousPosition.y` | No se expone como propiedad publica en la vista actual. |
 | `width` | si | no | si | `RuntimeObject.size.x` | Vista viva; modificar con `resize_width()`/`resize()`. |
 | `height` | si | no | si | `RuntimeObject.size.y` | Vista viva; modificar con `resize_height()`/`resize()`. |
 | `speed` | si | no | si | `RuntimeObject.speed` | Vista viva; modificar con `apply_speed()`/`restore_speed()`. |
 | `angle` | si | no | si | `RuntimeObject.angle` | Vista viva; modificar con `apply_angle()`/`rotate()`. |
-| `originX` | no | no | si | `RuntimeObject.origin.x` | No se expone como propiedad publica en la vista actual. |
-| `originY` | no | no | si | `RuntimeObject.origin.y` | No se expone como propiedad publica en la vista actual. |
-| `originSpeed` | no | no | si | `RuntimeObject.originSpeed` | No se expone como propiedad publica en la vista actual. |
-| `motion` | no | no | si | `RuntimeObject` / `ObjectDefinition` | El subobjeto anidado ya no forma parte de la vista JS runtime. |
-| `motion.speed` | no | no | si | `RuntimeObject.speed` | Sustituido por `speed` readonly + funciones. |
-| `motion.angle` | no | no | si | `RuntimeObject.angle` | Sustituido por `angle` readonly + funciones. |
-| `motion.rotationSpeed` | no | no | si | `RuntimeObject.rotationSpeed` | Sustituido por `rotationSpeed` readonly. |
-| `motion.acceleration` | no | no | si | `RuntimeObject.acceleration` | No se expone como propiedad publica en la vista actual. |
-| `motion.inertia` | no | no | si | `RuntimeObject.inertia` | No se expone como propiedad publica en la vista actual. |
-| `motion.maxSpeed` | no | no | si | `RuntimeObject.maxSpeed` | No se expone como propiedad publica en la vista actual. |
+| `originX` | no | no | no | `RuntimeObject.origin.x` | No se expone como propiedad publica en la vista actual. |
+| `originY` | no | no | no | `RuntimeObject.origin.y` | No se expone como propiedad publica en la vista actual. |
+| `originSpeed` | no | no | no | `RuntimeObject.originSpeed` | No se expone como propiedad publica en la vista actual. |
+| `motion` | no | no | no | `RuntimeObject` / `ObjectDefinition` | El subobjeto anidado ya no forma parte de la vista JS runtime. |
+| `motion.speed` | no | no | no | `RuntimeObject.speed` | Sustituido por `speed` readonly + funciones. |
+| `motion.angle` | no | no | no | `RuntimeObject.angle` | Sustituido por `angle` readonly + funciones. |
+| `motion.rotationSpeed` | no | no | no | `RuntimeObject.rotationSpeed` | Sustituido por `rotationSpeed` readonly. |
+| `motion.acceleration` | no | no | no | `RuntimeObject.acceleration` | No se expone como propiedad publica en la vista actual. |
+| `motion.inertia` | no | no | no | `RuntimeObject.inertia` | No se expone como propiedad publica en la vista actual. |
+| `motion.maxSpeed` | no | no | no | `RuntimeObject.maxSpeed` | No se expone como propiedad publica en la vista actual. |
 | `velocityX` | si | no | si | `RuntimeObject.velocity.x` | Vista viva; modificar con `apply_velocity()` o mecanicas. |
 | `velocityY` | si | no | si | `RuntimeObject.velocity.y` | Vista viva; modificar con `apply_velocity()` o mecanicas. |
 | `rotationSpeed` | si | no | si | `RuntimeObject.rotationSpeed` | Vista viva; modificar con `apply_rotation_speed()`. |
@@ -268,9 +268,9 @@ Conclusiones de caracterizacion:
 | --- | --- | --- | --- |
 | `group` | si | no | colisiones en Pong/Asteroids/Arkanoid/Invaders; ray result usa group. |
 | `role` | si | no | documentada; sin uso claro en examples actuales. |
-| `layer` | si | si | tests; posible uso dinamico futuro; examples no lo usan por JS. |
-| `originX/Y` | si | no | Arkanoid title usa `originY`. |
-| `size` como `width/height` | si | si | Asteroids fades, Arkanoid paddle, collision positioning. |
+| `layer` | no | no | draw order declarativo; no se expone a JS. |
+| `originX/Y` | no | no | no se expone a JS; scripts que necesitan origen usan estado local propio o `position_origin()`. |
+| `size` como `width/height` | si | via API funcional | Arkanoid paddle, collision positioning. |
 | collision metadata | no directa | no | collision system/ray; JS solo ve `group` y `role`. |
 | `music/sounds` | no directa | no | APIs `play_music/play_sound`. |
 | `children/childResources` | no directa | no | API `spawn(object,id)` y creation runtime. |
@@ -278,24 +278,23 @@ Conclusiones de caracterizacion:
 
 ## G. Accesos reales en examples
 
-Conteo aproximado de propiedades JS relevantes encontradas en `examples`:
+Conteo aproximado de propiedades JS relevantes encontradas en los scripts
+versionados de `examples`:
 
 | Propiedad | Frecuencia aproximada | Uso |
 | --- | ---: | --- |
-| `local` | 24 | estado por objeto. |
 | `group` | 20 | filtrado en collision. |
-| `width` | 17 | resize, colision manual, efectos. |
-| `x` | 15 | limites, posicion, draw helpers. |
-| `angle` | 12 | direccion de movimiento/disparo/rebote. |
-| `y` | 11 | limites, posicion. |
-| `speed` | 5 | inicializacion aleatoria/efectos. |
-| `height` | 5 | resize/colision manual. |
-| `name` | 4 | powerups de Arkanoid. |
-| `attached` | 2 | logica de bola en Arkanoid antes de la consolidacion; ahora se consulta con `attach_active`. |
-| `originY` | 2 | retorno de titulo en Arkanoid antes de la consolidacion; ya no forma parte de la vista publica runtime. |
+| `x` | 29 | limites, posicion, draw helpers. |
+| `y` | 17 | limites, posicion. |
+| `width` | 11 | resize, colision manual, efectos. |
+| `name` | 5 | powerups de Arkanoid y ejemplos de estructura. |
+| `speed` | 1 | incremento funcional de velocidad en Pong. |
+| `height` | 1 | colision manual en Arkanoid. |
+| `id` | 1 | ejemplo de resolucion mediante `find_id`. |
 
-Propiedades expuestas pero sin uso claro en `examples`: `id`, `visible`,
-`velocityX`, `velocityY`, `role`.
+Propiedades expuestas pero sin uso claro en los scripts versionados de
+`examples`: `visible`, `angle`, `velocityX`, `velocityY`, `rotationSpeed` y
+`role`.
 
 ## H. Inconsistencias
 
@@ -344,9 +343,8 @@ Campos que claramente deben seguir siendo locales por instancia:
 
 Campos dudosos:
 
-- `layer`: podria ser metadata o estado vivo; hoy JS lo modifica realmente.
-- `origin` y `originSpeed`: parecen metadata de nacimiento, pero `to_origin`
-  depende de ellos.
+- `origin` y `originSpeed`: parecen metadata de nacimiento, pero
+  `position_origin()` y `restore_speed()` dependen de ellos.
 - `boundsOverflow`: se calcula en runtime aunque depende de `boundsMode`.
 
 Costes de consultar metadata por `definitionId`:
@@ -379,7 +377,6 @@ parecen mejores como funciones que como escritura directa:
 
 Propiedades que representan estado local natural y tienen uso real:
 
-- `local`.
 - `name` como nombre logico de instancia, aunque conviene decidir si el nombre
   exacto es el correcto.
 - `x`, `y`.
@@ -387,15 +384,13 @@ Propiedades que representan estado local natural y tienen uso real:
 - `speed`, `angle`.
 - `velocityX`, `velocityY`, si el modelo de movimiento vectorial sigue siendo
   parte de la API JS.
-- `originX`, `originY`, si se consideran referencias utiles de solo lectura.
 - `group`, `role`, si se mantienen como lectura de clasificacion logica.
 
 ## L. Detalles internos accidentalmente expuestos
 
 - `id` como runtime id bajo un nombre generico.
-- `previousX` / `previousY`: utiles para `carry` y debug, pero pueden ser
-  detalle de ciclo.
-- `originSpeed`: poco usado y no mutable; parece detalle de reset.
+- `previousPosition`: util para `carry`, pero no expuesto como propiedad JS.
+- `originSpeed`: no expuesto; parece detalle de `restore_speed()`.
 - `motion` anidado: resuelto; ya no se expone como objeto runtime.
 - `layer`: resuelto para v0.3.0 como metadata declarativa no expuesta
   directamente a JS.
@@ -405,28 +400,27 @@ Propiedades que representan estado local natural y tienen uso real:
 1. Debe existir una propiedad publica `runtimeId`, o `id` debe seguir
    significando runtime id?
 2. `name` debe llamarse `name`, `instance`, `instanceId` o similar?
-3. Resuelto para v0.3.0: `attached` se controla solo mediante API funcional.
-4. Resuelto para v0.3.0: `layer` queda como metadata declarativa de dibujo.
-5. Resuelto para v0.3.0: `motion.*` no forma parte de la vista JS runtime.
-6. `group` y `role` deben ser readonly explicitos en typings?
-7. `width/height` deben seguir modificando tambien collision, o separar shape
+3. `group` y `role` deben mantenerse como propiedades readonly tras la auditoria
+   de Collision, o migrar hacia API funcional?
+4. `width/height` deben seguir modificando tambien collision, o separar shape
    size y collision size?
-8. Debe poder leerse la metadata de collision desde JS, o solo `group/role`?
-9. Debe `RuntimeObject` conservar copias de metadata compilada o consultarlas
+5. Debe poder leerse la metadata de collision desde JS, o solo `group/role`?
+6. Debe `RuntimeObject` conservar copias de metadata compilada o consultarlas
    por `definitionId`?
-10. Que politica de compatibilidad aplica antes de v0.3.0 para limpiar esta
+7. Que politica de compatibilidad aplica antes de v0.3.0 para limpiar esta
     superficie?
 
 ## Tests de caracterizacion anadidos
 
 La suite `flx-runtime-lifecycle-tests` confirma ahora:
 
-- Propiedades planas mutables reales: `x`, `y`, `speed`, `angle`,
-  `velocityX`, `velocityY`, `width`, `height`, `layer`, `attached`, `local`.
-- Propiedades aparentemente mutables pero ignoradas: `motion.speed`,
-  `motion.angle`, `motion.rotationSpeed`, `motion.acceleration`,
-  `motion.inertia`, `motion.maxSpeed`.
+- Vista JS readonly y viva: operaciones como `position_x`, `apply_speed`,
+  `apply_angle`, `resize_width` y `kill` se reflejan al leer el mismo objeto
+  dentro del hook.
+- Propiedades no expuestas o no mutables desde JS: `motion.*`, `layer`,
+  `attached`, `origin*`, `previous*`.
 - `alive` y `visible` son de solo lectura efectiva.
 - Identidad y metadata son legibles, pero escrituras sobre `id`, `name`,
-  `group`, `role`, `originX`, `originY`, `originSpeed`, `previousX`,
-  `previousY` no vuelven al runtime.
+  `group` y `role` no vuelven al runtime.
+- `dead(object)` puede usar su objeto como contexto estructural final para
+  `find_parent` y `find_children`, manteniendo resultados exclusivamente vivos.

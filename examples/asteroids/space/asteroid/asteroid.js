@@ -39,12 +39,16 @@ function collision(asteroid, other) {
         write_global("score", read_global("score") + 100);
         kill(asteroid);
         kill(other);
+
+        return;
     }
 
     if (other.group === "ship") {
         write_global("asteroids", read_global("asteroids") - 2);
         kill(asteroid);
         kill(other);
+
+        return;
     }
 }
 

@@ -287,6 +287,15 @@ if (input_pressed(player, FIRE)) {
             </p>
 
             <p>
+                The object received by <code>dead(object)</code> is a deliberate
+                final context for that hook. It may be used for meaningful final
+                operations such as <code>spawn()</code>, <code>read_local()</code>,
+                <code>play_sound()</code>, <code>find_parent()</code> and
+                <code>find_children()</code>. Search results still come only from
+                the live world.
+            </p>
+
+            <p>
                 Use <code>hide(object)</code> and <code>show(object)</code> to control
                 visibility without changing lifetime. Hidden objects keep updating
                 action, motion, collision, timers and state time, but skip both

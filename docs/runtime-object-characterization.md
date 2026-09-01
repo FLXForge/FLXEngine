@@ -153,6 +153,15 @@ se resuelven contra el `RuntimeObject` vivo mientras la invocacion sigue activa.
 No existe copy-back desde JS hacia C++; las mutaciones reales se hacen mediante
 funciones de la API (`position_x`, `apply_speed`, `resize_width`, `kill`, etc.).
 
+Frase de contrato: el scripting conserva identidad; el Runtime conserva el
+mundo vivo. Los RuntimeObjects se resuelven, no se persisten.
+
+Una referencia normal caduca inmediatamente cuando muere su instancia. La
+excepcion limitada es `dead(object)`: el Runtime entrega deliberadamente ese
+objeto muerto como contexto final durante el hook, permitiendo consultar estado
+local, generar consecuencias y navegar su relacion estructural. Las busquedas
+siguen devolviendo solo objetos vivos.
+
 | JS property | Readable | Writable real | Documented | Runtime source | Observacion |
 | --- | --- | --- | --- | --- | --- |
 | `local` | no | no | no | `RuntimeObject.local` | Se accede mediante `read_local`/`write_local`. |
@@ -243,6 +252,8 @@ Usos reales:
 - No se han encontrado usos reales de `object.id` en `examples`.
 - Las APIs funcionales internas usan `id` del objeto JS para resolver runtime id
   en `kill`, `spawn`, `keep_only`, `show`, `hide`, `attach`, etc.
+- El codigo de juego que necesite conservar identidad entre hooks debe guardar
+  `object.id` como string y resolverlo de nuevo con `find_id()`.
 
 Conclusiones de caracterizacion:
 
@@ -297,7 +308,8 @@ Propiedades expuestas pero sin uso claro en `examples`: `id`, `visible`,
   `attach/detach/attach_active`.
 - `group` y `role` son metadata copiadas a cada instancia y expuestas como
   propiedades planas, aunque no se pueden cambiar realmente desde JS.
-- `layer` procede de definicion pero se comporta como estado vivo mutable.
+- `layer` procede de definicion y queda como metadata declarativa de dibujo; no
+  es una propiedad mutable de scripting.
 - `id` expone runtime id, no id logico; el nombre puede inducir a error.
 - `RuntimeObject.children` mantiene definiciones embebidas aunque el modelo
   compilado consolidado usa `childResources`.

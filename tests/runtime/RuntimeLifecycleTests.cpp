@@ -986,6 +986,176 @@ namespace
         require(localValue(runtimeChild, "parentAfterKill") == 1.0, "find_parent should return undefined when parent is dead");
     }
 
+    void testDeadHookCanFindAndKillLiveDirectChildren()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentDeadNavigation",
+            "function action(o) { kill(o); }"
+            "function dead(o) {"
+            "  const children = find_children(o);"
+            "  write_global('deadChildCount', children.length);"
+            "  write_global('firstChildName', children[0].name == 'childA' ? 1 : 0);"
+            "  write_global('secondChildName', children[1].name == 'childB' ? 1 : 0);"
+            "  for (const child of children) { kill(child); }"
+            "  write_global('childrenAfterKill', find_children(o).length);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentDeadNavigation");
+        parent.childResources["childA"] = "childA";
+        parent.childResources["childB"] = "childB";
+
+        ObjectDefinition childA =
+            objectDefinition("childA");
+
+        ObjectDefinition childB =
+            objectDefinition("childB");
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(childA);
+        harness.addObject(childB);
+
+        require(harness.load().success, "runtime should load dead child navigation project");
+
+        harness.update();
+
+        require(globalValue(harness.scripts, "deadChildCount") == 2.0, "dead hook should find live direct children from its dead context");
+        require(globalValue(harness.scripts, "firstChildName") == 1.0, "dead hook find_children should preserve first child order");
+        require(globalValue(harness.scripts, "secondChildName") == 1.0, "dead hook find_children should preserve second child order");
+        require(globalValue(harness.scripts, "childrenAfterKill") == 0.0, "children killed inside dead hook should stop appearing as live children");
+        require(harness.world.findByName("childA") == nullptr, "childA killed from parent dead hook should be cleaned up");
+        require(harness.world.findByName("childB") == nullptr, "childB killed from parent dead hook should be cleaned up");
+    }
+
+    void testDeadHookFindChildrenExcludesAlreadyDeadChildren()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentDeadNavigation",
+            "function action(o) { kill(o); }"
+            "function dead(o) {"
+            "  const children = find_children(o);"
+            "  write_global('deadChildCount', children.length);"
+            "  write_global('remainingChildName', children[0].name == 'childB' ? 1 : 0);"
+            "}"
+        );
+
+        harness.addScript(
+            "childKiller",
+            "function action(o) { kill(o); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentDeadNavigation");
+        parent.childResources["childA"] = "childA";
+        parent.childResources["childB"] = "childB";
+
+        ObjectDefinition childA =
+            objectDefinition("childA", "childKiller");
+
+        ObjectDefinition childB =
+            objectDefinition("childB");
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(childA);
+        harness.addObject(childB);
+
+        require(harness.load().success, "runtime should load dead child exclusion project");
+
+        harness.update();
+
+        require(globalValue(harness.scripts, "deadChildCount") == 1.0, "dead hook find_children should exclude children already killed in the same frame");
+        require(globalValue(harness.scripts, "remainingChildName") == 1.0, "dead hook find_children should return only the remaining live child");
+    }
+
+    void testDeadHookFindParentReturnsLiveParent()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "childDeadNavigation",
+            "function action(o) { kill(o); }"
+            "function dead(o) {"
+            "  const parent = find_parent(o);"
+            "  write_global('parentFound', parent && parent.name == 'parent' ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent");
+        parent.childResources["child"] = "child";
+
+        ObjectDefinition child =
+            objectDefinition("child", "childDeadNavigation");
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load dead parent lookup project");
+
+        harness.update();
+
+        require(globalValue(harness.scripts, "parentFound") == 1.0, "dead child should resolve a live structural parent");
+    }
+
+    void testDeadHookFindParentReturnsUndefinedWhenParentIsDead()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentKiller",
+            "function action(o) { kill(o); }"
+        );
+
+        harness.addScript(
+            "childDeadNavigation",
+            "function action(o) { kill(o); }"
+            "function dead(o) {"
+            "  write_global('parentMissing', typeof find_parent(o) == 'undefined' ? 1 : 0);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentKiller");
+        parent.childResources["child"] = "child";
+
+        ObjectDefinition child =
+            objectDefinition("child", "childDeadNavigation");
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load dead missing parent lookup project");
+
+        harness.update();
+
+        require(globalValue(harness.scripts, "parentMissing") == 1.0, "dead child should not resolve a dead structural parent");
+    }
+
     void testRuntimeObjectReferencesExpireAcrossHooks()
     {
         RuntimeHarness harness;
@@ -2231,6 +2401,10 @@ int main()
         { "JS runtime object view reads killed state in same callback", testJsRuntimeObjectViewReadsKilledStateInSameCallback },
         { "find functions use live world and creation order", testFindFunctionsUseLiveWorldAndCreationOrder },
         { "find functions exclude dead objects and dead parents", testFindFunctionsExcludeDeadObjectsAndDeadParents },
+        { "dead hook can find and kill live direct children", testDeadHookCanFindAndKillLiveDirectChildren },
+        { "dead hook find children excludes already dead children", testDeadHookFindChildrenExcludesAlreadyDeadChildren },
+        { "dead hook find parent returns live parent", testDeadHookFindParentReturnsLiveParent },
+        { "dead hook find parent returns undefined when parent is dead", testDeadHookFindParentReturnsUndefinedWhenParentIsDead },
         { "RuntimeObject references expire across hooks", testRuntimeObjectReferencesExpireAcrossHooks },
         { "RuntimeObject references invalidate after kill", testRuntimeObjectReferencesInvalidateAfterKill },
         { "RuntimeObject cannot be persisted in script state", testRuntimeObjectCannotBePersistedInScriptState },

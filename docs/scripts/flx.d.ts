@@ -120,6 +120,9 @@ interface MusicChannelConfig {
  * RuntimeObject is a temporary live view for the current script hook.
  * Do not store it in local/global state. Store its id string and resolve it
  * again with find_id() when needed.
+ * A normal reference expires when the current hook ends or when its instance
+ * dies. dead(object) deliberately receives the final context of the dead
+ * instance for that hook.
  */
 interface RuntimeObject {
     /** Unique runtime instance identifier. */
@@ -260,21 +263,27 @@ declare function write_global(key: string, value: ScriptValue): void;
 
 /**
  * Resolves a live runtime object by runtime id during the current hook.
+ * Returns undefined when the object does not exist or is not alive.
  */
 declare function find_id(id: string): RuntimeObject | undefined;
 
 /**
  * Returns all live runtime objects with the given logical instance name, in world order.
+ * The returned array is a normal JavaScript snapshot, not a reactive collection.
  */
 declare function find_name(name: string): RuntimeObject[];
 
 /**
  * Returns the live parent of an object, when it still exists.
+ * In dead(object), the dead object may be used as final structural context,
+ * but the returned parent must still be alive.
  */
 declare function find_parent(object: RuntimeObject): RuntimeObject | undefined;
 
 /**
  * Returns the live direct children of an object, in world order.
+ * It does not return declarations, pending objects, grandchildren or dead
+ * children. The returned array is a normal JavaScript snapshot.
  */
 declare function find_children(object: RuntimeObject): RuntimeObject[];
 
@@ -304,11 +313,13 @@ declare function rotate(object: RuntimeObject, intent?: number): void;
 
 /**
  * Makes an object follow another object on the X axis.
+ * The target must be a live RuntimeObject, not a name.
  */
 declare function follow_x(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Makes an object follow another object on the Y axis.
+ * The target must be a live RuntimeObject, not a name.
  */
 declare function follow_y(object: RuntimeObject, target: RuntimeObject): void;
 
@@ -329,6 +340,7 @@ declare function attach_active(object: RuntimeObject): boolean;
 
 /**
  * Applies the carrier movement delta to an object for the current frame.
+ * Does not create a persistent relationship.
  */
 declare function carry(object: RuntimeObject, carrier: RuntimeObject): void;
 
@@ -780,5 +792,7 @@ declare function draw(object: RuntimeObject): void;
 /**
  * Called once before an object is removed.
  * Executed after kill() and before cleanup.
+ * The object is dead, but may still be used as final context for operations
+ * such as spawn(), read_local(), play_sound(), find_parent() and find_children().
  */
 declare function dead(object: RuntimeObject): void;

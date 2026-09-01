@@ -1,0 +1,59 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "target": {
+      "origin": {
+        "x": 60,
+        "y": 80
+      },
+      "shape": {
+        "type": "block",
+        "color": "yellow",
+        "size": {
+          "width": 12,
+          "height": 12
+        }
+      },
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 80
+          }
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "follow-target"
+        ]
+      }
+    },
+    "follower": {
+      "origin": {
+        "x": 150,
+        "y": 125
+      },
+      "shape": {
+        "type": "block",
+        "color": "cyan",
+        "size": {
+          "width": 12,
+          "height": 12
+        }
+      },
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 55
+          }
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "follower"
+        ]
+      }
+    }
+  }
+}

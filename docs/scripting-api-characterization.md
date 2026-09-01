@@ -79,8 +79,8 @@ Observaciones:
 | `bounce_x` | `bounce_x(object)` | `undefined` | movement | si | no | si, escribe `angle` JS | si | si | 3 |
 | `bounce_y` | `bounce_y(object)` | `undefined` | movement | si | no | si, escribe `angle` JS | si | si | 5 |
 | `accelerate` | `accelerate(object, amount?)` | `undefined` | movement | si | no | si, escribe `speed` o `velocityX/Y` | si | si | 2 |
-| `rotate` | `rotate(object, direction)` | `undefined` | movement | si | no | si, escribe `angle` JS | si | si | 7 |
-| `to_origin` | `to_origin(object)` | `undefined` | movement/reset | si | no | si, escribe `x/y/speed` JS | si | si | 1 |
+| `rotate` | `rotate(object, direction)` | `undefined` | movement | si | no | si, escribe `angle` runtime | si | si | 7 |
+| `to_origin` | `to_origin(object)` | `undefined` | movement/reset | si | no | si, escribe `x/y/speed` runtime | si | si | 1 |
 
 Notas:
 
@@ -88,6 +88,11 @@ Notas:
 - La vista `RuntimeObject` JS es temporal, readonly y viva durante el hook.
   `advance`, `accelerate` y `rotate` trabajan contra estado runtime y
   configuracion interna, no contra un subobjeto `object.motion`.
+- Frase de contrato: el scripting conserva identidad; el Runtime conserva el
+  mundo vivo. Los RuntimeObjects se resuelven, no se persisten.
+- `dead(object)` recibe un contexto final deliberado de una instancia muerta;
+  `find_parent` y `find_children` pueden partir de ese contexto, pero siguen
+  devolviendo solo objetos vivos.
 
 ### DrawBindings
 
@@ -350,6 +355,8 @@ Conclusiones de caracterizacion:
   - `find_id`, `find_name`, `find_parent`, `find_children`;
   - retorno indirecto de `spawn` no existe;
   - `ray` no devuelve objeto ni id.
+- Las referencias de `RuntimeObject` no se deben almacenar entre hooks; se debe
+  almacenar `object.id` como string y resolver mediante `find_id()`.
 
 ## G. JSON vs JS
 
@@ -551,11 +558,11 @@ No son decisiones, solo candidatos segun el tipo de efecto:
    reemplazado por otra palabra?
 4. `group` y `role` deben seguir como propiedades readonly o migrar hacia API
    funcional?
-5. `attached` debe poder escribirse directamente o solo mediante
-   `attach/detach`?
-6. `layer` debe ser estado mutable del objeto o declaracion inmutable?
-7. `motion.*` debe desaparecer de la API JS, hacerse readonly real, o aplicar
-   escrituras al runtime?
+5. Resuelto para v0.3.0: `attached` se controla solo mediante
+   `attach/detach/attach_active`.
+6. Resuelto para v0.3.0: `layer` queda como declaracion de orden de dibujo, no
+   como propiedad mutable de scripting.
+7. Resuelto para v0.3.0: `motion.*` no forma parte de la vista JS runtime.
 8. Debe existir una forma publica de obtener parent, children o ultima instancia
    spawneada?
 9. Resuelto: `follow_x/follow_y` reciben una referencia viva de `RuntimeObject`.

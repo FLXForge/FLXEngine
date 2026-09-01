@@ -67,11 +67,24 @@
                 como estado generado durante la ejecución.
             </p>
 
+            <p>
+                El scripting conserva identidad; el Runtime conserva el mundo vivo.
+                Los RuntimeObjects se resuelven, no se persisten. Guarda
+                <code>object.id</code> como string y vuelve a resolverlo con
+                <code>find_id()</code> cuando lo necesites.
+            </p>
+
+            <p>
+                Las vistas RuntimeObject son temporales y de solo lectura. Una
+                referencia normal caduca al terminar el hook actual y tambien
+                caduca inmediatamente cuando muere su instancia.
+            </p>
+
             <div class="code-card">
                 <div class="code-header">RuntimeObject</div>
 <pre><code>function motion(ship) {
 
-    ship.x += 10;
+    position_x(ship, ship.x + 10);
 
     console.log(ship.id);
 }
@@ -682,7 +695,9 @@ fade_set(0, "black");</code></pre>
 
             <p>
                 Devuelve todos los objetos vivos con el nombre logico indicado,
-                en orden de mundo desde el mas antiguo al mas nuevo.
+                en orden de mundo desde el mas antiguo al mas nuevo. El array
+                devuelto es una fotografia JavaScript normal, no una coleccion
+                reactiva.
             </p>
 
             <div class="code-card">
@@ -701,11 +716,27 @@ if (balls.length > 0) {
                 si el objeto no tiene parent vivo.
             </p>
 
+            <p>
+                El parent estructural permanece estable durante la vida de la
+                instancia, pero no implica ownership y FLX v0.3.0 no expone
+                reparenting publico. Durante <code>dead(object)</code>, el objeto
+                muerto puede usarse como contexto estructural final; el parent
+                devuelto debe seguir vivo.
+            </p>
+
             <h2>find_children(object)</h2>
 
             <p>
                 Devuelve los hijos directos vivos de un objeto en orden de mundo.
-                No devuelve capacidades de spawn manual ni objetos pendientes.
+                No devuelve capacidades de spawn manual, objetos pendientes,
+                nietos, descendientes ni hijos muertos.
+            </p>
+
+            <p>
+                El array devuelto es una fotografia JavaScript normal. Durante
+                <code>dead(object)</code>, el objeto muerto puede usarse como
+                contexto estructural final; los resultados siguen siendo solo
+                objetos vivos.
             </p>
 
             <hr />
@@ -715,6 +746,7 @@ if (balls.length > 0) {
             <p>
                 Mueve un objeto horizontalmente hacia otro objeto.
                 El objetivo debe ser un <code>RuntimeObject</code> vivo.
+                No es un nombre ni un id string.
                 Solo modifica la posicion X del objeto.
             </p>
 
@@ -741,6 +773,7 @@ if (balls.length > 0) {
             <p>
                 Mueve un objeto verticalmente hacia otro objeto.
                 El objetivo debe ser un <code>RuntimeObject</code> vivo.
+                No es un nombre ni un id string.
                 Solo modifica la posicion Y del objeto.
             </p>
 
@@ -767,7 +800,7 @@ if (balls.length > 0) {
             <p>
                 Activa las reglas de attach declaradas en JSON para el objeto.
                 El objeto sigue solo a su parent original; no crea una nueva
-                relacion de parent.
+                relacion de parent. FLX v0.3.0 no expone reparenting publico.
             </p>
 
             <div class="code-card">
@@ -802,6 +835,7 @@ if (balls.length > 0) {
             <p>
                 Aplica al objeto el desplazamiento del carrier durante el frame actual.
                 No cambia parent, attach, offset, ownership ni collision.
+                Es una operacion de un solo frame, no una relacion persistente.
             </p>
 
             <div class="code-card">

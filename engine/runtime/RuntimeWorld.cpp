@@ -854,7 +854,7 @@ RuntimeObject* RuntimeWorld::findLiveParent(
 )
 {
     RuntimeObject* object =
-        findLiveByRuntimeId(runtimeId);
+        findByRuntimeId(runtimeId);
 
     if (object == nullptr || object->parentId.empty())
     {
@@ -871,7 +871,7 @@ std::vector<RuntimeObject*> RuntimeWorld::findLiveChildren(
     std::vector<RuntimeObject*> children;
 
     RuntimeObject* parent =
-        findLiveByRuntimeId(runtimeId);
+        findByRuntimeId(runtimeId);
 
     if (parent == nullptr)
     {

@@ -1,0 +1,12 @@
+# Game data
+title=Structural Relationship Demo
+name=structural-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=structural-demo
+
+# Notes
+notes=Minimal FLX v0.3.0 structural relationship demo

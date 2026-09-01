@@ -32,11 +32,15 @@ function collision(asteroid, other) {
         write_local(asteroid, "destroyed_by_laser", 1);
         kill(asteroid);
         kill(other);
+
+        return;
     }
 
     if (other.group === "ship") {
         kill(asteroid);
         kill(other);
+
+        return;
     }
 }
 

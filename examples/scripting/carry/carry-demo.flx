@@ -1,0 +1,12 @@
+# Game data
+title=Carry Demo
+name=carry-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=carry-demo
+
+# Notes
+notes=Minimal FLX v0.3.0 relative carry demo

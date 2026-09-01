@@ -1,0 +1,12 @@
+# Game data
+title=Follow Demo
+name=follow-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=follow-demo
+
+# Notes
+notes=Minimal FLX v0.3.0 relative follow demo

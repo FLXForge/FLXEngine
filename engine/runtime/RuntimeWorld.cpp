@@ -113,6 +113,150 @@ namespace
         );
     }
 
+    Vector2 rotatedPoint(
+        Vector2 center,
+        Vector2 local,
+        float angle
+    )
+    {
+        const float radians =
+            angle * DEG2RAD;
+
+        const float cosine =
+            std::cos(radians);
+
+        const float sine =
+            std::sin(radians);
+
+        return Vector2{
+            center.x + local.x * cosine - local.y * sine,
+            center.y + local.x * sine + local.y * cosine
+        };
+    }
+
+    Vector2 scaledPoint(Vector2 point, int scale)
+    {
+        return Vector2{
+            point.x * scale,
+            point.y * scale
+        };
+    }
+
+    Color colliderDebugColor(const EffectiveCollider& collider)
+    {
+        if (!collider.declaredEnabled)
+        {
+            return Color{ 180, 70, 70, 255 };
+        }
+
+        if (!collider.stateAvailable)
+        {
+            return Color{ 230, 170, 40, 255 };
+        }
+
+        if (!collider.effective)
+        {
+            return Color{ 120, 120, 120, 255 };
+        }
+
+        return GREEN;
+    }
+
+    void drawDebugLine(Vector2 start, Vector2 end, int scale, Color color)
+    {
+        const Vector2 scaledStart =
+            scaledPoint(start, scale);
+
+        const Vector2 scaledEnd =
+            scaledPoint(end, scale);
+
+        DrawLine(
+            static_cast<int>(std::round(scaledStart.x)),
+            static_cast<int>(std::round(scaledStart.y)),
+            static_cast<int>(std::round(scaledEnd.x)),
+            static_cast<int>(std::round(scaledEnd.y)),
+            color
+        );
+    }
+
+    void drawDebugBox(
+        const EffectiveCollider& collider,
+        int scale,
+        Color color
+    )
+    {
+        const Vector2 corners[4] = {
+            rotatedPoint(collider.center, Vector2{ -collider.halfSize.x, -collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ collider.halfSize.x, -collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ collider.halfSize.x, collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ -collider.halfSize.x, collider.halfSize.y }, collider.angle)
+        };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            drawDebugLine(
+                corners[i],
+                corners[(i + 1) % 4],
+                scale,
+                color
+            );
+        }
+    }
+
+    void drawDebugEllipse(
+        const EffectiveCollider& collider,
+        int scale,
+        Color color
+    )
+    {
+        constexpr int Segments = 40;
+
+        Vector2 previous =
+            rotatedPoint(
+                collider.center,
+                Vector2{ collider.halfSize.x, 0.0f },
+                collider.angle
+            );
+
+        for (int i = 1; i <= Segments; ++i)
+        {
+            const float radians =
+                static_cast<float>(i) / static_cast<float>(Segments) *
+                2.0f * PI;
+
+            const Vector2 current =
+                rotatedPoint(
+                    collider.center,
+                    Vector2{
+                        std::cos(radians) * collider.halfSize.x,
+                        std::sin(radians) * collider.halfSize.y
+                    },
+                    collider.angle
+                );
+
+            drawDebugLine(previous, current, scale, color);
+            previous =
+                current;
+        }
+    }
+
+    void drawDebugCollider(
+        const EffectiveCollider& collider,
+        int scale
+    )
+    {
+        const Color color =
+            colliderDebugColor(collider);
+
+        if (collider.type == "ellipse")
+        {
+            drawDebugEllipse(collider, scale, color);
+            return;
+        }
+
+        drawDebugBox(collider, scale, color);
+    }
+
     void applyInheritedCreationMotion(
         RuntimeObject& child,
         const RuntimeObject& parent,
@@ -156,6 +300,7 @@ RuntimeLoadResult RuntimeWorld::load(
 
     objects.clear();
     pendingObjects.clear();
+    collisionDebugFrame.clear();
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
@@ -278,13 +423,30 @@ void RuntimeWorld::update(
 
     applyAttachments();
 
-    CollisionSystem::run(objects, scriptEngine);
+    CollisionSystem::run(
+        objects,
+        scriptEngine,
+        collisionDebugEnabled
+            ? &collisionDebugFrame
+            : nullptr
+    );
     flushSpawnQueue(scriptEngine);
 
     updateObjectTime(delta);
 
     deadPhase(scriptEngine);
     cleanupDeadObjects();
+}
+
+void RuntimeWorld::setCollisionDebugEnabled(bool enabled)
+{
+    collisionDebugEnabled =
+        enabled;
+
+    if (!collisionDebugEnabled)
+    {
+        collisionDebugFrame.clear();
+    }
 }
 
 void RuntimeWorld::draw(
@@ -331,28 +493,6 @@ void RuntimeWorld::draw(
             screenHeight
         );
 
-        if (debugCollisions)
-        {
-            const std::vector<EffectiveCollider> colliders =
-                EffectiveColliderBuilder::build(*object, scriptEngine);
-
-            for (const EffectiveCollider& collider : colliders)
-            {
-                const Color color =
-                    collider.effective
-                    ? GREEN
-                    : Color{ 120, 120, 120, 255 };
-
-                DrawRectangleLines(
-                    static_cast<int>(collider.broadBounds.x * screenScale),
-                    static_cast<int>(collider.broadBounds.y * screenScale),
-                    static_cast<int>(collider.broadBounds.width * screenScale),
-                    static_cast<int>(collider.broadBounds.height * screenScale),
-                    color
-                );
-            }
-        }
-
         for (const auto& scriptPath : object->resolvedScriptPaths)
         {
             scriptEngine.callScriptFunction(
@@ -361,6 +501,11 @@ void RuntimeWorld::draw(
                 *object
             );
         }
+    }
+
+    if (debugCollisions)
+    {
+        drawCollisionDebug(screenScale);
     }
 }
 
@@ -872,6 +1017,15 @@ RayCastResult RuntimeWorld::rayCast(
     const Vector2 direction =
         rayDirection(angle);
 
+    CollisionDebugRay debugRay;
+    debugRay.origin =
+        origin;
+    debugRay.end =
+        Vector2{
+            origin.x + direction.x * distance,
+            origin.y + direction.y * distance
+        };
+
     for (const RuntimeObject& target : objects)
     {
         if (!target.alive)
@@ -911,8 +1065,19 @@ RayCastResult RuntimeWorld::rayCast(
                 closest.distance = hit.distance;
                 closest.point = hit.point;
                 closest.normal = hit.normal;
+
+                debugRay.hit = true;
+                debugRay.hitPoint = hit.point;
+                debugRay.hitNormal = hit.normal;
+                debugRay.targetId = target.runtimeId;
+                debugRay.collider = collider.name;
             }
         }
+    }
+
+    if (collisionDebugEnabled)
+    {
+        collisionDebugFrame.rays.push_back(debugRay);
     }
 
     return closest;
@@ -1375,6 +1540,8 @@ bool RuntimeWorld::flushSpawnQueueForLoad(
 
 void RuntimeWorld::beginFrame()
 {
+    collisionDebugFrame.clear();
+
     for (auto& object : objects)
     {
         object.previousPosition =
@@ -1585,6 +1752,69 @@ void RuntimeWorld::updateObjectTime(float delta)
                 timer.second.status = RuntimeTimerStatus::Done;
             }
         }
+    }
+}
+
+void RuntimeWorld::drawCollisionDebug(int screenScale) const
+{
+    for (const EffectiveCollider& collider : collisionDebugFrame.colliders)
+    {
+        drawDebugCollider(collider, screenScale);
+    }
+
+    for (const CollisionDebugContact& contact : collisionDebugFrame.contacts)
+    {
+        const Vector2 point =
+            contact.contact.point;
+
+        DrawCircle(
+            static_cast<int>(std::round(point.x * screenScale)),
+            static_cast<int>(std::round(point.y * screenScale)),
+            std::max(2.0f, 2.0f * static_cast<float>(screenScale)),
+            YELLOW
+        );
+
+        drawDebugLine(
+            point,
+            Vector2{
+                point.x + contact.contact.normal.x * 10.0f,
+                point.y + contact.contact.normal.y * 10.0f
+            },
+            screenScale,
+            YELLOW
+        );
+    }
+
+    for (const CollisionDebugRay& ray : collisionDebugFrame.rays)
+    {
+        drawDebugLine(
+            ray.origin,
+            ray.end,
+            screenScale,
+            Color{ 80, 180, 255, 255 }
+        );
+
+        if (!ray.hit)
+        {
+            continue;
+        }
+
+        DrawCircle(
+            static_cast<int>(std::round(ray.hitPoint.x * screenScale)),
+            static_cast<int>(std::round(ray.hitPoint.y * screenScale)),
+            std::max(2.0f, 2.0f * static_cast<float>(screenScale)),
+            SKYBLUE
+        );
+
+        drawDebugLine(
+            ray.hitPoint,
+            Vector2{
+                ray.hitPoint.x + ray.hitNormal.x * 10.0f,
+                ray.hitPoint.y + ray.hitNormal.y * 10.0f
+            },
+            screenScale,
+            BLUE
+        );
     }
 }
 

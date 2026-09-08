@@ -1,4 +1,5 @@
 #include "CollisionSystem.h"
+#include "CollisionDebugFrame.h"
 #include "CollisionGeometry.h"
 #include "EffectiveColliderBuilder.h"
 #include "../runtime/RuntimeObject.h"
@@ -26,23 +27,50 @@ namespace
     }
 
     bool hasAnyDirectedCollider(
-        const RuntimeObject& object
+        const std::vector<EffectiveCollider>& colliders
     )
     {
         return std::any_of(
-            object.collisions.begin(),
-            object.collisions.end(),
-            [](const auto& pair)
+            colliders.begin(),
+            colliders.end(),
+            [](const EffectiveCollider& collider)
             {
-                return pair.second.enabled && !pair.second.with.empty();
+                return collider.effective && !collider.with.empty();
             }
         );
+    }
+
+    void captureFrameColliders(
+        const std::vector<RuntimeObject>& objects,
+        ScriptEngine& scriptEngine,
+        CollisionDebugFrame& debugFrame
+    )
+    {
+        debugFrame.colliders.clear();
+
+        for (const RuntimeObject& object : objects)
+        {
+            if (!object.alive)
+            {
+                continue;
+            }
+
+            std::vector<EffectiveCollider> colliders =
+                EffectiveColliderBuilder::build(object, scriptEngine);
+
+            debugFrame.colliders.insert(
+                debugFrame.colliders.end(),
+                colliders.begin(),
+                colliders.end()
+            );
+        }
     }
 }
 
 void CollisionSystem::run(
     std::vector<RuntimeObject>& objects,
-    ScriptEngine& scriptEngine
+    ScriptEngine& scriptEngine,
+    CollisionDebugFrame* debugFrame
 )
 {
     for (size_t i = 0; i < objects.size(); ++i)
@@ -50,7 +78,15 @@ void CollisionSystem::run(
         RuntimeObject& a =
             objects[i];
 
-        if (!a.alive || !hasAnyDirectedCollider(a))
+        if (!a.alive)
+        {
+            continue;
+        }
+
+        std::vector<EffectiveCollider> sourceColliders =
+            EffectiveColliderBuilder::build(a, scriptEngine);
+
+        if (!hasAnyDirectedCollider(sourceColliders))
         {
             continue;
         }
@@ -70,7 +106,7 @@ void CollisionSystem::run(
                 continue;
             }
 
-            const std::vector<EffectiveCollider> sourceColliders =
+            sourceColliders =
                 EffectiveColliderBuilder::build(a, scriptEngine);
 
             const std::vector<EffectiveCollider> targetColliders =
@@ -111,6 +147,20 @@ void CollisionSystem::run(
                 continue;
             }
 
+            if (debugFrame != nullptr)
+            {
+                for (const CollisionContact& contact : contacts)
+                {
+                    debugFrame->contacts.push_back(
+                        CollisionDebugContact{
+                            a.runtimeId,
+                            b.runtimeId,
+                            contact
+                        }
+                    );
+                }
+            }
+
             for (const auto& scriptPath : a.resolvedScriptPaths)
             {
                 scriptEngine.callScriptFunction(
@@ -132,5 +182,14 @@ void CollisionSystem::run(
                 break;
             }
         }
+    }
+
+    if (debugFrame != nullptr)
+    {
+        captureFrameColliders(
+            objects,
+            scriptEngine,
+            *debugFrame
+        );
     }
 }

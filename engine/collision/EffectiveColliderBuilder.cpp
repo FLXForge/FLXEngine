@@ -117,12 +117,9 @@ std::vector<EffectiveCollider> EffectiveColliderBuilder::build(
         collider.halfSize = Vector2{ width / 2.0f, height / 2.0f };
         collider.angle = object.angle + declaration.angle;
 
-        const Vector2 rotatedOffset =
-            rotate(declaration.offset, object.angle);
-
         collider.center = Vector2{
-            object.position.x + rotatedOffset.x,
-            object.position.y + rotatedOffset.y
+            object.position.x + declaration.offset.x,
+            object.position.y + declaration.offset.y
         };
 
         collider.broadBounds =

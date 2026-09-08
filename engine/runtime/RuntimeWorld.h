@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../compiler/CompiledProject.h"
+#include "../collision/CollisionDebugFrame.h"
 #include "ObjectDefinition.h"
 #include "RayCastResult.h"
 #include "RuntimeObject.h"
@@ -33,6 +34,8 @@ public:
         float screenHeight,
         float delta
     );
+
+    void setCollisionDebugEnabled(bool enabled);
 
     void draw(
         ScriptEngine& scriptEngine,
@@ -150,6 +153,8 @@ private:
 
     void updateObjectTime(float delta);
 
+    void drawCollisionDebug(int screenScale) const;
+
     std::string createRuntimeId(const std::string& name);
 
     int nextRuntimeId;
@@ -157,6 +162,8 @@ private:
     const ResourceRegistry* resources = nullptr;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
+    CollisionDebugFrame collisionDebugFrame;
+    bool collisionDebugEnabled = false;
     bool automaticInstantiationFailed = false;
     std::string automaticInstantiationFailure;
     std::vector<ResourceId> automaticInstantiationStack;

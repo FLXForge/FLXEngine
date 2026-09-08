@@ -207,6 +207,8 @@ bool Engine::loadProject(
     runOptions =
         options;
 
+    world->setCollisionDebugEnabled(runOptions.debugCollisions);
+
     Logger::setConsoleEnabled(runOptions.debugConsole);
     Logger::setDebugEnabled(runOptions.debugLogs);
     SetTraceLogLevel(

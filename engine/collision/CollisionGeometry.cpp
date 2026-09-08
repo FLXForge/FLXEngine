@@ -862,7 +862,34 @@ bool CollisionGeometry::contact(
 
     ContactResult contact;
 
-    if (!supportContact(source, target, contact))
+    if (source.type == "box" && target.type == "box")
+    {
+        if (!satContact(
+            source,
+            target,
+            contact.normal,
+            contact.penetration
+        ))
+        {
+            return false;
+        }
+
+        contact.hit =
+            true;
+
+        const Vector2 sourcePoint =
+            supportPoint(source, negate(contact.normal));
+
+        const Vector2 targetPoint =
+            supportPoint(target, contact.normal);
+
+        contact.point =
+            multiply(
+                add(sourcePoint, targetPoint),
+                0.5f
+            );
+    }
+    else if (!supportContact(source, target, contact))
     {
         return false;
     }

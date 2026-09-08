@@ -209,6 +209,7 @@ add_executable(flx
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
     engine/collision/CollisionContact.h
+    engine/collision/CollisionDebugFrame.h
     engine/collision/CollisionGeometry.h
     engine/collision/CollisionGeometry.cpp
     engine/collision/EffectiveCollider.h

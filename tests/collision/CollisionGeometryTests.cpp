@@ -98,6 +98,53 @@ namespace
         return object;
     }
 
+    RuntimeObject pongBall(Vector2 topLeft, float angle)
+    {
+        RuntimeObject object("ball", topLeft, Vector2{ 5.0f, 5.0f }, WHITE);
+        object.runtimeId = "ball";
+        object.group = "ball";
+        object.mechanicsType = MechanicsType::Polar;
+        object.speed = 90.0f;
+        object.originSpeed = 90.0f;
+        object.angle = angle;
+        object.resolvedScriptPaths.push_back("pongBounce");
+
+        ColliderDefinition& collider =
+            object.collisions["body"];
+
+        collider.type = "box";
+        collider.size.width = 5.0f;
+        collider.size.height = 5.0f;
+        collider.size.hasWidth = true;
+        collider.size.hasHeight = true;
+        collider.offset = Vector2{ 2.5f, 2.5f };
+        collider.with.push_back("wall");
+
+        return object;
+    }
+
+    RuntimeObject pongWall(
+        const std::string& name,
+        Vector2 topLeft
+    )
+    {
+        RuntimeObject object(name, topLeft, Vector2{ 320.0f, 10.0f }, WHITE);
+        object.runtimeId = name;
+        object.group = "wall";
+
+        ColliderDefinition& collider =
+            object.collisions["body"];
+
+        collider.type = "box";
+        collider.size.width = 320.0f;
+        collider.size.height = 10.0f;
+        collider.size.hasWidth = true;
+        collider.size.hasHeight = true;
+        collider.offset = Vector2{ 160.0f, 5.0f };
+
+        return object;
+    }
+
     double localNumber(const RuntimeObject& object, const std::string& key)
     {
         const auto it =
@@ -330,6 +377,96 @@ namespace
         require(localNumber(objects[0], "hitC") == 0.0, "C should not collide after state_to removes source collider availability");
     }
 
+    void testPongTopWallBoxBounceSeparatesAndMovesAway()
+    {
+        ScriptEngine scripts;
+        scripts.setFrameDelta(1.0f / 60.0f);
+        scripts.loadScript(
+            "pongBounce",
+            "function motion(ball) { advance(ball); }"
+            "function collision(ball, other, contacts) {"
+            "  const contact = contacts[0];"
+            "  write_local(ball, 'normalX', contact.normalX);"
+            "  write_local(ball, 'normalY', contact.normalY);"
+            "  write_local(ball, 'penetration', contact.penetration);"
+            "  position(ball, ball.x + contact.normalX * contact.penetration, ball.y + contact.normalY * contact.penetration);"
+            "  write_local(ball, 'separatedX', ball.x);"
+            "  write_local(ball, 'separatedY', ball.y);"
+            "  reflect_y(ball);"
+            "  write_local(ball, 'count', (read_local(ball, 'count') || 0) + 1);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(pongBall(Vector2{ 100.0f, -4.0f }, 0.0f));
+        objects.push_back(pongWall("top_wall", Vector2{ 0.0f, -10.0f }));
+
+        const float originalY =
+            objects[0].position.y;
+
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "top wall penetration should produce one callback");
+        require(localNumber(objects[0], "normalY") > 0.9, "top wall contact normal should separate the ball downward");
+        require(std::abs(localNumber(objects[0], "normalX")) < 0.1, "top wall contact normal should be vertical");
+        require(localNumber(objects[0], "penetration") > 0.0, "top wall contact should report penetration");
+        require(objects[0].position.y > originalY, "top wall script should separate ball out of the wall");
+
+        const float separatedY =
+            objects[0].position.y;
+
+        scripts.callScriptFunction("pongBounce", "motion", objects[0]);
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "separated top wall bounce should not produce a second callback");
+        require(objects[0].position.y > separatedY, "ball should move away from the top wall on the next frame");
+    }
+
+    void testPongBottomWallBoxBounceSeparatesAndMovesAway()
+    {
+        ScriptEngine scripts;
+        scripts.setFrameDelta(1.0f / 60.0f);
+        scripts.loadScript(
+            "pongBounce",
+            "function motion(ball) { advance(ball); }"
+            "function collision(ball, other, contacts) {"
+            "  const contact = contacts[0];"
+            "  write_local(ball, 'normalX', contact.normalX);"
+            "  write_local(ball, 'normalY', contact.normalY);"
+            "  write_local(ball, 'penetration', contact.penetration);"
+            "  position(ball, ball.x + contact.normalX * contact.penetration, ball.y + contact.normalY * contact.penetration);"
+            "  write_local(ball, 'separatedX', ball.x);"
+            "  write_local(ball, 'separatedY', ball.y);"
+            "  reflect_y(ball);"
+            "  write_local(ball, 'count', (read_local(ball, 'count') || 0) + 1);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(pongBall(Vector2{ 100.0f, 177.0f }, 180.0f));
+        objects.push_back(pongWall("bottom_wall", Vector2{ 0.0f, 180.0f }));
+
+        const float originalY =
+            objects[0].position.y;
+
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "bottom wall penetration should produce one callback");
+        require(localNumber(objects[0], "normalY") < -0.9, "bottom wall contact normal should separate the ball upward");
+        require(std::abs(localNumber(objects[0], "normalX")) < 0.1, "bottom wall contact normal should be vertical");
+        require(localNumber(objects[0], "penetration") > 0.0, "bottom wall contact should report penetration");
+        require(objects[0].position.y < originalY, "bottom wall script should separate ball out of the wall");
+
+        const float separatedY =
+            objects[0].position.y;
+
+        scripts.callScriptFunction("pongBounce", "motion", objects[0]);
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "separated bottom wall bounce should not produce a second callback");
+        require(objects[0].position.y < separatedY, "ball should move away from the bottom wall on the next frame");
+    }
+
     void testScriptSeparationPreventsRepeatedWallCallback()
     {
         ScriptEngine scripts;
@@ -382,6 +519,8 @@ int main()
         { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
         { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
         { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },
+        { "Pong exact top wall box bounce", testPongTopWallBoxBounceSeparatesAndMovesAway },
+        { "Pong exact bottom wall box bounce", testPongBottomWallBoxBounceSeparatesAndMovesAway },
         { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback }
     };
 

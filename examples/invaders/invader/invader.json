@@ -36,6 +36,10 @@
   "collisions": {
     "body": {
       "type": "box",
+      "offset": {
+        "x": 7,
+        "y": 5
+      },
       "with": [
         "laser"
       ]

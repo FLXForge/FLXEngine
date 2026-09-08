@@ -1,6 +1,7 @@
 #include "CollisionGeometry.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cmath>
 #include <limits>
 #include <vector>
@@ -8,6 +9,24 @@
 namespace
 {
     constexpr float Epsilon = 0.0001f;
+    constexpr int MaxGjkIterations = 32;
+    constexpr int MaxEpaIterations = 48;
+    constexpr float EpaTolerance = 0.0005f;
+
+    struct SupportPoint
+    {
+        Vector2 point = Vector2{ 0.0f, 0.0f };
+        Vector2 source = Vector2{ 0.0f, 0.0f };
+        Vector2 target = Vector2{ 0.0f, 0.0f };
+    };
+
+    struct ContactResult
+    {
+        bool hit = false;
+        Vector2 normal = Vector2{ 1.0f, 0.0f };
+        Vector2 point = Vector2{ 0.0f, 0.0f };
+        float penetration = 0.0f;
+    };
 
     float dot(Vector2 a, Vector2 b)
     {
@@ -35,6 +54,64 @@ namespace
         };
     }
 
+    Vector2 negate(Vector2 value)
+    {
+        return Vector2{ -value.x, -value.y };
+    }
+
+    Vector2 subtract(Vector2 a, Vector2 b)
+    {
+        return Vector2{
+            a.x - b.x,
+            a.y - b.y
+        };
+    }
+
+    Vector2 add(Vector2 a, Vector2 b)
+    {
+        return Vector2{
+            a.x + b.x,
+            a.y + b.y
+        };
+    }
+
+    Vector2 multiply(Vector2 value, float factor)
+    {
+        return Vector2{
+            value.x * factor,
+            value.y * factor
+        };
+    }
+
+    bool sameDirection(Vector2 a, Vector2 b)
+    {
+        return dot(a, b) > 0.0f;
+    }
+
+    Vector2 perpendicularTowardOrigin(Vector2 edge, Vector2 toward)
+    {
+        Vector2 result = Vector2{
+            edge.y,
+            -edge.x
+        };
+
+        if (!sameDirection(result, toward))
+        {
+            result =
+                negate(result);
+        }
+
+        if (length(result) <= Epsilon)
+        {
+            result = Vector2{
+                -edge.y,
+                edge.x
+            };
+        }
+
+        return normalize(result);
+    }
+
     Vector2 rotate(Vector2 value, float angle)
     {
         const float radians =
@@ -60,6 +137,25 @@ namespace
     Vector2 axisY(const EffectiveCollider& collider)
     {
         return rotate(Vector2{ 0.0f, 1.0f }, collider.angle);
+    }
+
+    float cross(Vector2 a, Vector2 b)
+    {
+        return a.x * b.y - a.y * b.x;
+    }
+
+    Vector2 tripleProduct(Vector2 a, Vector2 b, Vector2 c)
+    {
+        const float ac =
+            dot(a, c);
+
+        const float bc =
+            dot(b, c);
+
+        return Vector2{
+            b.x * ac - a.x * bc,
+            b.y * ac - a.y * bc
+        };
     }
 
     bool broadIntersects(Rectangle a, Rectangle b)
@@ -95,6 +191,81 @@ namespace
         return
             std::abs(dot(axis, axisX(collider))) * collider.halfSize.x +
             std::abs(dot(axis, axisY(collider))) * collider.halfSize.y;
+    }
+
+    Vector2 supportPoint(
+        const EffectiveCollider& collider,
+        Vector2 direction
+    )
+    {
+        direction =
+            normalize(direction);
+
+        const Vector2 xAxis =
+            axisX(collider);
+
+        const Vector2 yAxis =
+            axisY(collider);
+
+        if (collider.type == "ellipse")
+        {
+            const float localX =
+                dot(direction, xAxis);
+
+            const float localY =
+                dot(direction, yAxis);
+
+            const float scaledX =
+                collider.halfSize.x * localX;
+
+            const float scaledY =
+                collider.halfSize.y * localY;
+
+            const float denominator =
+                std::sqrt(scaledX * scaledX + scaledY * scaledY);
+
+            if (denominator <= Epsilon)
+            {
+                return add(
+                    collider.center,
+                    multiply(xAxis, collider.halfSize.x)
+                );
+            }
+
+            return Vector2{
+                collider.center.x +
+                    xAxis.x * collider.halfSize.x * scaledX / denominator +
+                    yAxis.x * collider.halfSize.y * scaledY / denominator,
+                collider.center.y +
+                    xAxis.y * collider.halfSize.x * scaledX / denominator +
+                    yAxis.y * collider.halfSize.y * scaledY / denominator
+            };
+        }
+
+        return Vector2{
+            collider.center.x +
+                xAxis.x * (dot(direction, xAxis) >= 0.0f ? collider.halfSize.x : -collider.halfSize.x) +
+                yAxis.x * (dot(direction, yAxis) >= 0.0f ? collider.halfSize.y : -collider.halfSize.y),
+            collider.center.y +
+                xAxis.y * (dot(direction, xAxis) >= 0.0f ? collider.halfSize.x : -collider.halfSize.x) +
+                yAxis.y * (dot(direction, yAxis) >= 0.0f ? collider.halfSize.y : -collider.halfSize.y)
+        };
+    }
+
+    SupportPoint support(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        Vector2 direction
+    )
+    {
+        SupportPoint point;
+        point.source =
+            supportPoint(source, direction);
+        point.target =
+            supportPoint(target, negate(direction));
+        point.point =
+            subtract(point.source, point.target);
+        return point;
     }
 
     void addBoxAxes(
@@ -178,32 +349,308 @@ namespace
         return true;
     }
 
-    Vector2 closestPointOnBox(
-        const EffectiveCollider& box,
-        Vector2 point
+    bool handleSimplex(
+        std::vector<SupportPoint>& simplex,
+        Vector2& direction
     )
     {
-        const Vector2 localDelta{
-            point.x - box.center.x,
-            point.y - box.center.y
-        };
+        const SupportPoint& a =
+            simplex.back();
 
-        const Vector2 xAxis =
-            axisX(box);
+        const Vector2 ao =
+            negate(a.point);
 
-        const Vector2 yAxis =
-            axisY(box);
+        if (simplex.size() == 2)
+        {
+            const Vector2 ab =
+                subtract(simplex[0].point, a.point);
 
-        const float localX =
-            std::clamp(dot(localDelta, xAxis), -box.halfSize.x, box.halfSize.x);
+            if (sameDirection(ab, ao))
+            {
+                direction =
+                    tripleProduct(ab, ao, ab);
 
-        const float localY =
-            std::clamp(dot(localDelta, yAxis), -box.halfSize.y, box.halfSize.y);
+                if (length(direction) <= Epsilon)
+                {
+                    direction =
+                        perpendicularTowardOrigin(ab, ao);
+                }
+            }
+            else
+            {
+                simplex.erase(simplex.begin());
+                direction =
+                    ao;
+            }
 
-        return Vector2{
-            box.center.x + xAxis.x * localX + yAxis.x * localY,
-            box.center.y + xAxis.y * localX + yAxis.y * localY
-        };
+            return false;
+        }
+
+        if (simplex.size() == 3)
+        {
+            const Vector2 ab =
+                subtract(simplex[1].point, a.point);
+
+            const Vector2 ac =
+                subtract(simplex[0].point, a.point);
+
+            const Vector2 abPerp =
+                tripleProduct(ac, ab, ab);
+
+            if (sameDirection(abPerp, ao))
+            {
+                simplex.erase(simplex.begin());
+                direction =
+                    length(abPerp) <= Epsilon
+                    ? perpendicularTowardOrigin(ab, ao)
+                    : abPerp;
+                return false;
+            }
+
+            const Vector2 acPerp =
+                tripleProduct(ab, ac, ac);
+
+            if (sameDirection(acPerp, ao))
+            {
+                simplex.erase(simplex.begin() + 1);
+                direction =
+                    length(acPerp) <= Epsilon
+                    ? perpendicularTowardOrigin(ac, ao)
+                    : acPerp;
+                return false;
+            }
+
+            return true;
+        }
+
+        direction =
+            ao;
+
+        return false;
+    }
+
+    bool gjk(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        std::vector<SupportPoint>& simplex
+    )
+    {
+        Vector2 direction =
+            subtract(source.center, target.center);
+
+        if (length(direction) <= Epsilon)
+        {
+            direction = Vector2{ 1.0f, 0.0f };
+        }
+
+        simplex.clear();
+        simplex.push_back(
+            support(source, target, direction)
+        );
+
+        direction =
+            negate(simplex.back().point);
+
+        for (int i = 0; i < MaxGjkIterations; ++i)
+        {
+            SupportPoint next =
+                support(source, target, direction);
+
+            if (dot(next.point, direction) < -Epsilon)
+            {
+                return false;
+            }
+
+            simplex.push_back(next);
+
+            if (handleSimplex(simplex, direction))
+            {
+                return true;
+            }
+
+            if (length(direction) <= Epsilon)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    float polygonArea(
+        const std::vector<SupportPoint>& points
+    )
+    {
+        float area = 0.0f;
+
+        for (std::size_t i = 0; i < points.size(); ++i)
+        {
+            const Vector2 a =
+                points[i].point;
+
+            const Vector2 b =
+                points[(i + 1) % points.size()].point;
+
+            area +=
+                cross(a, b);
+        }
+
+        return area / 2.0f;
+    }
+
+    ContactResult epa(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        std::vector<SupportPoint> simplex
+    )
+    {
+        ContactResult result;
+
+        if (simplex.size() < 3)
+        {
+            return result;
+        }
+
+        if (polygonArea(simplex) < 0.0f)
+        {
+            std::swap(simplex[0], simplex[1]);
+        }
+
+        for (int iteration = 0; iteration < MaxEpaIterations; ++iteration)
+        {
+            float minDistance =
+                std::numeric_limits<float>::max();
+
+            Vector2 bestNormal =
+                Vector2{ 1.0f, 0.0f };
+
+            std::size_t bestIndex = 0;
+
+            for (std::size_t i = 0; i < simplex.size(); ++i)
+            {
+                const Vector2 a =
+                    simplex[i].point;
+
+                const Vector2 b =
+                    simplex[(i + 1) % simplex.size()].point;
+
+                const Vector2 edge =
+                    subtract(b, a);
+
+                Vector2 normal =
+                    normalize(Vector2{ edge.y, -edge.x });
+
+                float distance =
+                    dot(normal, a);
+
+                if (distance < 0.0f)
+                {
+                    distance =
+                        -distance;
+
+                    normal =
+                        negate(normal);
+                }
+
+                if (distance < minDistance)
+                {
+                    minDistance =
+                        distance;
+
+                    bestNormal =
+                        normal;
+
+                    bestIndex =
+                        i;
+                }
+            }
+
+            const SupportPoint point =
+                support(source, target, bestNormal);
+
+            const float supportDistance =
+                dot(bestNormal, point.point);
+
+            if (supportDistance - minDistance <= EpaTolerance)
+            {
+                Vector2 finalNormal =
+                    bestNormal;
+
+                if (dot(
+                    finalNormal,
+                    subtract(source.center, target.center)
+                ) < 0.0f)
+                {
+                    finalNormal =
+                        negate(finalNormal);
+                }
+
+                result.hit = true;
+                result.normal =
+                    finalNormal;
+                result.penetration =
+                    std::max(0.0f, supportDistance);
+
+                const Vector2 sourcePoint =
+                    supportPoint(source, negate(finalNormal));
+
+                const Vector2 targetPoint =
+                    supportPoint(target, finalNormal);
+
+                result.point =
+                    multiply(
+                        add(sourcePoint, targetPoint),
+                        0.5f
+                    );
+
+                return result;
+            }
+
+            simplex.insert(
+                simplex.begin() + static_cast<std::ptrdiff_t>(bestIndex + 1),
+                point
+            );
+        }
+
+        result.hit = true;
+        result.normal =
+            normalize(subtract(source.center, target.center));
+        result.penetration =
+            std::max(
+                0.0f,
+                supportRadius(source, result.normal) +
+                    supportRadius(target, result.normal) -
+                    std::abs(dot(subtract(source.center, target.center), result.normal))
+            );
+        result.point =
+            multiply(
+                add(
+                    supportPoint(source, negate(result.normal)),
+                    supportPoint(target, result.normal)
+                ),
+                0.5f
+            );
+
+        return result;
+    }
+
+    bool supportContact(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        ContactResult& result
+    )
+    {
+        std::vector<SupportPoint> simplex;
+
+        if (!gjk(source, target, simplex))
+        {
+            return false;
+        }
+
+        result =
+            epa(source, target, simplex);
+
+        return result.hit;
     }
 
     bool rayBox(
@@ -413,39 +860,18 @@ bool CollisionGeometry::contact(
         return false;
     }
 
-    Vector2 normal;
-    float penetration = 0.0f;
+    ContactResult contact;
 
-    if (!satContact(source, target, normal, penetration))
+    if (!supportContact(source, target, contact))
     {
         return false;
     }
 
     result.collider = source.name;
     result.otherCollider = target.name;
-    result.normal = normal;
-    result.penetration = std::max(0.0f, penetration);
-
-    const Vector2 sourcePoint =
-        target.type == "box"
-        ? closestPointOnBox(target, source.center)
-        : Vector2{
-            target.center.x + normal.x * target.halfSize.x,
-            target.center.y + normal.y * target.halfSize.y
-        };
-
-    const Vector2 targetPoint =
-        source.type == "box"
-        ? closestPointOnBox(source, target.center)
-        : Vector2{
-            source.center.x - normal.x * source.halfSize.x,
-            source.center.y - normal.y * source.halfSize.y
-        };
-
-    result.point = Vector2{
-        (sourcePoint.x + targetPoint.x) / 2.0f,
-        (sourcePoint.y + targetPoint.y) / 2.0f
-    };
+    result.normal = contact.normal;
+    result.penetration = contact.penetration;
+    result.point = contact.point;
 
     return true;
 }

@@ -18,7 +18,11 @@
       "group": "wall_top",
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 280,
+            "y": 5
+          }
         }
       }
     },
@@ -38,7 +42,11 @@
       "group": "wall_side",
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 5,
+            "y": 125
+          }
         }
       }
     },
@@ -58,7 +66,11 @@
       "group": "wall_side",
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 5,
+            "y": 125
+          }
         }
       }
     }

@@ -1,0 +1,361 @@
+#include "../support/TestSupport.h"
+#include "../../engine/collision/CollisionGeometry.h"
+#include "../../engine/collision/CollisionSystem.h"
+#include "../../engine/runtime/RuntimeObject.h"
+#include "../../engine/scripting/ScriptEngine.h"
+
+#include <cmath>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <variant>
+#include <vector>
+
+using namespace flx::test;
+
+namespace
+{
+    bool nearlyEqual(float left, float right, float epsilon = 0.001f)
+    {
+        return std::abs(left - right) <= epsilon;
+    }
+
+    EffectiveCollider collider(
+        const std::string& type,
+        Vector2 center,
+        Vector2 size,
+        float angle = 0.0f
+    )
+    {
+        EffectiveCollider result;
+        result.name = "body";
+        result.type = type;
+        result.effective = true;
+        result.declaredEnabled = true;
+        result.stateAvailable = true;
+        result.center = center;
+        result.halfSize = Vector2{ size.x / 2.0f, size.y / 2.0f };
+        result.angle = angle;
+        result.broadBounds = Rectangle{
+            center.x - size.x * 2.0f,
+            center.y - size.y * 2.0f,
+            size.x * 4.0f,
+            size.y * 4.0f
+        };
+
+        return result;
+    }
+
+    bool hasContact(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        CollisionContact* output = nullptr
+    )
+    {
+        CollisionContact contact;
+
+        const bool result =
+            CollisionGeometry::contact(source, target, contact);
+
+        if (output != nullptr)
+        {
+            *output = contact;
+        }
+
+        return result;
+    }
+
+    EffectiveCollider topLeftBox(Vector2 topLeft, Vector2 size, Vector2 offset)
+    {
+        return collider(
+            "box",
+            Vector2{ topLeft.x + offset.x, topLeft.y + offset.y },
+            size
+        );
+    }
+
+    EffectiveCollider circle(Vector2 center, float radius)
+    {
+        return collider(
+            "ellipse",
+            center,
+            Vector2{ radius * 2.0f, radius * 2.0f }
+        );
+    }
+
+    RuntimeObject runtimeBox(
+        const std::string& name,
+        Vector2 position,
+        Vector2 size,
+        const std::string& group
+    )
+    {
+        RuntimeObject object(name, position, size, WHITE);
+        object.runtimeId = name;
+        object.group = group;
+        object.collisions["body"].type = "box";
+        return object;
+    }
+
+    double localNumber(const RuntimeObject& object, const std::string& key)
+    {
+        const auto it =
+            object.local.find(key);
+
+        if (it == object.local.end())
+        {
+            return 0.0;
+        }
+
+        if (const auto* number = std::get_if<double>(&it->second))
+        {
+            return *number;
+        }
+
+        if (const auto* boolean = std::get_if<bool>(&it->second))
+        {
+            return *boolean ? 1.0 : 0.0;
+        }
+
+        return 0.0;
+    }
+
+    void testPongGameplayGeometry()
+    {
+        const EffectiveCollider ballLeftTop =
+            topLeftBox(Vector2{ 20.0f, -5.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f });
+        const EffectiveCollider ballRightTop =
+            topLeftBox(Vector2{ 300.0f, -5.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f });
+        const EffectiveCollider topWall =
+            topLeftBox(Vector2{ 0.0f, -10.0f }, Vector2{ 320.0f, 10.0f }, Vector2{ 160.0f, 5.0f });
+
+        require(hasContact(ballLeftTop, topWall), "Pong top wall should cover the left side");
+        require(hasContact(ballRightTop, topWall), "Pong top wall should cover the right side");
+
+        require(
+            hasContact(
+                topLeftBox(Vector2{ 120.0f, 175.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f }),
+                topLeftBox(Vector2{ 0.0f, 180.0f }, Vector2{ 320.0f, 10.0f }, Vector2{ 160.0f, 5.0f })
+            ),
+            "Pong bottom wall should match the visual surface"
+        );
+
+        require(
+            hasContact(
+                topLeftBox(Vector2{ 21.0f, 100.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f }),
+                topLeftBox(Vector2{ 16.0f, 90.0f }, Vector2{ 5.0f, 30.0f }, Vector2{ 2.5f, 15.0f })
+            ),
+            "Pong ball should contact the player paddle at its drawn edge"
+        );
+
+        require(
+            hasContact(
+                topLeftBox(Vector2{ 294.0f, 100.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f }),
+                topLeftBox(Vector2{ 299.0f, 90.0f }, Vector2{ 5.0f, 30.0f }, Vector2{ 2.5f, 15.0f })
+            ),
+            "Pong ball should contact the enemy paddle at its drawn edge"
+        );
+
+        require(
+            hasContact(
+                topLeftBox(Vector2{ -5.0f, 80.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f }),
+                topLeftBox(Vector2{ -10.0f, 0.0f }, Vector2{ 10.0f, 180.0f }, Vector2{ 5.0f, 90.0f })
+            ),
+            "Pong left goal should match the full logical height"
+        );
+
+        require(
+            hasContact(
+                topLeftBox(Vector2{ 320.0f, 80.0f }, Vector2{ 5.0f, 5.0f }, Vector2{ 2.5f, 2.5f }),
+                topLeftBox(Vector2{ 320.0f, 0.0f }, Vector2{ 10.0f, 180.0f }, Vector2{ 5.0f, 90.0f })
+            ),
+            "Pong right goal should match the full logical height"
+        );
+    }
+
+    void testArkanoidGameplayGeometry()
+    {
+        require(
+            hasContact(circle(Vector2{ 335.0f, 275.0f }, 5.0f),
+                topLeftBox(Vector2{ 300.0f, 280.0f }, Vector2{ 70.0f, 10.0f }, Vector2{ 35.0f, 5.0f })),
+            "Arkanoid ball should contact the horizontal paddle surface"
+        );
+
+        require(
+            hasContact(circle(Vector2{ 500.0f, 60.0f }, 5.0f),
+                topLeftBox(Vector2{ 40.0f, 45.0f }, Vector2{ 560.0f, 10.0f }, Vector2{ 280.0f, 5.0f })),
+            "Arkanoid top wall should match the drawn width"
+        );
+
+        require(
+            hasContact(circle(Vector2{ 55.0f, 120.0f }, 5.0f),
+                topLeftBox(Vector2{ 40.0f, 45.0f }, Vector2{ 10.0f, 250.0f }, Vector2{ 5.0f, 125.0f })),
+            "Arkanoid left wall should match the drawn height"
+        );
+
+        require(
+            hasContact(circle(Vector2{ 595.0f, 120.0f }, 5.0f),
+                topLeftBox(Vector2{ 600.0f, 45.0f }, Vector2{ 10.0f, 250.0f }, Vector2{ 5.0f, 125.0f })),
+            "Arkanoid right wall should match the drawn height"
+        );
+
+        const EffectiveCollider brick =
+            topLeftBox(Vector2{ 100.0f, 100.0f }, Vector2{ 30.0f, 10.0f }, Vector2{ 15.0f, 5.0f });
+
+        require(hasContact(circle(Vector2{ 115.0f, 95.0f }, 5.0f), brick), "Arkanoid ball should contact the top face of a brick");
+        require(hasContact(circle(Vector2{ 95.0f, 105.0f }, 5.0f), brick), "Arkanoid ball should contact the lateral face of a brick");
+        require(!hasContact(circle(Vector2{ 82.0f, 82.0f }, 5.0f), brick), "Arkanoid ball should not touch when passing outside a brick corner");
+        require(hasContact(circle(Vector2{ 96.4645f, 96.4645f }, 5.0f), brick), "Arkanoid ball should contact when tangent to a brick corner");
+    }
+
+    void testEllipseCornerContacts()
+    {
+        const EffectiveCollider box =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 20.0f, 20.0f });
+
+        require(!hasContact(circle(Vector2{ 82.0f, 82.0f }, 5.0f), box), "circle outside a box corner should not contact");
+        require(hasContact(circle(Vector2{ 86.4645f, 86.4645f }, 5.0f), box), "circle tangent to a box corner should contact");
+
+        CollisionContact contact;
+        require(hasContact(circle(Vector2{ 87.0f, 87.0f }, 5.0f), box, &contact), "circle penetrating a box corner should contact");
+        require(contact.normal.x < -0.4f && contact.normal.y < -0.4f, "corner penetration normal should be diagonal");
+
+        const EffectiveCollider ellipse =
+            collider("ellipse", Vector2{ 83.0f, 100.0f }, Vector2{ 24.0f, 8.0f }, 45.0f);
+
+        require(hasContact(ellipse, box), "oriented non-circular ellipse should contact a box when its real surface reaches it");
+    }
+
+    void testCollisionSystemRebuildsAfterPositionMutation()
+    {
+        ScriptEngine scripts;
+        scripts.loadScript(
+            "mover",
+            "function collision(o, other) {"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "  if (other.name == 'b') { position_x(o, 100); }"
+            "  if (other.name == 'c') { write_local(o, 'hitC', 1); }"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("a", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("b", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+        objects.push_back(runtimeBox("c", Vector2{ 100.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        objects[0].resolvedScriptPaths.push_back("mover");
+        objects[0].collisions["body"].with.push_back("target");
+
+        CollisionSystem::run(objects, scripts);
+
+        require(nearlyEqual(objects[0].position.x, 100.0f), "collision callback should move source object");
+        require(localNumber(objects[0], "count") == 2.0, "later directed interaction should use rebuilt source geometry");
+        require(localNumber(objects[0], "hitC") == 1.0, "source should collide with C after moving during A to B");
+    }
+
+    void testCollisionSystemRebuildsAfterColliderMutation()
+    {
+        ScriptEngine scripts;
+        scripts.loadScript(
+            "disabler",
+            "function collision(o, other) {"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "  if (other.name == 'b') { collider_off(o, 'body'); }"
+            "  if (other.name == 'c') { write_local(o, 'hitC', 1); }"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("a", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("b", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+        objects.push_back(runtimeBox("c", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        objects[0].resolvedScriptPaths.push_back("disabler");
+        objects[0].collisions["body"].with.push_back("target");
+
+        CollisionSystem::run(objects, scripts);
+
+        require(!objects[0].collisions["body"].enabled, "collision callback should disable source collider");
+        require(localNumber(objects[0], "count") == 1.0, "disabled collider should not participate in later directed interactions");
+        require(localNumber(objects[0], "hitC") == 0.0, "C should not collide after collider_off during A to B");
+    }
+
+    void testCollisionSystemRebuildsAfterStateMutation()
+    {
+        std::unordered_map<std::string, ObjectDefinition> definitions;
+        definitions["a"].id = "a";
+        definitions["a"].initialState = "attack";
+        definitions["a"].stateTransitions["attack"] = { "idle" };
+        definitions["a"].stateTransitions["idle"] = {};
+
+        ScriptEngine scripts;
+        scripts.setRuntimeFrame(1);
+        scripts.setFindObjectDefinitionFunction(
+            [&definitions](const std::string& id)
+            {
+                const auto it =
+                    definitions.find(id);
+
+                return it == definitions.end()
+                    ? nullptr
+                    : &it->second;
+            }
+        );
+
+        scripts.loadScript(
+            "stateChanger",
+            "function collision(o, other) {"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "  if (other.name == 'b') { state_to(o, 'idle'); }"
+            "  if (other.name == 'c') { write_local(o, 'hitC', 1); }"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("a", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("b", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+        objects.push_back(runtimeBox("c", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        objects[0].definitionId = "a";
+        objects[0].state = "attack";
+        objects[0].resolvedScriptPaths.push_back("stateChanger");
+        objects[0].collisions["body"].with.push_back("target");
+        objects[0].collisions["body"].states.push_back("attack");
+
+        CollisionSystem::run(objects, scripts);
+
+        require(objects[0].state == "idle", "collision callback should change source state");
+        require(localNumber(objects[0], "count") == 1.0, "source collider state restriction should be rebuilt before later directed interactions");
+        require(localNumber(objects[0], "hitC") == 0.0, "C should not collide after state_to removes source collider availability");
+    }
+}
+
+int main()
+{
+    const std::vector<std::pair<std::string, void(*)()>> tests = {
+        { "Pong gameplay geometry", testPongGameplayGeometry },
+        { "Arkanoid gameplay geometry", testArkanoidGameplayGeometry },
+        { "ellipse corner contacts", testEllipseCornerContacts },
+        { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
+        { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
+        { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation }
+    };
+
+    for (const auto& test : tests)
+    {
+        try
+        {
+            std::cout << "[RUN] " << test.first << std::endl;
+            test.second();
+            std::cout << "[PASS] " << test.first << std::endl;
+        }
+        catch (const std::exception& exception)
+        {
+            std::cerr << "[FAIL] " << test.first << ": " << exception.what() << "\n";
+            return 1;
+        }
+    }
+
+    return 0;
+}

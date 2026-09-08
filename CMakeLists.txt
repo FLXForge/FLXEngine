@@ -360,6 +360,7 @@ add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests
 add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
 add_flx_test_suite(flx-input-characterization-tests tests/input/InputCharacterizationTests.cpp)
+add_flx_test_suite(flx-collision-geometry-tests tests/collision/CollisionGeometryTests.cpp)
 add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTests.cpp)
 add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGraphTests.cpp)
 add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)

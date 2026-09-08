@@ -5,13 +5,9 @@
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
-#include <unordered_map>
 
 namespace
 {
-    using ColliderMap =
-        std::unordered_map<std::string, std::vector<EffectiveCollider>>;
-
     bool hasDirectedGroup(
         const EffectiveCollider& source,
         const RuntimeObject& target
@@ -49,33 +45,12 @@ void CollisionSystem::run(
     ScriptEngine& scriptEngine
 )
 {
-    ColliderMap colliders;
-
-    for (RuntimeObject& object : objects)
-    {
-        if (!object.alive || object.collisions.empty())
-        {
-            continue;
-        }
-
-        colliders[object.runtimeId] =
-            EffectiveColliderBuilder::build(object, scriptEngine);
-    }
-
     for (size_t i = 0; i < objects.size(); ++i)
     {
         RuntimeObject& a =
             objects[i];
 
         if (!a.alive || !hasAnyDirectedCollider(a))
-        {
-            continue;
-        }
-
-        const auto sourceIt =
-            colliders.find(a.runtimeId);
-
-        if (sourceIt == colliders.end())
         {
             continue;
         }
@@ -95,17 +70,20 @@ void CollisionSystem::run(
                 continue;
             }
 
-            const auto targetIt =
-                colliders.find(b.runtimeId);
+            const std::vector<EffectiveCollider> sourceColliders =
+                EffectiveColliderBuilder::build(a, scriptEngine);
 
-            if (targetIt == colliders.end())
+            const std::vector<EffectiveCollider> targetColliders =
+                EffectiveColliderBuilder::build(b, scriptEngine);
+
+            if (sourceColliders.empty() || targetColliders.empty())
             {
                 continue;
             }
 
             std::vector<CollisionContact> contacts;
 
-            for (const EffectiveCollider& sourceCollider : sourceIt->second)
+            for (const EffectiveCollider& sourceCollider : sourceColliders)
             {
                 if (!sourceCollider.effective ||
                     !hasDirectedGroup(sourceCollider, b))
@@ -113,7 +91,7 @@ void CollisionSystem::run(
                     continue;
                 }
 
-                for (const EffectiveCollider& targetCollider : targetIt->second)
+                for (const EffectiveCollider& targetCollider : targetColliders)
                 {
                     CollisionContact contact;
 

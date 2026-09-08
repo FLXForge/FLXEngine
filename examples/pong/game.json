@@ -33,7 +33,11 @@
       },
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 2.5,
+            "y": 15
+          }
         }
       }
     },
@@ -66,7 +70,11 @@
       },
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 2.5,
+            "y": 15
+          }
         }
       }
     },
@@ -116,6 +124,10 @@
       "collisions": {
         "body": {
           "type": "box",
+          "offset": {
+            "x": 2.5,
+            "y": 2.5
+          },
           "with": [
             "wall",
             "goal",
@@ -141,7 +153,11 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 5,
+            "y": 90
+          }
         }
       }
     },
@@ -162,7 +178,11 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 5,
+            "y": 90
+          }
         }
       }
     },
@@ -183,7 +203,11 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 160,
+            "y": 5
+          }
         }
       }
     },
@@ -204,7 +228,11 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box"
+          "type": "box",
+          "offset": {
+            "x": 160,
+            "y": 5
+          }
         }
       }
     }

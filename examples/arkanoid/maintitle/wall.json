@@ -11,7 +11,11 @@
   "visible": false,
   "collisions": {
     "body": {
-      "type": "box"
+      "type": "box",
+      "offset": {
+        "x": 5,
+        "y": 5
+      }
     }
   }
 }

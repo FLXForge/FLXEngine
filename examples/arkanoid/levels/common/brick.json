@@ -11,7 +11,11 @@
   "group": "brick",
   "collisions": {
     "body": {
-      "type": "box"
+      "type": "box",
+      "offset": {
+        "x": 15,
+        "y": 5
+      }
     }
   }
 }

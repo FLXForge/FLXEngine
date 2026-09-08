@@ -205,9 +205,9 @@ if (input_pressed(player, FIRE)) {
                 <li><code>motion(object)</code>: movimiento y transformaciones.</li>
 
                 <li>
-                    <code>collision(object, other)</code>:
-                    se ejecuta cuando el objeto tiene <code>collision.active = true</code>
-                    y el grupo del otro objeto está incluido en <code>collision.with</code>.
+                    <code>collision(object, other, contacts)</code>:
+                    se ejecuta cuando uno de los colliders habilitados del objeto
+                    incluye el grupo del otro objeto en su lista <code>with</code>.
                 </li>
 
                 <li><code>dead(object)</code>: última oportunidad de actuar antes de la eliminación física.</li>
@@ -218,29 +218,28 @@ if (input_pressed(player, FIRE)) {
             <h3>Regla de ejecución de colisiones</h3>
 
             <p>
-                <code>collision.active</code> no significa que un objeto pueda recibir colisiones.
+                Un collider sin <code>with</code> es pasivo.
             </p>
 
             <p>
-                Significa que ese objeto comprueba colisiones activamente.
+                Puede ser detectado por otros objetos, pero no inicia callbacks.
             </p>
 
             <ul>
-                <li><code>active</code>: pregunta si hay colisiones.</li>
-                <li><code>with</code>: define a qué grupos pregunta.</li>
+                <li><code>enabled</code>: controla si existe un collider nombrado.</li>
+                <li><code>with</code>: define qué grupos consulta activamente ese collider.</li>
                 <li><code>collision()</code>: define qué ocurre cuando encuentra una coincidencia.</li>
             </ul>
 
             <p>
-                Solo los objetos activos ejecutan
-                <code>collision(object, other)</code>.
+                Solo objetos con al menos un collider habilitado y compatible ejecutan
+                <code>collision(object, other, contacts)</code>.
             </p>
 
             <p>
-                Los objetos incluidos en <code>collision.with</code>
-                no ejecutan automáticamente su propio manejador de colisión,
-                salvo que también estén activos y detecten de forma independiente
-                una colisión coincidente.
+                Los grupos incluidos en <code>with</code> no ejecutan automáticamente
+                su propio manejador de colisión: la dirección de cada collider se evalúa
+                de forma independiente.
             </p>
 
             <hr />

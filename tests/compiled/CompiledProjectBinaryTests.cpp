@@ -1,6 +1,7 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProjectBinary.h"
 #include "../../engine/compiler/binary/BinaryLimits.h"
+#include "../../engine/compiler/binary/CompiledProjectCodec.h"
 #include "../../engine/runtime/RuntimeWorld.h"
 #include "../../engine/scripting/ScriptEngine.h"
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -222,7 +224,7 @@ namespace
     )
     {
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 7u);
+        appendU32(bytes, flx::binary::CompiledProjectCodec::FormatVersion);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
@@ -376,7 +378,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "compiled project should read");
-        require(loaded.metadata.formatVersion == 7, "format version should be exposed");
+        require(loaded.metadata.formatVersion == 8, "format version should be exposed");
         require(!loaded.metadata.producerVersion.empty(), "producer version should be exposed");
         require(loaded.project.context.name == compiled.project.context.name, "context name should survive roundtrip");
         require(loaded.project.rootId == compiled.project.rootId, "root id should survive roundtrip");
@@ -521,7 +523,7 @@ namespace
         CompilationResult compiled =
             compile(root / "game.flx");
 
-        require(compiled.success, "input v7 project should compile");
+        require(compiled.success, "input project should compile");
 
         const std::filesystem::path output =
             root / "game.flxc";
@@ -534,14 +536,14 @@ namespace
                 compiled.project,
                 writeDiagnostics
             ),
-            "input v7 project should write"
+            "input project should write"
         );
 
         CompiledProjectBinaryResult loaded =
             CompiledProjectReader::read(output.generic_string());
 
-        require(loaded.success, "input v7 project should read");
-        require(loaded.metadata.formatVersion == 7, "input v7 roundtrip should use format 7");
+        require(loaded.success, "input project should read");
+        require(loaded.metadata.formatVersion == 8, "input roundtrip should use current format");
         require(loaded.project.context.machine.input.systemButtons == 9, "system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 3, "player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 12, "player button count should survive roundtrip");
@@ -609,7 +611,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "default input project should read");
-        require(loaded.metadata.formatVersion == 7, "default input roundtrip should use format 7");
+        require(loaded.metadata.formatVersion == 8, "default input roundtrip should use current format");
         require(loaded.project.context.machine.input.systemButtons == 16, "default system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 16, "default player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 16, "default player button count should survive roundtrip");
@@ -695,7 +697,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 7u);
+        appendU32(bytes, flx::binary::CompiledProjectCodec::FormatVersion);
         appendU32(bytes, flx::binary::MaxStringSize + 1u);
 
         writeBinary(path, bytes);
@@ -714,7 +716,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 7u);
+        appendU32(bytes, flx::binary::CompiledProjectCodec::FormatVersion);
         appendU32(bytes, flx::binary::MaxTotalDecodedStringBytes + 1u);
 
         writeBinary(path, bytes);
@@ -826,7 +828,7 @@ namespace
 
         std::vector<unsigned char> bytes;
         appendU32(bytes, 0x43584C46u);
-        appendU32(bytes, 7u);
+        appendU32(bytes, flx::binary::CompiledProjectCodec::FormatVersion);
         appendString(bytes, "test-producer");
 
         for (int i = 0; i < 7; ++i)
@@ -978,7 +980,9 @@ namespace
 
         ObjectDefinition root;
         root.id = "root";
-        root.children["child"].id = "child";
+        root.children["child"] =
+            std::make_shared<ObjectDefinition>();
+        root.children["child"]->id = "child";
 
         require(project.resources.addObject(project.rootId, root), "root should register");
 
@@ -1030,7 +1034,9 @@ namespace
 
         ObjectDefinition root;
         root.id = "root";
-        root.children["child"].id = "child";
+        root.children["child"] =
+            std::make_shared<ObjectDefinition>();
+        root.children["child"]->id = "child";
 
         require(project.resources.addObject(project.rootId, root), "root should register");
 
@@ -1446,9 +1452,9 @@ int main()
 
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
 
-        { "compiled project roundtrip input v7", testCompiledProjectRoundTripInputV7 },
+        { "compiled project roundtrip input current format", testCompiledProjectRoundTripInputV7 },
 
-        { "compiled project roundtrip default machine input v7", testCompiledProjectRoundTripDefaultMachineInputV7 },
+        { "compiled project roundtrip default machine input current format", testCompiledProjectRoundTripDefaultMachineInputV7 },
 
         { "deterministic bytes", testDeterministicBytes },
 

@@ -929,7 +929,7 @@ if (input_pressed(player, FIRE)) {
                 <div class="code-header">kill</div>
 
 
-<pre><code>function collision(object, other) {
+<pre><code>function collision(object, other, contacts) {
     kill(object);
 }</code></pre>
 
@@ -1133,7 +1133,7 @@ move_vertical(player, input_direction(player, MOVE, VERTICAL));</code></pre>
 <pre><code>function motion(tank) {
     let sight = ray(tank, tank.angle, 200);
 
-    if (sight.hit && sight.group == "player") {
+    if (sight !== undefined && sight.object.group == "player") {
         spawn(tank, "bullet");
     }
 }</code></pre>
@@ -1142,18 +1142,17 @@ move_vertical(player, input_direction(player, MOVE, VERTICAL));</code></pre>
             <h3>Return Value</h3>
 
             <ul>
-                <li>No hit: <code>{ hit: false, group: "" }</code></li>
-                <li>Hit: <code>{ hit: true, group, distance, x, y }</code></li>
+                <li>No hit: <code>undefined</code></li>
+                <li>Hit: <code>{ object, collider, pointX, pointY, normalX, normalY, distance }</code></li>
             </ul>
 
             <h3>Collision Rules</h3>
 
             <ul>
-                <li>The group filter comes from <code>source.collision.with</code>.</li>
-                <li>The hit object does not need <code>collision.active = true</code>.</li>
-                <li>Invisible objects can be hit if their collision is valid.</li>
-                <li>The source object, dead objects and unsupported collision types are ignored.</li>
-                <li>This version supports <code>circle</code> and <code>box</code> collisions.</li>
+                <li>The ray uses effective named colliders.</li>
+                <li>Invisible objects can be hit if their collider is valid.</li>
+                <li>The source logical entity, dead objects and invalid colliders are ignored.</li>
+                <li>This version supports <code>ellipse</code> and <code>box</code> collisions.</li>
             </ul>
 
             <hr />

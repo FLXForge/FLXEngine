@@ -1,11 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 140,
     "y": 70
   },
-
   "shape": {
     "type": "text",
     "layer": 10,
@@ -17,7 +15,6 @@
       "height": 90
     }
   },
-
   "children": {
     "left_titlle": {
       "like": "wall",
@@ -60,14 +57,15 @@
       }
     }
   },
-
   "group": "title",
-
-  "collision": {
-    "type": "box"
-  },
-
   "behavior": {
-    "scripts": [ "title" ]
+    "scripts": [
+      "title"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
   }
 }

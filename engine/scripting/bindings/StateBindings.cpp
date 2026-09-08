@@ -18,24 +18,6 @@ namespace
         return runtimeObjectViewFromArgument(context, value);
     }
 
-    const ObjectDefinition* definitionFor(
-        JSContext* context,
-        const RuntimeObject& object
-    )
-    {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (scriptEngine == nullptr)
-        {
-            return nullptr;
-        }
-
-        return scriptEngine->findObjectDefinition(
-            object.definitionId
-        );
-    }
-
     bool hasStateMachine(const ObjectDefinition* definition)
     {
         return definition != nullptr &&
@@ -110,8 +92,15 @@ namespace
 
         JS_FreeCString(context, stateName);
 
+        RuntimeObject* stateObject =
+            scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->effectiveStateObject(*object);
+
         const ObjectDefinition* definition =
-            definitionFor(context, *object);
+            stateObject == nullptr
+            ? nullptr
+            : scriptEngine->findObjectDefinition(stateObject->definitionId);
 
         if (!hasStateMachine(definition))
         {
@@ -124,24 +113,24 @@ namespace
             return JS_UNDEFINED;
         }
 
-        if (!transitionAllowed(*definition, object->state, nextState))
+        if (!transitionAllowed(*definition, stateObject->state, nextState))
         {
             Logger::warning(
                 "state",
-                "Invalid transition from '" + object->state +
+                "Invalid transition from '" + stateObject->state +
                 "' to '" + nextState + "' in " + object->runtimeId
             );
 
             return JS_UNDEFINED;
         }
 
-        object->state =
+        stateObject->state =
             nextState;
 
-        object->stateTime =
+        stateObject->stateTime =
             0.0f;
 
-        object->stateEnteredFrame =
+        stateObject->stateEnteredFrame =
             scriptEngine != nullptr
             ? scriptEngine->getRuntimeFrame() + 1
             : 0;
@@ -164,17 +153,23 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (
-            object == nullptr ||
-            !hasStateMachine(definitionFor(context, *object))
-            )
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* stateObject =
+            object == nullptr || scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->effectiveStateObject(*object);
+
+        if (stateObject == nullptr ||
+            !scriptEngine->hasStateMachine(*stateObject))
         {
             return JS_NewString(context, "");
         }
 
         return JS_NewString(
             context,
-            object->state.c_str()
+            stateObject->state.c_str()
         );
     }
 
@@ -206,9 +201,18 @@ namespace
             return JS_NewBool(context, false);
         }
 
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* stateObject =
+            object == nullptr || scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->effectiveStateObject(*object);
+
         const bool active =
-            hasStateMachine(definitionFor(context, *object)) &&
-            object->state == stateName;
+            stateObject != nullptr &&
+            scriptEngine->hasStateMachine(*stateObject) &&
+            stateObject->state == stateName;
 
         JS_FreeCString(context, stateName);
 
@@ -233,17 +237,20 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (
-            object == nullptr ||
-            !hasStateMachine(definitionFor(context, *object))
-            )
+        RuntimeObject* stateObject =
+            object == nullptr
+            ? nullptr
+            : scriptEngine->effectiveStateObject(*object);
+
+        if (stateObject == nullptr ||
+            !scriptEngine->hasStateMachine(*stateObject))
         {
             return JS_NewBool(context, false);
         }
 
         return JS_NewBool(
             context,
-            object->stateEnteredFrame == scriptEngine->getRuntimeFrame()
+            stateObject->stateEnteredFrame == scriptEngine->getRuntimeFrame()
         );
     }
 
@@ -262,17 +269,23 @@ namespace
         RuntimeObject* object =
             objectFromArgument(context, argv[0]);
 
-        if (
-            object == nullptr ||
-            !hasStateMachine(definitionFor(context, *object))
-            )
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* stateObject =
+            object == nullptr || scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->effectiveStateObject(*object);
+
+        if (stateObject == nullptr ||
+            !scriptEngine->hasStateMachine(*stateObject))
         {
             return JS_NewFloat64(context, 0.0);
         }
 
         return JS_NewFloat64(
             context,
-            object->stateTime
+            stateObject->stateTime
         );
     }
 }

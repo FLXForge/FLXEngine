@@ -4,6 +4,7 @@
 #include "../runtime/ObjectDefinition.h"
 #include "../runtime/ScriptValue.h"
 #include "../runtime/RayCastResult.h"
+#include "../collision/CollisionContact.h"
 #include "../machine/MachineDefinition.h"
 #include "../persistence/PersistenceSystem.h"
 #include "ScriptModule.h"
@@ -55,6 +56,14 @@ public:
         RuntimeObject& other
     );
 
+    void callScriptFunction(
+        const std::string& script,
+        const std::string& function,
+        RuntimeObject& object,
+        RuntimeObject& other,
+        const std::vector<CollisionContact>& contacts
+    );
+
     using FindObjectFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
@@ -82,6 +91,7 @@ public:
     using RayCastFunction =
         std::function<RayCastResult(
             RuntimeObject& source,
+            ScriptEngine& scriptEngine,
             float angle,
             float distance
             )>;
@@ -142,6 +152,9 @@ public:
         const std::string& id,
         uint64_t invocationId
     );
+    RuntimeObject* effectiveStateObject(RuntimeObject& object);
+    const RuntimeObject* effectiveStateObject(const RuntimeObject& object) const;
+    bool hasStateMachine(const RuntimeObject& object) const;
 
     bool isCurrentScriptInvocation(uint64_t invocationId) const;
     uint64_t currentScriptInvocationId() const;

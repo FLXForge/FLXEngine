@@ -208,6 +208,12 @@ add_executable(flx
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/collision/CollisionContact.h
+    engine/collision/CollisionGeometry.h
+    engine/collision/CollisionGeometry.cpp
+    engine/collision/EffectiveCollider.h
+    engine/collision/EffectiveColliderBuilder.h
+    engine/collision/EffectiveColliderBuilder.cpp
     engine/input/InputMapping.h
     engine/input/InputMappingLoader.h
     engine/input/InputMappingLoader.cpp

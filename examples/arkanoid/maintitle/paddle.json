@@ -1,11 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 300,
     "y": 270
   },
-
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -15,7 +13,6 @@
       "height": 10
     }
   },
-
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -24,19 +21,19 @@
       }
     }
   },
-
   "group": "paddle",
-
-  "collision": {
-    "type": "box",
-    "size": {
-      "width": 10,
-      "height": 70
-    }
-  },
-
   "behavior": {
-    "scripts": [ "paddle" ]
+    "scripts": [
+      "paddle"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "size": {
+        "width": 10,
+        "height": 70
+      }
+    }
   }
-
 }

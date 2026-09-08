@@ -1,0 +1,11 @@
+{
+  "group": "enemy",
+  "collisions": { "body": { "with": ["enemy"] } },
+  "children": {
+    "turret": {
+      "component": true,
+      "group": "enemy",
+      "collisions": { "body": { "with": ["enemy"] } }
+    }
+  }
+}

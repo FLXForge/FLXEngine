@@ -191,6 +191,109 @@ namespace
             }
         }
     }
+
+    void validateCollider(
+        const ObjectDefinition& object,
+        const std::string& colliderName,
+        const ColliderDefinition& collider,
+        Diagnostics& diagnostics,
+        const std::string& source,
+        const ResourceId& objectId
+    )
+    {
+        const std::string field =
+            objectId + ".collisions." + colliderName;
+
+        if (colliderName.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled collider name is empty",
+                source,
+                objectId + ".collisions"
+            );
+        }
+
+        if (collider.type != "box" && collider.type != "ellipse")
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled collider type must be box or ellipse",
+                source,
+                field + ".type"
+            );
+        }
+
+        const float effectiveWidth =
+            collider.size.hasWidth
+            ? collider.size.width
+            : object.size.x;
+
+        const float effectiveHeight =
+            collider.size.hasHeight
+            ? collider.size.height
+            : object.size.y;
+
+        if (effectiveWidth <= 0.0f || effectiveHeight <= 0.0f)
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled collider effective size must be positive",
+                source,
+                field + ".size"
+            );
+        }
+
+        std::unordered_set<std::string> groups;
+
+        for (const std::string& group : collider.with)
+        {
+            if (group.empty())
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled collider with group cannot be empty",
+                    source,
+                    field + ".with"
+                );
+            }
+
+            if (!groups.insert(group).second)
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled collider with group is duplicated",
+                    source,
+                    field + ".with"
+                );
+            }
+        }
+
+        std::unordered_set<std::string> states;
+
+        for (const std::string& state : collider.states)
+        {
+            if (state.empty())
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled collider state cannot be empty",
+                    source,
+                    field + ".states"
+                );
+            }
+
+            if (!states.insert(state).second)
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled collider state is duplicated",
+                    source,
+                    field + ".states"
+                );
+            }
+        }
+    }
 }
 
 bool CompiledProjectValidator::validate(
@@ -224,6 +327,16 @@ bool CompiledProjectValidator::validate(
             objectPair.first;
         const ObjectDefinition& object =
             objectPair.second;
+
+        if (objectId == project.rootId && object.component)
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled root object cannot be a component",
+                source,
+                objectId + ".component"
+            );
+        }
 
         if (
             object.id.find('#') != std::string::npos &&
@@ -293,6 +406,18 @@ bool CompiledProjectValidator::validate(
             source,
             objectId
         );
+
+        for (const auto& colliderPair : object.collisions)
+        {
+            validateCollider(
+                object,
+                colliderPair.first,
+                colliderPair.second,
+                diagnostics,
+                source,
+                objectId
+            );
+        }
     }
 
     for (const auto& scriptPair : project.resources.allScripts())

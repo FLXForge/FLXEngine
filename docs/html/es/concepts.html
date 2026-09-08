@@ -333,7 +333,7 @@ machine=machines/standard.yml
 
             <p>
                 El bloque <code>shape</code> define cómo se dibuja un objeto,
-                mientras que el bloque <code>collision</code> define cómo interactúa
+                mientras que el bloque <code>collisions</code> define cómo interactúa
                 con otros objetos dentro del runtime.
             </p>
 
@@ -343,29 +343,31 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                Además de definir la forma del collider,
-                <code>collision</code> puede controlar si la colisión está activa
-                y con qué grupos puede interactuar.
+                Además de definir colliders nombrados,
+                <code>collisions</code> puede controlar si cada collider está habilitado
+                y qué grupos consulta activamente.
             </p>
 
             <p>
-                Las comprobaciones de colisión son activas y direccionales:
-                un objeto solo ejecuta <code>collision()</code>
-                cuando su propio <code>collision.active</code> está habilitado
-                y el grupo del otro objeto coincide con su lista <code>collision.with</code>.
+                Las comprobaciones de colisión son direccionales:
+                un objeto solo ejecuta <code>collision(object, other, contacts)</code>
+                cuando uno de sus colliders habilitados incluye el grupo del otro objeto
+                en su lista <code>with</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape + collision</div>
+                <div class="code-header">shape + collisions</div>
 <pre><code>{
     "shape": {
         "type": "polygon"
     },
 
-"collision": {
-    "type": "circle",
-    "radius": 12
-}
+    "collisions": {
+        "body": {
+            "type": "ellipse",
+            "size": { "width": 24, "height": 24 }
+        }
+    }
 
 } </code></pre>
 

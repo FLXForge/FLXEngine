@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -10,7 +9,6 @@
       "height": 10
     }
   },
-
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -19,7 +17,6 @@
       }
     }
   },
-
   "children": {
     "laser": {
       "like": "laser",
@@ -30,16 +27,18 @@
       }
     }
   },
-
   "group": "invader",
-
-  "collision": {
-    "type": "box",
-    "active": true,
-    "with": [ "laser" ]
-  },
-
   "behavior": {
-    "scripts": [ "invader" ]
+    "scripts": [
+      "invader"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "laser"
+      ]
+    }
   }
 }

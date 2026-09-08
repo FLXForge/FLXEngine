@@ -205,11 +205,9 @@ if (input_pressed(player, FIRE)) {
                 <li><code>motion(object)</code>: movement and transformations.</li>
 
                 <li>
-                    <code>collision(object, other)</code>:
-                    executed when the object has
-                    <code>collision.active = true</code>
-                    and the other object's group is included in
-                    <code>collision.with</code>.
+                    <code>collision(object, other, contacts)</code>:
+                    executed when one of the object's enabled colliders includes
+                    the other object's group in its <code>with</code> list.
                 </li>
 
                 <li><code>dead(object)</code>: last opportunity to react before physical removal.</li>
@@ -220,28 +218,27 @@ if (input_pressed(player, FIRE)) {
             <h3>Collision execution rule</h3>
 
             <p>
-                <code>collision.active</code> does not mean that an object can be collided with.
+                A collider without <code>with</code> is passive.
             </p>
 
             <p>
-                It means that the object actively checks collisions.
+                It can be detected by other objects, but it does not initiate callbacks.
             </p>
 
             <ul>
-                <li><code>active</code>: asks for collisions.</li>
-                <li><code>with</code>: defines which groups it asks about.</li>
+                <li><code>enabled</code>: controls whether a named collider exists.</li>
+                <li><code>with</code>: defines which groups that collider actively checks.</li>
                 <li><code>collision()</code>: defines what happens when a match is found.</li>
             </ul>
 
             <p>
-                Only active objects execute
-                <code>collision(object, other)</code>.
+                Only objects with at least one matching enabled collider execute
+                <code>collision(object, other, contacts)</code>.
             </p>
 
             <p>
-                Objects listed in <code>collision.with</code>
-                do not automatically execute their own collision handler
-                unless they are also active and independently detect a matching collision.
+                Groups listed in <code>with</code> do not automatically execute their own
+                collision handler: each collider direction is evaluated independently.
             </p>
 
             <hr />

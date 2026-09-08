@@ -1,0 +1,11 @@
+{
+  "group": "enemy",
+  "shape": { "type": "block", "size": { "width": 32, "height": 20 } },
+  "collisions": {
+    "body": {},
+    "weakpoint": {
+      "size": { "width": 8, "height": 8 },
+      "offset": { "x": 10, "y": -4 }
+    }
+  }
+}

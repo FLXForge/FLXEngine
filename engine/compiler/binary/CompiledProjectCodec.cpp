@@ -224,6 +224,39 @@ namespace flx::binary
             return values;
         }
 
+        void writeCollider(
+            BinaryWriter& writer,
+            const ColliderDefinition& collider
+        )
+        {
+            writer.writeString(collider.type);
+            writer.writeF32(collider.size.width);
+            writer.writeF32(collider.size.height);
+            writer.writeBool(collider.size.hasWidth);
+            writer.writeBool(collider.size.hasHeight);
+            writeVector2(writer, collider.offset);
+            writer.writeF32(collider.angle);
+            writeStringVector(writer, collider.with);
+            writer.writeBool(collider.enabled);
+            writeStringVector(writer, collider.states);
+        }
+
+        ColliderDefinition readCollider(BinaryReader& reader)
+        {
+            ColliderDefinition collider;
+            collider.type = reader.readString("object.collisions.type");
+            collider.size.width = reader.readF32("object.collisions.size.width");
+            collider.size.height = reader.readF32("object.collisions.size.height");
+            collider.size.hasWidth = reader.readBool("object.collisions.size.hasWidth");
+            collider.size.hasHeight = reader.readBool("object.collisions.size.hasHeight");
+            collider.offset = readVector2(reader);
+            collider.angle = reader.readF32("object.collisions.angle");
+            collider.with = readStringVector(reader);
+            collider.enabled = reader.readBool("object.collisions.enabled");
+            collider.states = readStringVector(reader);
+            return collider;
+        }
+
         void writeVideo(BinaryWriter& writer, const VideoChipDefinition& video)
         {
             writer.writeI32(video.screenWidth);
@@ -1001,6 +1034,7 @@ namespace flx::binary
             writer.writeString(object.id);
             writer.writeString(object.sourcePath);
             writer.writeString(object.spawnMode);
+            writer.writeBool(object.component);
             writeVector2(writer, object.offset);
             writer.writeBool(object.hasOffset);
             writer.writeBool(object.attachFollowX);
@@ -1034,7 +1068,6 @@ namespace flx::binary
             writer.writeString(object.boundsMode);
             writer.writeBool(object.boundsOverflow);
             writer.writeString(object.group);
-            writer.writeString(object.role);
             writer.writeI32(object.controlPlayer);
 
             const auto localKeys =
@@ -1052,10 +1085,21 @@ namespace flx::binary
                 writeScriptValue(writer, object.local.at(key));
             }
 
-            writer.writeString(object.collisionType);
-            writer.writeBool(object.collisionActive);
-            writer.writeF32(object.collisionRadius);
-            writeStringVector(writer, object.collisionWith);
+            const auto collisionKeys =
+                sortedKeys(object.collisions);
+
+            writer.writeCount(
+                collisionKeys.size(),
+                MaxCollectionCount,
+                "object.collisions"
+            );
+
+            for (const std::string& key : collisionKeys)
+            {
+                writer.writeString(key);
+                writeCollider(writer, object.collisions.at(key));
+            }
+
             writeStringVector(writer, object.scripts);
             writeStringVector(writer, object.resolvedScriptPaths);
 
@@ -1146,6 +1190,7 @@ namespace flx::binary
             object.id = reader.readString("object.id");
             object.sourcePath = reader.readString("object.sourcePath");
             object.spawnMode = reader.readString("object.spawn");
+            object.component = reader.readBool("object.component");
             object.offset = readVector2(reader);
             object.hasOffset = reader.readBool("object.offset");
             object.attachFollowX = reader.readBool("object.attach.x");
@@ -1182,7 +1227,6 @@ namespace flx::binary
             object.boundsMode = reader.readString("object.bounds.mode");
             object.boundsOverflow = reader.readBool("object.bounds.overflow");
             object.group = reader.readString("object.group");
-            object.role = reader.readString("object.role");
             object.controlPlayer = reader.readI32("object.control.player");
 
             const uint32_t localCount =
@@ -1217,10 +1261,32 @@ namespace flx::binary
                 }
             }
 
-            object.collisionType = reader.readString("object.collision.type");
-            object.collisionActive = reader.readBool("object.collision.active");
-            object.collisionRadius = reader.readF32("object.collision.radius");
-            object.collisionWith = readStringVector(reader);
+            const uint32_t collisionCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "object.collisions"
+                );
+
+            for (uint32_t i = 0; i < collisionCount; ++i)
+            {
+                const std::string key =
+                    reader.readString("object.collisions.id");
+
+                auto inserted =
+                    object.collisions.insert(
+                        { key, readCollider(reader) }
+                    );
+
+                if (!inserted.second)
+                {
+                    throw BinaryException(
+                        DiagnosticCode::DuplicateCompiledEntry,
+                        "Duplicate collider entry in compiled object",
+                        "object.collisions." + key
+                    );
+                }
+            }
+
             object.scripts = readStringVector(reader);
             object.resolvedScriptPaths = readStringVector(reader);
 

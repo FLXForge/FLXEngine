@@ -531,12 +531,14 @@ void Engine::configureScriptEngine()
     scriptEngine.setRayCastFunction(
         [this](
             RuntimeObject& source,
+            ScriptEngine& activeScriptEngine,
             float angle,
             float distance
             )
         {
             return world->rayCast(
                 source,
+                activeScriptEngine,
                 angle,
                 distance
             );

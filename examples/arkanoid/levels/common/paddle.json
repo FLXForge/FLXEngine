@@ -1,19 +1,23 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 300,
     "y": 280
   },
-
   "states": {
     "initial": "playing",
-    "playing": { "next": [ "respawn" ] },
-    "respawn": { "next": [ "playing" ] }
+    "playing": {
+      "next": [
+        "respawn"
+      ]
+    },
+    "respawn": {
+      "next": [
+        "playing"
+      ]
+    }
   },
-
   "spawn": "manual",
-
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -23,7 +27,6 @@
       "height": 10
     }
   },
-
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -35,27 +38,15 @@
   "control": {
     "player": 1
   },
-
   "group": "paddle",
-
-  "collision": {
-    "type": "box",
-    "size": {
-      "width": 10,
-      "height": 70
-    },
-    "active": true,
-    "with": [ "wall_side", "powerup" ]
-  },
-
   "children": {
     "ball": "ball"
   },
-
   "behavior": {
-    "scripts": [ "paddle" ]
+    "scripts": [
+      "paddle"
+    ]
   },
-
   "sounds": {
     "pop": {
       "kind": {
@@ -73,6 +64,18 @@
       "duration": 0.06,
       "volume": 0.35
     }
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "size": {
+        "width": 10,
+        "height": 70
+      },
+      "with": [
+        "wall_side",
+        "powerup"
+      ]
+    }
   }
-
 }

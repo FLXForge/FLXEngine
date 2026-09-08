@@ -35,16 +35,6 @@
       }
     ]
   },
-  "collision": {
-    "type": "circle",
-    "active": true,
-    "with": [
-      "ship",
-      "asteroid",
-      "laser"
-    ],
-    "radius": 8
-  },
   "bounds": {
     "mode": "wrap",
     "overflow": false
@@ -94,6 +84,20 @@
     "fragment": {
       "like": "asteroid_fragment",
       "spawn": "manual"
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 16.0,
+        "height": 16.0
+      },
+      "with": [
+        "ship",
+        "asteroid",
+        "laser"
+      ]
     }
   }
 }

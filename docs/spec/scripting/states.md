@@ -10,7 +10,7 @@
 La máquina de estados permite declarar estados válidos y sus transiciones. JSON declara qué puede ocurrir; JavaScript decide cuándo ocurre.
 
 ## 2. Declaración
-`states` es opcional. Si no existe, el objeto no tiene máquina de estados.
+`states` es opcional.
 
 ```json
 "states": {
@@ -21,16 +21,45 @@ La máquina de estados permite declarar estados válidos y sus transiciones. JSO
 }
 ```
 
-Si existe `states`, `initial` es obligatorio, no puede estar vacío y debe referenciar un estado declarado.
+Si existe, `initial` es obligatorio, no vacío y debe referenciar un estado declarado.
 
-## 3. Estados y transiciones
-`next` es opcional. Ausente o vacío significa estado terminal.
+`next` es opcional. Ausente/vacío = terminal. Destinos deben existir. Ciclos válidos. Self-transition sólo si se declara explícitamente.
 
-Todos los destinos de `next` deben existir. Los ciclos son válidos. Una self-transition solo es válida cuando está declarada explícitamente.
+## 3. Propiedad de la StateMachine
 
-Una máquina con un único estado es válida.
+La StateMachine pertenece al RuntimeObject que declara `states`.
 
-## 4. API JavaScript
+Un RuntimeObject sin `states` no crea una máquina vacía.
+
+## 4. Effective State context
+
+Todas las APIs y consumidores de State resuelven:
+
+```text
+effectiveStateContext(O):
+1. O declara states
+   → StateMachine de O
+2. O no declara states y O es component
+   → effectiveStateContext(parent)
+3. O no es component
+   → sin StateMachine
+```
+
+La búsqueda termina en la primera StateMachine o en el primer RuntimeObject no-component sin states.
+
+```text
+tank states = patrol / alert / attack
+├─ body [component], sin states
+│  → tank
+└─ turret [component], states = idle / tracking / firing
+   └─ cannon [component], sin states
+      → turret
+```
+
+Un child normal no hereda State.
+
+## 5. API JavaScript
+
 ```javascript
 state_to(object, stateName)
 state_current(object)
@@ -39,78 +68,80 @@ state_entered(object)
 state_time(object)
 ```
 
-La antigua función `state(object, stateName)` no forma parte de la API.
+Todas operan sobre el effective State context del objeto recibido.
 
-## 5. state_to
-`state_to` solicita una transición validada. Solo cambia de estado cuando el destino existe y está permitido por `next`.
+La antigua `state(object, stateName)` no forma parte de la API.
 
-Una transición válida cambia el estado, reinicia su tiempo y programa el evento de entrada para el siguiente frame completo.
+## 6. state_to
 
-Una transición inválida se ignora y actualmente se registra mediante Logger.
+Solicita transición validada sobre la StateMachine efectiva.
 
-## 6. state_current
-Devuelve el estado actual. Sin máquina devuelve `""`; ese valor no representa un estado implícito.
+Sólo cambia si destino existe y está permitido por `next`.
 
-## 7. state_active
-Devuelve `true` cuando el estado indicado es el actual. Sin máquina devuelve siempre `false`.
+Ejemplo: `state_to(cannon,"firing")` puede modificar la máquina de turret si cannon es component sin states y turret es el primer contexto efectivo.
 
-## 8. state_entered
-Es `true` durante el primer frame completo de ejecución del estado actual. No pasa a `true` dentro del mismo callback que llamó a `state_to`.
+Transición válida cambia state, reinicia tiempo y programa `state_entered` para el siguiente frame completo.
 
-## 9. state_time
-Se reinicia a `0` al entrar en un estado. Durante el primer frame completo:
+## 7. Consultas
+
+`state_current` devuelve estado actual; sin máquina efectiva, `""`.
+
+`state_active` devuelve predicado; sin máquina, false.
+
+`state_entered` es true durante el primer frame completo del estado efectivo y no dentro del callback que llamó a `state_to`.
+
+`state_time` pertenece a la máquina efectiva, vale 0 durante ese primer frame y luego acumula.
+
+Componentes que resuelven la misma StateMachine observan el mismo state/stateEntered/stateTime: no hay copias.
+
+## 8. Runtime y DRY
+
+La definición que declara states conserva reglas (`initialState`, transiciones). La instancia propietaria conserva estado vivo.
+
+Los componentes consumidores resuelven esa máquina, no duplican su estado.
+
+## 9. Consumidores transversales
+
+Collision y cualquier otro subsistema condicionado por State usan el mismo effective State context; no implementan una herencia paralela.
+
+## 10. Validación
+
+Fallan antes de Runtime:
+- tipos incorrectos;
+- initial ausente/vacío/inexistente;
+- next inválido;
+- destino inexistente/duplicado.
+
+Las referencias externas a states deben validarse contra effective State context; sin máquina efectiva o estado inexistente → definición inválida.
+
+## 11. Futuro
+
+Máximo una StateMachine propia por RuntimeObject en v0.3.
+
+Una entidad lógica puede contener varias máquinas porque distintos components pueden declarar la suya, pero cada RuntimeObject resuelve una única máquina efectiva.
+
+## 12. Invariantes
+
+- STATE-001 states opcional.
+- STATE-002 Si existe, initial obligatorio y válido.
+- STATE-003 next sólo a destinos existentes.
+- STATE-004 ciclos válidos.
+- STATE-005 self-transition explícita.
+- STATE-006 state_to sólo transiciones permitidas.
+- STATE-007 state_entered = primer frame completo.
+- STATE-008 state_time = 0 durante ese frame.
+- STATE-009 Sin StateMachine efectiva no existe estado vacío implícito.
+- STATE-010 La máquina pertenece al RuntimeObject declarador.
+- STATE-011 Component sin states puede resolver State ascendente.
+- STATE-012 La resolución asciende sólo por chains de component.
+- STATE-013 RuntimeObject con states propios detiene ascenso.
+- STATE-014 Child normal no hereda State.
+- STATE-015 Todos los consumidores usan el mismo effective State context.
+
+## 13. Principio final
+
 ```text
-state_entered(object) == true
-state_time(object) == 0
+states    → qué puede ocurrir
+state_to  → cuándo ocurre
+component → desde qué RuntimeObjects se observa una misma máquina efectiva
 ```
-Después comienza a acumular tiempo.
-
-## 10. Runtime y DRY
-La definición compilada conserva `initialState` y `stateTransitions`.
-
-`RuntimeObject` mantiene solo estado vivo:
-```text
-definitionId
-state
-stateTime
-stateEnteredFrame
-```
-
-Las reglas se consultan desde `ResourceRegistry`; no se duplican por instancia.
-
-## 11. Validación
-Las declaraciones inválidas fallan antes de Runtime: tipos incorrectos, `initial` ausente/vacío/inexistente, `next` inválido, destinos inexistentes o duplicados.
-
-## 12. Gramática
-```text
-state_to       → transición
-state_current  → proyección de valor
-state_active   → predicado
-state_entered  → evento
-state_time     → proyección temporal
-```
-
-## 13. Futuro
-La v0.3.0 define una única máquina por objeto. Múltiples máquinas quedan fuera del contrato actual.
-
-## 14. Invariantes
-- STATE-001 `states` es opcional.
-- STATE-002 Si existe, `initial` es obligatorio.
-- STATE-003 `initial` debe existir.
-- STATE-004 Todo destino `next` debe existir.
-- STATE-005 `next` ausente/vacío define estado terminal.
-- STATE-006 Los ciclos son válidos.
-- STATE-007 La self-transition requiere declaración explícita.
-- STATE-008 `state_to` solo realiza transiciones permitidas.
-- STATE-009 `state_entered` corresponde al primer frame completo.
-- STATE-010 `state_time` vale 0 durante ese frame.
-- STATE-011 Sin `states` no existe estado vacío implícito.
-- STATE-012 Las reglas viven en la definición; la instancia conserva estado vivo.
-
-## 15. Principio final
-```text
-states   → qué puede ocurrir
-state_to → cuándo ocurre
-```
-
-JSON declara posibilidades. JavaScript decide el comportamiento.

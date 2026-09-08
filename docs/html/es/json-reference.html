@@ -722,8 +722,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 <pre><code>{
     "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-    "collision": {
-        "type": "box"
+    "collisions": {
+        "body": { "type": "box" }
     },
 
     "children": {
@@ -740,7 +740,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <ul>
                 <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: configuraciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: declaraciones de colliders nombrados asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
@@ -760,7 +760,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <p>
                 Puede ser dibujable si declara <code>shape</code>,
-                colisionable si declara <code>collision</code>,
+                colisionable si declara <code>collisions</code>,
                 scriptable si declara <code>behavior</code>
                 o un controlador lógico sin datos visuales.
             </p>
@@ -817,11 +817,12 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
     },
 
     "group": "paddle",
-    "role": "player",
 
-    "collision": {
-        "type": "circle",
-        "radius": 16
+    "collisions": {
+        "body": {
+            "type": "ellipse",
+            "size": { "width": 32, "height": 32 }
+        }
     },
 
     "behavior": {
@@ -847,9 +848,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
                 <li><code>control</code>: vinculacion opcional de input para este objeto. <i>[ Opcional ]</i></li>
                 <li><code>group</code>: grupo logico asociado al objeto. <i>[ Opcional ]</i></li>
-                <li><code>role</code>: papel opcional dentro del grupo del objeto. <i>[ Opcional ]</i></li>
                 <li><code>local</code>: estado local inicial de cada instancia. Solo admite valores string, number y boolean. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: configuracion de colision asociada al objeto <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: declaraciones de colliders nombrados asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
             </ul>
 
@@ -862,10 +862,6 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <p>
                 <code>group</code> clasifica que tipo de objeto es para colisiones y consultas.
-                <code>role</code> matiza el papel concreto de ese objeto dentro del mismo grupo.
-                Por ejemplo, Pong puede usar <code>group: "wall"</code> con <code>role: "top"</code>
-                o <code>role: "bottom"</code>, sin crear grupos artificiales como
-                <code>wall_top</code> y <code>wall_bottom</code>.
             </p>
 
             <p>
@@ -1188,66 +1184,42 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <hr />
 
-            <h2 id="collision">Collision</h2>
+            <h2 id="collision">Collisions</h2>
 
             <p>
-                Define la colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n asociada al objeto o al nodo,
+                Define uno o mas colliders nombrados asociados al objeto.
+                Cada collider puede habilitarse, filtrar por grupo, limitarse por estado
+                y tener forma independiente de la forma visual.
             </p>
 
             <p>
-                La funciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n <code>collision(object, other)</code>
-                solo se ejecuta cuando <code>collision.active</code> es <code>true</code>
-                y el grupo del otro objeto estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ incluido en <code>collision.with</code>.
-            </p>
-
-            <p>
-                Solo los objetos activos ejecutan
-                <code>collision(object, other)</code>.
-            </p>
-
-            <p>
-                Los objetos incluidos en <code>collision.with</code>
-                no ejecutan automÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ticamente su propio manejador de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n,
-                salvo que tambiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©n estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©n activos y detecten de forma independiente
-                una colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n coincidente.
+                El callback <code>collision(object, other, contacts)</code> se ejecuta
+                cuando uno de los colliders habilitados del objeto declara el grupo del otro
+                objeto en <code>with</code> y la geometria se solapa.
             </p>
 
             <div class="code-card">
-                <div class="code-header">behavior</div>
-<pre><code>"collision": {
-    "type": "circle",
-    "active": "true",
-    "with": [ "wall" ],
-    "radius": 16
-},
-</code></pre>
+                <div class="code-header">collisions</div>
+<pre><code>"collisions": {
+    "body": {
+        "type": "ellipse",
+        "size": { "width": 32, "height": 32 },
+        "with": [ "wall" ]
+    }
+}</code></pre>
             </div>
 
             <h3>Campos</h3>
 
             <ul>
-                <li>
-                    <code>type</code>: tipo de colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. [ Opcional ]
-                    <ul>
-                        <li><code>none</code>: sin colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. [ por defecto ]</li>
-                        <li><code>box</code>: cuadrada.</li>
-                        <li><code>circle</code>: circular.</li>
-                    </ul>
-                </li>
-                <li>
-                    <code>active</code>:
-                    indica si la colisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del objeto estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ activa.
-                    <i>[ Opcional ]</i>
-                </li>
-
-                <li>
-                    <code>with</code>:
-                    lista de grupos con los que este objeto puede colisionar.
-                    <i>[ Opcional ]</i>
-                </li>
-                <li><code>radius</code>: En caso de que el tipo sea <code>circle</code> selecciona el radio de la circunferencia. [ Opcional ]</li>
+                <li><code>type</code>: tipo de collider: <code>box</code> o <code>ellipse</code>.</li>
+                <li><code>enabled</code>: habilita o deshabilita este collider. Por defecto es <code>true</code>.</li>
+                <li><code>size</code>: tamaño logico opcional del collider. Si se omite, usa el tamaño del objeto.</li>
+                <li><code>offset</code>: desplazamiento local opcional desde la posicion del objeto.</li>
+                <li><code>angle</code>: angulo opcional del collider sumado al angulo del objeto.</li>
+                <li><code>with</code>: grupos que este collider consulta activamente. Vacio u omitido significa pasivo.</li>
+                <li><code>states</code>: lista opcional de estados efectivos donde existe este collider.</li>
             </ul>
-
             <hr />
 
             <h2 id="behavior">Behavior</h2>

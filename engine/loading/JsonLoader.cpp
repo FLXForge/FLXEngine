@@ -8,6 +8,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <unordered_map>
@@ -578,7 +579,7 @@ namespace
             "mechanics",
             "inherit",
             "bounds",
-            "collision",
+            "collisions",
             "behavior",
             "creation",
             "states"
@@ -867,6 +868,22 @@ namespace
         rejectRootProperty(object, "layer", owner, "shape");
         rejectRootProperty(object, "speed", owner, "mechanics");
         rejectRootProperty(object, "angle", owner, "mechanics");
+        if (object.contains("role"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'role' was removed in v0.3"
+            );
+        }
+
+        if (object.contains("collision"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'collision' was replaced by 'collisions'"
+            );
+        }
+
         if (object.contains("motion"))
         {
             throw std::runtime_error(
@@ -1485,51 +1502,143 @@ namespace
         }
     }
 
-    void parseCollision(
+    void parseCollisions(
+        JsonLoadSession& session,
         const Json& object,
+        const std::filesystem::path& currentFile,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("collision") || !object["collision"].is_object())
+        if (!object.contains("collisions"))
         {
             return;
         }
 
-        const auto& collision = object["collision"];
-
-        definition.collisionType =
-            TextTools::toLower(
-                collision.value("type", definition.collisionType)
+        if (!object["collisions"].is_object())
+        {
+            Logger::warning(
+                "json",
+                "Invalid collisions declaration: expected object"
             );
 
-        definition.collisionRadius =
-            collision.value("radius", definition.collisionRadius);
-
-        definition.collisionActive =
-            collision.value("active", definition.collisionActive);
-
-        definition.collisionWith.clear();
-
-        if (collision.contains("with") && collision["with"].is_array())
-        {
-            for (const auto& group : collision["with"])
-            {
-                definition.collisionWith.push_back(
-                    group.get<std::string>()
-                );
-            }
+            return;
         }
 
-        if (
-            definition.collisionType == "circle" &&
-            definition.collisionRadius <= 0.0f
-            )
+        definition.collisions.clear();
+
+        const auto& collisions =
+            object["collisions"];
+
+        for (auto it = collisions.begin(); it != collisions.end(); ++it)
         {
-            definition.collisionRadius =
-                std::max(
-                    definition.size.x,
-                    definition.size.y
-                ) / 2.0f;
+            Json colliderData =
+                it.value();
+
+            if (colliderData.is_string())
+            {
+                ResolvedJsonReference reference =
+                    resolveJsonReference(
+                        session,
+                        colliderData.get<std::string>(),
+                        currentFile,
+                        "collisions." + it.key()
+                    );
+
+                if (!reference.ok)
+                {
+                    continue;
+                }
+
+                colliderData =
+                    reference.data;
+            }
+
+            if (!colliderData.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid collider '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            ColliderDefinition collider;
+
+            collider.type =
+                TextTools::toLower(
+                    colliderData.value("type", collider.type)
+                );
+
+            if (colliderData.contains("size") &&
+                colliderData["size"].is_object())
+            {
+                const auto& size =
+                    colliderData["size"];
+
+                if (size.contains("width"))
+                {
+                    collider.size.width =
+                        size.value("width", collider.size.width);
+                    collider.size.hasWidth = true;
+                }
+
+                if (size.contains("height"))
+                {
+                    collider.size.height =
+                        size.value("height", collider.size.height);
+                    collider.size.hasHeight = true;
+                }
+            }
+
+            if (colliderData.contains("offset") &&
+                colliderData["offset"].is_object())
+            {
+                const auto& offset =
+                    colliderData["offset"];
+
+                collider.offset = Vector2{
+                    offset.value("x", 0.0f),
+                    offset.value("y", 0.0f)
+                };
+            }
+
+            collider.angle =
+                colliderData.value("angle", collider.angle);
+
+            collider.enabled =
+                colliderData.value("enabled", collider.enabled);
+
+            if (colliderData.contains("with") &&
+                colliderData["with"].is_array())
+            {
+                for (const auto& group : colliderData["with"])
+                {
+                    if (group.is_string())
+                    {
+                        collider.with.push_back(
+                            group.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            if (colliderData.contains("states") &&
+                colliderData["states"].is_array())
+            {
+                for (const auto& state : colliderData["states"])
+                {
+                    if (state.is_string())
+                    {
+                        collider.states.push_back(
+                            state.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            definition.collisions[it.key()] =
+                collider;
         }
     }
 
@@ -2907,82 +3016,99 @@ namespace
                 object["__childSourceFiles"];
         }
 
+        std::vector<std::string> childNames;
+
         for (auto it = children.begin(); it != children.end(); ++it)
         {
-            Json childData =
-                normalizeChildValue(it.value());
+            childNames.push_back(it.key());
+        }
 
-            if (!childData.is_object())
+        for (const std::string& childName : childNames)
+        {
             {
-                Logger::warning(
-                    "json",
-                    "Invalid child '" + it.key() + "': expected object"
-                );
+                Json childData =
+                    normalizeChildValue(children.at(childName));
 
-                continue;
-            }
-
-            Json resolvedChild;
-            const std::filesystem::path childSourceFile =
-                childSourceFiles.contains(it.key())
-                ? std::filesystem::path(childSourceFiles[it.key()].get<std::string>())
-                : currentFile;
-
-            if (!resolveLike(
-                session,
-                childSourceFile,
-                childData,
-                resolvedChild,
-                "children." + it.key()
-            ))
-            {
-                throw std::runtime_error(
-                    "Child reference could not be resolved: " +
-                    it.key()
-                );
-            }
-
-            const std::filesystem::path resolvedSourceFile =
-                resolvedChild.value(
-                    "__sourceFile",
-                    genericPathString(childSourceFile)
-                );
-
-            if (
-                definitionIsActive(
-                    session,
-                    resolvedSourceFile,
-                    it.key()
-                )
-                )
-            {
-                ObjectDefinition childDefinition;
-                childDefinition.id =
-                    it.key();
-                childDefinition.sourcePath =
-                    genericPathString(resolvedSourceFile);
-                childDefinition.spawnMode =
-                    TextTools::toLower(
-                        resolvedChild.value("spawn", childDefinition.spawnMode)
+                if (!childData.is_object())
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid child '" + childName + "': expected object"
                     );
 
-                definition.children[it.key()] =
-                    childDefinition;
-                definition.childSourcePaths[it.key()] =
-                    genericPathString(resolvedSourceFile);
+                    continue;
+                }
 
-                continue;
-            }
+                Json resolvedChild;
+                const std::filesystem::path childSourceFile =
+                    childSourceFiles.contains(childName)
+                    ? std::filesystem::path(childSourceFiles[childName].get<std::string>())
+                    : currentFile;
 
-            definition.children[it.key()] =
-                parseDefinition(
+                if (!resolveLike(
                     session,
-                    resolvedChild,
                     childSourceFile,
-                    it.key()
+                    childData,
+                    resolvedChild,
+                    "children." + childName
+                ))
+                {
+                    throw std::runtime_error(
+                        "Child reference could not be resolved: " +
+                        childName
+                    );
+                }
+
+                const std::filesystem::path resolvedSourceFile =
+                    resolvedChild.value(
+                        "__sourceFile",
+                        genericPathString(childSourceFile)
+                    );
+
+                if (
+                    definitionIsActive(
+                        session,
+                        resolvedSourceFile,
+                        childName
+                        )
+                    )
+                {
+                    ObjectDefinition childDefinition;
+                    childDefinition.id =
+                        childName;
+                    childDefinition.sourcePath =
+                        genericPathString(resolvedSourceFile);
+                    childDefinition.spawnMode =
+                        TextTools::toLower(
+                            resolvedChild.value("spawn", childDefinition.spawnMode)
+                        );
+
+                    definition.children[childName] =
+                        std::make_shared<ObjectDefinition>(
+                            std::move(childDefinition)
+                        );
+                    definition.childSourcePaths[childName] =
+                        genericPathString(resolvedSourceFile);
+
+                    continue;
+                }
+
+                ObjectDefinition parsedChild =
+                    parseDefinition(
+                        session,
+                        resolvedChild,
+                        childSourceFile,
+                        childName
+                    );
+                definition.children.emplace(
+                    childName,
+                    std::make_shared<ObjectDefinition>(
+                        std::move(parsedChild)
+                    )
                 );
-            definition.childSourcePaths[it.key()] =
-                genericPathString(childSourceFile);
+                definition.childSourcePaths[childName] =
+                    genericPathString(childSourceFile);
+            }
         }
     }
 
@@ -3043,11 +3169,11 @@ namespace
         definition.group =
             object.value("group", definition.group);
 
-        definition.role =
-            object.value("role", definition.role);
-
         definition.visible =
             object.value("visible", definition.visible);
+
+        definition.component =
+            object.value("component", definition.component);
 
         parseLocal(object, definition);
         parseControl(object, definition);
@@ -3058,7 +3184,7 @@ namespace
         parseBounds(object, definition);
         parseBehavior(object, definition);
         parseCreation(object, definition);
-        parseCollision(object, definition);
+        parseCollisions(session, object, sourceFile, definition);
         parseSounds(session, object, sourceFile, definition);
         parseMusic(session, object, sourceFile, definition);
         parseStates(session, object, sourceFile, definition);

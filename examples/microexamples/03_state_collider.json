@@ -1,0 +1,17 @@
+{
+  "group": "player",
+  "states": {
+    "initial": "idle",
+    "idle": { "next": ["attack"] },
+    "attack": { "next": ["idle"] }
+  },
+  "collisions": {
+    "body": {},
+    "sword": {
+      "size": { "width": 24, "height": 8 },
+      "offset": { "x": 18 },
+      "with": ["enemy"],
+      "states": ["attack"]
+    }
+  }
+}

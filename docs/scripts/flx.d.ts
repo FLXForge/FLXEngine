@@ -134,9 +134,6 @@ interface RuntimeObject {
     /** Collision group identifier. */
     readonly group: string;
 
-    /** Optional role inside the collision group. */
-    readonly role: string;
-
     /** True while the object is alive. Read-only from JavaScript. Use kill(object). */
     readonly alive: boolean;
 
@@ -182,21 +179,24 @@ interface RuntimeObject {
 /**
  * Result returned by ray().
  */
-interface RayResult {
-    /** True when the ray hit a compatible collision object. */
-    hit: boolean;
+interface CollisionContact {
+    readonly collider: string;
+    readonly otherCollider: string;
+    readonly normalX: number;
+    readonly normalY: number;
+    readonly pointX: number;
+    readonly pointY: number;
+    readonly penetration: number;
+}
 
-    /** Collision group hit by the ray, or empty string when hit is false. */
-    group: string;
-
-    /** Distance from the ray origin to the impact point. */
-    distance?: number;
-
-    /** Impact X coordinate in logical FLX space. */
-    x?: number;
-
-    /** Impact Y coordinate in logical FLX space. */
-    y?: number;
+interface RayHit {
+    readonly object: RuntimeObject;
+    readonly collider: string;
+    readonly pointX: number;
+    readonly pointY: number;
+    readonly normalX: number;
+    readonly normalY: number;
+    readonly distance: number;
 }
 
 interface InputButton {
@@ -432,13 +432,19 @@ declare function probability(chance: number, base?: number): boolean;
 declare function random(min: number, max: number): number;
 
 /**
- * Casts an invisible ray from an object using collision.with as group filter.
+ * Casts an invisible ray from an object and returns the nearest effective collider.
  */
 declare function ray(
     source: RuntimeObject,
     angle: number,
     distance: number
-): RayResult;
+): RayHit | undefined;
+
+/** Enables a declared collider. */
+declare function collider_on(object: RuntimeObject, colliderName: string): void;
+
+/** Disables a declared collider. */
+declare function collider_off(object: RuntimeObject, colliderName: string): void;
 
 /**
  * Marks an object for destruction.
@@ -776,12 +782,13 @@ declare function action(object: RuntimeObject): void;
 declare function motion(object: RuntimeObject): void;
 
 /**
- * Called only when this object has collision.active = true
- * and the other object's group is listed in collision.with.
+ * Called when one or more source colliders declared in this object contact
+ * another object whose group is listed in those colliders' with arrays.
  */
 declare function collision(
     object: RuntimeObject,
-    other: RuntimeObject
+    other: RuntimeObject,
+    contacts: CollisionContact[]
 ): void;
 
 /**

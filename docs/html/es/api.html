@@ -910,7 +910,7 @@ if (input_pressed(player, FIRE)) {
 
             <div class="code-card">
                 <div class="code-header">kill</div>
-<pre><code>function collision(object, other) {
+<pre><code>function collision(object, other, contacts) {
     kill(object);
 }</code></pre>
             </div>
@@ -1102,7 +1102,7 @@ move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));</code></pre>
 <pre><code>function motion(tank) {
     let sight = ray(tank, tank.angle, 200);
 
-    if (sight.hit && sight.group == "player") {
+    if (sight !== undefined && sight.object.group == "player") {
         spawn(tank, "bullet");
     }
 }</code></pre>
@@ -1111,18 +1111,17 @@ move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));</code></pre>
             <h3>Valor devuelto</h3>
 
             <ul>
-                <li>Sin impacto: <code>{ hit: false, group: "" }</code></li>
-                <li>Con impacto: <code>{ hit: true, group, distance, x, y }</code></li>
+                <li>Sin impacto: <code>undefined</code></li>
+                <li>Con impacto: <code>{ object, collider, pointX, pointY, normalX, normalY, distance }</code></li>
             </ul>
 
             <h3>Reglas de colision</h3>
 
             <ul>
-                <li>El filtro de grupos sale de <code>source.collision.with</code>.</li>
-                <li>El objeto impactado no necesita <code>collision.active = true</code>.</li>
-                <li>Los objetos invisibles pueden ser detectados si su collision es valida.</li>
-                <li>Se ignoran el propio source, objetos muertos y tipos de collision no soportados.</li>
-                <li>Esta version soporta colisiones <code>circle</code> y <code>box</code>.</li>
+                <li>El rayo usa colliders nombrados efectivos.</li>
+                <li>Los objetos invisibles pueden ser detectados si su collider es valido.</li>
+                <li>Se ignoran la entidad logica origen, objetos muertos y colliders invalidos.</li>
+                <li>Esta version soporta colisiones <code>ellipse</code> y <code>box</code>.</li>
             </ul>
 
             <hr />

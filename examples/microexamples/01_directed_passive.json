@@ -1,0 +1,14 @@
+{
+  "children": {
+    "ball": {
+      "group": "ball",
+      "shape": { "type": "block", "size": { "width": 6, "height": 6 } },
+      "collisions": { "body": { "with": ["wall"] } }
+    },
+    "wall": {
+      "group": "wall",
+      "shape": { "type": "block", "size": { "width": 64, "height": 8 } },
+      "collisions": { "body": {} }
+    }
+  }
+}

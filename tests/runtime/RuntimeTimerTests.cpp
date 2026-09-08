@@ -85,9 +85,9 @@ namespace
             );
 
             scripts.setRayCastFunction(
-                [this](RuntimeObject& source, float angle, float distance)
+                [this](RuntimeObject& source, ScriptEngine& scriptEngine, float angle, float distance)
                 {
-                    return world.rayCast(source, angle, distance);
+                    return world.rayCast(source, scriptEngine, angle, distance);
                 }
             );
         }
@@ -699,15 +699,13 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "phaseProbe");
         root.childResources["target"] = "target";
-        root.collisionActive = true;
-        root.collisionType = "box";
-        root.collisionWith.push_back("target");
+        root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);

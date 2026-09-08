@@ -20,46 +20,48 @@ namespace
         const RayCastResult& result
     )
     {
+        if (!result.hit)
+        {
+            return JS_UNDEFINED;
+        }
+
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* objectHit =
+            scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->findObjectByRuntimeId(result.objectId);
+
+        if (objectHit == nullptr || !objectHit->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
         JSValue object =
             JS_NewObject(context);
 
         JS_SetPropertyStr(
             context,
             object,
-            "hit",
-            JS_NewBool(context, result.hit)
+            "object",
+            scriptEngine->createRuntimeObjectView(*objectHit)
         );
 
         JS_SetPropertyStr(
             context,
             object,
-            "group",
-            JS_NewString(context, result.group.c_str())
+            "collider",
+            JS_NewString(context, result.collider.c_str())
         );
 
-        if (result.hit)
-        {
-            JS_SetPropertyStr(
-                context,
-                object,
-                "distance",
-                JS_NewFloat64(context, result.distance)
-            );
+        JS_SetPropertyStr(context, object, "pointX", JS_NewFloat64(context, result.point.x));
+        JS_SetPropertyStr(context, object, "pointY", JS_NewFloat64(context, result.point.y));
+        JS_SetPropertyStr(context, object, "normalX", JS_NewFloat64(context, result.normal.x));
+        JS_SetPropertyStr(context, object, "normalY", JS_NewFloat64(context, result.normal.y));
+        JS_SetPropertyStr(context, object, "distance", JS_NewFloat64(context, result.distance));
 
-            JS_SetPropertyStr(
-                context,
-                object,
-                "x",
-                JS_NewFloat64(context, result.point.x)
-            );
-
-            JS_SetPropertyStr(
-                context,
-                object,
-                "y",
-                JS_NewFloat64(context, result.point.y)
-            );
-        }
+        JS_PreventExtensions(context, object);
 
         return object;
     }
@@ -859,6 +861,73 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsColliderSetEnabled(
+        JSContext* context,
+        int argc,
+        JSValueConst* argv,
+        bool enabled
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        std::string colliderName;
+
+        if (object == nullptr ||
+            !readKeyArgument(context, argv[1], colliderName))
+        {
+            return JS_UNDEFINED;
+        }
+
+        auto it =
+            object->collisions.find(colliderName);
+
+        if (it == object->collisions.end())
+        {
+            Logger::warning(
+                "collision",
+                "Unknown collider '" + colliderName + "' in " + object->runtimeId
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        it->second.enabled =
+            enabled;
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsColliderOn(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        return jsColliderSetEnabled(
+            context,
+            argc,
+            argv,
+            true
+        );
+    }
+
+    JSValue jsColliderOff(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        return jsColliderSetEnabled(
+            context,
+            argc,
+            argv,
+            false
+        );
+    }
+
     JSValue jsFindId(
         JSContext* context,
         JSValueConst,
@@ -1085,6 +1154,20 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "ray",
         JS_NewCFunction(context, jsRay, "ray", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "collider_on",
+        JS_NewCFunction(context, jsColliderOn, "collider_on", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "collider_off",
+        JS_NewCFunction(context, jsColliderOff, "collider_off", 2)
     );
 
     JS_SetPropertyStr(

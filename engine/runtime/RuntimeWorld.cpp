@@ -1,7 +1,9 @@
 #include "RuntimeWorld.h"
 #include "RuntimeHelpers.h"
 #include "RuntimeObjectBuilder.h"
+#include "../collision/CollisionGeometry.h"
 #include "../compiler/CompiledProjectValidator.h"
+#include "../collision/EffectiveColliderBuilder.h"
 #include "../collision/CollisionSystem.h"
 #include "../debug/Logger.h"
 #include "../scripting/ScriptEngine.h"
@@ -29,205 +31,86 @@ namespace
         };
     }
 
-    Vector2 collisionCenter(const RuntimeObject& object)
-    {
-        if (object.shapeType == "block")
-        {
-            return Vector2{
-                object.position.x + object.size.x / 2.0f,
-                object.position.y + object.size.y / 2.0f
-            };
-        }
-
-        return object.position;
-    }
-
-    float collisionRadius(const RuntimeObject& object)
-    {
-        if (object.collisionRadius > 0.0f)
-        {
-            return object.collisionRadius;
-        }
-
-        return std::max(
-            object.size.x,
-            object.size.y
-        ) / 2.0f;
-    }
-
-    bool rayHitsCircle(
-        Vector2 origin,
-        Vector2 direction,
-        float maxDistance,
+    std::string logicalEntityRoot(
         const RuntimeObject& object,
-        RayCastResult& result
+        const std::vector<RuntimeObject>& objects
     )
     {
-        const Vector2 center =
-            collisionCenter(object);
+        const RuntimeObject* current =
+            &object;
 
-        const float radius =
-            collisionRadius(object);
-
-        const float ox =
-            origin.x - center.x;
-
-        const float oy =
-            origin.y - center.y;
-
-        const float b =
-            2.0f * (ox * direction.x + oy * direction.y);
-
-        const float c =
-            ox * ox + oy * oy - radius * radius;
-
-        const float discriminant =
-            b * b - 4.0f * c;
-
-        if (discriminant < 0.0f)
+        while (current != nullptr && current->component && !current->parentId.empty())
         {
-            return false;
-        }
-
-        const float root =
-            std::sqrt(discriminant);
-
-        float distance =
-            (-b - root) / 2.0f;
-
-        if (distance < 0.0f)
-        {
-            distance =
-                (-b + root) / 2.0f;
-        }
-
-        if (distance < 0.0f || distance > maxDistance)
-        {
-            return false;
-        }
-
-        result.hit = true;
-        result.group = object.group;
-        result.distance = distance;
-        result.point = Vector2{
-            origin.x + direction.x * distance,
-            origin.y + direction.y * distance
-        };
-
-        return true;
-    }
-
-    bool rayHitsBox(
-        Vector2 origin,
-        Vector2 direction,
-        float maxDistance,
-        const RuntimeObject& object,
-        RayCastResult& result
-    )
-    {
-        const Rectangle box = Rectangle{
-            object.position.x,
-            object.position.y,
-            object.size.x,
-            object.size.y
-        };
-
-        float tMin = 0.0f;
-        float tMax = maxDistance;
-
-        const auto updateAxis = [](
-            float originValue,
-            float directionValue,
-            float minValue,
-            float maxValue,
-            float& tMin,
-            float& tMax
-        )
-        {
-            if (std::abs(directionValue) < 0.00001f)
-            {
-                return originValue >= minValue && originValue <= maxValue;
-            }
-
-            float nearDistance =
-                (minValue - originValue) / directionValue;
-
-            float farDistance =
-                (maxValue - originValue) / directionValue;
-
-            if (nearDistance > farDistance)
-            {
-                std::swap(
-                    nearDistance,
-                    farDistance
+            const auto it =
+                std::find_if(
+                    objects.begin(),
+                    objects.end(),
+                    [current](const RuntimeObject& candidate)
+                    {
+                        return candidate.runtimeId == current->parentId;
+                    }
                 );
+
+            if (it == objects.end())
+            {
+                break;
             }
 
-            tMin =
-                std::max(tMin, nearDistance);
-
-            tMax =
-                std::min(tMax, farDistance);
-
-            return tMin <= tMax;
-        };
-
-        if (!updateAxis(
-            origin.x,
-            direction.x,
-            box.x,
-            box.x + box.width,
-            tMin,
-            tMax
-        ))
-        {
-            return false;
+            current =
+                &*it;
         }
 
-        if (!updateAxis(
-            origin.y,
-            direction.y,
-            box.y,
-            box.y + box.height,
-            tMin,
-            tMax
-        ))
-        {
-            return false;
-        }
-
-        if (tMin < 0.0f || tMin > maxDistance)
-        {
-            return false;
-        }
-
-        result.hit = true;
-        result.group = object.group;
-        result.distance = tMin;
-        result.point = Vector2{
-            origin.x + direction.x * tMin,
-            origin.y + direction.y * tMin
-        };
-
-        return true;
+        return current == nullptr
+            ? object.runtimeId
+            : current->runtimeId;
     }
 
-    bool groupMatches(
-        const RuntimeObject& source,
-        const RuntimeObject& target
+    bool sameLogicalEntity(
+        const RuntimeObject& left,
+        const RuntimeObject& right,
+        const std::vector<RuntimeObject>& objects
     )
     {
-        return std::find(
-            source.collisionWith.begin(),
-            source.collisionWith.end(),
-            target.group
-        ) != source.collisionWith.end();
+        return logicalEntityRoot(left, objects) ==
+            logicalEntityRoot(right, objects);
     }
 
-    bool collisionTypeSupported(const RuntimeObject& object)
+    bool isComponentDescendantOf(
+        const RuntimeObject& candidate,
+        const std::string& ancestorId,
+        const std::vector<RuntimeObject>& objects
+    )
     {
-        return object.collisionType == "circle" ||
-            object.collisionType == "box";
+        if (!candidate.component || candidate.parentId.empty())
+        {
+            return false;
+        }
+
+        if (candidate.parentId == ancestorId)
+        {
+            return true;
+        }
+
+        const auto parentIt =
+            std::find_if(
+                objects.begin(),
+                objects.end(),
+                [&candidate](const RuntimeObject& object)
+                {
+                    return object.runtimeId == candidate.parentId;
+                }
+            );
+
+        if (parentIt == objects.end() || !parentIt->component)
+        {
+            return false;
+        }
+
+        return isComponentDescendantOf(
+            *parentIt,
+            ancestorId,
+            objects
+        );
     }
 
     void applyInheritedCreationMotion(
@@ -450,7 +333,24 @@ void RuntimeWorld::draw(
 
         if (debugCollisions)
         {
-            object->drawCollision(screenScale);
+            const std::vector<EffectiveCollider> colliders =
+                EffectiveColliderBuilder::build(*object, scriptEngine);
+
+            for (const EffectiveCollider& collider : colliders)
+            {
+                const Color color =
+                    collider.effective
+                    ? GREEN
+                    : Color{ 120, 120, 120, 255 };
+
+                DrawRectangleLines(
+                    static_cast<int>(collider.broadBounds.x * screenScale),
+                    static_cast<int>(collider.broadBounds.y * screenScale),
+                    static_cast<int>(collider.broadBounds.width * screenScale),
+                    static_cast<int>(collider.broadBounds.height * screenScale),
+                    color
+                );
+            }
         }
 
         for (const auto& scriptPath : object->resolvedScriptPaths)
@@ -576,6 +476,19 @@ void RuntimeWorld::kill(const std::string& runtimeId)
     }
 
     object->alive = false;
+
+    for (RuntimeObject& candidate : objects)
+    {
+        if (!candidate.alive || candidate.runtimeId == runtimeId)
+        {
+            continue;
+        }
+
+        if (isComponentDescendantOf(candidate, runtimeId, objects))
+        {
+            candidate.alive = false;
+        }
+    }
 }
 
 void RuntimeWorld::show(const std::string& runtimeId)
@@ -920,25 +833,36 @@ void RuntimeWorld::keepOnly(const std::string& runtimeId)
 }
 
 RayCastResult RuntimeWorld::rayCast(
-    const RuntimeObject& source,
+    RuntimeObject& source,
+    ScriptEngine& scriptEngine,
     float angle,
     float distance
-) const
+)
 {
     RayCastResult closest;
 
-    if (distance <= 0.0f)
-    {
-        return closest;
-    }
-
-    if (source.collisionWith.empty())
+    if (!std::isfinite(angle) || !std::isfinite(distance))
     {
         Logger::warning(
             "ray",
-            "ray source has no collision.with groups"
+            "ray requires finite angle and distance"
         );
 
+        return closest;
+    }
+
+    if (distance < 0.0f)
+    {
+        Logger::warning(
+            "ray",
+            "ray distance cannot be negative"
+        );
+
+        return closest;
+    }
+
+    if (distance <= 0.0f)
+    {
         return closest;
     }
 
@@ -955,53 +879,39 @@ RayCastResult RuntimeWorld::rayCast(
             continue;
         }
 
-        if (target.runtimeId == source.runtimeId)
+        if (sameLogicalEntity(source, target, objects))
         {
             continue;
         }
 
-        if (!groupMatches(source, target))
-        {
-            continue;
-        }
+        const std::vector<EffectiveCollider> colliders =
+            EffectiveColliderBuilder::build(target, scriptEngine);
 
-        if (!collisionTypeSupported(target))
+        for (const EffectiveCollider& collider : colliders)
         {
-            continue;
-        }
+            const RayCollisionHit hit =
+                CollisionGeometry::ray(
+                    collider,
+                    origin,
+                    direction,
+                    distance
+                );
 
-        RayCastResult candidate;
+            if (!hit.hit)
+            {
+                continue;
+            }
 
-        if (target.collisionType == "circle")
-        {
-            rayHitsCircle(
-                origin,
-                direction,
-                distance,
-                target,
-                candidate
-            );
-        }
-        else if (target.collisionType == "box")
-        {
-            rayHitsBox(
-                origin,
-                direction,
-                distance,
-                target,
-                candidate
-            );
-        }
-
-        if (!candidate.hit)
-        {
-            continue;
-        }
-
-        if (!closest.hit || candidate.distance < closest.distance)
-        {
-            closest =
-                candidate;
+            if (!closest.hit || hit.distance < closest.distance)
+            {
+                closest.hit = true;
+                closest.objectId = target.runtimeId;
+                closest.group = target.group;
+                closest.collider = collider.name;
+                closest.distance = hit.distance;
+                closest.point = hit.point;
+                closest.normal = hit.normal;
+            }
         }
     }
 

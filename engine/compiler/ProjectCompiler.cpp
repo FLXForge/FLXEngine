@@ -8,9 +8,73 @@
 
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
+
+namespace
+{
+    void fillCompiledDefinitionShell(
+        ObjectDefinition& compiled,
+        const ObjectDefinition& definition
+    )
+    {
+        compiled.id = definition.id;
+        compiled.sourcePath = definition.sourcePath;
+        compiled.spawnMode = definition.spawnMode;
+        compiled.component = definition.component;
+
+        compiled.offset = definition.offset;
+        compiled.hasOffset = definition.hasOffset;
+
+        compiled.attachFollowX = definition.attachFollowX;
+        compiled.attachFollowY = definition.attachFollowY;
+        compiled.attachFollowAngle = definition.attachFollowAngle;
+        compiled.attachOnCreate = definition.attachOnCreate;
+
+        compiled.visible = definition.visible;
+        compiled.hasVisual = definition.hasVisual;
+        compiled.layer = definition.layer;
+
+        compiled.origin = definition.origin;
+        compiled.hasOrigin = definition.hasOrigin;
+        compiled.size = definition.size;
+        compiled.color = definition.color;
+        compiled.shapeMode = definition.shapeMode;
+        compiled.shapeType = definition.shapeType;
+        compiled.textContent = definition.textContent;
+        compiled.radius = definition.radius;
+        compiled.points = definition.points;
+
+        compiled.mechanics = definition.mechanics;
+        compiled.inherit = definition.inherit;
+
+        compiled.boundsMode = definition.boundsMode;
+        compiled.boundsOverflow = definition.boundsOverflow;
+
+        compiled.group = definition.group;
+        compiled.controlPlayer = definition.controlPlayer;
+        compiled.local = definition.local;
+        compiled.collisions = definition.collisions;
+
+        compiled.scripts = definition.scripts;
+        compiled.scriptSourcePaths = definition.scriptSourcePaths;
+        compiled.resolvedScriptPaths = definition.resolvedScriptPaths;
+        compiled.music = definition.music;
+        compiled.sounds = definition.sounds;
+        compiled.childSourcePaths = definition.childSourcePaths;
+
+        compiled.initialState = definition.initialState;
+        compiled.stateTransitions = definition.stateTransitions;
+
+        compiled.creationMode = definition.creationMode;
+        compiled.gridRules = definition.gridRules;
+        compiled.gridPatternIsRows = definition.gridPatternIsRows;
+        compiled.gridPattern = definition.gridPattern;
+        compiled.gridRowPattern = definition.gridRowPattern;
+    }
+}
 
 CompilationResult ProjectCompiler::compile(
     const std::string& projectPath
@@ -88,6 +152,18 @@ CompilationResult ProjectCompiler::compile(
                 result.diagnostics
             );
 
+        if (rootDefinition.component)
+        {
+            result.diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Root object cannot declare component=true",
+                rootPath,
+                "component"
+            );
+
+            return result;
+        }
+
         result.project.rootId =
             makeResourceId(
                 rootDefinition,
@@ -112,6 +188,9 @@ CompilationResult ProjectCompiler::compile(
             result.diagnostics,
             projectPath
         );
+
+        result.success =
+            !result.diagnostics.hasErrors();
     }
     catch (const std::exception& exception)
     {
@@ -123,9 +202,6 @@ CompilationResult ProjectCompiler::compile(
 
         return result;
     }
-
-    result.success =
-        !result.diagnostics.hasErrors();
 
     if (result.success)
     {
@@ -223,8 +299,13 @@ void ProjectCompiler::projectDefinitionColors(
 
     for (auto& child : definition.children)
     {
+        if (!child.second)
+        {
+            continue;
+        }
+
         projectDefinitionColors(
-            child.second,
+            *child.second,
             video
         );
     }
@@ -287,18 +368,22 @@ void ProjectCompiler::compileDefinition(
     }
 
     compiling.insert(id);
+    auto compiled =
+        std::make_unique<ObjectDefinition>();
 
-    ObjectDefinition compiled =
-        definition;
+    fillCompiledDefinitionShell(
+        *compiled,
+        definition
+    );
 
-    compiled.color =
+    compiled->color =
         VideoColorProcessor::project(
-            compiled.color,
+            compiled->color,
             video
         );
 
     resolveScripts(
-        compiled,
+        *compiled,
         registry,
         diagnostics,
         definition.sourcePath,
@@ -306,18 +391,23 @@ void ProjectCompiler::compileDefinition(
         worldRoot
     );
 
-    compiled.sourcePath =
+    compiled->sourcePath =
         relativeSourceName(
             definition.sourcePath,
             projectRoot
         );
 
-    compiled.childResources.clear();
+    compiled->childResources.clear();
 
     for (const auto& child : definition.children)
     {
+        if (!child.second)
+        {
+            continue;
+        }
+
         compileDefinition(
-            child.second,
+            *child.second,
             video,
             registry,
             diagnostics,
@@ -328,26 +418,28 @@ void ProjectCompiler::compileDefinition(
 
         const ResourceId childResourceId =
             makeResourceId(
-                child.second,
-                child.second.sourcePath,
+                *child.second,
+                child.second->sourcePath,
                 projectRoot
             );
 
-        compiled.childResources[child.first] =
+        compiled->childResources[child.first] =
             childResourceId;
-
     }
 
-    compiled.children.clear();
+    compiled->children.clear();
 
     compiling.erase(id);
 
-    if (!registry.addObject(id, compiled))
+    const bool objectAdded =
+        registry.addObjectOwned(id, std::move(compiled));
+
+    if (!objectAdded)
     {
         diagnostics.error(
             DiagnosticCode::ResourceIdCollision,
             "Resource id collision detected",
-            compiled.sourcePath,
+            definition.sourcePath,
             id
         );
     }

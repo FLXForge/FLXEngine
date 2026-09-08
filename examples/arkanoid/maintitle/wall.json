@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "shape": {
     "type": "block",
     "color": "white",
@@ -9,10 +8,10 @@
       "height": 10
     }
   },
-  
-  "collision": {
-    "type": "box"
-  },
-  
-  "visible": false
+  "visible": false,
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
+  }
 }

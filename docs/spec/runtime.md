@@ -119,13 +119,23 @@ En mecánicas `polar`, `advance()` usa `angle` y `speed` como movimiento polar p
 
 Las propiedades comunes de `mechanics.motion` se aplican a ambos ejes. `motion.horizontal` y `motion.vertical` son overrides parciales: si un eje no declara un campo concreto, conserva el valor común de `motion`.
 
+## 9.2. Tipología emergente de RuntimeObject
+FLX no exige una tipología explícita para clasificar RuntimeObjects.
+
+Todo RuntimeObject comparte el mismo modelo de definición y las mismas capacidades declarativas disponibles. Su papel dentro del mundo emerge de las propiedades, relaciones y capacidades que declara.
+
+Un RuntimeObject puede actuar, por ejemplo, como nodo estructural, objeto visible, elemento de UI, componente de otro objeto o entidad interactiva sin cambiar de tipo ni utilizar un esquema de definición distinto.
+
+Propiedades como `component`, `children`, capacidades visuales, scripting, mechanics o collision modifican su comportamiento y sus relaciones, pero no crean clases públicas distintas de RuntimeObject.
+
 ## 10. Muerte
 La operación es conceptualmente `kill(instance)` y actúa sobre identidad runtime, no sobre un nombre global.
 
 ```text
-kill
-→ muerte solicitada
-→ deja de participar en fases activas posteriores
+kill()
+→ alive = false inmediatamente
+→ deja de participar en cualquier procesamiento activo posterior,
+  incluso dentro de la misma fase y frame
 → dead()
 → cleanup
 → eliminación
@@ -174,11 +184,17 @@ video layer
 Las video layers no forman parte de 0.3.0.
 
 ## 13. Tiempo, attachments y collision
-`stateTime` y timers avanzan después de action, motion, attachments y collision. Se conserva esta política en 0.3.0, pendiente de auditoría específica.
+`stateTime` y timers avanzan después de action, motion, attachments y collision. Se conserva esta política en 0.3.0.
 
-Attachments mantienen el orden `motion → attachments → collision`; su semántica detallada queda pendiente.
+Attachments mantienen el orden `motion → attachments → collision`; su semántica detallada pertenece a su especificación correspondiente.
 
-Collision se ejecuta después de motion y attachments. Grupos, formas, respuesta, callbacks, activación/desactivación y raycast se auditarán separadamente.
+Collision se ejecuta después de motion y attachments. Su contrato normativo, incluidos colliders, contactos, activación, mutaciones durante la fase, Ray y debug, se define en:
+
+```text
+docs/spec/scripting/collision.md
+```
+
+La visibilidad no altera la participación en Collision.
 
 ## 14. Búsqueda
 `findByRuntimeId()` representa una búsqueda exacta. Las búsquedas por nombre son utilidades contextuales, no identidad global.
@@ -219,13 +235,9 @@ CompiledProject
 No constituyen por sí mismas deuda accidental:
 - video layers;
 - semántica completa de attachments;
-- states;
-- stateTime y timers;
-- collision y raycast;
 - Runtime Diagnostics recuperables;
-- input y audio;
+- audio;
 - operaciones adicionales sobre hijos;
-- búsqueda contextual;
 - modularización interna de RuntimeWorld.
 
 No deben elevarse a contrato definitivo sin su auditoría específica.
@@ -239,7 +251,9 @@ No deben elevarse a contrato definitivo sin su auditoría específica.
 - visibilidad aplicada solo al dibujo declarativo;
 - `draw()` JS fuera del orden del objeto;
 - confusión entre ciclos de referencia y ciclos de instanciación automática;
-- uso de `name` como identidad precisa.
+- uso de `name` como identidad precisa;
+- tipología pública rígida de RuntimeObject;
+- semántica diferida de `alive` tras `kill()`.
 
 ## 20. Invariantes
 - RT-001 Cada instancia posee `runtimeId` único.
@@ -264,9 +278,11 @@ No deben elevarse a contrato definitivo sin su auditoría específica.
 - RT-020 Los errores JS recuperables no detienen automáticamente Runtime.
 - RT-021 Los punteros C++ a RuntimeObject no son identidad persistente.
 - RT-022 Runtime no vuelve a las fuentes.
+- RT-023 La tipología funcional de un RuntimeObject emerge de su configuración y no de un tipo estructural declarado.
+- RT-024 `kill()` establece `alive = false` inmediatamente y excluye la instancia de toda participación posterior.
 
 ## 21. Tests mínimos
-El contrato debe proteger carga/nacimiento, spawn por fase, muerte terminal, `keep_only`, visibilidad, orden de dibujo, ciclos auto/manual, identidad runtime y continuidad ante errores recuperables de scripting.
+El contrato debe proteger carga/nacimiento, spawn por fase, muerte terminal e inmediata, `keep_only`, visibilidad, orden de dibujo, ciclos auto/manual, identidad runtime, continuidad ante errores recuperables de scripting y la frontera con Collision.
 
 ## 22. Principio final
 RuntimeWorld no representa el proyecto. Representa el mundo vivo que existe cuando ese proyecto se ejecuta.

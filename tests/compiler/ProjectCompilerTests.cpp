@@ -501,7 +501,6 @@ int main()
         try
 
         {
-
             test.second();
 
             std::cout << "[PASS] " << test.first << "\n";

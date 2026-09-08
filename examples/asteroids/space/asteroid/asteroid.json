@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "sounds": {
     "pfooom": {
       "kind": {
@@ -28,7 +27,6 @@
       "volume": 0.5
     }
   },
-
   "bounds": {
     "mode": "wrap",
     "overflow": true
@@ -42,16 +40,6 @@
     }
   },
   "group": "asteroid",
-  "collision": {
-    "type": "circle",
-    "active": true,
-    "with": [
-      "ship",
-      "asteroid",
-      "laser"
-    ],
-    "radius": 16
-  },
   "behavior": {
     "scripts": [
       "asteroid"
@@ -65,6 +53,20 @@
     "fragment": {
       "like": "asteroid_fragment",
       "spawn": "manual"
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 32.0,
+        "height": 32.0
+      },
+      "with": [
+        "ship",
+        "asteroid",
+        "laser"
+      ]
     }
   }
 }

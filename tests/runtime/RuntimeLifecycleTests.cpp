@@ -107,9 +107,9 @@ namespace
             );
 
             scripts.setRayCastFunction(
-                [this](RuntimeObject& source, float angle, float distance)
+                [this](RuntimeObject& source, ScriptEngine& scriptEngine, float angle, float distance)
                 {
-                    return world.rayCast(source, angle, distance);
+                    return world.rayCast(source, scriptEngine, angle, distance);
                 }
             );
         }
@@ -247,10 +247,10 @@ namespace
     {
         std::ostringstream out;
         out
-            << "root type=" << root.collisionType
+            << "root type=" << root.collisions.begin()->second.type
             << " pos=" << root.position.x << "," << root.position.y
             << " size=" << root.size.x << "," << root.size.y
-            << " target type=" << target.collisionType
+            << " target type=" << target.collisions.begin()->second.type
             << " pos=" << target.position.x << "," << target.position.y
             << " size=" << target.size.x << "," << target.size.y;
 
@@ -535,9 +535,7 @@ namespace
         root.childResources["motionChild"] = "motionChild";
         root.childResources["collisionChild"] = "collisionChild";
         root.childResources["target"] = "target";
-        root.collisionActive = true;
-        root.collisionType = "box";
-        root.collisionWith.push_back("target");
+        root.collisions["body"].with.push_back("target");
         root.group = "source";
         root.origin = Vector2{ 20.0f, 20.0f };
         root.hasOrigin = true;
@@ -546,7 +544,7 @@ namespace
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.offset = Vector2{ 0.0f, 0.0f };
         target.hasOffset = true;
         target.size = Vector2{ 100.0f, 100.0f };
@@ -574,15 +572,10 @@ namespace
             const RuntimeObject& loadedTarget =
                 requireObject(harness.world, "target");
 
-            require(loadedRoot.collisionActive, "root collision should be active");
-            require(loadedRoot.collisionType == "box", "root collision should be box");
-            require(loadedTarget.collisionType == "box", "target collision should be box");
+            require(!loadedRoot.collisions.empty(), "root collision should be active");
+            require(loadedRoot.collisions.begin()->second.type == "box", "root collision should be box");
+            require(loadedTarget.collisions.begin()->second.type == "box", "target collision should be box");
             require(loadedTarget.group == "target", "target group should be target");
-            require(
-                RuntimeHelpers::intersects(loadedRoot, loadedTarget),
-                "root and target should intersect after load: " +
-                collisionSnapshot(loadedRoot, loadedTarget)
-            );
         }
 
         harness.update();
@@ -593,15 +586,10 @@ namespace
             requireObject(harness.world, "target");
         require(localValue(updatedRoot, "a") == 1.0, "action callback should run");
         require(localValue(updatedRoot, "m") == 1.0, "motion callback should run");
+        require(!updatedRoot.collisions.empty(), "root collision should still be active");
+        require(!updatedRoot.collisions.begin()->second.with.empty(), "root collision filter should still exist");
         require(
-            RuntimeHelpers::intersects(updatedRoot, updatedTarget),
-            "root and target should intersect before collision callback assertion: " +
-            collisionSnapshot(updatedRoot, updatedTarget)
-        );
-        require(updatedRoot.collisionActive, "root collision should still be active");
-        require(!updatedRoot.collisionWith.empty(), "root collision filter should still exist");
-        require(
-            updatedRoot.collisionWith.front() == "target",
+            updatedRoot.collisions.begin()->second.with.front() == "target",
             "root collision filter should still target target group"
         );
         require(
@@ -679,22 +667,18 @@ namespace
 
         ObjectDefinition motionVictim =
             objectDefinition("motionVictim", "killInMotion");
-        motionVictim.collisionActive = true;
-        motionVictim.collisionType = "box";
-        motionVictim.collisionWith.push_back("target");
+        motionVictim.collisions["body"].with.push_back("target");
         motionVictim.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition collisionVictim =
             objectDefinition("collisionVictim", "killInCollision");
-        collisionVictim.collisionActive = true;
-        collisionVictim.collisionType = "box";
-        collisionVictim.collisionWith.push_back("target");
+        collisionVictim.collisions["body"].with.push_back("target");
         collisionVictim.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);
@@ -1340,14 +1324,13 @@ namespace
             "  write_local(o, 'idIsRuntime', o.id != o.name ? 1 : 0);"
             "  write_local(o, 'nameRead', o.name == 'root' ? 1 : 0);"
             "  write_local(o, 'groupRead', o.group == 'actor' ? 1 : 0);"
-            "  write_local(o, 'roleRead', o.role == 'leader' ? 1 : 0);"
+            "  write_local(o, 'roleHidden', typeof o.role == 'undefined' ? 1 : 0);"
             "  write_local(o, 'originHidden', typeof o.originX == 'undefined' && typeof o.originY == 'undefined' ? 1 : 0);"
             "  write_local(o, 'originSpeedHidden', typeof o.originSpeed == 'undefined' ? 1 : 0);"
             "  write_local(o, 'previousHidden', typeof o.previousX == 'undefined' && typeof o.previousY == 'undefined' ? 1 : 0);"
             "  o.id = 'changed_id';"
             "  o.name = 'changed_name';"
             "  o.group = 'changed_group';"
-            "  o.role = 'changed_role';"
             "  o.originX = 70;"
             "  o.originY = 80;"
             "  o.originSpeed = 90;"
@@ -1359,7 +1342,6 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "metadataProbe");
         root.group = "actor";
-        root.role = "leader";
         root.origin = Vector2{ 7.0f, 8.0f };
         root.hasOrigin = true;
         root.mechanics.motion.speed.start = 9.0f;
@@ -1376,14 +1358,13 @@ namespace
         require(localValue(runtimeRoot, "idIsRuntime") == 1.0, "JS id should expose runtime identity, not logical name");
         require(localValue(runtimeRoot, "nameRead") == 1.0, "JS name should expose logical instance name");
         require(localValue(runtimeRoot, "groupRead") == 1.0, "JS group should be readable");
-        require(localValue(runtimeRoot, "roleRead") == 1.0, "JS role should be readable");
+        require(localValue(runtimeRoot, "roleHidden") == 1.0, "JS role should not be exposed");
         require(localValue(runtimeRoot, "originHidden") == 1.0, "JS origin should not be exposed");
         require(localValue(runtimeRoot, "originSpeedHidden") == 1.0, "JS originSpeed should not be exposed");
         require(localValue(runtimeRoot, "previousHidden") == 1.0, "JS previous position should not be exposed");
         require(runtimeRoot.runtimeId != "changed_id", "JS id write should not update runtimeId");
         require(runtimeRoot.name == "root", "JS name write should not update runtime name");
         require(runtimeRoot.group == "actor", "JS group write should not update runtime group");
-        require(runtimeRoot.role == "leader", "JS role write should not update runtime role");
         require(nearlyEqual(runtimeRoot.origin.x, 7.0), "JS originX write should not update runtime origin x");
         require(nearlyEqual(runtimeRoot.origin.y, 8.0), "JS originY write should not update runtime origin y");
         require(nearlyEqual(runtimeRoot.originSpeed, 9.0), "JS originSpeed write should not update runtime originSpeed");
@@ -1440,15 +1421,13 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "collisionReferenceProbe");
         root.childResources["target"] = "target";
-        root.collisionActive = true;
-        root.collisionType = "box";
-        root.collisionWith.push_back("targetGroup");
+        root.collisions["body"].with.push_back("targetGroup");
         root.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "targetGroup";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);
@@ -1672,15 +1651,13 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "visibilityProbe");
         root.childResources["target"] = "target";
-        root.collisionActive = true;
-        root.collisionType = "box";
-        root.collisionWith.push_back("target");
+        root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);
@@ -2089,15 +2066,13 @@ namespace
         collisionProbe.initialState = "a";
         collisionProbe.stateTransitions["a"] = { "b" };
         collisionProbe.stateTransitions["b"] = {};
-        collisionProbe.collisionActive = true;
-        collisionProbe.collisionType = "box";
-        collisionProbe.collisionWith.push_back("target");
+        collisionProbe.collisions["body"].with.push_back("target");
         collisionProbe.size = Vector2{ 8.0f, 8.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 8.0f, 8.0f };
 
         harness.addObject(root);
@@ -2160,14 +2135,12 @@ namespace
         child.attachFollowX = true;
         child.attachFollowY = false;
         child.attachFollowAngle = true;
-        child.collisionActive = true;
-        child.collisionType = "box";
-        child.collisionWith.push_back("parent");
+        child.collisions["body"].with.push_back("parent");
         child.size = Vector2{ 10.0f, 10.0f };
         child.group = "child";
 
         parent.group = "parent";
-        parent.collisionType = "box";
+        parent.collisions["body"];
         parent.size = Vector2{ 30.0f, 30.0f };
 
         harness.addObject(root);
@@ -2266,15 +2239,13 @@ namespace
         ObjectDefinition root =
             objectDefinition("root", "throwEverywhere");
         root.childResources["target"] = "target";
-        root.collisionActive = true;
-        root.collisionType = "box";
-        root.collisionWith.push_back("target");
+        root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
-        target.collisionType = "box";
+        target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
 
         harness.addObject(root);

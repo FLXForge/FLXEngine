@@ -25,11 +25,6 @@ public:
     static void rotate(RuntimeObject& object, float intent, float delta);
     static void applyFreeMechanics(RuntimeObject& object, float delta);
 
-    static bool intersects(
-        const RuntimeObject& a,
-        const RuntimeObject& b
-    );
-
     static void moveY(RuntimeObject& object, float direction, float delta);
 
     static void followY(

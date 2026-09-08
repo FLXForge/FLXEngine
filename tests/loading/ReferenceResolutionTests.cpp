@@ -124,7 +124,11 @@ namespace
         const CompilationResult result =
             compile(project.manifest);
 
-        require(result.success, "REF-002 inline object should compile");
+        require(
+            result.success,
+            "REF-002 inline object should compile\n" +
+                diagnosticsText(result.diagnostics)
+        );
 
         const ObjectDefinition* ship =
             findChild(result, rootObject(result), "ship");
@@ -422,7 +426,7 @@ namespace
 
         writeFile(
             project.world / "root.json",
-            "{ \"like\": \"level/level\", \"role\": \"root\" }\n"
+            "{ \"like\": \"level/level\", \"control\": { \"player\": 1 } }\n"
         );
         writeFile(
             project.world / "level" / "level.json",
@@ -439,7 +443,7 @@ namespace
         require(result.success, "REF-012 chain of like should compile");
         require(!rootObject(result).visible, "REF-012 chain should inherit base properties");
         require(rootObject(result).group == "level", "REF-012 chain should allow intermediate override");
-        require(rootObject(result).role == "root", "REF-012 chain should allow final override");
+        require(rootObject(result).controlPlayer == 1, "REF-012 chain should allow final override");
     }
 
     void testRef010LikeCycle()

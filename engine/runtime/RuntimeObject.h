@@ -7,6 +7,8 @@
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
+#include <map>
+#include <memory>
 #include <cstdint>
 
 enum class RuntimeTimerStatus
@@ -35,7 +37,7 @@ public:
 
     std::unordered_map<std::string, ScriptValue> local;
 
-    std::unordered_map<std::string, ObjectDefinition> children;
+    std::map<std::string, std::shared_ptr<ObjectDefinition>> children;
     std::unordered_map<std::string, std::string> childResources;
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
@@ -52,8 +54,6 @@ public:
         float screenHeight
     ) const;
     void drawAt(Vector2 drawPosition, int scale) const;
-    void drawCollision(float scale) const;
-
     void applyBounds(float screenWidth, float screenHeight);
 
 public:
@@ -63,12 +63,12 @@ public:
     std::string parentId;
     std::string sourcePath;
     std::string group;
-    std::string role;
     int controlPlayer = 0;
     std::string state;
     float stateTime = 0.0f;
     uint64_t stateEnteredFrame = 0;
 
+    bool component = false;
     bool visible;
     bool alive;
     bool deadCalled;
@@ -119,10 +119,7 @@ public:
     std::string boundsMode;
     bool boundsOverflow;
 
-    bool collisionActive;
-    std::vector<std::string> collisionWith;
-    std::string collisionType;
-    float collisionRadius;
+    std::unordered_map<std::string, ColliderDefinition> collisions;
 
     std::vector<std::string> scripts;
     std::vector<std::string> resolvedScriptPaths;

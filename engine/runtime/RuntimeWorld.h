@@ -59,10 +59,11 @@ public:
     std::vector<RuntimeObject*> findLiveChildren(const std::string& runtimeId);
     void keepOnly(const std::string& runtimeId);
     RayCastResult rayCast(
-        const RuntimeObject& source,
+        RuntimeObject& source,
+        ScriptEngine& scriptEngine,
         float angle,
         float distance
-    ) const;
+    );
 
 private:
     RuntimeObject createRuntimeObject(

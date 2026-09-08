@@ -61,7 +61,6 @@ namespace
         RuntimeViewId,
         RuntimeViewName,
         RuntimeViewGroup,
-        RuntimeViewRole,
         RuntimeViewAlive,
         RuntimeViewVisible,
         RuntimeViewX,
@@ -77,15 +76,18 @@ namespace
 
     JSValue runtimeViewGetter(
         JSContext* context,
-        JSValueConst,
-        int,
-        JSValueConst*,
-        int magic,
-        JSValueConst* data
+        JSValueConst thisValue,
+        int magic
     )
     {
+        JSValue idValue =
+            JS_GetPropertyStr(context, thisValue, RuntimeViewInternalId);
+
+        JSValue invocationValue =
+            JS_GetPropertyStr(context, thisValue, RuntimeViewInternalInvocation);
+
         const char* idText =
-            JS_ToCString(context, data[0]);
+            JS_ToCString(context, idValue);
 
         const std::string runtimeId =
             idText == nullptr ? "" : idText;
@@ -97,7 +99,10 @@ namespace
 
         int64_t invocationId = 0;
 
-        JS_ToInt64(context, &invocationId, data[1]);
+        JS_ToInt64(context, &invocationId, invocationValue);
+
+        JS_FreeValue(context, idValue);
+        JS_FreeValue(context, invocationValue);
 
         ScriptEngine* scriptEngine =
             static_cast<ScriptEngine*>(
@@ -125,8 +130,6 @@ namespace
             return JS_NewString(context, object->name.c_str());
         case RuntimeViewGroup:
             return JS_NewString(context, object->group.c_str());
-        case RuntimeViewRole:
-            return JS_NewString(context, object->role.c_str());
         case RuntimeViewAlive:
             return JS_NewBool(context, object->alive);
         case RuntimeViewVisible:
@@ -154,6 +157,83 @@ namespace
         }
     }
 
+    JSValue runtimeViewUndefinedGetter(
+        JSContext*,
+        JSValueConst,
+        int
+    )
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue runtimeViewIgnoredSetter(
+        JSContext*,
+        JSValueConst,
+        JSValueConst,
+        int
+    )
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue newRuntimeViewGetterFunction(
+        JSContext* context,
+        const char* name,
+        RuntimeViewProperty property
+    )
+    {
+        JSCFunctionType functionType;
+        functionType.getter_magic =
+            runtimeViewGetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_getter_magic,
+            property
+        );
+    }
+
+    JSValue newRuntimeViewUndefinedGetterFunction(
+        JSContext* context,
+        const char* name
+    )
+    {
+        JSCFunctionType functionType;
+        functionType.getter_magic =
+            runtimeViewUndefinedGetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_getter_magic,
+            0
+        );
+    }
+
+    JSValue newRuntimeViewIgnoredSetterFunction(
+        JSContext* context,
+        const char* name
+    )
+    {
+        JSCFunctionType functionType;
+        functionType.setter_magic =
+            runtimeViewIgnoredSetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_setter_magic,
+            0
+        );
+    }
+
     void defineRuntimeViewGetter(
         JSContext* context,
         JSValueConst object,
@@ -163,23 +243,18 @@ namespace
         RuntimeViewProperty property
     )
     {
-        JSValue data[2] = {
-            JS_NewString(context, runtimeId.c_str()),
-            JS_NewInt64(context, static_cast<int64_t>(invocationId))
-        };
-
         JSValue getter =
-            JS_NewCFunctionData(
+            newRuntimeViewGetterFunction(
                 context,
-                runtimeViewGetter,
-                0,
-                property,
-                2,
-                data
+                name,
+            property
             );
 
-        JS_FreeValue(context, data[0]);
-        JS_FreeValue(context, data[1]);
+        JSValue setter =
+            newRuntimeViewIgnoredSetterFunction(
+                context,
+                name
+            );
 
         JSAtom atom =
             JS_NewAtom(context, name);
@@ -189,8 +264,41 @@ namespace
             object,
             atom,
             getter,
-            JS_UNDEFINED,
+            setter,
             JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE
+        );
+
+        JS_FreeAtom(context, atom);
+    }
+
+    void defineRuntimeViewIgnoredProperty(
+        JSContext* context,
+        JSValueConst object,
+        const char* name
+    )
+    {
+        JSValue getter =
+            newRuntimeViewUndefinedGetterFunction(
+                context,
+                name
+            );
+
+        JSValue setter =
+            newRuntimeViewIgnoredSetterFunction(
+                context,
+                name
+            );
+
+        JSAtom atom =
+            JS_NewAtom(context, name);
+
+        JS_DefinePropertyGetSet(
+            context,
+            object,
+            atom,
+            getter,
+            setter,
+            JS_PROP_CONFIGURABLE
         );
 
         JS_FreeAtom(context, atom);
@@ -210,6 +318,48 @@ namespace
             value,
             JS_PROP_CONFIGURABLE
         );
+    }
+
+    JSValue createCollisionContact(
+        JSContext* context,
+        const CollisionContact& contact
+    )
+    {
+        JSValue value =
+            JS_NewObject(context);
+
+        JS_SetPropertyStr(context, value, "collider", JS_NewString(context, contact.collider.c_str()));
+        JS_SetPropertyStr(context, value, "otherCollider", JS_NewString(context, contact.otherCollider.c_str()));
+        JS_SetPropertyStr(context, value, "normalX", JS_NewFloat64(context, contact.normal.x));
+        JS_SetPropertyStr(context, value, "normalY", JS_NewFloat64(context, contact.normal.y));
+        JS_SetPropertyStr(context, value, "pointX", JS_NewFloat64(context, contact.point.x));
+        JS_SetPropertyStr(context, value, "pointY", JS_NewFloat64(context, contact.point.y));
+        JS_SetPropertyStr(context, value, "penetration", JS_NewFloat64(context, contact.penetration));
+
+        JS_PreventExtensions(context, value);
+
+        return value;
+    }
+
+    JSValue createCollisionContacts(
+        JSContext* context,
+        const std::vector<CollisionContact>& contacts
+    )
+    {
+        JSValue array =
+            JS_NewArray(context);
+
+        for (uint32_t i = 0; i < contacts.size(); ++i)
+        {
+            JS_SetPropertyUint32(
+                context,
+                array,
+                i,
+                createCollisionContact(context, contacts[i])
+            );
+        }
+
+        return array;
     }
 
 }
@@ -410,6 +560,25 @@ void ScriptEngine::callScriptFunction(
     RuntimeObject& other
 )
 {
+    const std::vector<CollisionContact> contacts;
+
+    callScriptFunction(
+        script,
+        function,
+        object,
+        other,
+        contacts
+    );
+}
+
+void ScriptEngine::callScriptFunction(
+    const std::string& script,
+    const std::string& function,
+    RuntimeObject& object,
+    RuntimeObject& other,
+    const std::vector<CollisionContact>& contacts
+)
+{
     JSValue func =
         getCachedFunction(script, function);
 
@@ -436,9 +605,13 @@ void ScriptEngine::callScriptFunction(
     const std::string otherRuntimeId =
         other.runtimeId;
 
-    JSValue args[2] = {
+    JSValue contactArray =
+        createCollisionContacts(context, contacts);
+
+    JSValue args[3] = {
         self,
-        otherObject
+        otherObject,
+        contactArray
     };
 
     activeScriptObjects[objectRuntimeId] =
@@ -451,7 +624,7 @@ void ScriptEngine::callScriptFunction(
             context,
             func,
             global,
-            2,
+            3,
             args
         );
 
@@ -489,6 +662,7 @@ void ScriptEngine::callScriptFunction(
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
     JS_FreeValue(context, otherObject);
+    JS_FreeValue(context, contactArray);
     JS_FreeValue(context, global);
 }
 
@@ -815,6 +989,53 @@ RuntimeObject* ScriptEngine::resolveRuntimeObjectReference(
     return object;
 }
 
+bool ScriptEngine::hasStateMachine(const RuntimeObject& object) const
+{
+    const ObjectDefinition* definition =
+        findObjectDefinition(object.definitionId);
+
+    return definition != nullptr &&
+        !definition->initialState.empty() &&
+        !definition->stateTransitions.empty();
+}
+
+RuntimeObject* ScriptEngine::effectiveStateObject(RuntimeObject& object)
+{
+    RuntimeObject* current =
+        &object;
+
+    while (current != nullptr)
+    {
+        if (hasStateMachine(*current))
+        {
+            return current;
+        }
+
+        if (!current->component)
+        {
+            return nullptr;
+        }
+
+        current =
+            findParent(current->runtimeId);
+    }
+
+    return nullptr;
+}
+
+const RuntimeObject* ScriptEngine::effectiveStateObject(
+    const RuntimeObject& object
+) const
+{
+    RuntimeObject* mutableObject =
+        const_cast<RuntimeObject*>(&object);
+
+    ScriptEngine* mutableEngine =
+        const_cast<ScriptEngine*>(this);
+
+    return mutableEngine->effectiveStateObject(*mutableObject);
+}
+
 bool ScriptEngine::isCurrentScriptInvocation(
     uint64_t invocationId
 ) const
@@ -926,6 +1147,7 @@ RayCastResult ScriptEngine::rayCast(
 
     return rayCastFunction(
         source,
+        *this,
         angle,
         distance
     );
@@ -1057,7 +1279,6 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     defineRuntimeViewGetter(context, self, "id", object.runtimeId, invocationId, RuntimeViewId);
     defineRuntimeViewGetter(context, self, "name", object.runtimeId, invocationId, RuntimeViewName);
     defineRuntimeViewGetter(context, self, "group", object.runtimeId, invocationId, RuntimeViewGroup);
-    defineRuntimeViewGetter(context, self, "role", object.runtimeId, invocationId, RuntimeViewRole);
     defineRuntimeViewGetter(context, self, "alive", object.runtimeId, invocationId, RuntimeViewAlive);
     defineRuntimeViewGetter(context, self, "visible", object.runtimeId, invocationId, RuntimeViewVisible);
     defineRuntimeViewGetter(context, self, "x", object.runtimeId, invocationId, RuntimeViewX);
@@ -1069,6 +1290,9 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, invocationId, RuntimeViewVelocityX);
     defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, invocationId, RuntimeViewVelocityY);
     defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, invocationId, RuntimeViewRotationSpeed);
+    defineRuntimeViewIgnoredProperty(context, self, "attached");
+    defineRuntimeViewIgnoredProperty(context, self, "layer");
+    defineRuntimeViewIgnoredProperty(context, self, "local");
     JS_PreventExtensions(context, self);
 
     return self;

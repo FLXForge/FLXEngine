@@ -26,11 +26,15 @@
         "player": 1
       },
       "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
       "behavior": {
-        "scripts": [ "player" ]
+        "scripts": [
+          "player"
+        ]
+      },
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       }
     },
     "enemy": {
@@ -55,11 +59,15 @@
         }
       },
       "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
       "behavior": {
-        "scripts": [ "enemy" ]
+        "scripts": [
+          "enemy"
+        ]
+      },
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       }
     },
     "ball": {
@@ -87,17 +95,10 @@
         }
       },
       "group": "ball",
-      "collision": {
-        "type": "box",
-        "active": true,
-        "with": [
-          "wall",
-          "goal",
-          "paddle"
-        ]
-      },
       "behavior": {
-        "scripts": [ "ball" ]
+        "scripts": [
+          "ball"
+        ]
       },
       "sounds": {
         "beep": {
@@ -110,6 +111,16 @@
           },
           "duration": 0.08,
           "volume": 0.7
+        }
+      },
+      "collisions": {
+        "body": {
+          "type": "box",
+          "with": [
+            "wall",
+            "goal",
+            "paddle"
+          ]
         }
       }
     },
@@ -127,10 +138,12 @@
         }
       },
       "group": "goal",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      }
     },
     "right_goal": {
       "origin": {
@@ -146,10 +159,12 @@
         }
       },
       "group": "goal",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      }
     },
     "top_wall": {
       "origin": {
@@ -165,10 +180,12 @@
         }
       },
       "group": "wall",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      }
     },
     "bottom_wall": {
       "origin": {
@@ -184,10 +201,12 @@
         }
       },
       "group": "wall",
-      "collision": {
-        "type": "box"
-      },
-      "visible": false
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      }
     }
   }
 }

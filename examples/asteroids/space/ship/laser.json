@@ -27,13 +27,18 @@
     "overflow": false
   },
   "group": "laser",
-  "collision": {
-    "type": "circle",
-    "radius": 2
-  },
   "behavior": {
     "scripts": [
       "laser"
     ]
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 4.0,
+        "height": 4.0
+      }
+    }
   }
 }

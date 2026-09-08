@@ -352,7 +352,7 @@ machine=machines/standard.yml
 
             <p>
                 The <code>shape</code> block defines how an object is rendered,
-                while the <code>collision</code> block defines how it interacts
+                while the <code>collisions</code> block defines how it interacts
                 with other objects in the runtime.
             </p>
 
@@ -362,28 +362,30 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                In addition to defining the collider shape,
-                the <code>collision</code> block can control whether collision
-                is active and which groups the object can interact with.
+                In addition to defining named collider shapes,
+                the <code>collisions</code> block can control whether each collider
+                is enabled and which groups it can actively check.
             </p>
 
             <p>
-                Collision checks are active and directional:
-                an object only executes <code>collision()</code>
-                when its own <code>collision.active</code> is enabled
-                and the other object's group matches its <code>collision.with</code> list.
+                Collision checks are directional:
+                an object only executes <code>collision(object, other, contacts)</code>
+                when one of its enabled colliders includes the other object's group
+                in its <code>with</code> list.
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape + collision</div>
+                <div class="code-header">shape + collisions</div>
 <pre><code>{
     "shape": {
         "type": "polygon"
     },
 
-    "collision": {
-        "type": "circle",
-        "radius": 12
+    "collisions": {
+        "body": {
+            "type": "ellipse",
+            "size": { "width": 24, "height": 24 }
+        }
     }
 }
 </code></pre>

@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "shape": {
     "type": "text",
     "layer": 10,
@@ -12,9 +11,7 @@
       "height": 10
     }
   },
-
   "spawn": "manual",
-
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -23,14 +20,15 @@
       }
     }
   },
-
   "group": "powerup",
-
-  "collision": {
-    "type": "box"
-  },
-
   "behavior": {
-    "scripts": [ "powerup" ]
+    "scripts": [
+      "powerup"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
   }
 }

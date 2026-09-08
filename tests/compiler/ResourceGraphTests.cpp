@@ -127,7 +127,7 @@ namespace
 
         writeFile(
             root / "game" / "root.json",
-            "{ \"children\": { \"brick\": { \"like\": \"objects/brick\", \"role\": \"strong\" } } }\n"
+            "{ \"children\": { \"brick\": { \"like\": \"objects/brick\", \"visible\": false } } }\n"
         );
 
         writeFile(
@@ -146,7 +146,7 @@ namespace
 
         require(child != nullptr, "liked child should be registered");
         require(child->group == "brick", "liked child should inherit group");
-        require(child->role == "strong", "liked child should keep override");
+        require(!child->visible, "liked child should keep override");
     }
 
     void testValidFlxReference()

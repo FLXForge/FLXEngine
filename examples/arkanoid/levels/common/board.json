@@ -1,8 +1,6 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "spawn": "manual",
-
   "children": {
     "top_wall": {
       "shape": {
@@ -13,16 +11,15 @@
           "height": 10
         }
       },
-
       "origin": {
         "x": 40,
         "y": 45
       },
-
       "group": "wall_top",
-
-      "collision": {
-        "type": "box"
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       }
     },
     "left_wall": {
@@ -34,16 +31,15 @@
           "height": 250
         }
       },
-
       "origin": {
         "x": 40,
         "y": 45
       },
-
       "group": "wall_side",
-
-      "collision": {
-        "type": "box"
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       }
     },
     "right_wall": {
@@ -55,16 +51,15 @@
           "height": 250
         }
       },
-
       "origin": {
         "x": 600,
         "y": 45
       },
-
       "group": "wall_side",
-
-      "collision": {
-        "type": "box"
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       }
     }
   }

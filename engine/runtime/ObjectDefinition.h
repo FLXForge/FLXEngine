@@ -6,6 +6,8 @@
 #include "../audio/SoundDefinition.h"
 #include "ScriptValue.h"
 
+#include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -96,11 +98,31 @@ struct InheritDefinition
     InheritLiveMode liveAngle = InheritLiveMode::None;
 };
 
+struct ColliderSizeDefinition
+{
+    float width = 0.0f;
+    float height = 0.0f;
+    bool hasWidth = false;
+    bool hasHeight = false;
+};
+
+struct ColliderDefinition
+{
+    std::string type = "box";
+    ColliderSizeDefinition size;
+    Vector2 offset = Vector2{ 0.0f, 0.0f };
+    float angle = 0.0f;
+    std::vector<std::string> with;
+    bool enabled = true;
+    std::vector<std::string> states;
+};
+
 struct ObjectDefinition
 {
     std::string id;
     std::string sourcePath;
     std::string spawnMode = "auto";
+    bool component = false;
 
     Vector2 offset = Vector2{ 0.0f, 0.0f };
     bool hasOffset = false;
@@ -133,20 +155,16 @@ struct ObjectDefinition
     bool boundsOverflow = false;
 
     std::string group;
-    std::string role;
     int controlPlayer = 0;
     std::unordered_map<std::string, ScriptValue> local;
-    std::string collisionType = "none";
-    bool collisionActive = false;
-    float collisionRadius = 0.0f;
-    std::vector<std::string> collisionWith;
+    std::unordered_map<std::string, ColliderDefinition> collisions;
 
     std::vector<std::string> scripts;
     std::vector<std::string> scriptSourcePaths;
     std::vector<std::string> resolvedScriptPaths;
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
-    std::unordered_map<std::string, ObjectDefinition> children;
+    std::map<std::string, std::shared_ptr<ObjectDefinition>> children;
     std::unordered_map<std::string, std::string> childResources;
     std::unordered_map<std::string, std::string> childSourcePaths;
 

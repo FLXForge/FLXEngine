@@ -36,10 +36,6 @@
     "player": 1
   },
   "group": "ship",
-  "collision": {
-    "type": "circle",
-    "radius": 10
-  },
   "behavior": {
     "scripts": [
       "ship"
@@ -135,6 +131,15 @@
       "spawn": "manual",
       "offset": {
         "y": 14
+      }
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 20.0,
+        "height": 20.0
       }
     }
   }

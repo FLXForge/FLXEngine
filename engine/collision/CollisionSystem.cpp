@@ -1,32 +1,46 @@
 #include "CollisionSystem.h"
-#include "../runtime/RuntimeHelpers.h"
+#include "CollisionGeometry.h"
+#include "EffectiveColliderBuilder.h"
 #include "../runtime/RuntimeObject.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 namespace
 {
-    bool canCollideWith(
-        const RuntimeObject& object,
-        const RuntimeObject& other
+    using ColliderMap =
+        std::unordered_map<std::string, std::vector<EffectiveCollider>>;
+
+    bool hasDirectedGroup(
+        const EffectiveCollider& source,
+        const RuntimeObject& target
     )
     {
-        if (!object.collisionActive)
-        {
-            return false;
-        }
-
-        if (object.collisionWith.empty())
+        if (source.with.empty())
         {
             return false;
         }
 
         return std::find(
-            object.collisionWith.begin(),
-            object.collisionWith.end(),
-            other.group
-        ) != object.collisionWith.end();
+            source.with.begin(),
+            source.with.end(),
+            target.group
+        ) != source.with.end();
+    }
+
+    bool hasAnyDirectedCollider(
+        const RuntimeObject& object
+    )
+    {
+        return std::any_of(
+            object.collisions.begin(),
+            object.collisions.end(),
+            [](const auto& pair)
+            {
+                return pair.second.enabled && !pair.second.with.empty();
+            }
+        );
     }
 }
 
@@ -35,12 +49,33 @@ void CollisionSystem::run(
     ScriptEngine& scriptEngine
 )
 {
+    ColliderMap colliders;
+
+    for (RuntimeObject& object : objects)
+    {
+        if (!object.alive || object.collisions.empty())
+        {
+            continue;
+        }
+
+        colliders[object.runtimeId] =
+            EffectiveColliderBuilder::build(object, scriptEngine);
+    }
+
     for (size_t i = 0; i < objects.size(); ++i)
     {
         RuntimeObject& a =
             objects[i];
 
-        if (!a.alive || !a.collisionActive)
+        if (!a.alive || !hasAnyDirectedCollider(a))
+        {
+            continue;
+        }
+
+        const auto sourceIt =
+            colliders.find(a.runtimeId);
+
+        if (sourceIt == colliders.end())
         {
             continue;
         }
@@ -60,32 +95,63 @@ void CollisionSystem::run(
                 continue;
             }
 
-            if (!canCollideWith(a, b))
+            const auto targetIt =
+                colliders.find(b.runtimeId);
+
+            if (targetIt == colliders.end())
             {
                 continue;
             }
 
-            if (RuntimeHelpers::intersects(a, b))
-            {
-                for (const auto& scriptPath : a.resolvedScriptPaths)
-                {
-                    scriptEngine.callScriptFunction(
-                        scriptPath,
-                        "collision",
-                        a,
-                        b
-                    );
+            std::vector<CollisionContact> contacts;
 
-                    if (!a.alive)
-                    {
-                        break;
-                    }
+            for (const EffectiveCollider& sourceCollider : sourceIt->second)
+            {
+                if (!sourceCollider.effective ||
+                    !hasDirectedGroup(sourceCollider, b))
+                {
+                    continue;
                 }
 
-                if (!a.alive)
+                for (const EffectiveCollider& targetCollider : targetIt->second)
+                {
+                    CollisionContact contact;
+
+                    if (CollisionGeometry::contact(
+                        sourceCollider,
+                        targetCollider,
+                        contact
+                    ))
+                    {
+                        contacts.push_back(contact);
+                    }
+                }
+            }
+
+            if (contacts.empty())
+            {
+                continue;
+            }
+
+            for (const auto& scriptPath : a.resolvedScriptPaths)
+            {
+                scriptEngine.callScriptFunction(
+                    scriptPath,
+                    "collision",
+                    a,
+                    b,
+                    contacts
+                );
+
+                if (!a.alive || !b.alive)
                 {
                     break;
                 }
+            }
+
+            if (!a.alive)
+            {
+                break;
             }
         }
     }

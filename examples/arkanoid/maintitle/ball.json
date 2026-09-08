@@ -1,11 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 320,
     "y": 240
   },
-
   "shape": {
     "type": "circle",
     "mode": "fill",
@@ -15,7 +13,6 @@
       "height": 10
     }
   },
-
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -27,25 +24,12 @@
       "angle": 25
     }
   },
-
   "group": "ball",
-
-  "collision": {
-    "type": "circle",
-    "radius": 5,
-    "active": true,
-    "with": [
-      "wall_side",
-      "wall_top",
-      "title",
-      "paddle"
+  "behavior": {
+    "scripts": [
+      "ball"
     ]
   },
-
-  "behavior": {
-    "scripts": [ "ball" ]
-  },
-
   "sounds": {
     "paddle": {
       "kind": {
@@ -58,6 +42,20 @@
       "duration": 0.08,
       "volume": 0.8
     }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 10.0,
+        "height": 10.0
+      },
+      "with": [
+        "wall_side",
+        "wall_top",
+        "title",
+        "paddle"
+      ]
+    }
   }
-
 }

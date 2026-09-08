@@ -3,6 +3,7 @@
 #include "../runtime/ObjectDefinition.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 using ResourceId = std::string;
@@ -17,9 +18,20 @@ struct ScriptResource
 class ResourceRegistry
 {
 public:
+    ResourceRegistry() = default;
+    ResourceRegistry(const ResourceRegistry& other);
+    ResourceRegistry& operator=(const ResourceRegistry& other);
+    ResourceRegistry(ResourceRegistry&& other) noexcept = default;
+    ResourceRegistry& operator=(ResourceRegistry&& other) noexcept = default;
+
     bool addObject(
         const ResourceId& id,
         const ObjectDefinition& definition
+    );
+
+    bool addObjectOwned(
+        const ResourceId& id,
+        std::unique_ptr<ObjectDefinition> definition
     );
 
     const ObjectDefinition* findObject(
@@ -51,6 +63,7 @@ public:
     const std::map<ResourceId, ScriptResource>& allScripts() const;
 
 private:
-    std::map<ResourceId, ObjectDefinition> objects;
+    std::map<ResourceId, std::unique_ptr<ObjectDefinition>> objects;
+    mutable std::map<ResourceId, ObjectDefinition> objectSnapshot;
     std::map<ResourceId, ScriptResource> scripts;
 };

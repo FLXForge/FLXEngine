@@ -8,9 +8,6 @@
       "height": 10
     }
   },
-  "collision": {
-    "type": "none"
-  },
   "bounds": {
     "mode": "wrap",
     "overflow": false

@@ -724,8 +724,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 <pre><code>{
     "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-    "collision": {
-        "type": "box"
+    "collisions": {
+        "body": { "type": "box" }
     },
 
     "children": {
@@ -743,7 +743,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <ul>
                 <li><code>$schema</code>: schema path used for validation. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: named collider declarations associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#children">children</a>: child objects loaded with this object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
@@ -816,11 +816,12 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
     },
 
     "group": "paddle",
-    "role": "player",
 
-    "collision": {
-      "type": "circle",
-        "radius": 16
+    "collisions": {
+      "body": {
+        "type": "ellipse",
+        "size": { "width": 32, "height": 32 }
+      }
     },
 
     "behavior": {
@@ -847,9 +848,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><a class="link" href="#states">states</a>: lightweight state machine declaration. <i>[ Optional ]</i></li>
                 <li><code>control</code>: optional input subject binding for this object. <i>[ Optional ]</i></li>
                 <li><code>group</code>: logical group associated with the object. <i>[ Optional ]</i></li>
-                <li><code>role</code>: optional role inside the object's group. <i>[ Optional ]</i></li>
                 <li><code>local</code>: initial local state for each instance. Only string, number and boolean values are supported. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#collision">collision</a>: collision configuration associated with the object. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: named collider declarations associated with the object. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#behavior">behavior</a>: scripts associated with the object. <i>[ Optional ]</i></li>
             </ul>
 
@@ -861,10 +861,6 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <p>
                 <code>group</code> classifies what kind of object it is for collisions and queries.
-                <code>role</code> refines the concrete purpose of that object inside the same group.
-                For example, Pong can use <code>group: "wall"</code> with <code>role: "top"</code>
-                or <code>role: "bottom"</code>, without creating artificial groups such as
-                <code>wall_top</code> and <code>wall_bottom</code>.
             </p>
 
             <p>
@@ -1210,76 +1206,42 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <hr />
 
-            <h2 id="collision">Collision</h2>
+            <h2 id="collision">Collisions</h2>
 
             <p>
-                Defines the collision associated with the object.
+                Defines one or more named colliders associated with the object.
+                Each collider can be enabled, filtered by group, limited to states,
+                and shaped independently from the visual shape.
             </p>
 
             <p>
-                The <code>collision(object, other)</code> function
-                is only executed when <code>collision.active</code> is set to
-                <code>true</code> and the other object's group is included in
-                <code>collision.with</code>.
-            </p>
-
-            <p>
-                Only active objects execute
-                <code>collision(object, other)</code>.
-            </p>
-
-            <p>
-                Objects listed in <code>collision.with</code>
-                do not automatically execute their own collision handler
-                unless they are also active and independently detect a matching collision.
+                The <code>collision(object, other, contacts)</code> callback is executed
+                when one of the object's enabled colliders declares the other object's
+                group in <code>with</code> and the geometry overlaps.
             </p>
 
             <div class="code-card">
-                <div class="code-header">collision</div>
-<pre><code>"collision": {
-    "type": "circle",
-    "active": "true",
-    "with": [ "wall" ],
-    "radius": 16
-},
-</code></pre>
+                <div class="code-header">collisions</div>
+<pre><code>"collisions": {
+    "body": {
+        "type": "ellipse",
+        "size": { "width": 32, "height": 32 },
+        "with": [ "wall" ]
+    }
+}</code></pre>
             </div>
 
             <h3>Fields</h3>
 
             <ul>
-                <li>
-                    <code>type</code>: collision type. <i>[ Optional ]</i>
-
-                    <ul>
-                        <li><code>none</code>: no collision. <i>[ default ]</i></li>
-                        <li><code>box</code>: box collision.</li>
-                        <li><code>circle</code>: circular collision.</li>
-                    </ul>
-                </li>
-
-                <li>
-                    <code>active</code>:
-                    enables or disables collision processing for this object.
-                    <i>[ Optional ]</i>
-                </li>
-
-                <li>
-                    <code>with</code>:
-                    list of groups this object can collide with.
-                    <i>[ Optional ]</i>
-                </li>
-
-                <li>
-                    <code>radius</code>:
-                    collision radius when
-                    <code>type</code>
-                    is
-                    <code>circle</code>.
-                    <i>[ Optional ]</i>
-                </li>
+                <li><code>type</code>: collider type: <code>box</code> or <code>ellipse</code>.</li>
+                <li><code>enabled</code>: enables or disables this collider. Defaults to <code>true</code>.</li>
+                <li><code>size</code>: optional logical collider size. If omitted, the object size is used.</li>
+                <li><code>offset</code>: optional local offset from the object position.</li>
+                <li><code>angle</code>: optional collider angle added to the object angle.</li>
+                <li><code>with</code>: groups this collider actively checks. Empty or omitted means passive.</li>
+                <li><code>states</code>: optional list of effective states where this collider exists.</li>
             </ul>
-
             <hr />
 
             <h2 id="behavior">Behavior</h2>

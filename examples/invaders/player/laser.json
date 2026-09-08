@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -10,7 +9,6 @@
       "height": 8
     }
   },
-
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -22,14 +20,15 @@
       "angle": 0
     }
   },
-
   "group": "laser",
-
-  "collision": {
-    "type": "box"
-  },
-
   "behavior": {
-    "scripts": [ "laser" ]
+    "scripts": [
+      "laser"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
   }
 }

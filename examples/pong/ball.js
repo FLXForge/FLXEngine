@@ -11,13 +11,43 @@ function motion(ball) {
     advance(ball);
 }
 
-function collision(ball, other) {
+function strongest_contact(contacts) {
+    if (contacts.length == 0) {
+        return null;
+    }
+
+    let strongest = contacts[0];
+
+    for (const contact of contacts) {
+        if (contact.penetration > strongest.penetration) {
+            strongest = contact;
+        }
+    }
+
+    return strongest;
+}
+
+function separate(ball, contact) {
+    if (contact == null) {
+        return;
+    }
+
+    position(
+        ball,
+        ball.x + contact.normalX * contact.penetration,
+        ball.y + contact.normalY * contact.penetration
+    );
+}
+
+function collision(ball, other, contacts) {
     if (other.group == "goal") {
         position_origin(ball);
         restore_speed(ball);
     } else if (other.group == "wall") {
+        separate(ball, strongest_contact(contacts));
         reflect_y(ball);
     } else if (other.group == "paddle") {
+        separate(ball, strongest_contact(contacts));
         reflect_x(ball);
         apply_speed(ball, ball.speed + 5);
     }

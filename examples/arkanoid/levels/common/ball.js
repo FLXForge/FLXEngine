@@ -31,24 +31,70 @@ function motion(ball){
     }
 }
 
-function collision(ball, other) {
+function strongest_contact(contacts) {
+    if (contacts.length == 0) {
+        return null;
+    }
+
+    let strongest = contacts[0];
+
+    for (const contact of contacts) {
+        if (contact.penetration > strongest.penetration) {
+            strongest = contact;
+        }
+    }
+
+    return strongest;
+}
+
+function separate(ball, contact) {
+    if (contact == null) {
+        return;
+    }
+
+    position(
+        ball,
+        ball.x + contact.normalX * contact.penetration,
+        ball.y + contact.normalY * contact.penetration
+    );
+}
+
+function reflect_from_contact(ball, contact) {
+    if (contact == null) {
+        return;
+    }
+
+    if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
+        reflect_x(ball);
+    } else {
+        reflect_y(ball);
+    }
+}
+
+function collision(ball, other, contacts) {
     if (attach_active(ball)) {
         return;
     }
 
+    const contact = strongest_contact(contacts);
+
     if (other.group == "wall_top") {
-        reflect_y(ball);
+        separate(ball, contact);
+        reflect_from_contact(ball, contact);
         play_sound(ball, "paddle");
         return;
     }
 
     if (other.group == "wall_side") {
-        reflect_x(ball);
+        separate(ball, contact);
+        reflect_from_contact(ball, contact);
         play_sound(ball, "paddle");
         return;
     }
 
     if (other.group == "paddle") {
+        separate(ball, contact);
+
         if (
             read_global("activeGun") == 1
             && !timer_active(ball, "detach")
@@ -56,8 +102,6 @@ function collision(ball, other) {
             attach(ball);
             return;
         }
-
-        position_y(ball, other.y - ball.height - 1);
 
         let center = other.x + other.width / 2;
         let hit = ball.x - center;
@@ -70,8 +114,10 @@ function collision(ball, other) {
     }
 
     if (other.group == "brick") {
+        separate(ball, contact);
+
         if (read_global("activeBroken") == 0) {
-            reflect_y(ball);
+            reflect_from_contact(ball, contact);
         }
 
         kill(other);

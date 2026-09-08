@@ -329,6 +329,48 @@ namespace
         require(localNumber(objects[0], "count") == 1.0, "source collider state restriction should be rebuilt before later directed interactions");
         require(localNumber(objects[0], "hitC") == 0.0, "C should not collide after state_to removes source collider availability");
     }
+
+    void testScriptSeparationPreventsRepeatedWallCallback()
+    {
+        ScriptEngine scripts;
+        scripts.setFrameDelta(0.1f);
+        scripts.loadScript(
+            "ballBounce",
+            "function motion(o) { advance(o); }"
+            "function collision(o, other, contacts) {"
+            "  let contact = contacts[0];"
+            "  position(o, o.x + contact.normalX * contact.penetration, o.y + contact.normalY * contact.penetration);"
+            "  reflect_y(o);"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("ball", Vector2{ 0.0f, -4.0f }, Vector2{ 10.0f, 10.0f }, "ball"));
+        objects.push_back(runtimeBox("wall", Vector2{ 0.0f, 0.0f }, Vector2{ 100.0f, 10.0f }, "wall"));
+
+        objects[0].mechanicsType = MechanicsType::Polar;
+        objects[0].speed = 20.0f;
+        objects[0].originSpeed = 20.0f;
+        objects[0].angle = 180.0f;
+        objects[0].resolvedScriptPaths.push_back("ballBounce");
+        objects[0].collisions["body"].type = "ellipse";
+        objects[0].collisions["body"].size.width = 10.0f;
+        objects[0].collisions["body"].size.height = 10.0f;
+        objects[0].collisions["body"].size.hasWidth = true;
+        objects[0].collisions["body"].size.hasHeight = true;
+        objects[0].collisions["body"].with.push_back("wall");
+
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "initial penetration should produce exactly one wall callback");
+
+        scripts.callScriptFunction("ballBounce", "motion", objects[0]);
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "separation plus reflection should avoid a second spurious wall callback");
+        require(objects[0].position.y < -9.0f, "ball should move away from the wall on the next frame");
+    }
 }
 
 int main()
@@ -339,7 +381,8 @@ int main()
         { "ellipse corner contacts", testEllipseCornerContacts },
         { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
         { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
-        { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation }
+        { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },
+        { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback }
     };
 
     for (const auto& test : tests)

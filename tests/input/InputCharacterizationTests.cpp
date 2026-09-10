@@ -230,14 +230,14 @@ namespace
             "system.buttons.1=KEY_ESCAPE\n";
     }
 
-    void testDefaultMachineInputIsDigitalAndPermissive()
+    void testDefaultMachineInputMatchesDefaultMapping()
     {
         const MachineDefinition machine =
             MachineLoader::defaultMachine();
 
-        require(machine.input.systemButtons == 16, "default input should expose 16 system buttons");
-        require(machine.input.players == 16, "default input should expose 16 players");
-        require(machine.input.playerButtons == 16, "default input should expose 16 player buttons");
+        require(machine.input.systemButtons == 2, "default input should expose 2 system buttons");
+        require(machine.input.players == 1, "default input should expose 1 player");
+        require(machine.input.playerButtons == 4, "default input should expose 4 player buttons");
         require(machine.input.directions.size() == 1, "default input should expose one direction");
         require(machine.input.directions[0].type == "4way", "default direction should be 4way");
         require(machine.input.directions[0].simultaneous == "last", "default simultaneous should be last");
@@ -402,6 +402,7 @@ namespace
             InputMappingLoader::loadDefault(machine.input);
 
         require(result.success, "default mapping should validate against default machine");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped), "default mapping should fully cover default machine controls");
         require(result.sourceName == "<default input mapping>", "default mapping should have a stable source name");
         require(result.content.find("players.1.directions.0.up=KEY_W") != std::string::npos, "default mapping should declare up");
         require(result.content.find("system.buttons.0=KEY_ENTER") != std::string::npos, "default mapping should declare system confirm");
@@ -1099,12 +1100,48 @@ namespace
 
         require(localNumber(*runtimeRoot, "upReleased") == 1.0, "player(1) direction should report released without control.player");
     }
+
+    void testProjectWithoutMachineAndInputHasNoInputCoverageWarnings()
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_characterization" / "zero_config_no_machine_no_input";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=ZeroConfig\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "zero-config project should compile");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingMachineControlUnmapped), "zero-config project should not report unmapped machine controls");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingPlayerOutOfRange), "zero-config project should not report player coverage mismatch");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingButtonOutOfRange), "zero-config project should not report button coverage mismatch");
+        require(!hasCode(result.diagnostics, DiagnosticCode::InputMappingDirectionOutOfRange), "zero-config project should not report direction coverage mismatch");
+
+        require(result.project.context.machine.input.systemButtons == 2, "zero-config machine should expose 2 system buttons");
+        require(result.project.context.machine.input.players == 1, "zero-config machine should expose 1 player");
+        require(result.project.context.machine.input.playerButtons == 4, "zero-config machine should expose 4 player buttons");
+        require(result.project.context.machine.input.directions.size() == 1, "zero-config machine should expose one direction");
+        require(result.project.context.machine.input.directions[0].type == "4way", "zero-config direction should be 4way");
+    }
 }
 
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
-        { "default machine input is digital and permissive", testDefaultMachineInputIsDigitalAndPermissive },
+        { "default machine input matches default mapping", testDefaultMachineInputMatchesDefaultMapping },
         { "input chip loads consolidated shape", testInputChipLoadsConsolidatedShape },
         { "unsupported capabilities produce diagnostics", testUnsupportedCapabilitiesProduceDiagnostics },
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
@@ -1135,7 +1172,8 @@ int main()
         { "high indexes players system and directions are independent", testHighIndexesPlayersSystemAndDirectionsAreIndependent },
         { "invalid queries return false", testInvalidQueriesReturnFalse },
         { "mapping does not expose gameplay names", testMappingDoesNotExposeGameplayNames },
-        { "project without machine uses default direction from player subject", testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject }
+        { "project without machine uses default direction from player subject", testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject },
+        { "project without machine and input has no input coverage warnings", testProjectWithoutMachineAndInputHasNoInputCoverageWarnings }
     };
 
     for (const auto& test : tests)

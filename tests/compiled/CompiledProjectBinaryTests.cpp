@@ -612,9 +612,9 @@ namespace
 
         require(loaded.success, "default input project should read");
         require(loaded.metadata.formatVersion == 8, "default input roundtrip should use current format");
-        require(loaded.project.context.machine.input.systemButtons == 16, "default system button count should survive roundtrip");
-        require(loaded.project.context.machine.input.players == 16, "default player count should survive roundtrip");
-        require(loaded.project.context.machine.input.playerButtons == 16, "default player button count should survive roundtrip");
+        require(loaded.project.context.machine.input.systemButtons == 2, "default system button count should survive roundtrip");
+        require(loaded.project.context.machine.input.players == 1, "default player count should survive roundtrip");
+        require(loaded.project.context.machine.input.playerButtons == 4, "default player button count should survive roundtrip");
         require(loaded.project.context.machine.input.directions.size() == 1, "default direction collection should survive roundtrip");
         require(loaded.project.context.machine.input.directions[0].type == "4way", "default direction type should survive roundtrip");
         require(loaded.project.context.machine.input.directions[0].simultaneous == "last", "default direction policy should survive roundtrip");

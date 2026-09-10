@@ -1121,10 +1121,10 @@ MachineDefinition MachineLoader::defaultMachine()
     machine.audio.resourcesStreams = true;
     machine.audio.fileAudioMode = "all";
 
-    machine.input.systemButtons = 16;
-    machine.input.players = 16;
+    machine.input.systemButtons = 2;
+    machine.input.players = 1;
     machine.input.directions = { InputDirectionDefinition{} };
-    machine.input.playerButtons = 16;
+    machine.input.playerButtons = 4;
 
     return machine;
 }

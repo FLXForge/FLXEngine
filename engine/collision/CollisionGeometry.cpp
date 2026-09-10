@@ -1,6 +1,7 @@
 #include "CollisionGeometry.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cmath>
 #include <limits>
@@ -295,6 +296,191 @@ namespace
     {
         axes.push_back(axisX(collider));
         axes.push_back(axisY(collider));
+    }
+
+    std::array<Vector2, 4> boxCorners(const EffectiveCollider& collider)
+    {
+        const Vector2 xAxis =
+            axisX(collider);
+
+        const Vector2 yAxis =
+            axisY(collider);
+
+        const Vector2 xExtent =
+            multiply(xAxis, collider.halfSize.x);
+
+        const Vector2 yExtent =
+            multiply(yAxis, collider.halfSize.y);
+
+        return std::array<Vector2, 4>{
+            add(add(collider.center, negate(xExtent)), negate(yExtent)),
+            add(add(collider.center, xExtent), negate(yExtent)),
+            add(add(collider.center, xExtent), yExtent),
+            add(add(collider.center, negate(xExtent)), yExtent)
+        };
+    }
+
+    bool pointInsideBox(
+        Vector2 point,
+        const EffectiveCollider& box
+    )
+    {
+        const Vector2 delta =
+            subtract(point, box.center);
+
+        return
+            std::abs(dot(delta, axisX(box))) <= box.halfSize.x + Epsilon &&
+            std::abs(dot(delta, axisY(box))) <= box.halfSize.y + Epsilon;
+    }
+
+    void addUniquePoint(
+        std::vector<Vector2>& points,
+        Vector2 point
+    )
+    {
+        constexpr float PointEpsilon = 0.01f;
+
+        for (Vector2 existing : points)
+        {
+            if (length(subtract(existing, point)) <= PointEpsilon)
+            {
+                return;
+            }
+        }
+
+        points.push_back(point);
+    }
+
+    bool segmentIntersection(
+        Vector2 a,
+        Vector2 b,
+        Vector2 c,
+        Vector2 d,
+        Vector2& point
+    )
+    {
+        const Vector2 r =
+            subtract(b, a);
+
+        const Vector2 s =
+            subtract(d, c);
+
+        const float denominator =
+            cross(r, s);
+
+        if (std::abs(denominator) <= Epsilon)
+        {
+            return false;
+        }
+
+        const Vector2 offset =
+            subtract(c, a);
+
+        const float amountA =
+            cross(offset, s) / denominator;
+
+        const float amountB =
+            cross(offset, r) / denominator;
+
+        if (
+            amountA < -Epsilon ||
+            amountA > 1.0f + Epsilon ||
+            amountB < -Epsilon ||
+            amountB > 1.0f + Epsilon
+        )
+        {
+            return false;
+        }
+
+        point =
+            add(a, multiply(r, clamp01(amountA)));
+
+        return true;
+    }
+
+    bool boxIntersectionContactPoint(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        Vector2& point
+    )
+    {
+        const std::array<Vector2, 4> sourceCorners =
+            boxCorners(source);
+
+        const std::array<Vector2, 4> targetCorners =
+            boxCorners(target);
+
+        std::vector<Vector2> intersectionPoints;
+
+        for (Vector2 corner : sourceCorners)
+        {
+            if (pointInsideBox(corner, target))
+            {
+                addUniquePoint(intersectionPoints, corner);
+            }
+        }
+
+        for (Vector2 corner : targetCorners)
+        {
+            if (pointInsideBox(corner, source))
+            {
+                addUniquePoint(intersectionPoints, corner);
+            }
+        }
+
+        for (std::size_t sourceIndex = 0; sourceIndex < sourceCorners.size(); ++sourceIndex)
+        {
+            const Vector2 sourceA =
+                sourceCorners[sourceIndex];
+
+            const Vector2 sourceB =
+                sourceCorners[(sourceIndex + 1) % sourceCorners.size()];
+
+            for (std::size_t targetIndex = 0; targetIndex < targetCorners.size(); ++targetIndex)
+            {
+                const Vector2 targetA =
+                    targetCorners[targetIndex];
+
+                const Vector2 targetB =
+                    targetCorners[(targetIndex + 1) % targetCorners.size()];
+
+                Vector2 intersection =
+                    Vector2{ 0.0f, 0.0f };
+
+                if (segmentIntersection(
+                    sourceA,
+                    sourceB,
+                    targetA,
+                    targetB,
+                    intersection
+                ))
+                {
+                    addUniquePoint(intersectionPoints, intersection);
+                }
+            }
+        }
+
+        if (intersectionPoints.empty())
+        {
+            return false;
+        }
+
+        Vector2 sum =
+            Vector2{ 0.0f, 0.0f };
+
+        for (Vector2 intersection : intersectionPoints)
+        {
+            sum =
+                add(sum, intersection);
+        }
+
+        point =
+            multiply(
+                sum,
+                1.0f / static_cast<float>(intersectionPoints.size())
+            );
+
+        return true;
     }
 
     bool satContact(
@@ -936,17 +1122,14 @@ bool CollisionGeometry::contact(
         contact.hit =
             true;
 
-        const Vector2 sourcePoint =
-            supportPoint(source, negate(contact.normal));
-
-        const Vector2 targetPoint =
-            supportPoint(target, contact.normal);
-
-        contact.point =
-            multiply(
-                add(sourcePoint, targetPoint),
-                0.5f
-            );
+        if (!boxIntersectionContactPoint(source, target, contact.point))
+        {
+            contact.point =
+                multiply(
+                    add(source.center, target.center),
+                    0.5f
+                );
+        }
     }
     else if (!supportContact(source, target, contact))
     {

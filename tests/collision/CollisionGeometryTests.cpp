@@ -48,6 +48,17 @@ namespace
         return result;
     }
 
+    EffectiveCollider namedCollider(
+        EffectiveCollider value,
+        const std::string& name
+    )
+    {
+        value.name =
+            name;
+
+        return value;
+    }
+
     bool hasContact(
         const EffectiveCollider& source,
         const EffectiveCollider& target,
@@ -102,6 +113,52 @@ namespace
         require(nearlyEqual(ab.penetration, ba.penetration, 0.02f), message + " should preserve penetration when reversed");
         require(nearlyEqual(ab.normal.x, -ba.normal.x, 0.02f), message + " should invert normal x when reversed");
         require(nearlyEqual(ab.normal.y, -ba.normal.y, 0.02f), message + " should invert normal y when reversed");
+    }
+
+    Vector2 rotateForTest(Vector2 value, float angle)
+    {
+        const float radians =
+            angle * DEG2RAD;
+
+        const float cosine =
+            std::cos(radians);
+
+        const float sine =
+            std::sin(radians);
+
+        return Vector2{
+            value.x * cosine - value.y * sine,
+            value.x * sine + value.y * cosine
+        };
+    }
+
+    bool pointInsideBoxForTest(
+        Vector2 point,
+        const EffectiveCollider& box,
+        float epsilon = 0.05f
+    )
+    {
+        const Vector2 xAxis =
+            rotateForTest(Vector2{ 1.0f, 0.0f }, box.angle);
+
+        const Vector2 yAxis =
+            rotateForTest(Vector2{ 0.0f, 1.0f }, box.angle);
+
+        const Vector2 delta =
+            Vector2{
+                point.x - box.center.x,
+                point.y - box.center.y
+            };
+
+        const float localX =
+            delta.x * xAxis.x + delta.y * xAxis.y;
+
+        const float localY =
+            delta.x * yAxis.x + delta.y * yAxis.y;
+
+        return
+            std::abs(localX) <= box.halfSize.x + epsilon &&
+            std::abs(localY) <= box.halfSize.y + epsilon;
     }
 
     RuntimeObject runtimeBox(
@@ -369,6 +426,106 @@ namespace
         );
     }
 
+    void testBoxBoxHorizontalFaceContactPointUsesOverlapRegion()
+    {
+        const EffectiveCollider ball =
+            collider("box", Vector2{ 40.0f, -1.5f }, Vector2{ 5.0f, 5.0f });
+
+        const EffectiveCollider wall =
+            collider("box", Vector2{ 160.0f, -5.0f }, Vector2{ 320.0f, 10.0f });
+
+        CollisionContact contact;
+        require(hasContact(ball, wall, &contact), "small box should hit long horizontal face");
+        require(nearlyEqual(contact.point.x, 40.0f, 0.05f), "horizontal face contact point x should follow the small box overlap");
+        require(contact.point.y > -4.1f && contact.point.y < 0.1f, "horizontal face contact point y should remain inside the overlap region");
+    }
+
+    void testBoxBoxVerticalFaceContactPointUsesOverlapRegion()
+    {
+        const EffectiveCollider ball =
+            collider("box", Vector2{ -1.5f, 40.0f }, Vector2{ 5.0f, 5.0f });
+
+        const EffectiveCollider wall =
+            collider("box", Vector2{ -5.0f, 90.0f }, Vector2{ 10.0f, 180.0f });
+
+        CollisionContact contact;
+        require(hasContact(ball, wall, &contact), "small box should hit long vertical face");
+        require(contact.point.x > -4.1f && contact.point.x < 0.1f, "vertical face contact point x should remain inside the overlap region");
+        require(nearlyEqual(contact.point.y, 40.0f, 0.05f), "vertical face contact point y should follow the small box overlap");
+    }
+
+    void testBoxBoxContactSymmetry()
+    {
+        const EffectiveCollider ball =
+            namedCollider(
+                collider("box", Vector2{ 40.0f, -1.5f }, Vector2{ 5.0f, 5.0f }),
+                "ball"
+            );
+
+        const EffectiveCollider wall =
+            namedCollider(
+                collider("box", Vector2{ 160.0f, -5.0f }, Vector2{ 320.0f, 10.0f }),
+                "wall"
+            );
+
+        CollisionContact ab;
+        CollisionContact ba;
+
+        require(hasContact(ball, wall, &ab), "box contact should hit from ball to wall");
+        require(hasContact(wall, ball, &ba), "box contact should hit from wall to ball");
+        require(ab.collider == "ball", "forward contact should preserve source collider name");
+        require(ab.otherCollider == "wall", "forward contact should preserve target collider name");
+        require(ba.collider == "wall", "reverse contact should preserve source collider name");
+        require(ba.otherCollider == "ball", "reverse contact should preserve target collider name");
+        require(nearlyEqual(ab.point.x, ba.point.x, 0.02f), "box contact point x should be symmetric");
+        require(nearlyEqual(ab.point.y, ba.point.y, 0.02f), "box contact point y should be symmetric");
+        require(nearlyEqual(ab.penetration, ba.penetration, 0.02f), "box penetration should be symmetric");
+        require(nearlyEqual(ab.normal.x, -ba.normal.x, 0.02f), "box normal x should invert");
+        require(nearlyEqual(ab.normal.y, -ba.normal.y, 0.02f), "box normal y should invert");
+    }
+
+    void testRotatedBoxBoxContactPointUsesOverlapRegion()
+    {
+        const EffectiveCollider source =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 40.0f, 20.0f }, 25.0f);
+
+        const EffectiveCollider target =
+            collider("box", Vector2{ 112.0f, 104.0f }, Vector2{ 30.0f, 18.0f }, -20.0f);
+
+        CollisionContact ab;
+        CollisionContact ba;
+
+        require(hasContact(source, target, &ab), "rotated box contact should hit");
+        require(hasContact(target, source, &ba), "rotated box contact should hit when reversed");
+        require(pointInsideBoxForTest(ab.point, source), "rotated box contact point should lie inside source box");
+        require(pointInsideBoxForTest(ab.point, target), "rotated box contact point should lie inside target box");
+        require(nearlyEqual(ab.point.x, ba.point.x, 0.02f), "rotated box contact point x should be symmetric");
+        require(nearlyEqual(ab.point.y, ba.point.y, 0.02f), "rotated box contact point y should be symmetric");
+        require(nearlyEqual(ab.penetration, ba.penetration, 0.02f), "rotated box penetration should be symmetric");
+        require(nearlyEqual(ab.normal.x, -ba.normal.x, 0.02f), "rotated box normal x should invert");
+        require(nearlyEqual(ab.normal.y, -ba.normal.y, 0.02f), "rotated box normal y should invert");
+    }
+
+    void testPongBoxWallContactPointTracksBall()
+    {
+        const EffectiveCollider wall =
+            collider("box", Vector2{ 160.0f, -5.0f }, Vector2{ 320.0f, 10.0f });
+
+        const std::vector<float> positions =
+            { 20.0f, 160.0f, 300.0f };
+
+        for (float x : positions)
+        {
+            const EffectiveCollider ball =
+                collider("box", Vector2{ x, -1.5f }, Vector2{ 5.0f, 5.0f });
+
+            CollisionContact contact;
+            require(hasContact(ball, wall, &contact), "Pong ball should hit top wall at every sampled x");
+            require(nearlyEqual(contact.point.x, x, 0.05f), "Pong box-box contact point should track the ball x");
+            require(contact.point.y > -4.1f && contact.point.y < 0.1f, "Pong box-box contact point should stay in the wall overlap");
+        }
+    }
+
     void testCollisionSystemRebuildsAfterPositionMutation()
     {
         ScriptEngine scripts;
@@ -604,6 +761,43 @@ namespace
         require(objects[0].position.y < -9.0f, "ball should move away from the wall on the next frame");
     }
 
+    void testScriptBoxSeparationPreventsRepeatedWallCallback()
+    {
+        ScriptEngine scripts;
+        scripts.setFrameDelta(0.1f);
+        scripts.loadScript(
+            "boxBounce",
+            "function motion(o) { advance(o); }"
+            "function collision(o, other, contacts) {"
+            "  const contact = contacts[0];"
+            "  position(o, o.x + contact.normalX * contact.penetration, o.y + contact.normalY * contact.penetration);"
+            "  reflect_y(o);"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("ball", Vector2{ 0.0f, -4.0f }, Vector2{ 10.0f, 10.0f }, "ball"));
+        objects.push_back(runtimeBox("wall", Vector2{ 0.0f, 0.0f }, Vector2{ 100.0f, 10.0f }, "wall"));
+
+        objects[0].mechanicsType = MechanicsType::Polar;
+        objects[0].speed = 20.0f;
+        objects[0].originSpeed = 20.0f;
+        objects[0].angle = 180.0f;
+        objects[0].resolvedScriptPaths.push_back("boxBounce");
+        objects[0].collisions["body"].with.push_back("wall");
+
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "initial box penetration should produce exactly one wall callback");
+
+        scripts.callScriptFunction("boxBounce", "motion", objects[0]);
+        CollisionSystem::run(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 1.0, "box separation plus reflection should avoid a second spurious wall callback");
+        require(objects[0].position.y < -9.0f, "box should move away from the wall on the next frame");
+    }
+
     EffectiveCollider requireSingleCollider(
         const RuntimeObject& object,
         ScriptEngine& scripts
@@ -696,12 +890,18 @@ int main()
         { "circle box side contact point uses witness edge", testCircleBoxSideContactPointUsesWitnessEdge },
         { "non-circular ellipse box contact point", testNonCircularEllipseBoxContactPoint },
         { "oriented ellipse box contact point", testOrientedEllipseBoxContactPoint },
+        { "box box horizontal face contact point uses overlap region", testBoxBoxHorizontalFaceContactPointUsesOverlapRegion },
+        { "box box vertical face contact point uses overlap region", testBoxBoxVerticalFaceContactPointUsesOverlapRegion },
+        { "box box contact symmetry", testBoxBoxContactSymmetry },
+        { "rotated box box contact point uses overlap region", testRotatedBoxBoxContactPointUsesOverlapRegion },
+        { "Pong box wall contact point tracks ball", testPongBoxWallContactPointTracksBall },
         { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
         { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
         { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },
         { "Pong exact top wall box bounce", testPongTopWallBoxBounceSeparatesAndMovesAway },
         { "Pong exact bottom wall box bounce", testPongBottomWallBoxBounceSeparatesAndMovesAway },
         { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback },
+        { "script box separation prevents repeated wall callback", testScriptBoxSeparationPreventsRepeatedWallCallback },
         { "collider inherits live size per axis", testColliderInheritsLiveSizePerAxis },
         { "collider offset uses object local space", testColliderOffsetUsesObjectLocalSpace }
     };

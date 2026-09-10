@@ -117,7 +117,8 @@ namespace
             size_t sourceIndex
         )
             : objects(objects),
-              sourceIndex(sourceIndex)
+              sourceIndex(sourceIndex),
+              objectCount(objects.size())
         {
         }
 
@@ -126,7 +127,7 @@ namespace
             StatsPointer stats
         )
         {
-            while (cursor < objects.size())
+            while (cursor < objectCount)
             {
                 const size_t targetIndex =
                     cursor;
@@ -162,6 +163,7 @@ namespace
     private:
         std::vector<RuntimeObject>& objects;
         size_t sourceIndex = 0;
+        size_t objectCount = 0;
         size_t cursor = 0;
     };
 
@@ -198,7 +200,10 @@ namespace
         StatsPointer stats
     )
     {
-        for (size_t i = 0; i < objects.size(); ++i)
+        const size_t objectCount =
+            objects.size();
+
+        for (size_t i = 0; i < objectCount; ++i)
         {
             RuntimeObject& a =
                 objects[i];

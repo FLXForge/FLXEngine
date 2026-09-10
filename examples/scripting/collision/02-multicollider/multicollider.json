@@ -1,0 +1,74 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "scanner": {
+      "origin": {
+        "x": 65,
+        "y": 110
+      },
+      "group": "scanner",
+      "shape": {
+        "type": "block",
+        "color": "cyan",
+        "size": {
+          "width": 12,
+          "height": 12
+        }
+      },
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": {
+            "start": 45
+          }
+        },
+        "rotation": {
+          "angle": 90
+        }
+      },
+      "collisions": {
+        "body": {
+          "with": [
+            "enemy"
+          ]
+        },
+        "probe": {
+          "size": {
+            "width": 8,
+            "height": 8
+          },
+          "offset": {
+            "x": 18,
+            "y": 0
+          },
+          "with": [
+            "enemy"
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "multicollider-scanner"
+        ]
+      }
+    },
+    "enemy": {
+      "origin": {
+        "x": 190,
+        "y": 110
+      },
+      "group": "enemy",
+      "shape": {
+        "type": "block",
+        "color": "red",
+        "size": {
+          "width": 24,
+          "height": 30
+        }
+      },
+      "collisions": {
+        "body": {}
+      }
+    }
+  }
+}

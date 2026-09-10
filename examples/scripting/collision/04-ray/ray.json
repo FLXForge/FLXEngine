@@ -1,0 +1,51 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "sensor": {
+      "origin": {
+        "x": 60,
+        "y": 120
+      },
+      "shape": {
+        "type": "triangle",
+        "mode": "outline",
+        "color": "yellow",
+        "size": {
+          "width": 16,
+          "height": 20
+        }
+      },
+      "mechanics": {
+        "type": "direct",
+        "rotation": {
+          "angle": 90
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "ray-sensor"
+        ]
+      }
+    },
+    "enemy": {
+      "origin": {
+        "x": 190,
+        "y": 120
+      },
+      "group": "enemy",
+      "shape": {
+        "type": "block",
+        "color": "red",
+        "size": {
+          "width": 24,
+          "height": 32
+        }
+      },
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      }
+    }
+  }
+}

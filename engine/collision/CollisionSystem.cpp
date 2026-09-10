@@ -9,6 +9,58 @@
 
 namespace
 {
+#ifdef FLX_TESTING
+    using StatsPointer = CollisionSystemStats*;
+
+    void countSourceBuild(StatsPointer stats)
+    {
+        if (stats != nullptr)
+        {
+            ++stats->sourceBuilds;
+        }
+    }
+
+    void countTargetBuild(StatsPointer stats)
+    {
+        if (stats != nullptr)
+        {
+            ++stats->targetBuilds;
+        }
+    }
+
+    void countCandidateObject(StatsPointer stats)
+    {
+        if (stats != nullptr)
+        {
+            ++stats->candidateObjects;
+        }
+    }
+
+    void countNarrowPhaseCall(StatsPointer stats)
+    {
+        if (stats != nullptr)
+        {
+            ++stats->narrowPhaseCalls;
+        }
+    }
+
+    void countCallbackInvocation(StatsPointer stats)
+    {
+        if (stats != nullptr)
+        {
+            ++stats->callbackInvocations;
+        }
+    }
+#else
+    using StatsPointer = void*;
+
+    void countSourceBuild(StatsPointer) {}
+    void countTargetBuild(StatsPointer) {}
+    void countCandidateObject(StatsPointer) {}
+    void countNarrowPhaseCall(StatsPointer) {}
+    void countCallbackInvocation(StatsPointer) {}
+#endif
+
     bool hasDirectedGroup(
         const EffectiveCollider& source,
         const RuntimeObject& target
@@ -26,6 +78,23 @@ namespace
         ) != source.with.end();
     }
 
+    bool hasDirectedGroup(
+        const std::vector<EffectiveCollider>& sourceColliders,
+        const RuntimeObject& target
+    )
+    {
+        return std::any_of(
+            sourceColliders.begin(),
+            sourceColliders.end(),
+            [&target](const EffectiveCollider& collider)
+            {
+                return
+                    collider.effective &&
+                    hasDirectedGroup(collider, target);
+            }
+        );
+    }
+
     bool hasAnyDirectedCollider(
         const std::vector<EffectiveCollider>& colliders
     )
@@ -39,6 +108,62 @@ namespace
             }
         );
     }
+
+    class LinearCollisionCandidateProvider
+    {
+    public:
+        LinearCollisionCandidateProvider(
+            std::vector<RuntimeObject>& objects,
+            size_t sourceIndex
+        )
+            : objects(objects),
+              sourceIndex(sourceIndex)
+        {
+        }
+
+        RuntimeObject* next(
+            const std::vector<EffectiveCollider>& sourceColliders,
+            StatsPointer stats
+        )
+        {
+            while (cursor < objects.size())
+            {
+                const size_t targetIndex =
+                    cursor;
+
+                ++cursor;
+
+                if (targetIndex == sourceIndex)
+                {
+                    continue;
+                }
+
+                RuntimeObject& target =
+                    objects[targetIndex];
+
+                if (!target.alive)
+                {
+                    continue;
+                }
+
+                if (!hasDirectedGroup(sourceColliders, target))
+                {
+                    continue;
+                }
+
+                countCandidateObject(stats);
+
+                return &target;
+            }
+
+            return nullptr;
+        }
+
+    private:
+        std::vector<RuntimeObject>& objects;
+        size_t sourceIndex = 0;
+        size_t cursor = 0;
+    };
 
     void captureFrameColliders(
         const std::vector<RuntimeObject>& objects,
@@ -65,6 +190,162 @@ namespace
             );
         }
     }
+
+    void runCollisionSystem(
+        std::vector<RuntimeObject>& objects,
+        ScriptEngine& scriptEngine,
+        CollisionDebugFrame* debugFrame,
+        StatsPointer stats
+    )
+    {
+        for (size_t i = 0; i < objects.size(); ++i)
+        {
+            RuntimeObject& a =
+                objects[i];
+
+            if (!a.alive)
+            {
+                continue;
+            }
+
+            std::vector<EffectiveCollider> sourceColliders;
+
+            bool sourceDirty =
+                true;
+
+            const auto rebuildSource =
+                [&]()
+                {
+                    countSourceBuild(stats);
+
+                    sourceColliders =
+                        EffectiveColliderBuilder::build(a, scriptEngine);
+
+                    sourceDirty =
+                        false;
+
+                    return hasAnyDirectedCollider(sourceColliders);
+                };
+
+            if (!rebuildSource())
+            {
+                continue;
+            }
+
+            LinearCollisionCandidateProvider candidates(objects, i);
+
+            while (a.alive)
+            {
+                if (sourceDirty && !rebuildSource())
+                {
+                    break;
+                }
+
+                RuntimeObject* target =
+                    candidates.next(sourceColliders, stats);
+
+                if (target == nullptr)
+                {
+                    break;
+                }
+
+                RuntimeObject& b =
+                    *target;
+
+                countTargetBuild(stats);
+
+                const std::vector<EffectiveCollider> targetColliders =
+                    EffectiveColliderBuilder::build(b, scriptEngine);
+
+                if (sourceColliders.empty() || targetColliders.empty())
+                {
+                    continue;
+                }
+
+                std::vector<CollisionContact> contacts;
+
+                for (const EffectiveCollider& sourceCollider : sourceColliders)
+                {
+                    if (!sourceCollider.effective ||
+                        !hasDirectedGroup(sourceCollider, b))
+                    {
+                        continue;
+                    }
+
+                    for (const EffectiveCollider& targetCollider : targetColliders)
+                    {
+                        CollisionContact contact;
+
+                        countNarrowPhaseCall(stats);
+
+                        if (CollisionGeometry::contact(
+                            sourceCollider,
+                            targetCollider,
+                            contact
+                        ))
+                        {
+                            contacts.push_back(contact);
+                        }
+                    }
+                }
+
+                if (contacts.empty())
+                {
+                    continue;
+                }
+
+                if (debugFrame != nullptr)
+                {
+                    for (const CollisionContact& contact : contacts)
+                    {
+                        debugFrame->contacts.push_back(
+                            CollisionDebugContact{
+                                a.runtimeId,
+                                b.runtimeId,
+                                contact
+                            }
+                        );
+                    }
+                }
+
+                bool callbackExecuted =
+                    false;
+
+                for (const auto& scriptPath : a.resolvedScriptPaths)
+                {
+                    countCallbackInvocation(stats);
+
+                    callbackExecuted =
+                        true;
+
+                    scriptEngine.callScriptFunction(
+                        scriptPath,
+                        "collision",
+                        a,
+                        b,
+                        contacts
+                    );
+
+                    if (!a.alive || !b.alive)
+                    {
+                        break;
+                    }
+                }
+
+                sourceDirty =
+                    callbackExecuted;
+            }
+        }
+
+        if (debugFrame != nullptr)
+        {
+            captureFrameColliders(
+                objects,
+                scriptEngine,
+                *debugFrame
+            );
+        }
+    }
 }
 
 void CollisionSystem::run(
@@ -73,123 +354,27 @@ void CollisionSystem::run(
     CollisionDebugFrame* debugFrame
 )
 {
-    for (size_t i = 0; i < objects.size(); ++i)
-    {
-        RuntimeObject& a =
-            objects[i];
-
-        if (!a.alive)
-        {
-            continue;
-        }
-
-        std::vector<EffectiveCollider> sourceColliders =
-            EffectiveColliderBuilder::build(a, scriptEngine);
-
-        if (!hasAnyDirectedCollider(sourceColliders))
-        {
-            continue;
-        }
-
-        for (size_t j = 0; j < objects.size(); ++j)
-        {
-            if (i == j)
-            {
-                continue;
-            }
-
-            RuntimeObject& b =
-                objects[j];
-
-            if (!b.alive)
-            {
-                continue;
-            }
-
-            sourceColliders =
-                EffectiveColliderBuilder::build(a, scriptEngine);
-
-            const std::vector<EffectiveCollider> targetColliders =
-                EffectiveColliderBuilder::build(b, scriptEngine);
-
-            if (sourceColliders.empty() || targetColliders.empty())
-            {
-                continue;
-            }
-
-            std::vector<CollisionContact> contacts;
-
-            for (const EffectiveCollider& sourceCollider : sourceColliders)
-            {
-                if (!sourceCollider.effective ||
-                    !hasDirectedGroup(sourceCollider, b))
-                {
-                    continue;
-                }
-
-                for (const EffectiveCollider& targetCollider : targetColliders)
-                {
-                    CollisionContact contact;
-
-                    if (CollisionGeometry::contact(
-                        sourceCollider,
-                        targetCollider,
-                        contact
-                    ))
-                    {
-                        contacts.push_back(contact);
-                    }
-                }
-            }
-
-            if (contacts.empty())
-            {
-                continue;
-            }
-
-            if (debugFrame != nullptr)
-            {
-                for (const CollisionContact& contact : contacts)
-                {
-                    debugFrame->contacts.push_back(
-                        CollisionDebugContact{
-                            a.runtimeId,
-                            b.runtimeId,
-                            contact
-                        }
-                    );
-                }
-            }
-
-            for (const auto& scriptPath : a.resolvedScriptPaths)
-            {
-                scriptEngine.callScriptFunction(
-                    scriptPath,
-                    "collision",
-                    a,
-                    b,
-                    contacts
-                );
-
-                if (!a.alive || !b.alive)
-                {
-                    break;
-                }
-            }
-
-            if (!a.alive)
-            {
-                break;
-            }
-        }
-    }
-
-    if (debugFrame != nullptr)
-    {
-        captureFrameColliders(
-            objects,
-            scriptEngine,
-            *debugFrame
-        );
-    }
+    runCollisionSystem(
+        objects,
+        scriptEngine,
+        debugFrame,
+        nullptr
+    );
 }
+
+#ifdef FLX_TESTING
+void CollisionSystem::run(
+    std::vector<RuntimeObject>& objects,
+    ScriptEngine& scriptEngine,
+    CollisionSystemStats& stats,
+    CollisionDebugFrame* debugFrame
+)
+{
+    runCollisionSystem(
+        objects,
+        scriptEngine,
+        debugFrame,
+        &stats
+    );
+}
+#endif

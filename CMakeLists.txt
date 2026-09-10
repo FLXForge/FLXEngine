@@ -299,6 +299,12 @@ add_library(
     ${FLX_TEST_SOURCES}
 )
 
+target_compile_definitions(
+    flx-test-engine
+    PUBLIC
+    FLX_TESTING
+)
+
 target_include_directories(
     flx-test-engine
     PUBLIC

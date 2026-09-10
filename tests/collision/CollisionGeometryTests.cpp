@@ -235,6 +235,57 @@ namespace
         return 0.0;
     }
 
+    CollisionSystemStats runCollisionWithStats(
+        std::vector<RuntimeObject>& objects,
+        ScriptEngine& scripts
+    )
+    {
+        CollisionSystemStats stats;
+
+        CollisionSystem::run(
+            objects,
+            scripts,
+            stats
+        );
+
+        return stats;
+    }
+
+    void configureStateMachine(
+        ScriptEngine& scripts,
+        std::unordered_map<std::string, ObjectDefinition>& definitions,
+        const std::string& id,
+        const std::string& initial,
+        const std::vector<std::string>& states
+    )
+    {
+        ObjectDefinition definition;
+        definition.id =
+            id;
+        definition.initialState =
+            initial;
+
+        for (const std::string& state : states)
+        {
+            definition.stateTransitions[state] = {};
+        }
+
+        definitions[id] =
+            definition;
+
+        scripts.setFindObjectDefinitionFunction(
+            [&definitions](const std::string& definitionId)
+            {
+                const auto it =
+                    definitions.find(definitionId);
+
+                return it == definitions.end()
+                    ? nullptr
+                    : &it->second;
+            }
+        );
+    }
+
     void testPongGameplayGeometry()
     {
         const EffectiveCollider ballLeftTop =
@@ -629,6 +680,356 @@ namespace
         require(localNumber(objects[0], "hitC") == 0.0, "C should not collide after state_to removes source collider availability");
     }
 
+    void testPassiveColliderDoesNotAcquireCandidates()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("passive", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("target", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.candidateObjects == 0, "passive collider should not acquire candidates");
+        require(stats.targetBuilds == 0, "passive collider should not build target geometry");
+        require(stats.narrowPhaseCalls == 0, "passive collider should not reach narrow phase");
+        require(stats.callbackInvocations == 0, "passive collider should not invoke callbacks");
+    }
+
+    void testDisabledColliderDoesNotAcquireCandidates()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("target", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        objects[0].collisions["body"].with.push_back("target");
+        objects[0].collisions["body"].enabled =
+            false;
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.candidateObjects == 0, "disabled source collider should not acquire candidates");
+        require(stats.targetBuilds == 0, "disabled source collider should not build targets");
+        require(stats.narrowPhaseCalls == 0, "disabled source collider should not reach narrow phase");
+    }
+
+    void testStateUnavailableColliderDoesNotAcquireCandidates()
+    {
+        ScriptEngine scripts;
+        std::unordered_map<std::string, ObjectDefinition> definitions;
+
+        configureStateMachine(
+            scripts,
+            definitions,
+            "sourceDef",
+            "idle",
+            { "idle", "attack" }
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("target", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        objects[0].definitionId =
+            "sourceDef";
+        objects[0].state =
+            "idle";
+        objects[0].collisions["body"].with.push_back("target");
+        objects[0].collisions["body"].states.push_back("attack");
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.candidateObjects == 0, "state-unavailable source collider should not acquire candidates");
+        require(stats.targetBuilds == 0, "state-unavailable source collider should not build targets");
+        require(stats.narrowPhaseCalls == 0, "state-unavailable source collider should not reach narrow phase");
+    }
+
+    void testIrrelevantTargetGroupSkipsTargetBuild()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("irrelevant", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "other"));
+
+        objects[0].collisions["body"].with.push_back("target");
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.candidateObjects == 0, "irrelevant group should not become a candidate");
+        require(stats.targetBuilds == 0, "irrelevant group should be skipped before target geometry build");
+        require(stats.narrowPhaseCalls == 0, "irrelevant group should never reach narrow phase");
+    }
+
+    void testManyIrrelevantTargetsDoNotRebuildDirectedSourceRepeatedly()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects[0].collisions["body"].with.push_back("laser");
+
+        for (int index = 0; index < 153; ++index)
+        {
+            objects.push_back(
+                runtimeBox(
+                    "invader_" + std::to_string(index),
+                    Vector2{ static_cast<float>(index), 100.0f },
+                    Vector2{ 10.0f, 10.0f },
+                    "invader"
+                )
+            );
+        }
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.sourceBuilds == objects.size(), "irrelevant targets should not force repeated source rebuilds");
+        require(stats.candidateObjects == 0, "irrelevant Invaders-like targets should not become candidates");
+        require(stats.targetBuilds == 0, "irrelevant Invaders-like targets should not build target geometry");
+        require(stats.narrowPhaseCalls == 0, "irrelevant Invaders-like targets should not reach narrow phase");
+    }
+
+    void testInvadersLikeDirectedSourcesWithoutLaserDoNotBuildTargets()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+
+        for (int index = 0; index < 153; ++index)
+        {
+            objects.push_back(
+                runtimeBox(
+                    "invader_" + std::to_string(index),
+                    Vector2{ static_cast<float>(index), 100.0f },
+                    Vector2{ 10.0f, 10.0f },
+                    "invader"
+                )
+            );
+
+            objects.back().collisions["body"].with.push_back("laser");
+        }
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.sourceBuilds == objects.size(), "Invaders-like sources should build each source once when no callback occurs");
+        require(stats.candidateObjects == 0, "Invaders-like sources should not acquire candidates without laser targets");
+        require(stats.targetBuilds == 0, "Invaders-like sources should not build invader targets while searching only laser");
+        require(stats.narrowPhaseCalls == 0, "Invaders-like sources should not run narrow phase without laser targets");
+    }
+
+    void testInvadersLikeDirectedSourcesWithSingleLaserBuildOnlyLaserTargets()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+
+        for (int index = 0; index < 153; ++index)
+        {
+            objects.push_back(
+                runtimeBox(
+                    "invader_" + std::to_string(index),
+                    Vector2{ static_cast<float>(index), 100.0f },
+                    Vector2{ 10.0f, 10.0f },
+                    "invader"
+                )
+            );
+
+            objects.back().collisions["body"].with.push_back("laser");
+        }
+
+        objects.push_back(
+            runtimeBox(
+                "laser",
+                Vector2{ 500.0f, 500.0f },
+                Vector2{ 2.0f, 10.0f },
+                "laser"
+            )
+        );
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.sourceBuilds == objects.size(), "Invaders-like sources and passive laser should each build once as source");
+        require(stats.candidateObjects == 153, "each Invaders-like source should acquire only the single laser candidate");
+        require(stats.targetBuilds == 153, "each Invaders-like source should build only laser target geometry");
+        require(stats.narrowPhaseCalls == 153, "each Invaders-like source should run narrow phase only against the laser");
+        require(stats.callbackInvocations == 0, "non-overlapping Invaders-like laser should not invoke callbacks");
+    }
+
+    void testStateToChangesWantedGroupsForLaterCandidates()
+    {
+        ScriptEngine scripts;
+        std::unordered_map<std::string, ObjectDefinition> definitions;
+
+        configureStateMachine(
+            scripts,
+            definitions,
+            "sourceDef",
+            "attack",
+            { "attack", "escape" }
+        );
+
+        definitions["sourceDef"].stateTransitions["attack"] = { "escape" };
+
+        scripts.loadScript(
+            "stateWantedGroups",
+            "function collision(o, other) {"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "  if (other.group == 'enemy') {"
+            "    write_local(o, 'enemyCount', (read_local(o, 'enemyCount') || 0) + 1);"
+            "    state_to(o, 'escape');"
+            "  }"
+            "  if (other.group == 'wall') { write_local(o, 'wallCount', (read_local(o, 'wallCount') || 0) + 1); }"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("enemy_1", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "enemy"));
+        objects.push_back(runtimeBox("wall", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "wall"));
+        objects.push_back(runtimeBox("enemy_2", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "enemy"));
+
+        objects[0].definitionId =
+            "sourceDef";
+        objects[0].state =
+            "attack";
+        objects[0].resolvedScriptPaths.push_back("stateWantedGroups");
+
+        objects[0].collisions["attack"].type =
+            "box";
+        objects[0].collisions["attack"].with.push_back("enemy");
+        objects[0].collisions["attack"].states.push_back("attack");
+
+        objects[0].collisions["escape"].type =
+            "box";
+        objects[0].collisions["escape"].with.push_back("wall");
+        objects[0].collisions["escape"].states.push_back("escape");
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(localNumber(objects[0], "count") == 2.0, "state_to should make later candidates use the new wanted groups");
+        require(localNumber(objects[0], "enemyCount") == 1.0, "state_to should prevent later enemy candidates after leaving attack");
+        require(localNumber(objects[0], "wallCount") == 1.0, "state_to should allow later wall candidates after entering escape");
+        require(stats.targetBuilds == 2, "only currently wanted target groups should build geometry");
+        require(stats.callbackInvocations == 2, "only the enemy before state_to and the later wall should invoke callbacks");
+    }
+
+    void testKillSourceStopsLaterInteractions()
+    {
+        ScriptEngine scripts;
+        scripts.loadScript(
+            "killSource",
+            "function collision(o, other) {"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "  kill(o);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("target_1", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+        objects.push_back(runtimeBox("target_2", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        scripts.setKillObjectFunction(
+            [&objects](const std::string& runtimeId)
+            {
+                for (RuntimeObject& object : objects)
+                {
+                    if (object.runtimeId == runtimeId)
+                    {
+                        object.alive =
+                            false;
+                    }
+                }
+            }
+        );
+
+        objects[0].resolvedScriptPaths.push_back("killSource");
+        objects[0].collisions["body"].with.push_back("target");
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(!objects[0].alive, "kill(source) should mark source dead");
+        require(localNumber(objects[0], "count") == 1.0, "kill(source) should stop later interactions");
+        require(stats.callbackInvocations == 1, "kill(source) should stop later callback invocations");
+    }
+
+    void testKilledTargetDoesNotParticipateLater()
+    {
+        ScriptEngine scripts;
+        scripts.loadScript(
+            "killTarget",
+            "function collision(o, other) { if (other.name == 'target') { kill(other); } }"
+        );
+        scripts.loadScript(
+            "targetProbe",
+            "function collision(o, other) { write_local(o, 'ranAfterDeath', 1); }"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("target", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "target"));
+
+        scripts.setKillObjectFunction(
+            [&objects](const std::string& runtimeId)
+            {
+                for (RuntimeObject& object : objects)
+                {
+                    if (object.runtimeId == runtimeId)
+                    {
+                        object.alive =
+                            false;
+                    }
+                }
+            }
+        );
+
+        objects[0].resolvedScriptPaths.push_back("killTarget");
+        objects[0].collisions["body"].with.push_back("target");
+        objects[1].resolvedScriptPaths.push_back("targetProbe");
+        objects[1].collisions["body"].with.push_back("source");
+
+        runCollisionWithStats(objects, scripts);
+
+        require(!objects[1].alive, "target killed by callback should be dead");
+        require(localNumber(objects[1], "ranAfterDeath") == 0.0, "dead target should not participate later as source");
+    }
+
+    void testMulticolliderKeepsIndividualWithFiltering()
+    {
+        ScriptEngine scripts;
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("source", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "source"));
+        objects.push_back(runtimeBox("wall", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "wall"));
+        objects.push_back(runtimeBox("enemy", Vector2{ 0.0f, 0.0f }, Vector2{ 10.0f, 10.0f }, "enemy"));
+
+        objects[0].collisions.clear();
+        objects[0].collisions["wallSensor"].type =
+            "box";
+        objects[0].collisions["wallSensor"].with.push_back("wall");
+        objects[0].collisions["enemySensor"].type =
+            "box";
+        objects[0].collisions["enemySensor"].with.push_back("enemy");
+
+        const CollisionSystemStats stats =
+            runCollisionWithStats(objects, scripts);
+
+        require(stats.candidateObjects == 2, "multicollider source should acquire each relevant target once");
+        require(stats.targetBuilds == 2, "multicollider source should build relevant targets only");
+        require(stats.narrowPhaseCalls == 2, "multicollider source should narrow-phase only source colliders whose with matches the target group");
+    }
+
     void testPongTopWallBoxBounceSeparatesAndMovesAway()
     {
         ScriptEngine scripts;
@@ -898,6 +1299,17 @@ int main()
         { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
         { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
         { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },
+        { "passive collider does not acquire candidates", testPassiveColliderDoesNotAcquireCandidates },
+        { "disabled collider does not acquire candidates", testDisabledColliderDoesNotAcquireCandidates },
+        { "state unavailable collider does not acquire candidates", testStateUnavailableColliderDoesNotAcquireCandidates },
+        { "irrelevant target group skips target build", testIrrelevantTargetGroupSkipsTargetBuild },
+        { "many irrelevant targets do not rebuild directed source repeatedly", testManyIrrelevantTargetsDoNotRebuildDirectedSourceRepeatedly },
+        { "Invaders-like directed sources without laser do not build targets", testInvadersLikeDirectedSourcesWithoutLaserDoNotBuildTargets },
+        { "Invaders-like directed sources with single laser build only laser targets", testInvadersLikeDirectedSourcesWithSingleLaserBuildOnlyLaserTargets },
+        { "state_to changes wanted groups for later candidates", testStateToChangesWantedGroupsForLaterCandidates },
+        { "kill source stops later interactions", testKillSourceStopsLaterInteractions },
+        { "killed target does not participate later", testKilledTargetDoesNotParticipateLater },
+        { "multicollider keeps individual with filtering", testMulticolliderKeepsIndividualWithFiltering },
         { "Pong exact top wall box bounce", testPongTopWallBoxBounceSeparatesAndMovesAway },
         { "Pong exact bottom wall box bounce", testPongBottomWallBoxBounceSeparatesAndMovesAway },
         { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback },

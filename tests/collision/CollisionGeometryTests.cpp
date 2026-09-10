@@ -85,6 +85,25 @@ namespace
         );
     }
 
+    void requireSymmetricContact(
+        const EffectiveCollider& source,
+        const EffectiveCollider& target,
+        const std::string& message
+    )
+    {
+        CollisionContact ab;
+        CollisionContact ba;
+
+        require(hasContact(source, target, &ab), message + " should hit from source to target");
+        require(hasContact(target, source, &ba), message + " should hit from target to source");
+
+        require(nearlyEqual(ab.point.x, ba.point.x, 0.02f), message + " should preserve contact point x when reversed");
+        require(nearlyEqual(ab.point.y, ba.point.y, 0.02f), message + " should preserve contact point y when reversed");
+        require(nearlyEqual(ab.penetration, ba.penetration, 0.02f), message + " should preserve penetration when reversed");
+        require(nearlyEqual(ab.normal.x, -ba.normal.x, 0.02f), message + " should invert normal x when reversed");
+        require(nearlyEqual(ab.normal.y, -ba.normal.y, 0.02f), message + " should invert normal y when reversed");
+    }
+
     RuntimeObject runtimeBox(
         const std::string& name,
         Vector2 position,
@@ -258,11 +277,96 @@ namespace
         CollisionContact contact;
         require(hasContact(circle(Vector2{ 87.0f, 87.0f }, 5.0f), box, &contact), "circle penetrating a box corner should contact");
         require(contact.normal.x < -0.4f && contact.normal.y < -0.4f, "corner penetration normal should be diagonal");
+        require(contact.point.x > 88.5f && contact.point.x < 91.5f, "corner contact point should stay near the box corner x");
+        require(contact.point.y > 88.5f && contact.point.y < 91.5f, "corner contact point should stay near the box corner y");
 
         const EffectiveCollider ellipse =
             collider("ellipse", Vector2{ 83.0f, 100.0f }, Vector2{ 24.0f, 8.0f }, 45.0f);
 
         require(hasContact(ellipse, box), "oriented non-circular ellipse should contact a box when its real surface reaches it");
+    }
+
+    void testCircleBoxFaceContactPointUsesWitnessEdge()
+    {
+        const EffectiveCollider box =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 20.0f, 20.0f });
+
+        CollisionContact topContact;
+        require(hasContact(circle(Vector2{ 100.0f, 86.0f }, 5.0f), box, &topContact), "circle should hit top box face");
+        require(nearlyEqual(topContact.normal.x, 0.0f, 0.02f), "top face normal x should be vertical");
+        require(nearlyEqual(topContact.normal.y, -1.0f, 0.02f), "top face normal should point upward from circle to box");
+        require(nearlyEqual(topContact.penetration, 1.0f, 0.02f), "top face penetration should be approximately one");
+        require(nearlyEqual(topContact.point.x, 100.0f, 0.05f), "top face point should stay near the circle center x, not a box corner");
+        require(nearlyEqual(topContact.point.y, 90.5f, 0.05f), "top face point should sit between circle and box surfaces");
+
+        requireSymmetricContact(
+            circle(Vector2{ 100.0f, 86.0f }, 5.0f),
+            box,
+            "circle top face against box"
+        );
+    }
+
+    void testCircleBoxSideContactPointUsesWitnessEdge()
+    {
+        const EffectiveCollider box =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 20.0f, 20.0f });
+
+        CollisionContact sideContact;
+        require(hasContact(circle(Vector2{ 86.0f, 100.0f }, 5.0f), box, &sideContact), "circle should hit left box face");
+        require(nearlyEqual(sideContact.normal.x, -1.0f, 0.02f), "left face normal should point left from circle to box");
+        require(nearlyEqual(sideContact.normal.y, 0.0f, 0.02f), "left face normal y should be horizontal");
+        require(nearlyEqual(sideContact.penetration, 1.0f, 0.02f), "left face penetration should be approximately one");
+        require(nearlyEqual(sideContact.point.x, 90.5f, 0.05f), "left face point should sit between circle and box surfaces");
+        require(nearlyEqual(sideContact.point.y, 100.0f, 0.05f), "left face point should stay near the circle center y, not a box corner");
+
+        requireSymmetricContact(
+            circle(Vector2{ 86.0f, 100.0f }, 5.0f),
+            box,
+            "circle side face against box"
+        );
+    }
+
+    void testNonCircularEllipseBoxContactPoint()
+    {
+        const EffectiveCollider box =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 20.0f, 20.0f });
+
+        const EffectiveCollider ellipse =
+            collider("ellipse", Vector2{ 100.0f, 86.0f }, Vector2{ 30.0f, 10.0f });
+
+        CollisionContact contact;
+        require(hasContact(ellipse, box, &contact), "non-circular ellipse should hit top box face");
+        require(nearlyEqual(contact.normal.x, 0.0f, 0.03f), "non-circular ellipse top normal x should be vertical");
+        require(nearlyEqual(contact.normal.y, -1.0f, 0.03f), "non-circular ellipse top normal should point upward");
+        require(contact.point.x > 99.0f && contact.point.x < 101.0f, "non-circular ellipse point should remain near face center x");
+        require(contact.point.y > 90.0f && contact.point.y < 91.0f, "non-circular ellipse point should lie between surfaces");
+
+        requireSymmetricContact(
+            ellipse,
+            box,
+            "non-circular ellipse against box"
+        );
+    }
+
+    void testOrientedEllipseBoxContactPoint()
+    {
+        const EffectiveCollider box =
+            collider("box", Vector2{ 100.0f, 100.0f }, Vector2{ 20.0f, 20.0f });
+
+        const EffectiveCollider ellipse =
+            collider("ellipse", Vector2{ 92.0f, 89.0f }, Vector2{ 24.0f, 8.0f }, 45.0f);
+
+        CollisionContact contact;
+        require(hasContact(ellipse, box, &contact), "oriented ellipse should hit box");
+        require(contact.point.x > 89.0f && contact.point.x < 101.0f, "oriented ellipse point should remain near the contact region x");
+        require(contact.point.y > 88.0f && contact.point.y < 96.0f, "oriented ellipse point should remain near the contact region y");
+        require(contact.penetration > 0.0f, "oriented ellipse should report positive penetration");
+
+        requireSymmetricContact(
+            ellipse,
+            box,
+            "oriented ellipse against box"
+        );
     }
 
     void testCollisionSystemRebuildsAfterPositionMutation()
@@ -588,6 +692,10 @@ int main()
         { "Pong gameplay geometry", testPongGameplayGeometry },
         { "Arkanoid gameplay geometry", testArkanoidGameplayGeometry },
         { "ellipse corner contacts", testEllipseCornerContacts },
+        { "circle box face contact point uses witness edge", testCircleBoxFaceContactPointUsesWitnessEdge },
+        { "circle box side contact point uses witness edge", testCircleBoxSideContactPointUsesWitnessEdge },
+        { "non-circular ellipse box contact point", testNonCircularEllipseBoxContactPoint },
+        { "oriented ellipse box contact point", testOrientedEllipseBoxContactPoint },
         { "CollisionSystem rebuilds after position mutation", testCollisionSystemRebuildsAfterPositionMutation },
         { "CollisionSystem rebuilds after collider mutation", testCollisionSystemRebuildsAfterColliderMutation },
         { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },

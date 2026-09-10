@@ -28,6 +28,13 @@ namespace
         float penetration = 0.0f;
     };
 
+    struct EpaEdge
+    {
+        float distance = std::numeric_limits<float>::max();
+        Vector2 normal = Vector2{ 1.0f, 0.0f };
+        std::size_t index = 0;
+    };
+
     float dot(Vector2 a, Vector2 b)
     {
         return a.x * b.x + a.y * b.y;
@@ -80,6 +87,19 @@ namespace
         return Vector2{
             value.x * factor,
             value.y * factor
+        };
+    }
+
+    float clamp01(float value)
+    {
+        return std::max(0.0f, std::min(1.0f, value));
+    }
+
+    Vector2 lerp(Vector2 a, Vector2 b, float amount)
+    {
+        return Vector2{
+            a.x + (b.x - a.x) * amount,
+            a.y + (b.y - a.y) * amount
         };
     }
 
@@ -498,6 +518,88 @@ namespace
         return area / 2.0f;
     }
 
+    EpaEdge closestEpaEdge(
+        const std::vector<SupportPoint>& simplex
+    )
+    {
+        EpaEdge result;
+
+        for (std::size_t i = 0; i < simplex.size(); ++i)
+        {
+            const Vector2 a =
+                simplex[i].point;
+
+            const Vector2 b =
+                simplex[(i + 1) % simplex.size()].point;
+
+            const Vector2 edge =
+                subtract(b, a);
+
+            Vector2 normal =
+                normalize(Vector2{ edge.y, -edge.x });
+
+            float distance =
+                dot(normal, a);
+
+            if (distance < 0.0f)
+            {
+                distance =
+                    -distance;
+
+                normal =
+                    negate(normal);
+            }
+
+            if (distance < result.distance)
+            {
+                result.distance =
+                    distance;
+
+                result.normal =
+                    normal;
+
+                result.index =
+                    i;
+            }
+        }
+
+        return result;
+    }
+
+    Vector2 representativeContactPointFromEdge(
+        const std::vector<SupportPoint>& simplex,
+        std::size_t edgeIndex
+    )
+    {
+        const SupportPoint& a =
+            simplex[edgeIndex];
+
+        const SupportPoint& b =
+            simplex[(edgeIndex + 1) % simplex.size()];
+
+        const Vector2 edge =
+            subtract(b.point, a.point);
+
+        const float edgeLengthSquared =
+            dot(edge, edge);
+
+        const float amount =
+            edgeLengthSquared <= Epsilon
+            ? 0.0f
+            : clamp01(-dot(a.point, edge) / edgeLengthSquared);
+
+        const Vector2 sourceWitness =
+            lerp(a.source, b.source, amount);
+
+        const Vector2 targetWitness =
+            lerp(a.target, b.target, amount);
+
+        return multiply(
+            add(sourceWitness, targetWitness),
+            0.5f
+        );
+    }
+
     ContactResult epa(
         const EffectiveCollider& source,
         const EffectiveCollider& target,
@@ -518,63 +620,19 @@ namespace
 
         for (int iteration = 0; iteration < MaxEpaIterations; ++iteration)
         {
-            float minDistance =
-                std::numeric_limits<float>::max();
-
-            Vector2 bestNormal =
-                Vector2{ 1.0f, 0.0f };
-
-            std::size_t bestIndex = 0;
-
-            for (std::size_t i = 0; i < simplex.size(); ++i)
-            {
-                const Vector2 a =
-                    simplex[i].point;
-
-                const Vector2 b =
-                    simplex[(i + 1) % simplex.size()].point;
-
-                const Vector2 edge =
-                    subtract(b, a);
-
-                Vector2 normal =
-                    normalize(Vector2{ edge.y, -edge.x });
-
-                float distance =
-                    dot(normal, a);
-
-                if (distance < 0.0f)
-                {
-                    distance =
-                        -distance;
-
-                    normal =
-                        negate(normal);
-                }
-
-                if (distance < minDistance)
-                {
-                    minDistance =
-                        distance;
-
-                    bestNormal =
-                        normal;
-
-                    bestIndex =
-                        i;
-                }
-            }
+            const EpaEdge bestEdge =
+                closestEpaEdge(simplex);
 
             const SupportPoint point =
-                support(source, target, bestNormal);
+                support(source, target, bestEdge.normal);
 
             const float supportDistance =
-                dot(bestNormal, point.point);
+                dot(bestEdge.normal, point.point);
 
-            if (supportDistance - minDistance <= EpaTolerance)
+            if (supportDistance - bestEdge.distance <= EpaTolerance)
             {
                 Vector2 finalNormal =
-                    bestNormal;
+                    bestEdge.normal;
 
                 if (dot(
                     finalNormal,
@@ -591,44 +649,45 @@ namespace
                 result.penetration =
                     std::max(0.0f, supportDistance);
 
-                const Vector2 sourcePoint =
-                    supportPoint(source, negate(finalNormal));
-
-                const Vector2 targetPoint =
-                    supportPoint(target, finalNormal);
-
                 result.point =
-                    multiply(
-                        add(sourcePoint, targetPoint),
-                        0.5f
+                    representativeContactPointFromEdge(
+                        simplex,
+                        bestEdge.index
                     );
 
                 return result;
             }
 
             simplex.insert(
-                simplex.begin() + static_cast<std::ptrdiff_t>(bestIndex + 1),
+                simplex.begin() + static_cast<std::ptrdiff_t>(bestEdge.index + 1),
                 point
             );
         }
 
+        const EpaEdge bestEdge =
+            closestEpaEdge(simplex);
+
+        Vector2 finalNormal =
+            bestEdge.normal;
+
+        if (dot(
+            finalNormal,
+            subtract(source.center, target.center)
+        ) < 0.0f)
+        {
+            finalNormal =
+                negate(finalNormal);
+        }
+
         result.hit = true;
         result.normal =
-            normalize(subtract(source.center, target.center));
+            finalNormal;
         result.penetration =
-            std::max(
-                0.0f,
-                supportRadius(source, result.normal) +
-                    supportRadius(target, result.normal) -
-                    std::abs(dot(subtract(source.center, target.center), result.normal))
-            );
+            std::max(0.0f, bestEdge.distance);
         result.point =
-            multiply(
-                add(
-                    supportPoint(source, negate(result.normal)),
-                    supportPoint(target, result.normal)
-                ),
-                0.5f
+            representativeContactPointFromEdge(
+                simplex,
+                bestEdge.index
             );
 
         return result;

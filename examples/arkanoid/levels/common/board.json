@@ -12,17 +12,13 @@
         }
       },
       "origin": {
-        "x": 40,
-        "y": 45
+        "x": 320,
+        "y": 50
       },
       "group": "wall_top",
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 280,
-            "y": 5
-          }
+          "type": "box"
         }
       }
     },
@@ -36,17 +32,13 @@
         }
       },
       "origin": {
-        "x": 40,
-        "y": 45
+        "x": 45,
+        "y": 170
       },
       "group": "wall_side",
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 5,
-            "y": 125
-          }
+          "type": "box"
         }
       }
     },
@@ -60,17 +52,13 @@
         }
       },
       "origin": {
-        "x": 600,
-        "y": 45
+        "x": 605,
+        "y": 170
       },
       "group": "wall_side",
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 5,
-            "y": 125
-          }
+          "type": "box"
         }
       }
     }

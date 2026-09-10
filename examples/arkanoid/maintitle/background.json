@@ -4,8 +4,8 @@
   "children": {
     "skyTop": {
       "origin": {
-        "x": 0,
-        "y": 0
+        "x": 320,
+        "y": 35
       },
       "shape": {
         "type": "block",
@@ -21,8 +21,8 @@
 
     "skyMid": {
       "origin": {
-        "x": 0,
-        "y": 70
+        "x": 320,
+        "y": 92.5
       },
       "shape": {
         "type": "block",
@@ -38,8 +38,8 @@
 
     "sunsetYellow": {
       "origin": {
-        "x": 0,
-        "y": 115
+        "x": 320,
+        "y": 137.5
       },
       "shape": {
         "type": "block",
@@ -55,8 +55,8 @@
 
     "sunsetOrange": {
       "origin": {
-        "x": 0,
-        "y": 160
+        "x": 320,
+        "y": 182.5
       },
       "shape": {
         "type": "block",
@@ -72,8 +72,8 @@
 
     "sunsetRed": {
       "origin": {
-        "x": 0,
-        "y": 205
+        "x": 320,
+        "y": 232.5
       },
       "shape": {
         "type": "block",
@@ -89,8 +89,8 @@
 
     "floor": {
       "origin": {
-        "x": 0,
-        "y": 260
+        "x": 320,
+        "y": 290
       },
       "shape": {
         "type": "block",

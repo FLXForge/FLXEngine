@@ -28,11 +28,7 @@
   },
   "collisions": {
     "body": {
-      "type": "box",
-      "offset": {
-        "x": 5,
-        "y": 5
-      }
+      "type": "box"
     }
   }
 }

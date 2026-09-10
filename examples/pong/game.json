@@ -3,8 +3,8 @@
   "children": {
     "player": {
       "origin": {
-        "x": 16,
-        "y": 90
+        "x": 18.5,
+        "y": 105
       },
       "shape": {
         "type": "block",
@@ -33,18 +33,14 @@
       },
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 2.5,
-            "y": 15
-          }
+          "type": "box"
         }
       }
     },
     "enemy": {
       "origin": {
-        "x": 299,
-        "y": 90
+        "x": 301.5,
+        "y": 105
       },
       "shape": {
         "type": "block",
@@ -70,18 +66,14 @@
       },
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 2.5,
-            "y": 15
-          }
+          "type": "box"
         }
       }
     },
     "ball": {
       "origin": {
-        "x": 157,
-        "y": 87
+        "x": 159.5,
+        "y": 89.5
       },
       "shape": {
         "type": "block",
@@ -124,10 +116,6 @@
       "collisions": {
         "body": {
           "type": "box",
-          "offset": {
-            "x": 2.5,
-            "y": 2.5
-          },
           "with": [
             "wall",
             "goal",
@@ -138,8 +126,8 @@
     },
     "left_goal": {
       "origin": {
-        "x": -10,
-        "y": 0
+        "x": -5,
+        "y": 90
       },
       "shape": {
         "type": "block",
@@ -153,18 +141,14 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 5,
-            "y": 90
-          }
+          "type": "box"
         }
       }
     },
     "right_goal": {
       "origin": {
-        "x": 320,
-        "y": 0
+        "x": 325,
+        "y": 90
       },
       "shape": {
         "type": "block",
@@ -178,18 +162,14 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 5,
-            "y": 90
-          }
+          "type": "box"
         }
       }
     },
     "top_wall": {
       "origin": {
-        "x": 0,
-        "y": -10
+        "x": 160,
+        "y": -5
       },
       "shape": {
         "type": "block",
@@ -203,18 +183,14 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 160,
-            "y": 5
-          }
+          "type": "box"
         }
       }
     },
     "bottom_wall": {
       "origin": {
-        "x": 0,
-        "y": 180
+        "x": 160,
+        "y": 185
       },
       "shape": {
         "type": "block",
@@ -228,11 +204,7 @@
       "visible": false,
       "collisions": {
         "body": {
-          "type": "box",
-          "offset": {
-            "x": 160,
-            "y": 5
-          }
+          "type": "box"
         }
       }
     }

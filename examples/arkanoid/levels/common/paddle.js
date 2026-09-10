@@ -103,9 +103,9 @@ function update_respawn(paddle){
 function collision(paddle, other) {
     if (other.group == "wall_side") {
         if (paddle.x < other.x) {
-            position_x(paddle, other.x - paddle.width);
+            position_x(paddle, other.x - other.width / 2 - paddle.width / 2);
         } else {
-            position_x(paddle, other.x + other.width);
+            position_x(paddle, other.x + other.width / 2 + paddle.width / 2);
         }
 
         return;

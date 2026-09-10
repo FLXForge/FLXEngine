@@ -103,8 +103,7 @@ function collision(ball, other, contacts) {
             return;
         }
 
-        let center = other.x + other.width / 2;
-        let hit = ball.x - center;
+        let hit = ball.x - other.x;
         let factor = hit / (other.width / 2);
 
         apply_angle(ball, factor * 60);

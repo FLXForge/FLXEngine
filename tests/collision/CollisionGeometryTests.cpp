@@ -1,4 +1,5 @@
 #include "../support/TestSupport.h"
+#include "../../engine/collision/EffectiveColliderBuilder.h"
 #include "../../engine/collision/CollisionGeometry.h"
 #include "../../engine/collision/CollisionSystem.h"
 #include "../../engine/runtime/RuntimeObject.h"
@@ -98,9 +99,9 @@ namespace
         return object;
     }
 
-    RuntimeObject pongBall(Vector2 topLeft, float angle)
+    RuntimeObject pongBall(Vector2 position, float angle)
     {
-        RuntimeObject object("ball", topLeft, Vector2{ 5.0f, 5.0f }, WHITE);
+        RuntimeObject object("ball", position, Vector2{ 5.0f, 5.0f }, WHITE);
         object.runtimeId = "ball";
         object.group = "ball";
         object.mechanicsType = MechanicsType::Polar;
@@ -113,11 +114,6 @@ namespace
             object.collisions["body"];
 
         collider.type = "box";
-        collider.size.width = 5.0f;
-        collider.size.height = 5.0f;
-        collider.size.hasWidth = true;
-        collider.size.hasHeight = true;
-        collider.offset = Vector2{ 2.5f, 2.5f };
         collider.with.push_back("wall");
 
         return object;
@@ -125,10 +121,10 @@ namespace
 
     RuntimeObject pongWall(
         const std::string& name,
-        Vector2 topLeft
+        Vector2 position
     )
     {
-        RuntimeObject object(name, topLeft, Vector2{ 320.0f, 10.0f }, WHITE);
+        RuntimeObject object(name, position, Vector2{ 320.0f, 10.0f }, WHITE);
         object.runtimeId = name;
         object.group = "wall";
 
@@ -136,11 +132,6 @@ namespace
             object.collisions["body"];
 
         collider.type = "box";
-        collider.size.width = 320.0f;
-        collider.size.height = 10.0f;
-        collider.size.hasWidth = true;
-        collider.size.hasHeight = true;
-        collider.offset = Vector2{ 160.0f, 5.0f };
 
         return object;
     }
@@ -398,8 +389,8 @@ namespace
         );
 
         std::vector<RuntimeObject> objects;
-        objects.push_back(pongBall(Vector2{ 100.0f, -4.0f }, 0.0f));
-        objects.push_back(pongWall("top_wall", Vector2{ 0.0f, -10.0f }));
+        objects.push_back(pongBall(Vector2{ 102.5f, -1.5f }, 0.0f));
+        objects.push_back(pongWall("top_wall", Vector2{ 160.0f, -5.0f }));
 
         const float originalY =
             objects[0].position.y;
@@ -443,8 +434,8 @@ namespace
         );
 
         std::vector<RuntimeObject> objects;
-        objects.push_back(pongBall(Vector2{ 100.0f, 177.0f }, 180.0f));
-        objects.push_back(pongWall("bottom_wall", Vector2{ 0.0f, 180.0f }));
+        objects.push_back(pongBall(Vector2{ 102.5f, 179.5f }, 180.0f));
+        objects.push_back(pongWall("bottom_wall", Vector2{ 160.0f, 185.0f }));
 
         const float originalY =
             objects[0].position.y;
@@ -508,6 +499,87 @@ namespace
         require(localNumber(objects[0], "count") == 1.0, "separation plus reflection should avoid a second spurious wall callback");
         require(objects[0].position.y < -9.0f, "ball should move away from the wall on the next frame");
     }
+
+    EffectiveCollider requireSingleCollider(
+        const RuntimeObject& object,
+        ScriptEngine& scripts
+    )
+    {
+        const std::vector<EffectiveCollider> colliders =
+            EffectiveColliderBuilder::build(object, scripts);
+
+        require(colliders.size() == 1, "object should expose one effective collider declaration");
+
+        return colliders.front();
+    }
+
+    void testColliderInheritsLiveSizePerAxis()
+    {
+        ScriptEngine scripts;
+
+        RuntimeObject object("body", Vector2{ 100.0f, 50.0f }, Vector2{ 20.0f, 10.0f }, WHITE);
+        object.runtimeId = "body";
+
+        ColliderDefinition& collider =
+            object.collisions["body"];
+
+        collider.type = "box";
+        collider.size.width = 8.0f;
+        collider.size.hasWidth = true;
+
+        EffectiveCollider effective =
+            requireSingleCollider(object, scripts);
+
+        require(nearlyEqual(effective.halfSize.x, 4.0f), "explicit collider width should be preserved");
+        require(nearlyEqual(effective.halfSize.y, 5.0f), "omitted collider height should inherit object height");
+
+        object.size = Vector2{ 40.0f, 30.0f };
+
+        effective =
+            requireSingleCollider(object, scripts);
+
+        require(nearlyEqual(effective.halfSize.x, 4.0f), "explicit collider width should not change after resize");
+        require(nearlyEqual(effective.halfSize.y, 15.0f), "inherited collider height should follow live object height");
+    }
+
+    void testColliderOffsetUsesObjectLocalSpace()
+    {
+        ScriptEngine scripts;
+
+        RuntimeObject object("body", Vector2{ 100.0f, 50.0f }, Vector2{ 20.0f, 10.0f }, WHITE);
+        object.runtimeId = "body";
+
+        ColliderDefinition& collider =
+            object.collisions["body"];
+
+        collider.type = "box";
+        collider.offset = Vector2{ 20.0f, 0.0f };
+        collider.angle = 15.0f;
+
+        EffectiveCollider effective =
+            requireSingleCollider(object, scripts);
+
+        require(nearlyEqual(effective.center.x, 120.0f), "angle 0 should place collider at position plus local offset x");
+        require(nearlyEqual(effective.center.y, 50.0f), "angle 0 should place collider at position plus local offset y");
+        require(nearlyEqual(effective.angle, 15.0f), "collider angle should include local collider angle");
+
+        object.angle = 90.0f;
+
+        effective =
+            requireSingleCollider(object, scripts);
+
+        require(nearlyEqual(effective.center.x, 100.0f), "object rotation should rotate local collider offset x");
+        require(nearlyEqual(effective.center.y, 70.0f), "object rotation should rotate local collider offset y");
+        require(nearlyEqual(effective.angle, 105.0f), "collider angle should be object angle plus local collider angle");
+
+        object.size = Vector2{ 40.0f, 30.0f };
+
+        effective =
+            requireSingleCollider(object, scripts);
+
+        require(nearlyEqual(effective.center.x, 100.0f), "resize should not scale local collider offset x");
+        require(nearlyEqual(effective.center.y, 70.0f), "resize should not scale local collider offset y");
+    }
 }
 
 int main()
@@ -521,7 +593,9 @@ int main()
         { "CollisionSystem rebuilds after state mutation", testCollisionSystemRebuildsAfterStateMutation },
         { "Pong exact top wall box bounce", testPongTopWallBoxBounceSeparatesAndMovesAway },
         { "Pong exact bottom wall box bounce", testPongBottomWallBoxBounceSeparatesAndMovesAway },
-        { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback }
+        { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback },
+        { "collider inherits live size per axis", testColliderInheritsLiveSizePerAxis },
+        { "collider offset uses object local space", testColliderOffsetUsesObjectLocalSpace }
     };
 
     for (const auto& test : tests)

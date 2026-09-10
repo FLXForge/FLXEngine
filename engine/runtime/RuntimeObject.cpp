@@ -711,7 +711,10 @@ void RuntimeObject::draw(
         {
             drawTextInBox(
                 textContent,
-                Vector2{ x, y },
+                Vector2{
+                    x - size.x * scale / 2.0f,
+                    y - size.y * scale / 2.0f
+                },
                 Vector2{
                     size.x * scale,
                     size.y * scale
@@ -733,8 +736,8 @@ void RuntimeObject::draw(
         if (isOutlineMode(shapeMode))
         {
             DrawRectangleLines(
-                static_cast<int>(drawPosition.x * scale),
-                static_cast<int>(drawPosition.y * scale),
+                static_cast<int>(x - width / 2.0f),
+                static_cast<int>(y - height / 2.0f),
                 static_cast<int>(width),
                 static_cast<int>(height),
                 color
@@ -743,8 +746,8 @@ void RuntimeObject::draw(
         else
         {
             DrawRectangle(
-                static_cast<int>(drawPosition.x * scale),
-                static_cast<int>(drawPosition.y * scale),
+                static_cast<int>(x - width / 2.0f),
+                static_cast<int>(y - height / 2.0f),
                 static_cast<int>(width),
                 static_cast<int>(height),
                 color

@@ -1,8 +1,8 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "origin": {
-    "x": 300,
-    "y": 270
+    "x": 335,
+    "y": 275
   },
   "shape": {
     "type": "block",
@@ -29,15 +29,7 @@
   },
   "collisions": {
     "body": {
-      "type": "box",
-      "size": {
-        "width": 70,
-        "height": 10
-      },
-      "offset": {
-        "x": 35,
-        "y": 5
-      }
+      "type": "box"
     }
   }
 }

@@ -6,8 +6,8 @@
   "children": {
     "linea": {
       "origin": {
-        "x": 0,
-        "y": 20
+        "x": 320,
+        "y": 21
       },
       "shape": {
         "type": "block",
@@ -22,8 +22,8 @@
     },
     "lineb": {
       "origin": {
-        "x": 0,
-        "y": 24
+        "x": 320,
+        "y": 25
       },
       "shape": {
         "type": "block",
@@ -38,8 +38,8 @@
     },
     "linec": {
       "origin": {
-        "x": 0,
-        "y": 28
+        "x": 320,
+        "y": 29
       },
       "shape": {
         "type": "block",

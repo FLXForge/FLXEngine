@@ -1,5 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "offset": {
+    "x": 15,
+    "y": 5
+  },
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -11,11 +15,7 @@
   "group": "brick",
   "collisions": {
     "body": {
-      "type": "box",
-      "offset": {
-        "x": 15,
-        "y": 5
-      }
+      "type": "box"
     }
   }
 }

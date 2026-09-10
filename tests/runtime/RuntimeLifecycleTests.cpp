@@ -1567,6 +1567,93 @@ namespace
         require(nearlyEqual(runtimeVector.position.y, 70.7107), "vector diagonal should normalize vertical movement");
     }
 
+    void testResizeKeepsPivotAndOrigin()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "resizeProbe",
+            "function action(o) {"
+            "  write_local(o, 'xBefore', o.x);"
+            "  write_local(o, 'yBefore', o.y);"
+            "  resize(o, 30, 40);"
+            "  resize_width(o, 50);"
+            "  resize_height(o, 60);"
+            "  write_local(o, 'xAfter', o.x);"
+            "  write_local(o, 'yAfter', o.y);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "resizeProbe");
+        root.origin = Vector2{ 12.0f, 18.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 10.0f, 20.0f };
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load resize spatial project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(localValue(runtimeRoot, "xBefore"), 12.0), "resize test should start from the declared pivot x");
+        require(nearlyEqual(localValue(runtimeRoot, "yBefore"), 18.0), "resize test should start from the declared pivot y");
+        require(nearlyEqual(localValue(runtimeRoot, "xAfter"), 12.0), "resize should not move pivot x");
+        require(nearlyEqual(localValue(runtimeRoot, "yAfter"), 18.0), "resize should not move pivot y");
+        require(nearlyEqual(runtimeRoot.origin.x, 12.0), "resize should not move origin x");
+        require(nearlyEqual(runtimeRoot.origin.y, 18.0), "resize should not move origin y");
+        require(nearlyEqual(runtimeRoot.size.x, 50.0), "resize_width should update live width");
+        require(nearlyEqual(runtimeRoot.size.y, 60.0), "resize_height should update live height");
+    }
+
+    void testFollowUsesRuntimeObjectPivots()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "followPivot",
+            "function motion(o) {"
+            "  const target = find_name('target')[0];"
+            "  follow_x(o, target);"
+            "  follow_y(o, target);"
+            "  write_local(o, 'xAfterFollow', o.x);"
+            "  write_local(o, 'yAfterFollow', o.y);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "followPivot");
+        root.origin = Vector2{ 0.0f, 0.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 100.0f, 100.0f };
+        root.mechanics.motion.speed.start = 100.0f;
+        root.childResources["target"] = "target";
+
+        ObjectDefinition target =
+            objectDefinition("target");
+        target.origin = Vector2{ 10.0f, 20.0f };
+        target.hasOrigin = true;
+        target.size = Vector2{ 10.0f, 10.0f };
+
+        harness.addObject(root);
+        harness.addObject(target);
+
+        require(harness.load().success, "runtime should load follow spatial project");
+
+        harness.update(1.0f);
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(runtimeRoot.position.x, 10.0), "follow_x should move to target pivot x");
+        require(nearlyEqual(runtimeRoot.position.y, 20.0), "follow_y should move to target pivot y");
+        require(nearlyEqual(localValue(runtimeRoot, "xAfterFollow"), 10.0), "follow_x should expose pivot x through live JS view");
+        require(nearlyEqual(localValue(runtimeRoot, "yAfterFollow"), 20.0), "follow_y should expose pivot y through live JS view");
+    }
+
     void testApplySpeedRespectsMechanicsLimit()
     {
         RuntimeHarness harness;
@@ -1718,6 +1805,30 @@ namespace
         require(countRenderedColor(harness, GREEN) == 0, "hide should suppress declarative shape drawing");
     }
 
+    void testBlockShapeDrawsAroundPivot()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["block"] = "block";
+
+        ObjectDefinition block =
+            objectDefinition("block");
+        block.shapeType = "block";
+        block.origin = Vector2{ 1.0f, 1.0f };
+        block.hasOrigin = true;
+        block.size = Vector2{ 4.0f, 4.0f };
+        block.color = GREEN;
+
+        harness.addObject(root);
+        harness.addObject(block);
+
+        require(harness.load().success, "runtime should load block spatial draw project");
+
+        require(countRenderedColor(harness, GREEN) == 9, "block should be centered on pivot instead of drawn from top-left");
+    }
+
     void testVisibleIsReadOnlyFromJavaScript()
     {
         RuntimeHarness harness;
@@ -1825,7 +1936,7 @@ namespace
             objectDefinition("highBlock");
         highBlock.layer = 10;
         highBlock.shapeType = "block";
-        highBlock.size = Vector2{ 1.0f, 1.0f };
+        highBlock.size = Vector2{ 3.0f, 3.0f };
         highBlock.origin = Vector2{ 5.0f, 5.0f };
         highBlock.hasOrigin = true;
         highBlock.color = BLUE;
@@ -1836,7 +1947,7 @@ namespace
 
         require(harness.load().success, "runtime should load draw pipeline project");
 
-        require(countRenderedColor(harness, BLUE) == 1, "higher layer declarative draw should cover lower layer JS draw");
+        require(countRenderedColor(harness, BLUE) == 9, "higher layer declarative draw should cover lower layer JS draw");
         require(countRenderedColor(harness, RED) == 0, "lower layer JS draw should not run in a separate final overlay pipeline");
     }
 
@@ -2385,10 +2496,13 @@ int main()
         { "collision callback receives concrete other reference", testCollisionCallbackReceivesConcreteOtherReference },
         { "public scripting functions are registered", testPublicScriptingFunctionsAreRegistered },
         { "mechanics diagonal vector normalizes combined axes", testMechanicsDiagonalVectorNormalizesCombinedAxes },
+        { "resize keeps pivot and origin", testResizeKeepsPivotAndOrigin },
+        { "follow uses RuntimeObject pivots", testFollowUsesRuntimeObjectPivots },
         { "apply_speed respects mechanics limit", testApplySpeedRespectsMechanicsLimit },
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },
+        { "block shape draws around pivot", testBlockShapeDrawsAroundPivot },
         { "visible is read-only from JavaScript", testVisibleIsReadOnlyFromJavaScript },
         { "draw callbacks follow stable layer order", testDrawCallbacksFollowStableLayerOrder },
         { "declarative draw and JS draw share object layer order", testDeclarativeDrawAndJsDrawShareObjectLayerOrder },

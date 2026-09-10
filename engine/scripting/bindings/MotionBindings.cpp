@@ -251,8 +251,7 @@ namespace
             source->position.y;
 
         const double distance =
-            (target->position.y + target->size.y / 2.0) -
-            (source->position.y + source->size.y / 2.0);
+            target->position.y - source->position.y;
 
         const double maxStep =
             std::abs(source->speed) * frameDelta(context);
@@ -312,8 +311,7 @@ namespace
             source->position.x;
 
         const double distance =
-            (target->position.x + target->size.x / 2.0) -
-            (source->position.x + source->size.x / 2.0);
+            target->position.x - source->position.x;
 
         const double maxStep =
             std::abs(source->speed) * frameDelta(context);

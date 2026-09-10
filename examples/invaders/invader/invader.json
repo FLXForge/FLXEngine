@@ -1,5 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "offset": {
+    "x": 7,
+    "y": 5
+  },
   "shape": {
     "type": "block",
     "mode": "fill",
@@ -22,8 +26,8 @@
       "like": "laser",
       "spawn": "manual",
       "offset": {
-        "x": 11,
-        "y": 10
+        "x": 5,
+        "y": 9
       }
     }
   },
@@ -36,10 +40,6 @@
   "collisions": {
     "body": {
       "type": "box",
-      "offset": {
-        "x": 7,
-        "y": 5
-      },
       "with": [
         "laser"
       ]

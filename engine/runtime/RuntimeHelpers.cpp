@@ -638,19 +638,13 @@ void RuntimeHelpers::followY(
     float delta
 )
 {
-    const float followerCenterY =
-        follower.position.y + follower.size.y / 2.0f;
-
-    const float targetCenterY =
-        target.position.y + target.size.y / 2.0f;
-
     const float tolerance = 2.0f;
 
-    if (followerCenterY < targetCenterY - tolerance)
+    if (follower.position.y < target.position.y - tolerance)
     {
         moveY(follower, DOWN, delta);
     }
-    else if (followerCenterY > targetCenterY + tolerance)
+    else if (follower.position.y > target.position.y + tolerance)
     {
         moveY(follower, UP, delta);
     }

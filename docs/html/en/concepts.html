@@ -413,19 +413,20 @@ machine=machines/standard.yml
             </ul>
 
             <p>
-                At the moment, FLX uses logical screen coordinates
+                At the moment, FLX uses logical world coordinates
                 in a fixed world without cameras or scrolling.
             </p>
 
             <p>
                 Objects use these coordinates for their position within the runtime.
-                Text rendering functions such as <code>draw_text()</code>
-                also use logical screen coordinates.
+                Immediate drawing functions such as <code>draw_text()</code>
+                use logical world coordinates by default, or local coordinates
+                when a <code>RuntimeObject</code> is passed as reference.
             </p>
 
             <p>
-                Camera systems, scrolling and the formal separation between world,
-                screen, view and local coordinate spaces
+                Camera systems, scrolling and richer transformations between
+                world, screen, view and local coordinate spaces
                 remain planned for future versions.
             </p>
 

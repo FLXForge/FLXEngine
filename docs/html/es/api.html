@@ -455,15 +455,20 @@ resize_width(paddle, paddle.width + 8);</code></pre>
 </code></pre>
             </div>
 
-            <h2>Draw_text(x, y, text, size, color)</h2>
+            <h2>draw_text(x, y, text, size, color)</h2>
 
             <p>
-                Dibuja texto en pantalla usando las coodenadas definidas en screen.
+                Dibuja texto inmediato durante el hook
+                <code>draw(object)</code> actual.
             </p>
 
             <p>
-                Las coordenadas son expresadas en FLX como coordenadas de resolución.
-                El motor aplica la configuración de escalada de forma automática.
+                Las coordenadas se expresan en el espacio lógico del mundo FLX
+                y representan el centro del texto. Si se pasa un
+                <code>RuntimeObject</code> como primer argumento, las
+                coordenadas son locales a ese objeto y rotan con él. Usa
+                <code>shape.type = "text"</code> cuando el texto sea un objeto
+                persistente del mundo.
             </p>
 
             <div class="code-card">
@@ -471,6 +476,7 @@ resize_width(paddle, paddle.width + 8);</code></pre>
 <pre><code>draw_text( 10, 10, "HELLO ");
 draw_text( 40, 10, "WORLD!", 15);
 draw_text( 10, 30, "READY", 10, "#ffffff");
+draw_text(ship, 0, -12, "LOCK", 8, "yellow");
 </code></pre>
             </div>
 
@@ -484,14 +490,16 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <h2>draw_pixel(x, y, color)</h2>
 
             <p>
-                Dibuja un pixel inmediato en pantalla usando coordenadas logicas FLX.
-                El motor aplica internamente la escala de salida del chip de video.
+                Dibuja un pixel lógico inmediato durante el hook
+                <code>draw(object)</code> actual. Con un
+                <code>RuntimeObject</code> como primer argumento, las
+                coordenadas son locales a ese objeto.
             </p>
 
             <p>
-                Es una funcion de dibujo de overlay, igual que <code>draw_text()</code>.
-                No crea runtime objects, no colisiona y en esta version se dibuja
-                por encima de los objetos del mundo.
+                No crea RuntimeObjects ni colisiona. El dibujo inmediato
+                pertenece al turno visual del objeto cuyo <code>draw()</code>
+                se está ejecutando.
             </p>
 
             <div class="code-card">
@@ -500,6 +508,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
     draw_pixel(4, 10);
     draw_pixel(10, 10, "white");
     draw_pixel(20, 20, "#ffcc00");
+    draw_pixel(ship, 0, -6, "white");
 }</code></pre>
             </div>
 
@@ -514,19 +523,21 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <h2>draw_line(x, y, x1, y1, color)</h2>
 
             <p>
-                Dibuja una linea inmediata en pantalla usando coordenadas logicas FLX.
-                El motor aplica internamente la escala de salida del chip de video.
+                Dibuja una línea inmediata durante el hook
+                <code>draw(object)</code> actual. Con un
+                <code>RuntimeObject</code> como primer argumento, los extremos
+                son locales a ese objeto.
             </p>
 
             <p>
-                Es una funcion de dibujo de overlay. No crea runtime objects
-                y no colisiona.
+                No crea RuntimeObjects ni colisiona.
             </p>
 
             <div class="code-card">
                 <div class="code-header">line</div>
 <pre><code>draw_line(10, 10, 40, 10);
-draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
+draw_line(10, 20, 40, 40, "#ffcc00");
+draw_line(ship, 0, 0, 0, -12, "white");</code></pre>
             </div>
 
             <p>
@@ -539,20 +550,22 @@ draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
             <h2>draw_rectangle(x, y, width, height, color)</h2>
 
             <p>
-                Dibuja el contorno de un rectangulo inmediato en pantalla usando
-                coordenadas logicas FLX. El motor aplica internamente la escala
-                de salida del chip de video.
+                Dibuja el contorno de un rectángulo inmediato durante el hook
+                <code>draw(object)</code> actual. <code>x</code> e
+                <code>y</code> son el centro del rectángulo.
             </p>
 
             <p>
-                Es una funcion de dibujo de overlay. No crea runtime objects
-                y no colisiona.
+                Con un <code>RuntimeObject</code> como primer argumento, el
+                centro es local a ese objeto y el rectángulo rota con él. No
+                crea RuntimeObjects ni colisiona.
             </p>
 
             <div class="code-card">
                 <div class="code-header">rectangle</div>
 <pre><code>draw_rectangle(8, 8, 40, 20);
-draw_rectangle(60, 8, 30, 30, "green");</code></pre>
+draw_rectangle(60, 8, 30, 30, "green");
+draw_rectangle(ship, 0, 0, 12, 8, "cyan");</code></pre>
             </div>
 
             <p>
@@ -566,8 +579,8 @@ draw_rectangle(60, 8, 30, 30, "green");</code></pre>
 
             <p>
                 Inicia un desvanecimiento de pantalla completa desde transparente
-                hasta opaco. La superposicion se dibuja por encima del mundo y
-                por encima del texto dibujado con <code>draw_text()</code>.
+                hasta opaco. La superposición es global y se dibuja por encima
+                del mundo y del dibujo inmediato.
             </p>
 
             <p>

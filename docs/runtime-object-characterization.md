@@ -45,7 +45,7 @@ Clasificacion provisional:
 | `alive` | `bool` | runtime true | si | all phases, JS readonly live view | kill/keep_only/runtime cleanup | A |
 | `deadCalled` | `bool` | runtime false | si | dead phase | dead phase | E |
 | `attached` | `bool` | `ObjectDefinition.attachOnCreate` | si | attachments, attach_active | attach/detach | A/D |
-| `layer` | `int` | `ObjectDefinition.layer` | no esperado | draw sorting | builder | C |
+| `depth` | `int` | `ObjectDefinition.depth` | no esperado | draw sorting, JS readonly live view | builder/depth API | C/A |
 | `origin` | `Vector2` | `ObjectDefinition.origin` | no esperado | position_origin, attach math | builder | C/F |
 | `position` | `Vector2` | `ObjectDefinition.origin` | si | draw, collision, motion, JS readonly view | position APIs, movement, attach, carry | A |
 | `previousPosition` | `Vector2` | initial origin | si | carry | beginFrame | A |
@@ -110,7 +110,7 @@ operaciones:
 
 ### Copia directamente desde ObjectDefinition
 
-`sourcePath`, `hasOrigin`, `origin`, `size`, `color`, `visible`, `layer`,
+`sourcePath`, `hasOrigin`, `origin`, `size`, `color`, `visible`, `depth`,
 `attachFollowX`, `attachFollowY`, `attachFollowAngle`, `shapeMode`, `shapeType`,
 `textContent`, `radius`, `points`, `speed`, `angle`, `rotationSpeed`,
 `acceleration`, `maxSpeed`, `inertia`, `boundsMode`, `boundsOverflow`, `group`,
@@ -172,7 +172,7 @@ siguen devolviendo solo objetos vivos.
 | `attached` | no | no | no | `RuntimeObject.attached` | Usar `attach()`/`detach()`/`attach_active()`. |
 | `group` | si | no | si | `RuntimeObject.group` | Metadata de collision/logica. |
 | `role` | si | no | si | `RuntimeObject.role` | Metadata logica dentro de group. |
-| `layer` | no | no | no | `RuntimeObject.layer` | No se expone como propiedad publica en la vista actual. |
+| `depth` | si | no | si | `RuntimeObject.depth` | Vista viva; modificar con `depth(object,value)`. |
 | `x` | si | no | si | `RuntimeObject.position.x` | Vista viva; modificar con `position_x()`/`position()`. |
 | `previousX` | no | no | no | `RuntimeObject.previousPosition.x` | No se expone como propiedad publica en la vista actual. |
 | `y` | si | no | si | `RuntimeObject.position.y` | Vista viva; modificar con `position_y()`/`position()`. |
@@ -268,7 +268,7 @@ Conclusiones de caracterizacion:
 | --- | --- | --- | --- |
 | `group` | si | no | colisiones en Pong/Asteroids/Arkanoid/Invaders; ray result usa group. |
 | `role` | si | no | documentada; sin uso claro en examples actuales. |
-| `layer` | no | no | draw order declarativo; no se expone a JS. |
+| `depth` | si | via API funcional | draw order declarativo; se expone como lectura viva. |
 | `originX/Y` | no | no | no se expone a JS; scripts que necesitan origen usan estado local propio o `position_origin()`. |
 | `size` como `width/height` | si | via API funcional | Arkanoid paddle, collision positioning. |
 | collision metadata | no directa | no | collision system/ray; JS solo ve `group` y `role`. |
@@ -307,8 +307,8 @@ Propiedades expuestas pero sin uso claro en los scripts versionados de
   `attach/detach/attach_active`.
 - `group` y `role` son metadata copiadas a cada instancia y expuestas como
   propiedades planas, aunque no se pueden cambiar realmente desde JS.
-- `layer` procede de definicion y queda como metadata declarativa de dibujo; no
-  es una propiedad mutable de scripting.
+- `depth` procede de definicion y queda como metadata declarativa de dibujo; se
+  puede consultar como lectura viva y modificar mediante `depth(object,value)`.
 - `id` expone runtime id, no id logico; el nombre puede inducir a error.
 - `RuntimeObject.children` mantiene definiciones embebidas aunque el modelo
   compilado consolidado usa `childResources`.
@@ -392,8 +392,8 @@ Propiedades que representan estado local natural y tienen uso real:
 - `previousPosition`: util para `carry`, pero no expuesto como propiedad JS.
 - `originSpeed`: no expuesto; parece detalle de `restore_speed()`.
 - `motion` anidado: resuelto; ya no se expone como objeto runtime.
-- `layer`: resuelto para v0.3.0 como metadata declarativa no expuesta
-  directamente a JS.
+- `depth`: resuelto para v0.3.0 como metadata declarativa expuesta en lectura y
+  modificable solo por API funcional.
 
 ## M. Preguntas de diseno pendientes
 

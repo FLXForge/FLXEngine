@@ -22,6 +22,7 @@
 class FadeSystem;
 class AudioSystem;
 class InputSystem;
+class DrawingContext;
 struct JSRuntime;
 struct JSContext;
 
@@ -173,11 +174,41 @@ public:
     void setScreenScale(int scale);
     int getScreenScale() const;
     void setVideoChip(const VideoChipDefinition* videoChip);
+    void setDrawingContext(DrawingContext* drawingContext);
     Color parseColor(
         const std::string& color,
         Color fallback
     ) const;
     Color projectColor(Color color) const;
+    bool drawWorldPixel(Vector2 point, Color color);
+    bool drawLocalPixel(const RuntimeObject& reference, Vector2 point, Color color);
+    bool drawWorldLine(Vector2 start, Vector2 end, Color color);
+    bool drawLocalLine(
+        const RuntimeObject& reference,
+        Vector2 start,
+        Vector2 end,
+        Color color
+    );
+    bool drawWorldRectangle(Vector2 center, Vector2 size, Color color);
+    bool drawLocalRectangle(
+        const RuntimeObject& reference,
+        Vector2 center,
+        Vector2 size,
+        Color color
+    );
+    bool drawWorldText(
+        Vector2 center,
+        const std::string& text,
+        int fontSize,
+        Color color
+    );
+    bool drawLocalText(
+        const RuntimeObject& reference,
+        Vector2 center,
+        const std::string& text,
+        int fontSize,
+        Color color
+    );
     void setFrameDelta(float delta);
     float getFrameDelta() const;
     void setRuntimeFrame(uint64_t frame);
@@ -248,6 +279,7 @@ private:
     float frameDelta = 1.0f / 60.0f;
     uint64_t runtimeFrame = 0;
     const VideoChipDefinition* videoChip = nullptr;
+    DrawingContext* drawingContext = nullptr;
     JSRuntime* runtime;
     JSContext* context;
     std::unordered_map<std::string, ScriptValue> globalState;

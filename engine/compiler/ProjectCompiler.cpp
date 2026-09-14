@@ -35,7 +35,7 @@ namespace
 
         compiled.visible = definition.visible;
         compiled.hasVisual = definition.hasVisual;
-        compiled.layer = definition.layer;
+        compiled.depth = definition.depth;
 
         compiled.origin = definition.origin;
         compiled.hasOrigin = definition.hasOrigin;

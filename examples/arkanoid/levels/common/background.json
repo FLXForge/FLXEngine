@@ -5,6 +5,7 @@
 
   "children": {
     "linea": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 21
@@ -13,7 +14,6 @@
         "type": "block",
         "mode": "fill",
         "color": "#1b3f8b",
-        "layer": -10,
         "size": {
           "width": 640,
           "height": 2
@@ -21,6 +21,7 @@
       }
     },
     "lineb": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 25
@@ -29,7 +30,6 @@
         "type": "block",
         "mode": "fill",
         "color": "#ffcc40",
-        "layer": -10,
         "size": {
           "width": 640,
           "height": 2
@@ -37,6 +37,7 @@
       }
     },
     "linec": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 29
@@ -45,7 +46,6 @@
         "type": "block",
         "mode": "fill",
         "color": "#40ccff",
-        "layer": -10,
         "size": {
           "width": 640,
           "height": 2

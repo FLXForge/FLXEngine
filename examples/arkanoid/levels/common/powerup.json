@@ -1,8 +1,8 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "depth": 10,
   "shape": {
     "type": "text",
-    "layer": 10,
     "content": "G",
     "color": "blue",
     "mode": "fill",

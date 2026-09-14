@@ -451,7 +451,7 @@ Fuera de 0.3.0: `resolve()`, solids, plataformas, materiales, separación autom�
 La respuesta pertenece al juego: reflect, kill, spawn, score, etc.
 
 ## 37. Machine y compatibilidad espacial
-Collision no deduce compatibilidad a partir del `layer` visual.
+Collision no deduce compatibilidad a partir del `depth` visual.
 
 La arquitectura reserva una etapa independiente `spatial compatibility`, potencialmente gobernable por Machine en versiones futuras.
 
@@ -640,7 +640,7 @@ continuous collision detection
 - COL-032 Ray excluye la entidad lógica completa del source.
 - COL-033 Collision excluye sólo el RuntimeObject fuente exacto.
 - COL-034 Visibilidad no altera Collision.
-- COL-035 Render layer no determina compatibilidad Collision.
+- COL-035 Render depth no determina compatibilidad Collision.
 - COL-036 La compatibilidad espacial pertenece a una frontera independiente, potencialmente gobernable por Machine.
 - COL-037 Debug representa datos reales y no recalcula Collision o Ray.
 - COL-038 La estrategia de candidatos es interna y reemplazable.

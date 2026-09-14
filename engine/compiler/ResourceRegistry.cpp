@@ -24,7 +24,7 @@ namespace
 
         target.visible = source.visible;
         target.hasVisual = source.hasVisual;
-        target.layer = source.layer;
+        target.depth = source.depth;
 
         target.origin = source.origin;
         target.hasOrigin = source.hasOrigin;

@@ -744,7 +744,7 @@ namespace
             "  o.velocityY = 16;"
             "  o.width = 17;"
             "  o.height = 18;"
-            "  o.layer = 19;"
+            "  o.depth = 19;"
             "  o.attached = true;"
             "  write_local(o, 'removedLocal', typeof o.local == 'undefined' ? 1 : 0);"
             "  write_local(o, 'removedLayer', typeof o.layer == 'undefined' ? 1 : 0);"
@@ -761,6 +761,8 @@ namespace
             "  resize(o, 28, 29);"
             "  resize_width(o, 30);"
             "  write_local(o, 'liveWidthAfterResizeWidth', o.width);"
+            "  depth(o, 32);"
+            "  write_local(o, 'liveDepthAfterDepth', o.depth);"
             "  resize_height(o, 31);"
             "  write_local(o, 'liveX', o.x);"
             "  write_local(o, 'liveY', o.y);"
@@ -792,7 +794,7 @@ namespace
         require(nearlyEqual(runtimeRoot.angle, 24.0), "apply_angle should update runtime angle");
         require(nearlyEqual(runtimeRoot.size.x, 30.0), "resize_width should update runtime width");
         require(nearlyEqual(runtimeRoot.size.y, 31.0), "resize_height should update runtime height");
-        require(runtimeRoot.layer == 0, "JS layer write should not update runtime layer");
+        require(runtimeRoot.depth == 32, "depth() should update runtime depth");
         require(!runtimeRoot.attached, "JS attached write should not update runtime attached");
         require(localValue(runtimeRoot, "removedLocal") == 1.0, "local should not exist on runtime object view");
         require(localValue(runtimeRoot, "removedLayer") == 1.0, "layer should not exist on runtime object view");
@@ -801,6 +803,7 @@ namespace
         require(localValue(runtimeRoot, "liveSpeedAfterApplySpeed") == 23.0, "apply_speed should be visible through same JS object immediately");
         require(localValue(runtimeRoot, "liveAngleAfterApplyAngle") == 24.0, "apply_angle should be visible through same JS object immediately");
         require(localValue(runtimeRoot, "liveWidthAfterResizeWidth") == 30.0, "resize_width should be visible through same JS object immediately");
+        require(localValue(runtimeRoot, "liveDepthAfterDepth") == 32.0, "depth should be visible through same JS object immediately");
         require(localValue(runtimeRoot, "liveX") == 21.0, "x getter should read updated value in same callback");
         require(localValue(runtimeRoot, "liveY") == 22.0, "y getter should read updated value in same callback");
         require(localValue(runtimeRoot, "liveSpeed") == 23.0, "speed getter should read updated value in same callback");
@@ -1858,7 +1861,7 @@ namespace
         require(localValue(runtimeRoot, "drawCount") == 1.0, "object should still draw after ignored visible write");
     }
 
-    void testDrawCallbacksFollowStableLayerOrder()
+    void testDrawCallbacksFollowStableDepthOrder()
     {
         RuntimeHarness harness;
 
@@ -1879,15 +1882,15 @@ namespace
 
         ObjectDefinition low =
             objectDefinition("low", "drawProbe");
-        low.layer = -10;
+        low.depth = -10;
 
         ObjectDefinition same =
             objectDefinition("same", "drawProbe");
-        same.layer = 0;
+        same.depth = 0;
 
         ObjectDefinition high =
             objectDefinition("high", "drawProbe");
-        high.layer = 10;
+        high.depth = 10;
 
         harness.addObject(root);
         harness.addObject(low);
@@ -1909,12 +1912,12 @@ namespace
         RuntimeObject& runtimeHigh =
             requireObject(harness.world, "high");
 
-        require(localValue(runtimeLow, "drawOrder") == 0.0, "lower layer should draw first");
-        require(localValue(runtimeRoot, "drawOrder") < localValue(runtimeSame, "drawOrder"), "same layer should keep insertion order");
-        require(localValue(runtimeHigh, "drawOrder") > localValue(runtimeSame, "drawOrder"), "higher layer should draw last");
+        require(localValue(runtimeLow, "drawOrder") == 0.0, "lower depth should draw first");
+        require(localValue(runtimeRoot, "drawOrder") < localValue(runtimeSame, "drawOrder"), "same depth should keep insertion order");
+        require(localValue(runtimeHigh, "drawOrder") > localValue(runtimeSame, "drawOrder"), "higher depth should draw last");
     }
 
-    void testDeclarativeDrawAndJsDrawShareObjectLayerOrder()
+    void testDeclarativeDrawAndJsDrawShareObjectDepthOrder()
     {
         RuntimeHarness harness;
 
@@ -1930,11 +1933,11 @@ namespace
 
         ObjectDefinition lowPainter =
             objectDefinition("lowPainter", "paintRedPixel");
-        lowPainter.layer = -10;
+        lowPainter.depth = -10;
 
         ObjectDefinition highBlock =
             objectDefinition("highBlock");
-        highBlock.layer = 10;
+        highBlock.depth = 10;
         highBlock.shapeType = "block";
         highBlock.size = Vector2{ 3.0f, 3.0f };
         highBlock.origin = Vector2{ 5.0f, 5.0f };
@@ -1947,8 +1950,8 @@ namespace
 
         require(harness.load().success, "runtime should load draw pipeline project");
 
-        require(countRenderedColor(harness, BLUE) == 9, "higher layer declarative draw should cover lower layer JS draw");
-        require(countRenderedColor(harness, RED) == 0, "lower layer JS draw should not run in a separate final overlay pipeline");
+        require(countRenderedColor(harness, BLUE) == 9, "higher depth declarative draw should cover lower depth JS draw");
+        require(countRenderedColor(harness, RED) == 0, "lower depth JS draw should not run in a separate final overlay pipeline");
     }
 
     void testObjectTimeStateAndTimers()
@@ -2504,8 +2507,8 @@ int main()
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },
         { "block shape draws around pivot", testBlockShapeDrawsAroundPivot },
         { "visible is read-only from JavaScript", testVisibleIsReadOnlyFromJavaScript },
-        { "draw callbacks follow stable layer order", testDrawCallbacksFollowStableLayerOrder },
-        { "declarative draw and JS draw share object layer order", testDeclarativeDrawAndJsDrawShareObjectLayerOrder },
+        { "draw callbacks follow stable depth order", testDrawCallbacksFollowStableDepthOrder },
+        { "declarative draw and JS draw share object depth order", testDeclarativeDrawAndJsDrawShareObjectDepthOrder },
         { "object time state and timers", testObjectTimeStateAndTimers },
         { "state machine single terminal invalid and absent states", testStateMachineSingleTerminalInvalidAndAbsentStates },
         { "state transitions from motion and collision enter next frame", testStateTransitionsFromMotionAndCollisionEnterNextFrame },

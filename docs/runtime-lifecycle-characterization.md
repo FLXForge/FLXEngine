@@ -81,14 +81,14 @@ cleanup
 
 ### Dibujo
 
-- Los objetos visibles se dibujan en orden estable por `layer`.
-- Los valores menores de `layer` se dibujan antes que los mayores.
-- Los objetos con el mismo `layer` mantienen el orden runtime estable actual.
+- Los objetos visibles se dibujan en orden estable por `depth`.
+- Los valores menores de `depth` se dibujan antes que los mayores.
+- Los objetos con el mismo `depth` mantienen el orden runtime estable actual.
 - Para cada objeto, primero se dibuja la shape declarativa y justo despues se
   ejecuta su callback JavaScript `draw(object)`.
 - No existen dos pipelines separados del tipo "todas las shapes declarativas" y
   despues "todos los callbacks draw de objeto".
-- El `layer` actual representa el orden relativo de objetos del mundo.
+- El `depth` actual representa el orden relativo de objetos del mundo.
 - Las futuras video layers introduciran un nivel superior de composicion por
   encima de este orden de dibujo por objeto.
 
@@ -134,7 +134,7 @@ cleanup
 
 ## B. Reglas futuras deliberadamente pendientes
 
-- Video layers: el `layer` actual solo es orden de dibujo por objeto. Un sistema
+- Video layers: el `depth` actual solo es orden de dibujo por objeto. Un sistema
   futuro de video layers debe definir composicion por encima del dibujo de
   objetos.
 - Attachments: el contrato actual confirma el timing aprobado: attachments se
@@ -170,7 +170,7 @@ cleanup
 - `object.visible` ya no es mutable desde JavaScript.
 - `hide()` ya no suprime solo parte del render; suprime shape declarativa y
   `draw(object)`.
-- El dibujo de objetos ya no se comporta como dos pipelines de layer
+- El dibujo de objetos ya no se comporta como dos pipelines de depth
   independientes.
 - Los ciclos manuales de children ya no se clasifican como
   `AutomaticInstantiationCycle`.

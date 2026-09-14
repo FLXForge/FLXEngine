@@ -395,19 +395,22 @@ machine=machines/standard.yml
             </ul>
 
             <p>
-                Actualmente FLX trabaja con coordenadas lógicas de pantalla
+                Actualmente FLX trabaja con coordenadas lógicas de mundo
                 en un mundo fijo sin cámara ni scroll.
             </p>
 
             <p>
                 Los objetos utilizan estas coordenadas para su posición dentro del runtime.
-                Las funciones de dibujo de texto, como <code>draw_text()</code>,
-                también utilizan coordenadas lógicas de pantalla.
+                Las funciones de dibujo inmediato, como <code>draw_text()</code>,
+                usan coordenadas lógicas de mundo por defecto, o coordenadas
+                locales cuando se pasa un <code>RuntimeObject</code> como
+                referencia.
             </p>
 
             <p>
-                El sistema de cámara, scroll y la separación formal entre coordenadas de mundo,
-                pantalla, vista y coordenadas locales queda pendiente para futuras versiones.
+                El sistema de cámara, scroll y transformaciones más ricas entre
+                coordenadas de mundo, pantalla, vista y coordenadas locales
+                queda pendiente para futuras versiones.
             </p>
 
 

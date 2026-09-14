@@ -77,7 +77,7 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.size = definition.size;
     object.color = definition.color;
     object.visible = definition.visible;
-    object.layer = definition.layer;
+    object.depth = definition.depth;
     object.attached = definition.attachOnCreate;
     object.originalOffset = definition.offset;
     object.attachFollowX = definition.attachFollowX;

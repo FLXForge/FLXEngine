@@ -336,6 +336,35 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsDepth(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "depth called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        int depth = object->depth;
+        JS_ToInt32(context, &depth, argv[1]);
+
+        object->depth =
+            depth;
+
+        return JS_UNDEFINED;
+    }
+
     JSValue jsDelta(
         JSContext* context,
         JSValueConst thisValue,
@@ -1126,6 +1155,13 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "keep_only",
         JS_NewCFunction(context, jsKeepOnly, "keep_only", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "depth",
+        JS_NewCFunction(context, jsDepth, "depth", 2)
     );
 
     JS_SetPropertyStr(

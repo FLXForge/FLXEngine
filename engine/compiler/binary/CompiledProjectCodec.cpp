@@ -1043,7 +1043,7 @@ namespace flx::binary
             writer.writeBool(object.attachOnCreate);
             writer.writeBool(object.visible);
             writer.writeBool(object.hasVisual);
-            writer.writeI32(object.layer);
+            writer.writeI32(object.depth);
             writeVector2(writer, object.origin);
             writer.writeBool(object.hasOrigin);
             writeVector2(writer, object.size);
@@ -1199,7 +1199,7 @@ namespace flx::binary
             object.attachOnCreate = reader.readBool("object.attach.born");
             object.visible = reader.readBool("object.visible");
             object.hasVisual = reader.readBool("object.shape");
-            object.layer = reader.readI32("object.layer");
+            object.depth = reader.readI32("object.depth");
             object.origin = readVector2(reader);
             object.hasOrigin = reader.readBool("object.origin");
             object.size = readVector2(reader);

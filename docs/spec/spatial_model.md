@@ -799,8 +799,26 @@ Drawing puede definir:
 -   modos fill/outline;
 -   propiedades específicas de geometría;
 -   comportamiento visual.
+-   primitivas inmediatas en espacio mundo o local;
+-   proyección de coordenadas lógicas a display físico.
 
 Pero Drawing NO puede cambiar el significado de `RuntimeObject.x/y`.
+
+En v0.3.0, las funciones `draw_*` usan coordenadas lógicas del mundo por
+defecto. Cuando reciben un `RuntimeObject` como primer parámetro, sus
+coordenadas son locales al pivot de ese objeto y rotan con su ángulo.
+
+La conversión a píxeles físicos pertenece al renderer:
+
+``` text
+local RuntimeObject space
+        ↓
+world logical space
+        ↓
+screen logical space
+        ↓
+display / physical pixels
+```
 
 ------------------------------------------------------------------------
 

@@ -1,6 +1,7 @@
 #include "ScriptEngine.h"
 #include "../runtime/RuntimeConstants.h"
 #include "../debug/Logger.h"
+#include "../graphics/DrawingContext.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
 #include "../machine/VideoColorProcessor.h"
@@ -71,7 +72,8 @@ namespace
         RuntimeViewAngle,
         RuntimeViewVelocityX,
         RuntimeViewVelocityY,
-        RuntimeViewRotationSpeed
+        RuntimeViewRotationSpeed,
+        RuntimeViewDepth
     };
 
     JSValue runtimeViewGetter(
@@ -152,6 +154,8 @@ namespace
             return JS_NewFloat64(context, object->velocity.y);
         case RuntimeViewRotationSpeed:
             return JS_NewFloat64(context, object->rotationSpeed);
+        case RuntimeViewDepth:
+            return JS_NewFloat64(context, object->depth);
         default:
             return JS_UNDEFINED;
         }
@@ -1290,6 +1294,7 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, invocationId, RuntimeViewVelocityX);
     defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, invocationId, RuntimeViewVelocityY);
     defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, invocationId, RuntimeViewRotationSpeed);
+    defineRuntimeViewGetter(context, self, "depth", object.runtimeId, invocationId, RuntimeViewDepth);
     defineRuntimeViewIgnoredProperty(context, self, "attached");
     defineRuntimeViewIgnoredProperty(context, self, "layer");
     defineRuntimeViewIgnoredProperty(context, self, "local");
@@ -1343,6 +1348,12 @@ void ScriptEngine::setVideoChip(const VideoChipDefinition* nextVideoChip)
         nextVideoChip;
 }
 
+void ScriptEngine::setDrawingContext(DrawingContext* nextDrawingContext)
+{
+    drawingContext =
+        nextDrawingContext;
+}
+
 Color ScriptEngine::parseColor(
     const std::string& color,
     Color fallback
@@ -1367,6 +1378,127 @@ Color ScriptEngine::projectColor(Color color) const
         color,
         *videoChip
     );
+}
+
+bool ScriptEngine::drawWorldPixel(Vector2 point, Color color)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldPixel(point, color);
+}
+
+bool ScriptEngine::drawLocalPixel(
+    const RuntimeObject& reference,
+    Vector2 point,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalPixel(reference, point, color);
+}
+
+bool ScriptEngine::drawWorldLine(
+    Vector2 start,
+    Vector2 end,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldLine(start, end, color);
+}
+
+bool ScriptEngine::drawLocalLine(
+    const RuntimeObject& reference,
+    Vector2 start,
+    Vector2 end,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalLine(reference, start, end, color);
+}
+
+bool ScriptEngine::drawWorldRectangle(
+    Vector2 center,
+    Vector2 size,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldRectangle(center, size, color);
+}
+
+bool ScriptEngine::drawLocalRectangle(
+    const RuntimeObject& reference,
+    Vector2 center,
+    Vector2 size,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalRectangle(reference, center, size, color);
+}
+
+bool ScriptEngine::drawWorldText(
+    Vector2 center,
+    const std::string& text,
+    int fontSize,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldText(center, text, fontSize, color);
+}
+
+bool ScriptEngine::drawLocalText(
+    const RuntimeObject& reference,
+    Vector2 center,
+    const std::string& text,
+    int fontSize,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalText(reference, center, text, fontSize, color);
 }
 
 void ScriptEngine::setFrameDelta(float delta)

@@ -2,7 +2,6 @@
 #include "BindingHelpers.h"
 
 #include <quickjs.h>
-#include <raylib.h>
 
 #include <string>
 
@@ -52,43 +51,78 @@ namespace
             return JS_UNDEFINED;
         }
 
+        const bool local =
+            isRuntimeObjectView(context, argv[0]);
+
+        const int xIndex =
+            local ? 1 : 0;
+
+        const int yIndex =
+            local ? 2 : 1;
+
+        const int textIndex =
+            local ? 3 : 2;
+
+        if (argc <= textIndex)
+        {
+            return JS_UNDEFINED;
+        }
+
         int fontSize = 10;
 
-        if (argc >= 4)
+        const int fontSizeIndex =
+            textIndex + 1;
+
+        if (argc > fontSizeIndex)
         {
-            JS_ToInt32(context, &fontSize, argv[3]);
+            JS_ToInt32(context, &fontSize, argv[fontSizeIndex]);
         }
 
         const std::string colorText =
-            optionalString(context, argc, argv, 4, "white");
+            optionalString(context, argc, argv, fontSizeIndex + 1, "white");
 
         const Color color =
             scriptEngine->parseColor(colorText, WHITE);
 
-        const int scale =
-            scriptEngine->getScreenScale();
-
         double x = 0.0;
         double y = 0.0;
 
-        JS_ToFloat64(context, &x, argv[0]);
-        JS_ToFloat64(context, &y, argv[1]);
+        JS_ToFloat64(context, &x, argv[xIndex]);
+        JS_ToFloat64(context, &y, argv[yIndex]);
 
         const char* text =
-            JS_ToCString(context, argv[2]);
+            JS_ToCString(context, argv[textIndex]);
 
         if (text == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        DrawText(
-            text,
-            static_cast<int>(x * scale),
-            static_cast<int>(y * scale),
-            fontSize * scale,
-            color
-        );
+        if (local)
+        {
+            RuntimeObject* reference =
+                runtimeObjectViewFromArgument(context, argv[0]);
+
+            if (reference != nullptr)
+            {
+                scriptEngine->drawLocalText(
+                    *reference,
+                    Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                    text,
+                    fontSize,
+                    color
+                );
+            }
+        }
+        else
+        {
+            scriptEngine->drawWorldText(
+                Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                text,
+                fontSize,
+                color
+            );
+        }
 
         JS_FreeCString(context, text);
 
@@ -110,26 +144,53 @@ namespace
             return JS_UNDEFINED;
         }
 
+        const bool local =
+            isRuntimeObjectView(context, argv[0]);
+
+        const int xIndex =
+            local ? 1 : 0;
+
+        const int yIndex =
+            local ? 2 : 1;
+
+        if (argc <= yIndex)
+        {
+            return JS_UNDEFINED;
+        }
+
         double x = 0.0;
         double y = 0.0;
 
-        JS_ToFloat64(context, &x, argv[0]);
-        JS_ToFloat64(context, &y, argv[1]);
+        JS_ToFloat64(context, &x, argv[xIndex]);
+        JS_ToFloat64(context, &y, argv[yIndex]);
 
         const std::string colorText =
-            optionalString(context, argc, argv, 2, "white");
+            optionalString(context, argc, argv, yIndex + 1, "white");
 
         const Color color =
             scriptEngine->parseColor(colorText, WHITE);
 
-        const int scale =
-            scriptEngine->getScreenScale();
+        if (local)
+        {
+            RuntimeObject* reference =
+                runtimeObjectViewFromArgument(context, argv[0]);
 
-        DrawPixel(
-            static_cast<int>(x * scale),
-            static_cast<int>(y * scale),
-            color
-        );
+            if (reference != nullptr)
+            {
+                scriptEngine->drawLocalPixel(
+                    *reference,
+                    Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                    color
+                );
+            }
+        }
+        else
+        {
+            scriptEngine->drawWorldPixel(
+                Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                color
+            );
+        }
 
         return JS_UNDEFINED;
     }
@@ -149,32 +210,65 @@ namespace
             return JS_UNDEFINED;
         }
 
+        const bool local =
+            isRuntimeObjectView(context, argv[0]);
+
+        const int xIndex =
+            local ? 1 : 0;
+
+        const int yIndex =
+            local ? 2 : 1;
+
+        const int x1Index =
+            local ? 3 : 2;
+
+        const int y1Index =
+            local ? 4 : 3;
+
+        if (argc <= y1Index)
+        {
+            return JS_UNDEFINED;
+        }
+
         double x = 0.0;
         double y = 0.0;
         double x1 = 0.0;
         double y1 = 0.0;
 
-        JS_ToFloat64(context, &x, argv[0]);
-        JS_ToFloat64(context, &y, argv[1]);
-        JS_ToFloat64(context, &x1, argv[2]);
-        JS_ToFloat64(context, &y1, argv[3]);
+        JS_ToFloat64(context, &x, argv[xIndex]);
+        JS_ToFloat64(context, &y, argv[yIndex]);
+        JS_ToFloat64(context, &x1, argv[x1Index]);
+        JS_ToFloat64(context, &y1, argv[y1Index]);
 
         const std::string colorText =
-            optionalString(context, argc, argv, 4, "white");
+            optionalString(context, argc, argv, y1Index + 1, "white");
 
         const Color color =
             scriptEngine->parseColor(colorText, WHITE);
 
-        const int scale =
-            scriptEngine->getScreenScale();
+        if (local)
+        {
+            RuntimeObject* reference =
+                runtimeObjectViewFromArgument(context, argv[0]);
 
-        DrawLine(
-            static_cast<int>(x * scale),
-            static_cast<int>(y * scale),
-            static_cast<int>(x1 * scale),
-            static_cast<int>(y1 * scale),
-            color
-        );
+            if (reference != nullptr)
+            {
+                scriptEngine->drawLocalLine(
+                    *reference,
+                    Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                    Vector2{ static_cast<float>(x1), static_cast<float>(y1) },
+                    color
+                );
+            }
+        }
+        else
+        {
+            scriptEngine->drawWorldLine(
+                Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                Vector2{ static_cast<float>(x1), static_cast<float>(y1) },
+                color
+            );
+        }
 
         return JS_UNDEFINED;
     }
@@ -194,32 +288,65 @@ namespace
             return JS_UNDEFINED;
         }
 
+        const bool local =
+            isRuntimeObjectView(context, argv[0]);
+
+        const int xIndex =
+            local ? 1 : 0;
+
+        const int yIndex =
+            local ? 2 : 1;
+
+        const int widthIndex =
+            local ? 3 : 2;
+
+        const int heightIndex =
+            local ? 4 : 3;
+
+        if (argc <= heightIndex)
+        {
+            return JS_UNDEFINED;
+        }
+
         double x = 0.0;
         double y = 0.0;
         double width = 0.0;
         double height = 0.0;
 
-        JS_ToFloat64(context, &x, argv[0]);
-        JS_ToFloat64(context, &y, argv[1]);
-        JS_ToFloat64(context, &width, argv[2]);
-        JS_ToFloat64(context, &height, argv[3]);
+        JS_ToFloat64(context, &x, argv[xIndex]);
+        JS_ToFloat64(context, &y, argv[yIndex]);
+        JS_ToFloat64(context, &width, argv[widthIndex]);
+        JS_ToFloat64(context, &height, argv[heightIndex]);
 
         const std::string colorText =
-            optionalString(context, argc, argv, 4, "white");
+            optionalString(context, argc, argv, heightIndex + 1, "white");
 
         const Color color =
             scriptEngine->parseColor(colorText, WHITE);
 
-        const int scale =
-            scriptEngine->getScreenScale();
+        if (local)
+        {
+            RuntimeObject* reference =
+                runtimeObjectViewFromArgument(context, argv[0]);
 
-        DrawRectangleLines(
-            static_cast<int>(x * scale),
-            static_cast<int>(y * scale),
-            static_cast<int>(width * scale),
-            static_cast<int>(height * scale),
-            color
-        );
+            if (reference != nullptr)
+            {
+                scriptEngine->drawLocalRectangle(
+                    *reference,
+                    Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                    Vector2{ static_cast<float>(width), static_cast<float>(height) },
+                    color
+                );
+            }
+        }
+        else
+        {
+            scriptEngine->drawWorldRectangle(
+                Vector2{ static_cast<float>(x), static_cast<float>(y) },
+                Vector2{ static_cast<float>(width), static_cast<float>(height) },
+                color
+            );
+        }
 
         return JS_UNDEFINED;
     }
@@ -359,28 +486,28 @@ void DrawBindings::registerAll(JSContext* context)
         context,
         global,
         "draw_text",
-        JS_NewCFunction(context, jsDrawText, "draw_text", 5)
+        JS_NewCFunction(context, jsDrawText, "draw_text", 6)
     );
 
     JS_SetPropertyStr(
         context,
         global,
         "draw_pixel",
-        JS_NewCFunction(context, jsDrawPixel, "draw_pixel", 3)
+        JS_NewCFunction(context, jsDrawPixel, "draw_pixel", 4)
     );
 
     JS_SetPropertyStr(
         context,
         global,
         "draw_line",
-        JS_NewCFunction(context, jsDrawLine, "draw_line", 5)
+        JS_NewCFunction(context, jsDrawLine, "draw_line", 6)
     );
 
     JS_SetPropertyStr(
         context,
         global,
         "draw_rectangle",
-        JS_NewCFunction(context, jsDrawRectangle, "draw_rectangle", 5)
+        JS_NewCFunction(context, jsDrawRectangle, "draw_rectangle", 6)
     );
 
     JS_SetPropertyStr(

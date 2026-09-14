@@ -465,17 +465,19 @@ resize_width(paddle, paddle.width + 8);</code></pre>
 
             <hr />
 
-            <h2>Draw_text(x, y, text, size, color)</h2>
+            <h2>draw_text(x, y, text, size, color)</h2>
 
             <p>
-                Draws text on screen using logical screen coordinates.
+                Draws immediate text during the current <code>draw(object)</code>
+                hook.
             </p>
 
             <p>
-                Coordinates are expressed in FLX logical resolution.
-                The engine applies the configured screen scale internally.
-                This is a screen-space helper. World text should use
-                <code>shape.type = "text"</code>.
+                Coordinates are expressed in FLX logical world space and
+                represent the text center. If a <code>RuntimeObject</code> is
+                passed first, coordinates are local to that object and rotate
+                with it. Use <code>shape.type = "text"</code> when the text is
+                a persistent world object.
             </p>
 
             <div class="code-card">
@@ -483,6 +485,7 @@ resize_width(paddle, paddle.width + 8);</code></pre>
 <pre><code>draw_text( 10, 10, "HELLO ");
 draw_text( 40, 10, "WORLD!", 15);
 draw_text( 10, 30, "READY", 10, "#ffffff");
+draw_text(ship, 0, -12, "LOCK", 8, "yellow");
 </code></pre>
             </div>
 
@@ -496,14 +499,15 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <h2>draw_pixel(x, y, color)</h2>
 
             <p>
-                Draws one immediate screen-space pixel using logical FLX coordinates.
-                The engine applies the video chip output scale internally.
+                Draws one immediate logical pixel during the current
+                <code>draw(object)</code> hook. With a <code>RuntimeObject</code>
+                first argument, coordinates are local to that object.
             </p>
 
             <p>
-                This is an overlay drawing helper, like <code>draw_text()</code>.
-                It does not create runtime objects, does not collide, and is drawn
-                above world objects in this version.
+                It does not create runtime objects and does not collide.
+                Immediate drawing belongs to the visual turn of the object whose
+                <code>draw()</code> is running.
             </p>
 
             <div class="code-card">
@@ -512,6 +516,7 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
     draw_pixel(4, 10);
     draw_pixel(10, 10, "white");
     draw_pixel(20, 20, "#ffcc00");
+    draw_pixel(ship, 0, -6, "white");
 }</code></pre>
             </div>
 
@@ -526,19 +531,20 @@ draw_text( 10, 30, "READY", 10, "#ffffff");
             <h2>draw_line(x, y, x1, y1, color)</h2>
 
             <p>
-                Draws one immediate screen-space line using logical FLX coordinates.
-                The engine applies the video chip output scale internally.
+                Draws one immediate line during the current
+                <code>draw(object)</code> hook. With a <code>RuntimeObject</code>
+                first argument, endpoints are local to that object.
             </p>
 
             <p>
-                This is an overlay drawing helper. It does not create runtime
-                objects and does not collide.
+                It does not create runtime objects and does not collide.
             </p>
 
             <div class="code-card">
                 <div class="code-header">line</div>
 <pre><code>draw_line(10, 10, 40, 10);
-draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
+draw_line(10, 20, 40, 40, "#ffcc00");
+draw_line(ship, 0, 0, 0, -12, "white");</code></pre>
             </div>
 
             <p>
@@ -551,20 +557,22 @@ draw_line(10, 20, 40, 40, "#ffcc00");</code></pre>
             <h2>draw_rectangle(x, y, width, height, color)</h2>
 
             <p>
-                Draws one immediate screen-space rectangle outline using logical
-                FLX coordinates. The engine applies the video chip output scale
-                internally.
+                Draws one immediate rectangle outline during the current
+                <code>draw(object)</code> hook. <code>x</code> and
+                <code>y</code> are the rectangle center.
             </p>
 
             <p>
-                This is an overlay drawing helper. It does not create runtime
-                objects and does not collide.
+                With a <code>RuntimeObject</code> first argument, the rectangle
+                center is local to that object and the rectangle rotates with it.
+                It does not create runtime objects and does not collide.
             </p>
 
             <div class="code-card">
                 <div class="code-header">rectangle</div>
 <pre><code>draw_rectangle(8, 8, 40, 20);
-draw_rectangle(60, 8, 30, 30, "green");</code></pre>
+draw_rectangle(60, 8, 30, 30, "green");
+draw_rectangle(ship, 0, 0, 12, 8, "cyan");</code></pre>
             </div>
 
             <p>
@@ -578,8 +586,8 @@ draw_rectangle(60, 8, 30, 30, "green");</code></pre>
 
             <p>
                 Starts a full-screen fade from transparent to opaque.
-                The overlay is drawn above the world and above text drawn with
-                <code>draw_text()</code>.
+                The overlay is global and is drawn above the world and above
+                immediate drawing.
             </p>
 
             <p>

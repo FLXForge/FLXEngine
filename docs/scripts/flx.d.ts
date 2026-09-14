@@ -174,6 +174,13 @@ interface RuntimeObject {
 
     /** Runtime rotation speed in degrees per second. */
     readonly rotationSpeed: number;
+
+    /**
+     * Visual draw depth.
+     * Lower values are drawn first. Mutate it with depth(object, value).
+     * Changes affect the next draw pass order.
+     */
+    readonly depth: number;
 }
 
 /**
@@ -407,6 +414,13 @@ declare function resize_height(object: RuntimeObject, height: number): void;
 declare function position_origin(object: RuntimeObject): void;
 
 /**
+ * Changes the object's draw depth.
+ * The current JavaScript view observes the new value immediately, while the
+ * current draw pass keeps the order snapshot taken at its start.
+ */
+declare function depth(object: RuntimeObject, value: number): void;
+
+/**
  * Returns true according to a probability chance.
  *
  * By default, base is 100, so probability(40) means 40%.
@@ -585,11 +599,12 @@ declare function timer_left(
 ): number;
 
 /**
- * Draws text on screen using logical screen coordinates.
+ * Draws immediate text during the current draw(object) hook.
  *
- * Coordinates are expressed in FLX logical resolution.
- * The engine applies the configured screen scale internally.
- * This is a screen-space helper; use shape.type = "text" for world text.
+ * Coordinates are expressed in FLX logical world space and represent the text
+ * center/pivot. When a RuntimeObject is passed first, coordinates are local to
+ * that reference object and rotate with it. The primitive belongs to the
+ * current draw owner, not necessarily to the coordinate reference.
  *
  * @example
  * draw_text(10, 10, "SCORE: " + read_global("score"));
@@ -607,18 +622,34 @@ declare function draw_text(
     size?: number,
     color?: string
 ): void;
+declare function draw_text(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    text: string,
+    size?: number,
+    color?: string
+): void;
 
 /**
- * Draws one screen-space pixel using logical screen coordinates.
+ * Draws one immediate logical pixel during the current draw(object) hook.
+ * With a RuntimeObject first argument, coordinates are local to that reference.
  */
 declare function draw_pixel(
     x: number,
     y: number,
     color?: string
 ): void;
+declare function draw_pixel(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    color?: string
+): void;
 
 /**
- * Draws a screen-space line using logical screen coordinates.
+ * Draws an immediate line during the current draw(object) hook.
+ * With a RuntimeObject first argument, endpoints are local to that reference.
  */
 declare function draw_line(
     x: number,
@@ -627,11 +658,29 @@ declare function draw_line(
     y1: number,
     color?: string
 ): void;
+declare function draw_line(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    color?: string
+): void;
 
 /**
- * Draws a screen-space rectangle outline using logical screen coordinates.
+ * Draws an immediate rectangle outline during the current draw(object) hook.
+ * x/y are the rectangle center/pivot. With a RuntimeObject first argument, the
+ * center is local to that reference and the rectangle rotates with it.
  */
 declare function draw_rectangle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color?: string
+): void;
+declare function draw_rectangle(
+    reference: RuntimeObject,
     x: number,
     y: number,
     width: number,

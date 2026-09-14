@@ -109,10 +109,10 @@ Notas:
 
 | Nombre JS | Firma real | Retorno | Subsistema | RuntimeObject | Modifica runtime | Efectos externos | d.ts | Docs | Usos examples |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
-| `draw_text` | `draw_text(x, y, text, size?, color?)` | `undefined` | drawing | no | no | dibuja pantalla | si | si | 16 |
-| `draw_pixel` | `draw_pixel(x, y, color?)` | `undefined` | drawing | no | no | dibuja pantalla | si | si | 2 |
-| `draw_line` | `draw_line(x, y, x1, y1, color?)` | `undefined` | drawing | no | no | dibuja pantalla | si | si | 3 |
-| `draw_rectangle` | `draw_rectangle(x, y, width, height, color?)` | `undefined` | drawing | no | no | dibuja pantalla | si | si | 0 |
+| `draw_text` | `draw_text([reference,] x, y, text, size?, color?)` | `undefined` | drawing | opcional referencia local | no | dibujo inmediato | si | si | 16 |
+| `draw_pixel` | `draw_pixel([reference,] x, y, color?)` | `undefined` | drawing | opcional referencia local | no | dibujo inmediato | si | si | 2 |
+| `draw_line` | `draw_line([reference,] x, y, x1, y1, color?)` | `undefined` | drawing | opcional referencia local | no | dibujo inmediato | si | si | 3 |
+| `draw_rectangle` | `draw_rectangle([reference,] x, y, width, height, color?)` | `undefined` | drawing | opcional referencia local | no | dibujo inmediato | si | si | 0 |
 | `fade_on` | `fade_on(color?)` | `undefined` | fade/drawing | no | si, estado global fade | overlay | si | si | 2 |
 | `fade_off` | `fade_off(color?)` | `undefined` | fade/drawing | no | si, estado global fade | overlay | si | si | 6 |
 | `fade_set` | `fade_set(alpha, color?)` | `undefined` | fade/drawing | no | si, estado global fade | overlay | si | si | 6 |
@@ -122,11 +122,12 @@ Notas:
 
 Notas:
 
-- Las funciones `draw_*` usan coordenadas logicas y aplican `screen.scale`.
+- Las funciones `draw_*` emiten coordenadas logicas; el escalado fisico queda en
+  el renderer de Drawing, no en los bindings.
 - El color pasa por `ScriptEngine::parseColor`, por tanto se proyecta con el
   Video Chip actual.
 - No crean `RuntimeObject`.
-- En el ciclo actual se ejecutan dentro del draw del objeto, respetando `layer`
+- En el ciclo actual se ejecutan dentro del draw del objeto, respetando `depth`
   del objeto que ejecuta el callback.
 
 ### AudioBindings
@@ -292,7 +293,7 @@ La matriz completa esta desarrollada en
 
 | Propiedad JS | Lectura | Escritura real | Fuente runtime | Categoria |
 | --- | --- | --- | --- | --- |
-| `local` | si | si, numerica | `RuntimeObject.local` | propiedad local |
+| `local` | no | no | `RuntimeObject.local` | acceder con `read_local`/`write_local` |
 | `name` | si | no | `RuntimeObject.name` | metadata/identidad logica |
 | `id` | si | no | `RuntimeObject.runtimeId` | identidad tecnica |
 | `alive` | si | no | `RuntimeObject.alive` | estado vivo readonly |
@@ -300,7 +301,7 @@ La matriz completa esta desarrollada en
 | `attached` | no | no | `RuntimeObject.attached` | consultar con `attach_active()` |
 | `group` | si | no | `RuntimeObject.group` | metadata |
 | `role` | si | no | `RuntimeObject.role` | metadata |
-| `layer` | no | no | `RuntimeObject.layer` | no expuesto como propiedad runtime |
+| `depth` | si | no | `RuntimeObject.depth` | estado visual readonly; cambiar con `depth()` |
 | `x`, `y` | si | no | `RuntimeObject.position` | estado vivo readonly; cambiar con funciones |
 | `previousX`, `previousY` | no | no | `RuntimeObject.previousPosition` | no expuesto como propiedad runtime |
 | `width`, `height` | si | no | `RuntimeObject.size` | estado vivo/tamano readonly; cambiar con funciones |
@@ -387,7 +388,7 @@ Conclusiones de caracterizacion:
 | `shape.size` | `object.width/height` | estado vivo de tamano |
 | `group` | `object.group` | metadata de juego/collision |
 | `role` | `object.role` | metadata de juego |
-| `layer` | no directo | declarativo consumido por draw order |
+| `depth` | `object.depth` readonly + `depth(object,value)` | declarativo/runtime consumido por draw order |
 | `children` | no directo; `spawn(object,id)` | declaracion operada por API |
 | `sounds` | no directo; `play_sound(object,id)` | declaracion operada por API |
 | `music` | no directo; `play_music(object,id)` | declaracion operada por API |
@@ -513,6 +514,7 @@ API retirada o no implementada:
 | `console.log` | implementado | no declarado localmente | ambiental TS | aceptable, pero no propio FLX |
 | `id/name/group/role/x/y/width/height/speed/angle/velocity*/rotationSpeed` | vista viva readonly | readonly | si | alineado tras refactor |
 | `origin*/previous*/layer/motion.*` | no expuesto | no | no | alineado tras retirar restos documentales antiguos |
+| `depth` | vista viva readonly | si | si | mutable solo con `depth(object,value)` |
 | `attached` | API funcional | no directo | si | alineado con `attach_active()` |
 | `Input.*` / `Key.*` / `__flx_input_*` | retirado | no | no actual | ejemplos migrados |
 | audio config types | tipos d.ts | no son objetos runtime JS | JSON authoring | no forman API runtime directa |

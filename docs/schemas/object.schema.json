@@ -45,6 +45,12 @@
       "type": "boolean"
     },
 
+    "depth": {
+      "type": "integer",
+      "default": 0,
+      "description": "Visual depth. Lower values are drawn first."
+    },
+
     "attach": {
       "type": "object",
       "additionalProperties": false,

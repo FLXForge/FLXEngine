@@ -4,9 +4,9 @@
     "x": 325,
     "y": 115
   },
+  "depth": 10,
   "shape": {
     "type": "text",
-    "layer": 10,
     "content": "ARKANOID",
     "color": "black",
     "mode": "fill",

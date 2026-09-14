@@ -165,19 +165,19 @@ Una instancia oculta sigue viva y continúa con action, motion, collision, attac
 En 0.3.0:
 
 ```text
-orden estable por object.layer
+orden estable por object.depth
 → para cada objeto visible
    → dibujo declarativo
    → draw() JS
 ```
 
-Para igual `layer` se conserva el orden de inserción.
+Para igual `depth` se conserva el orden de inserción.
 
-`object.layer` no es un orden global definitivo. Es el orden relativo del objeto dentro de su futura capa de vídeo:
+`object.depth` no es un orden global definitivo. Es el orden relativo del objeto dentro de su futura capa de vídeo:
 
 ```text
 video layer
-→ object.layer
+→ object.depth
 → orden estable
 ```
 
@@ -272,7 +272,7 @@ No deben elevarse a contrato definitivo sin su auditoría específica.
 - RT-014 `hide()` no altera fases no visuales.
 - RT-015 Una instancia oculta no produce salida visual.
 - RT-016 Dibujo declarativo y `draw()` JS comparten el orden relativo del objeto.
-- RT-017 `object.layer` es relativo, no una video layer global.
+- RT-017 `object.depth` es relativo, no una video layer global.
 - RT-018 Los ciclos de instanciación automática son inválidos.
 - RT-019 Los ciclos manuales no son por sí mismos ciclos de instanciación.
 - RT-020 Los errores JS recuperables no detienen automáticamente Runtime.

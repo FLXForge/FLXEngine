@@ -48,12 +48,6 @@ public:
     std::vector<std::string> gridPattern;
     std::vector<std::vector<std::string>> gridRowPattern;
 
-    void draw(
-        int scale,
-        float screenWidth,
-        float screenHeight
-    ) const;
-    void drawAt(Vector2 drawPosition, int scale) const;
     void applyBounds(float screenWidth, float screenHeight);
 
 public:
@@ -73,7 +67,7 @@ public:
     bool alive;
     bool deadCalled;
     bool attached = false;
-    int layer = 0;
+    int depth = 0;
 
     Vector2 origin;
     Vector2 position;

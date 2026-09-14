@@ -865,7 +865,13 @@ namespace
     {
         rejectRootProperty(object, "size", owner, "shape");
         rejectRootProperty(object, "color", owner, "shape");
-        rejectRootProperty(object, "layer", owner, "shape");
+        if (object.contains("layer"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'layer' was replaced by root property 'depth'"
+            );
+        }
         rejectRootProperty(object, "speed", owner, "mechanics");
         rejectRootProperty(object, "angle", owner, "mechanics");
         if (object.contains("role"))
@@ -941,6 +947,14 @@ namespace
 
         const auto& shape = object["shape"];
 
+        if (shape.contains("layer"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + definition.id +
+                "': property 'shape.layer' was replaced by root property 'depth'"
+            );
+        }
+
         definition.hasVisual = true;
         definition.shapeType =
             TextTools::toLower(shape.value("type", "block"));
@@ -948,9 +962,6 @@ namespace
             TextTools::toLower(shape.value("mode", "fill"));
         definition.textContent =
             shape.value("content", definition.textContent);
-
-        definition.layer =
-            shape.value("layer", definition.layer);
 
         if (shape.contains("color"))
         {
@@ -3171,6 +3182,9 @@ namespace
 
         definition.visible =
             object.value("visible", definition.visible);
+
+        definition.depth =
+            object.value("depth", definition.depth);
 
         definition.component =
             object.value("component", definition.component);

@@ -6,6 +6,9 @@
 #include "../collision/EffectiveColliderBuilder.h"
 #include "../collision/CollisionSystem.h"
 #include "../debug/Logger.h"
+#include "../graphics/DrawingContext.h"
+#include "../graphics/DrawingRenderer.h"
+#include "../graphics/ShapePrimitiveBuilder.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
@@ -476,9 +479,12 @@ void RuntimeWorld::draw(
         drawObjects.end(),
         [](const RuntimeObject* left, const RuntimeObject* right)
         {
-            return left->layer < right->layer;
+            return left->depth < right->depth;
         }
     );
+
+    DrawingContext drawingContext;
+    scriptEngine.setDrawingContext(&drawingContext);
 
     for (RuntimeObject* object : drawObjects)
     {
@@ -487,11 +493,18 @@ void RuntimeWorld::draw(
             continue;
         }
 
-        object->draw(
-            screenScale,
-            screenWidth,
-            screenHeight
-        );
+        std::vector<VisualPrimitive> primitives;
+
+        drawingContext.begin(*object, primitives);
+
+        VisualPrimitive shapePrimitive;
+
+        if (ShapePrimitiveBuilder::build(*object, shapePrimitive))
+        {
+            primitives.push_back(
+                std::move(shapePrimitive)
+            );
+        }
 
         for (const auto& scriptPath : object->resolvedScriptPaths)
         {
@@ -501,7 +514,19 @@ void RuntimeWorld::draw(
                 *object
             );
         }
+
+        drawingContext.end();
+
+        DrawingRenderer::render(
+            primitives,
+            objects,
+            screenScale,
+            screenWidth,
+            screenHeight
+        );
     }
+
+    scriptEngine.setDrawingContext(nullptr);
 
     if (debugCollisions)
     {

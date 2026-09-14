@@ -35,6 +35,7 @@ interface RuntimeObject {
     readonly velocityX: number;
     readonly velocityY: number;
     readonly rotationSpeed: number;
+    readonly depth: number;
 }
 ```
 
@@ -72,6 +73,7 @@ restore_speed(object)
 apply_velocity(object,direction,speed)
 apply_angle(object,angle)
 apply_rotation_speed(object,speed)
+depth(object,value)
 show(object)
 hide(object)
 kill(object)

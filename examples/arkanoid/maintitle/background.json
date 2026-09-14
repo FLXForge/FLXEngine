@@ -3,13 +3,13 @@
 
   "children": {
     "skyTop": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 35
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#1b3f8b",
         "size": {
@@ -20,13 +20,13 @@
     },
 
     "skyMid": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 92.5
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#3f6fd8",
         "size": {
@@ -37,13 +37,13 @@
     },
 
     "sunsetYellow": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 137.5
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#f7d84a",
         "size": {
@@ -54,13 +54,13 @@
     },
 
     "sunsetOrange": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 182.5
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#ef7d22",
         "size": {
@@ -71,13 +71,13 @@
     },
 
     "sunsetRed": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 232.5
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#b53128",
         "size": {
@@ -88,13 +88,13 @@
     },
 
     "floor": {
+      "depth": -10,
       "origin": {
         "x": 320,
         "y": 290
       },
       "shape": {
         "type": "block",
-        "layer": -10,
         "mode": "fill",
         "color": "#2d6b2d",
         "size": {

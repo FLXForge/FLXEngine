@@ -25,16 +25,16 @@ function draw(congratulations){
         let hex = value.toString(16).padStart(2, "0");
 
         draw_text(
-            170,
-            140,
+            320,
+            154,
             "CONGRATULATIONS",
             28,
             "#" + "0000" + hex 
         );
 
         draw_text(
-            260,
-            200,
+            320,
+            206,
             "-- SCORE: " + read_global("score") + " --",
             12
         );

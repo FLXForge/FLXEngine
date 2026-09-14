@@ -19,6 +19,10 @@ struct VisualPrimitive
     VisualPrimitiveKind kind = VisualPrimitiveKind::Pixel;
     std::string ownerRuntimeId;
     std::string presentationSourceRuntimeId;
+    bool presentationWrap = false;
+    bool presentationOverflow = false;
+    Vector2 presentationPosition = Vector2{ 0.0f, 0.0f };
+    Vector2 presentationSize = Vector2{ 0.0f, 0.0f };
 
     Vector2 a = Vector2{ 0.0f, 0.0f };
     Vector2 b = Vector2{ 0.0f, 0.0f };

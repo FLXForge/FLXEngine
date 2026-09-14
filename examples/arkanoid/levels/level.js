@@ -47,8 +47,8 @@ function draw(level){
             .padStart(2, "0");
 
     draw_text(
-        270,
-        140,
+        320,
+        154,
         "LEVEL " + read_global("level"),
         28,
         "#" + hex + hex + "ff"

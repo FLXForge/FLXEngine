@@ -80,6 +80,10 @@ posición/pivot del RuntimeObject de referencia
 
 Las primitivas locales capturan su transformación al emitirse. Si el objeto de referencia se mueve después dentro del mismo hook, las primitivas ya emitidas no se mueven retroactivamente.
 
+La captura incluye tanto la geometría mundial resultante como la información de presentación necesaria para `wrap`. Una primitiva local ya emitida no vuelve a consultar el estado vivo del objeto de referencia durante el render del mismo pass.
+
+La shape declarativa de un objeto se captura antes de ejecutar `draw(object)`. Si `draw(object)` modifica posición, tamaño, ángulo o presentación del mismo objeto, esa mutación no cambia retroactivamente la shape ya emitida en el pass actual.
+
 ## 6. Presentación y wrap
 
 Una primitiva mundial no tiene fuente de presentación y no genera copias por wrap.
@@ -87,6 +91,8 @@ Una primitiva mundial no tiene fuente de presentación y no genera copias por wr
 Una primitiva local usa el objeto de referencia como fuente de presentación. Si ese objeto usa `bounds.wrap` y está en overflow, la primitiva comparte las mismas instancias de presentación que la shape de ese objeto.
 
 `draw(object)` se ejecuta una sola vez por objeto, aunque existan copias visuales por wrap.
+
+La presentación se decide desde el snapshot capturado al emitir la primitiva. Dos primitivas emitidas antes y después de mover la misma referencia pueden tener distintas instancias de presentación dentro del mismo hook.
 
 ## 7. Primitivas
 
@@ -99,6 +105,8 @@ Una primitiva local usa el objeto de referencia como fuente de presentación. Si
 `draw_text(x, y, text, size?, color?)` dibuja texto centrado en `x/y`.
 
 Todas aceptan overload local con `RuntimeObject` como primer argumento.
+
+Los outlines se expresan en unidades lógicas y el renderer los proyecta según `screen.scale`; no quedan limitados accidentalmente a un único píxel físico cuando la escala de salida es mayor que `1`.
 
 ## 8. Proyección física
 
@@ -124,3 +132,5 @@ Fade no es parte de Immediate Drawing, no tiene `depth` y se dibuja por encima d
 - DRAW-008 La referencia de coordenadas no cambia el propietario visual.
 - DRAW-009 Los bindings JS no realizan escalado físico.
 - DRAW-010 Fade es overlay global independiente de Drawing.
+- DRAW-011 Shape y primitivas locales capturan presentación al emitirse.
+- DRAW-012 Mutaciones posteriores durante el mismo hook no alteran primitivas ya emitidas.

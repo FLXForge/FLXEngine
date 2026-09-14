@@ -33,33 +33,33 @@ function draw(ui){
     if (read_global("inGame") == 0) {
         if (read_global("lives") == 0){
             draw_text(
-                250,
-                100,
+                305,
+                110,
                 "GAME OVER",
                 20
             );
 
             draw_text(
-                250,
-                140,
+                320,
+                148,
                 "SCORE: " + read_global("score"),
                 15
             );
         }
 	    draw_text(
-            270,
-            180,
+            320,
+            185,
             "-- PRESS SPACE TO START --"
         );
     } else {
         draw_text(
-                10,
-                10,
+                55,
+                15,
                 "SCORE: " + read_global("score")
             );
         draw_text(
-                10,
-                20,
+                50,
+                25,
                 "LIVES: " + read_global("lives")
             );
     }

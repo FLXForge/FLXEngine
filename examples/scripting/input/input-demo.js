@@ -16,14 +16,14 @@ function buttonLine(subject, control) {
 function draw(demo) {
     const p1 = player(1);
 
-    draw_text(20, 18, "FLX Input Demo", 24, "white");
-    draw_text(20, 52, "Direction 0", 18, "yellow");
-    draw_text(20, 78, "UP     " + stateLine(p1, MOVE, UP), 14, "white");
-    draw_text(20, 98, "RIGHT  " + stateLine(p1, MOVE, RIGHT), 14, "white");
-    draw_text(20, 118, "DOWN   " + stateLine(p1, MOVE, DOWN), 14, "white");
-    draw_text(20, 138, "LEFT   " + stateLine(p1, MOVE, LEFT), 14, "white");
+    draw_text(115, 30, "FLX Input Demo", 24, "white");
+    draw_text(70, 61, "Direction 0", 18, "yellow");
+    draw_text(190, 85, "UP     " + stateLine(p1, MOVE, UP), 14, "white");
+    draw_text(200, 105, "RIGHT  " + stateLine(p1, MOVE, RIGHT), 14, "white");
+    draw_text(200, 125, "DOWN   " + stateLine(p1, MOVE, DOWN), 14, "white");
+    draw_text(200, 145, "LEFT   " + stateLine(p1, MOVE, LEFT), 14, "white");
 
-    draw_text(20, 174, "Button 0", 18, "yellow");
-    draw_text(20, 200, "ACTION " + buttonLine(p1, ACTION), 14, "white");
-    draw_text(20, 222, "WASD / ARROWS + SPACE", 12, "lightgray");
+    draw_text(62, 183, "Button 0", 18, "yellow");
+    draw_text(190, 207, "ACTION " + buttonLine(p1, ACTION), 14, "white");
+    draw_text(95, 228, "WASD / ARROWS + SPACE", 12, "lightgray");
 }

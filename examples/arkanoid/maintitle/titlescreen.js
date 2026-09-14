@@ -23,8 +23,8 @@ function draw(ui){
             .padStart(2, "0");
 
     draw_text(
-        200,
-        200,
+        320,
+        209,
         "-- Press SPACE to Start --",
         18,
         "#" + hex + hex + "ff"

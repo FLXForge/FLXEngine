@@ -37,6 +37,23 @@ namespace
             reference.position.y + rotated.y
         };
     }
+
+    void capturePresentation(
+        VisualPrimitive& primitive,
+        const RuntimeObject& reference
+    )
+    {
+        primitive.presentationSourceRuntimeId =
+            reference.runtimeId;
+        primitive.presentationWrap =
+            reference.boundsMode == "wrap";
+        primitive.presentationOverflow =
+            reference.boundsOverflow;
+        primitive.presentationPosition =
+            reference.position;
+        primitive.presentationSize =
+            reference.size;
+    }
 }
 
 void DrawingContext::begin(
@@ -134,8 +151,10 @@ bool DrawingContext::emitLocalPixel(
 
     VisualPrimitive primitive =
         basePrimitive(VisualPrimitiveKind::Pixel, color);
-    primitive.presentationSourceRuntimeId =
-        reference.runtimeId;
+    capturePresentation(
+        primitive,
+        reference
+    );
     primitive.a =
         localToWorld(reference, point);
 
@@ -179,8 +198,10 @@ bool DrawingContext::emitLocalLine(
 
     VisualPrimitive primitive =
         basePrimitive(VisualPrimitiveKind::Line, color);
-    primitive.presentationSourceRuntimeId =
-        reference.runtimeId;
+    capturePresentation(
+        primitive,
+        reference
+    );
     primitive.a =
         localToWorld(reference, start);
     primitive.b =
@@ -226,8 +247,10 @@ bool DrawingContext::emitLocalRectangle(
 
     VisualPrimitive primitive =
         basePrimitive(VisualPrimitiveKind::Rectangle, color);
-    primitive.presentationSourceRuntimeId =
-        reference.runtimeId;
+    capturePresentation(
+        primitive,
+        reference
+    );
     primitive.a =
         localToWorld(reference, center);
     primitive.size =
@@ -279,8 +302,10 @@ bool DrawingContext::emitLocalText(
 
     VisualPrimitive primitive =
         basePrimitive(VisualPrimitiveKind::Text, color);
-    primitive.presentationSourceRuntimeId =
-        reference.runtimeId;
+    capturePresentation(
+        primitive,
+        reference
+    );
     primitive.a =
         localToWorld(reference, center);
     primitive.fontSize =

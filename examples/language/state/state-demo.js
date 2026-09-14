@@ -25,11 +25,11 @@ function draw(demo)
         color = "red";
     }
 
-    draw_text(20, 30, "FLX State Demo", 32, "white");
-    draw_text(20, 80, "State: " + state_current(demo), 24, color);
-    draw_text(20, 115, "Time: " + state_time(demo).toFixed(2), 24, color);
+    draw_text(145, 46, "FLX State Demo", 32, "white");
+    draw_text(105, 92, "State: " + state_current(demo), 24, color);
+    draw_text(105, 127, "Time: " + state_time(demo).toFixed(2), 24, color);
 
     if (state_entered(demo)) {
-        draw_text(20, 155, "ENTERED", 20, color);
+        draw_text(65, 165, "ENTERED", 20, color);
     }
 }

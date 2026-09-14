@@ -21,8 +21,11 @@ function action(game){
     handle_game_over(game);
     handle_return_to_title(game);
     handle_transition(game);
-    draw_hud();
     write_global("level", currentLevel);
+}
+
+function draw(game){
+    draw_hud();
 }
 
 function reset_game(){
@@ -169,16 +172,16 @@ function draw_hud(){
     }
 
     draw_text(
-        40,
-        300,
+        110,
+        308,
         "SCORE: " + read_global("score"),
         16,
         "white"
     );
 
     draw_text(
-        500,
-        300,
+        560,
+        308,
         "LIVES: " + lives,
         16,
         "white"

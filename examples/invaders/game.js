@@ -26,13 +26,13 @@ function action(game){
 }
 
 function draw(game){
-    draw_text(10, 450, "SCORE: " + read_global("score"), 16, "white");
+    draw_text(70, 458, "SCORE: " + read_global("score"), 16, "white");
 
     if (read_global("game_over") == 1) {
-        draw_text(250, 240, "GAME OVER", 24, "red");
+        draw_text(320, 252, "GAME OVER", 24, "red");
     }
 
     if (read_global("victory") == 1) {
-        draw_text(250, 240, "VICTORY", 24, "green");
+        draw_text(320, 252, "VICTORY", 24, "green");
     }
 }

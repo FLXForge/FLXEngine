@@ -19,6 +19,14 @@ bool ShapePrimitiveBuilder::build(
         object.runtimeId;
     primitive.presentationSourceRuntimeId =
         object.runtimeId;
+    primitive.presentationWrap =
+        object.boundsMode == "wrap";
+    primitive.presentationOverflow =
+        object.boundsOverflow;
+    primitive.presentationPosition =
+        object.position;
+    primitive.presentationSize =
+        object.size;
     primitive.a =
         object.position;
     primitive.size =

@@ -15,8 +15,8 @@ function action(object) {
 }
 function draw(object) {
     const children = find_children(object);
-    draw_text(10, 10, "STRUCTURAL RELATION", 10);
-    draw_text(10, 24, "live children: " + children.length, 8);
+    draw_text(70, 15, "STRUCTURAL RELATION", 10);
+    draw_text(60, 28, "live children: " + children.length, 8);
 }
 function dead(object) {
     for (const child of find_children(object)) kill(child);

@@ -12,6 +12,6 @@ function action(object) {
     position(markers[0], target.x - 2, target.y + 38);
 }
 function draw(object) {
-    draw_text(10, 10, "REFERENCES", 10);
-    draw_text(10, 24, "find_name -> id -> find_id", 8);
+    draw_text(38, 15, "REFERENCES", 10);
+    draw_text(82, 28, "find_name -> id -> find_id", 8);
 }

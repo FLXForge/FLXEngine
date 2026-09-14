@@ -1,8 +1,5 @@
 #include "DrawingRenderer.h"
 
-#include "../runtime/RuntimeObject.h"
-
-#include <algorithm>
 #include <cmath>
 
 namespace
@@ -79,7 +76,6 @@ namespace
 
     std::vector<Vector2> presentationOffsets(
         const VisualPrimitive& primitive,
-        const std::vector<RuntimeObject>& objects,
         float screenWidth,
         float screenHeight
     )
@@ -93,47 +89,28 @@ namespace
             return offsets;
         }
 
-        const auto it =
-            std::find_if(
-                objects.begin(),
-                objects.end(),
-                [&primitive](const RuntimeObject& object)
-                {
-                    return object.runtimeId ==
-                        primitive.presentationSourceRuntimeId;
-                }
-            );
-
-        if (it == objects.end())
-        {
-            return offsets;
-        }
-
-        const RuntimeObject& source =
-            *it;
-
-        if (source.boundsMode != "wrap" || !source.boundsOverflow)
+        if (!primitive.presentationWrap || !primitive.presentationOverflow)
         {
             return offsets;
         }
 
         const float radius =
             std::sqrt(
-                source.size.x * source.size.x +
-                source.size.y * source.size.y
+                primitive.presentationSize.x * primitive.presentationSize.x +
+                primitive.presentationSize.y * primitive.presentationSize.y
             ) / 2.0f;
 
         const bool overflowLeft =
-            source.position.x - radius < 0.0f;
+            primitive.presentationPosition.x - radius < 0.0f;
 
         const bool overflowRight =
-            source.position.x + radius > screenWidth;
+            primitive.presentationPosition.x + radius > screenWidth;
 
         const bool overflowTop =
-            source.position.y - radius < 0.0f;
+            primitive.presentationPosition.y - radius < 0.0f;
 
         const bool overflowBottom =
-            source.position.y + radius > screenHeight;
+            primitive.presentationPosition.y + radius > screenHeight;
 
         if (overflowLeft)
         {
@@ -496,10 +473,18 @@ namespace
 
             if (isOutlineMode(primitive.shapeMode))
             {
-                DrawCircleLines(
-                    static_cast<int>(std::round(center.x * scale)),
-                    static_cast<int>(std::round(center.y * scale)),
-                    radius * scale,
+                const float scaledRadius =
+                    radius * scale;
+                const float thickness =
+                    std::max(1.0f, static_cast<float>(scale));
+
+                DrawRing(
+                    scalePoint(center, scale),
+                    std::max(0.0f, scaledRadius - thickness / 2.0f),
+                    scaledRadius + thickness / 2.0f,
+                    0.0f,
+                    360.0f,
+                    64,
                     primitive.color
                 );
             }
@@ -635,12 +620,13 @@ void DrawingRenderer::render(
     float screenHeight
 )
 {
+    (void)objects;
+
     for (const VisualPrimitive& primitive : primitives)
     {
         const std::vector<Vector2> offsets =
             presentationOffsets(
                 primitive,
-                objects,
                 screenWidth,
                 screenHeight
             );

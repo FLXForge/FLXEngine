@@ -31,16 +31,16 @@ function action(demo)
 
 function draw(demo)
 {
-    draw_text(20, 25, "FLX Timer Demo", 32, "white");
-    draw_text(20, 75, timer_left(demo, TIMER_NAME).toFixed(2), 48, "yellow");
+    draw_text(135, 41, "FLX Timer Demo", 32, "white");
+    draw_text(80, 99, timer_left(demo, TIMER_NAME).toFixed(2), 48, "yellow");
 
-    draw_text(20, 145, "ACTIVE: " + timer_active(demo, TIMER_NAME), 22, "white");
-    draw_text(20, 175, "PAUSED: " + timer_paused(demo, TIMER_NAME), 22, "white");
-    draw_text(20, 205, "DONE: " + timer_done(demo, TIMER_NAME), 22, "white");
-    draw_text(20, 235, "LEFT: " + timer_left(demo, TIMER_NAME).toFixed(2), 22, "white");
+    draw_text(115, 156, "ACTIVE: " + timer_active(demo, TIMER_NAME), 22, "white");
+    draw_text(115, 186, "PAUSED: " + timer_paused(demo, TIMER_NAME), 22, "white");
+    draw_text(105, 216, "DONE: " + timer_done(demo, TIMER_NAME), 22, "white");
+    draw_text(105, 246, "LEFT: " + timer_left(demo, TIMER_NAME).toFixed(2), 22, "white");
 
-    draw_text(20, 300, "SPACE  play / redefine to 5.00", 18, "lightgray");
-    draw_text(20, 325, "P      pause", 18, "lightgray");
-    draw_text(20, 350, "R      resume / replay done", 18, "lightgray");
-    draw_text(20, 375, "S      stop (becomes absent)", 18, "lightgray");
+    draw_text(175, 309, "SPACE  play / redefine to 5.00", 18, "lightgray");
+    draw_text(80, 334, "P      pause", 18, "lightgray");
+    draw_text(165, 359, "R      resume / replay done", 18, "lightgray");
+    draw_text(155, 384, "S      stop (becomes absent)", 18, "lightgray");
 }

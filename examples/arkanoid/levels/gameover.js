@@ -25,16 +25,16 @@ function draw(gameover){
         let hex = value.toString(16).padStart(2, "0");
 
         draw_text(
-            240,
-            140,
+            320,
+            154,
             "GAME OVER",
             28,
             "#" + hex + "0000"
         );
 
         draw_text(
-            260,
-            200,
+            320,
+            206,
             "-- SCORE: " + read_global("score") + " --",
             12
         );

@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -62,6 +64,44 @@ namespace
         {
             point =
                 rotateAround(point, center, angle);
+        }
+
+        return points;
+    }
+
+    std::vector<Vector2> ellipsePoints(
+        Vector2 center,
+        Vector2 size,
+        float angle
+    )
+    {
+        constexpr int SegmentCount = 48;
+
+        const float radiusX =
+            size.x / 2.0f;
+        const float radiusY =
+            size.y / 2.0f;
+
+        std::vector<Vector2> points;
+        points.reserve(SegmentCount);
+
+        for (int i = 0; i < SegmentCount; ++i)
+        {
+            const float theta =
+                (static_cast<float>(i) / static_cast<float>(SegmentCount)) *
+                2.0f *
+                PI;
+
+            points.push_back(
+                rotateAround(
+                    Vector2{
+                        center.x + std::cos(theta) * radiusX,
+                        center.y + std::sin(theta) * radiusY
+                    },
+                    center,
+                    angle
+                )
+            );
         }
 
         return points;
@@ -269,24 +309,84 @@ namespace
         const float scaledFontSize =
             static_cast<float>(fontSize * scale);
 
-        const Vector2 measured =
+        std::vector<std::string> lines;
+        size_t start = 0;
+
+        while (start <= text.size())
+        {
+            const size_t end =
+                text.find('\n', start);
+
+            if (end == std::string::npos)
+            {
+                lines.push_back(text.substr(start));
+                break;
+            }
+
+            lines.push_back(text.substr(start, end - start));
+            start = end + 1;
+        }
+
+        const Vector2 lineMetrics =
             MeasureTextEx(
                 font,
-                text.c_str(),
+                "A",
                 scaledFontSize,
                 spacing * scale
             );
 
-        DrawTextPro(
-            font,
-            text.c_str(),
-            scalePoint(center, scale),
-            Vector2{ measured.x / 2.0f, measured.y / 2.0f },
-            angle,
-            scaledFontSize,
-            spacing * scale,
-            color
-        );
+        const float lineHeight =
+            std::max(
+                scaledFontSize,
+                lineMetrics.y
+            ) +
+            spacing * scale;
+
+        const float totalHeight =
+            lineHeight * static_cast<float>(lines.size());
+
+        for (size_t i = 0; i < lines.size(); ++i)
+        {
+            if (lines[i].empty())
+            {
+                continue;
+            }
+
+            const Vector2 measured =
+                MeasureTextEx(
+                    font,
+                    lines[i].c_str(),
+                    scaledFontSize,
+                    spacing * scale
+                );
+
+            const Vector2 localLineCenter = {
+                0.0f,
+                -totalHeight / 2.0f +
+                    lineHeight * (static_cast<float>(i) + 0.5f)
+            };
+
+            const Vector2 lineCenter =
+                rotateAround(
+                    Vector2{
+                        center.x + localLineCenter.x / static_cast<float>(scale),
+                        center.y + localLineCenter.y / static_cast<float>(scale)
+                    },
+                    center,
+                    angle
+                );
+
+            DrawTextPro(
+                font,
+                lines[i].c_str(),
+                scalePoint(lineCenter, scale),
+                Vector2{ measured.x / 2.0f, lineHeight / 2.0f },
+                angle,
+                scaledFontSize,
+                spacing * scale,
+                color
+            );
+        }
     }
 
     void drawPath(
@@ -580,45 +680,36 @@ namespace
                 return;
             }
 
-            if (isOutlineMode(primitive.primitiveMode))
-            {
-                const float thickness =
-                    std::max(1.0f, static_cast<float>(scale));
-                const Vector2 physicalCenter =
-                    scalePoint(center, scale);
-                const float physicalRadiusX =
-                    radiusX * scale;
-                const float physicalRadiusY =
-                    radiusY * scale;
-
-                DrawEllipseLines(
-                    static_cast<int>(std::round(physicalCenter.x)),
-                    static_cast<int>(std::round(physicalCenter.y)),
-                    physicalRadiusX,
-                    physicalRadiusY,
-                    primitive.color
+            const std::vector<Vector2> points =
+                ellipsePoints(
+                    center,
+                    primitive.size,
+                    primitive.angle
                 );
 
-                if (thickness > 1.0f)
-                {
-                    DrawEllipseLines(
-                        static_cast<int>(std::round(physicalCenter.x)),
-                        static_cast<int>(std::round(physicalCenter.y)),
-                        std::max(0.0f, physicalRadiusX - thickness),
-                        std::max(0.0f, physicalRadiusY - thickness),
-                        primitive.color
-                    );
-                }
+            if (isOutlineMode(primitive.primitiveMode))
+            {
+                drawPath(
+                    points,
+                    true,
+                    primitive.color,
+                    scale
+                );
             }
             else
             {
-                DrawEllipse(
-                    static_cast<int>(std::round(center.x * scale)),
-                    static_cast<int>(std::round(center.y * scale)),
-                    radiusX * scale,
-                    radiusY * scale,
-                    primitive.color
-                );
+                const Vector2 physicalCenter =
+                    scalePoint(center, scale);
+
+                for (size_t i = 0; i < points.size(); ++i)
+                {
+                    DrawTriangle(
+                        physicalCenter,
+                        scalePoint(points[(i + 1) % points.size()], scale),
+                        scalePoint(points[i], scale),
+                        primitive.color
+                    );
+                }
             }
 
             return;

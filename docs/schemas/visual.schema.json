@@ -102,7 +102,7 @@
               "items": {
                 "$ref": "#/$defs/point"
               },
-              "minItems": 2
+              "minItems": 1
             },
             "mode": {
               "type": "string",

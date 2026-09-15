@@ -68,6 +68,8 @@ triangle
 ellipse
 ```
 
+Todos los primitives siguen el espacio local del objeto, incluido `RuntimeObject.angle`.
+
 `mode` puede ser:
 
 ```text
@@ -96,6 +98,8 @@ Para resolver una dimensión por herencia o porcentaje, el objeto debe tener `si
 
 Los puntos son locales al pivot del objeto.
 
+Una geometría puede declarar desde un punto. Un punto se dibuja como una celda lógica; `close` y `fill` con un único punto no crean área.
+
 `mode` puede ser:
 
 ```text
@@ -116,6 +120,8 @@ fill
 ```
 
 `fontSize` es obligatorio.
+
+Los saltos explícitos `\n` crean texto multiline. El bloque completo se centra respecto al pivot y cada línea se centra horizontalmente sobre el mismo eje local X.
 
 El texto declarativo es representación del mundo. No sustituye a `draw_text()`, que sigue siendo dibujo inmediato desde JavaScript.
 

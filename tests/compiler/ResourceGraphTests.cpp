@@ -1,6 +1,8 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProjectValidator.h"
+#include <nlohmann/json.hpp>
 #include <algorithm>
+#include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -261,6 +263,82 @@ namespace
         require(object.visual.representation[2].fontSize == 8, "text font size should compile");
     }
 
+    void testOnePointGeometryIsAcceptedBySchemaAndCompiler()
+    {
+        std::filesystem::path schemaPath =
+            "docs/schemas/visual.schema.json";
+
+        if (!std::filesystem::exists(schemaPath))
+        {
+            schemaPath =
+                "../../../docs/schemas/visual.schema.json";
+        }
+
+        std::ifstream schemaFile(schemaPath);
+        require(schemaFile.good(), "visual schema should be readable");
+
+        const nlohmann::json schema =
+            nlohmann::json::parse(schemaFile);
+
+        require(
+            schema["$defs"]["geometryElement"]["allOf"][1]["properties"]["geometry"]["minItems"].get<int>() == 1,
+            "visual schema should accept one-point geometry"
+        );
+
+        const std::filesystem::path root =
+            testRoot() / "one_point_geometry";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=OnePointGeometry\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"visual\": {\n"
+            "    \"representation\": [\n"
+            "      { \"geometry\": [{ \"x\": 10, \"y\": 20 }], \"mode\": \"open\" },\n"
+            "      { \"geometry\": [{ \"x\": 11, \"y\": 20 }], \"mode\": \"close\" },\n"
+            "      { \"geometry\": [{ \"x\": 12, \"y\": 20 }], \"mode\": \"fill\" }\n"
+            "    ]\n"
+            "  }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "one-point geometry should compile");
+
+        const ObjectDefinition& object =
+            rootObject(result.project);
+
+        require(object.visual.representation.size() == 3, "all one-point geometry modes should be preserved");
+
+        for (const RepresentationElementDefinition& element : object.visual.representation)
+        {
+            require(element.kind == RepresentationElementKind::Geometry, "one-point element should remain geometry");
+            require(element.geometry.size() == 1, "one-point geometry should keep exactly one point");
+        }
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"visual\": { \"representation\": [{ \"geometry\": [] }] } }\n"
+        );
+
+        const CompilationResult invalid =
+            compile(root / "game.flx");
+
+        require(!invalid.success, "empty geometry should fail compilation");
+        require(invalid.diagnostics.hasErrors(), "empty geometry should report an error");
+    }
+
     void testAutomaticInstantiationCycleFailsCompiledProjectValidation()
     {
         CompiledProject project;
@@ -459,6 +537,7 @@ int main()
 
         { "invalid FLX reference", testInvalidFlxReference },
         { "visual representation compiles", testVisualRepresentationCompiles },
+        { "one-point geometry is accepted by schema and compiler", testOnePointGeometryIsAcceptedBySchemaAndCompiler },
         { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation },
         { "auto child cycle fails compilation", testAutoChildCycleFailsCompilation },
         { "manual child cycle compiles", testManualChildCycleCompiles },

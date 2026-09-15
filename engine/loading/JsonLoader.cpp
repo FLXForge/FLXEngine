@@ -1193,6 +1193,13 @@ namespace
             definition.geometryMode =
                 TextTools::toLower(element.value("mode", "open"));
 
+            if (element["geometry"].empty())
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation: expected at least one point"
+                );
+            }
+
             if (
                 definition.geometryMode != "open" &&
                 definition.geometryMode != "close" &&

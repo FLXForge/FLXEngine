@@ -3,6 +3,7 @@
 #include "../../engine/compiler/ProjectCompiler.h"
 #include "../../engine/graphics/DrawingContext.h"
 #include "../../engine/graphics/DrawingRenderer.h"
+#include "../../engine/graphics/RepresentationPrimitiveBuilder.h"
 #include "../../engine/runtime/RuntimeWorld.h"
 #include "../../engine/scripting/ScriptEngine.h"
 
@@ -262,6 +263,54 @@ namespace
             left.a == right.a;
     }
 
+    struct ColorBounds
+    {
+        bool found = false;
+        int minX = 0;
+        int minY = 0;
+        int maxX = 0;
+        int maxY = 0;
+        int count = 0;
+    };
+
+    void includePixel(ColorBounds& bounds, int x, int y)
+    {
+        if (!bounds.found)
+        {
+            bounds.found = true;
+            bounds.minX = x;
+            bounds.maxX = x;
+            bounds.minY = y;
+            bounds.maxY = y;
+        }
+        else
+        {
+            bounds.minX = std::min(bounds.minX, x);
+            bounds.maxX = std::max(bounds.maxX, x);
+            bounds.minY = std::min(bounds.minY, y);
+            bounds.maxY = std::max(bounds.maxY, y);
+        }
+
+        ++bounds.count;
+    }
+
+    float centerX(const ColorBounds& bounds)
+    {
+        return
+            (static_cast<float>(bounds.minX) + static_cast<float>(bounds.maxX)) /
+            2.0f;
+    }
+
+    int width(const ColorBounds& bounds)
+    {
+        return bounds.maxX - bounds.minX + 1;
+    }
+
+    int height(const ColorBounds& bounds)
+    {
+        return bounds.maxY - bounds.minY + 1;
+    }
+
     int countRenderedColor(
         RuntimeHarness& harness,
         Color color,
@@ -316,6 +365,99 @@ namespace
         }
 
         return false;
+    }
+
+    ColorBounds renderedBounds(
+        const std::vector<VisualPrimitive>& primitives,
+        Color color,
+        int renderWidth,
+        int renderHeight,
+        int scale = 1
+    )
+    {
+        HiddenTestWindow window;
+
+        std::vector<RuntimeObject> objects;
+        RenderTexture2D target =
+            LoadRenderTexture(renderWidth, renderHeight);
+
+        BeginTextureMode(target);
+        ClearBackground(BLACK);
+        DrawingRenderer::render(primitives, objects, scale, ScreenWidth, ScreenHeight);
+        EndTextureMode();
+
+        Image image =
+            LoadImageFromTexture(target.texture);
+
+        ColorBounds bounds;
+
+        for (int y = 0; y < image.height; ++y)
+        {
+            for (int x = 0; x < image.width; ++x)
+            {
+                if (sameColor(GetImageColor(image, x, y), color))
+                {
+                    includePixel(bounds, x, y);
+                }
+            }
+        }
+
+        UnloadImage(image);
+        UnloadRenderTexture(target);
+
+        return bounds;
+    }
+
+    std::pair<ColorBounds, ColorBounds> splitRenderedBoundsByY(
+        const std::vector<VisualPrimitive>& primitives,
+        Color color,
+        int splitY,
+        int renderWidth,
+        int renderHeight,
+        int scale
+    )
+    {
+        HiddenTestWindow window;
+
+        std::vector<RuntimeObject> objects;
+        RenderTexture2D target =
+            LoadRenderTexture(renderWidth, renderHeight);
+
+        BeginTextureMode(target);
+        ClearBackground(BLACK);
+        DrawingRenderer::render(primitives, objects, scale, ScreenWidth, ScreenHeight);
+        EndTextureMode();
+
+        Image image =
+            LoadImageFromTexture(target.texture);
+
+        ColorBounds first;
+        ColorBounds second;
+
+        for (int y = 0; y < image.height; ++y)
+        {
+            for (int x = 0; x < image.width; ++x)
+            {
+                if (!sameColor(GetImageColor(image, x, y), color))
+                {
+                    continue;
+                }
+
+                if (y < splitY)
+                {
+                    includePixel(first, x, y);
+                }
+                else
+                {
+                    includePixel(second, x, y);
+                }
+            }
+        }
+
+        UnloadImage(image);
+        UnloadRenderTexture(target);
+
+        return { first, second };
     }
 
     void testDrawingContextRejectsCallsOutsideDrawTurn()
@@ -866,6 +1008,154 @@ namespace
 
         require(count > 120, "circle outline at scale 3 should draw a logical-width outline, not a one-pixel physical line");
     }
+
+    void testOnePointGeometryBuildsAndDrawsAsLogicalPoint()
+    {
+        RuntimeObject object =
+            runtimeObject("point");
+        object.runtimeId = "point#1";
+        object.position = Vector2{ 5.0f, 5.0f };
+        object.hasVisualColor = true;
+        object.visualColor = RED;
+
+        for (const std::string& mode : std::vector<std::string>{ "open", "close", "fill" })
+        {
+            RepresentationElementDefinition element;
+            element.kind = RepresentationElementKind::Geometry;
+            element.geometryMode = mode;
+            element.geometry = { Vector2{ 1.0f, 2.0f } };
+
+            object.representation = { element };
+
+            const std::vector<VisualPrimitive> primitives =
+                RepresentationPrimitiveBuilder::build(object, WHITE);
+
+            require(primitives.size() == 1, "one-point geometry should build one presentation primitive");
+            require(primitives[0].primitive == "geometry", "one-point geometry should remain a geometry primitive");
+            require(primitives[0].points.size() == 1, "builder should preserve the single geometry point");
+
+            const ColorBounds bounds =
+                renderedBounds(primitives, RED, 40, 40, 1);
+
+            require(bounds.found, "one-point geometry should draw one logical point");
+            require(bounds.count == 1, "one-point geometry should not generate artificial area");
+        }
+    }
+
+    void testRotatedEllipseFillAndOutlineRespectAngle()
+    {
+        std::vector<VisualPrimitive> filledPrimitives;
+
+        VisualPrimitive filled;
+        filled.kind = VisualPrimitiveKind::Representation;
+        filled.primitive = "ellipse";
+        filled.primitiveMode = "fill";
+        filled.a = Vector2{ 30.0f, 30.0f };
+        filled.size = Vector2{ 30.0f, 10.0f };
+        filled.angle = 90.0f;
+        filled.color = RED;
+        filledPrimitives.push_back(filled);
+
+        const ColorBounds filledBounds =
+            renderedBounds(filledPrimitives, RED, 80, 80, 1);
+
+        require(filledBounds.found, "rotated filled ellipse should draw");
+        require(height(filledBounds) > width(filledBounds) * 2, "filled ellipse should rotate its long axis with object angle");
+
+        std::vector<VisualPrimitive> outlinedPrimitives;
+
+        VisualPrimitive outlined =
+            filled;
+        outlined.primitiveMode = "outline";
+        outlined.color = GREEN;
+        outlinedPrimitives.push_back(outlined);
+
+        const ColorBounds outlineBounds =
+            renderedBounds(outlinedPrimitives, GREEN, 80, 80, 1);
+
+        require(outlineBounds.found, "rotated outlined ellipse should draw");
+        require(height(outlineBounds) > width(outlineBounds) * 2, "outlined ellipse should rotate its long axis with object angle");
+    }
+
+    void testMultilineTextCentersEachLine()
+    {
+        std::vector<VisualPrimitive> primitives;
+
+        VisualPrimitive text;
+        text.kind = VisualPrimitiveKind::Representation;
+        text.primitive = "text";
+        text.text = "LONG\nX";
+        text.fontSize = 8;
+        text.a = Vector2{ 30.0f, 30.0f };
+        text.color = RED;
+        primitives.push_back(text);
+
+        const ColorBounds fullBounds =
+            renderedBounds(primitives, RED, 80, 80, 1);
+
+        require(fullBounds.found, "multiline text should draw visible glyphs");
+
+        const int splitY =
+            (fullBounds.minY + fullBounds.maxY + 1) / 2;
+
+        const auto [top, bottom] =
+            splitRenderedBoundsByY(primitives, RED, splitY, 80, 80, 1);
+
+        require(top.found, "multiline text should draw the first line");
+        require(bottom.found, "multiline text should draw the second line");
+        const int wideLine =
+            std::max(width(top), width(bottom));
+        const int narrowLine =
+            std::min(width(top), width(bottom));
+
+        require(
+            wideLine > narrowLine * 2,
+            "test fixture should use lines with clearly different widths"
+        );
+        require(
+            std::abs(centerX(top) - centerX(bottom)) <= 1.5f,
+            "each multiline text line should be centered on the same local X axis: top=" +
+                std::to_string(centerX(top)) +
+                " bottom=" +
+                std::to_string(centerX(bottom))
+        );
+    }
+
+    void testTextCasesDoNotDependOnRuntimeObjectSize()
+    {
+        std::vector<VisualPrimitive> primitives;
+
+        for (const std::string& value : std::vector<std::string>{ "A", "A\nB", "A\n\nB" })
+        {
+            VisualPrimitive text;
+            text.kind = VisualPrimitiveKind::Representation;
+            text.primitive = "text";
+            text.text = value;
+            text.fontSize = 8;
+            text.a = Vector2{ 20.0f, 20.0f };
+            text.angle = 25.0f;
+            text.color = BLUE;
+            primitives = { text };
+
+            const ColorBounds bounds =
+                renderedBounds(primitives, BLUE, 60, 60, 1);
+
+            require(bounds.found, "single and multiline text should draw without object size");
+        }
+
+        VisualPrimitive empty;
+        empty.kind = VisualPrimitiveKind::Representation;
+        empty.primitive = "text";
+        empty.text = "";
+        empty.fontSize = 8;
+        empty.a = Vector2{ 20.0f, 20.0f };
+        empty.color = YELLOW;
+
+        const ColorBounds emptyBounds =
+            renderedBounds({ empty }, YELLOW, 60, 60, 1);
+
+        require(!emptyBounds.found, "empty text should remain valid without visible glyphs");
+    }
 }
 
 int main()
@@ -888,7 +1178,11 @@ int main()
         { "Representation and immediate draw share same object depth", testRepresentationAndImmediateDrawShareSameObjectDepth },
         { "JSON depth is visual-level and root depth is rejected", testJsonDepthIsVisualLevelAndRootDepthIsRejected },
         { "Depth property is readonly from JavaScript", testDepthPropertyIsReadonlyFromJavaScript },
-        { "Circle outline scales with output scale", testCircleOutlineScalesWithOutputScale }
+        { "Circle outline scales with output scale", testCircleOutlineScalesWithOutputScale },
+        { "One-point geometry builds and draws as logical point", testOnePointGeometryBuildsAndDrawsAsLogicalPoint },
+        { "Rotated ellipse fill and outline respect angle", testRotatedEllipseFillAndOutlineRespectAngle },
+        { "Multiline text centers each line", testMultilineTextCentersEachLine },
+        { "Text cases do not depend on RuntimeObject size", testTextCasesDoNotDependOnRuntimeObjectSize }
     };
 
     for (const auto& test : tests)

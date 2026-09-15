@@ -35,17 +35,12 @@ namespace
 
         compiled.visible = definition.visible;
         compiled.hasVisual = definition.hasVisual;
-        compiled.depth = definition.depth;
+        compiled.visual = definition.visual;
 
         compiled.origin = definition.origin;
         compiled.hasOrigin = definition.hasOrigin;
         compiled.size = definition.size;
-        compiled.color = definition.color;
-        compiled.shapeMode = definition.shapeMode;
-        compiled.shapeType = definition.shapeType;
-        compiled.textContent = definition.textContent;
-        compiled.radius = definition.radius;
-        compiled.points = definition.points;
+        compiled.hasSize = definition.hasSize;
 
         compiled.mechanics = definition.mechanics;
         compiled.inherit = definition.inherit;
@@ -291,11 +286,28 @@ void ProjectCompiler::projectDefinitionColors(
     const VideoChipDefinition& video
 )
 {
-    definition.color =
-        VideoColorProcessor::project(
-            definition.color,
-            video
-        );
+    if (definition.visual.hasColor)
+    {
+        definition.visual.color =
+            VideoColorProcessor::project(
+                definition.visual.color,
+                video
+            );
+    }
+
+    for (auto& element : definition.visual.representation)
+    {
+        if (!element.hasColor)
+        {
+            continue;
+        }
+
+        element.color =
+            VideoColorProcessor::project(
+                element.color,
+                video
+            );
+    }
 
     for (auto& child : definition.children)
     {
@@ -376,11 +388,10 @@ void ProjectCompiler::compileDefinition(
         definition
     );
 
-    compiled->color =
-        VideoColorProcessor::project(
-            compiled->color,
-            video
-        );
+    projectDefinitionColors(
+        *compiled,
+        video
+    );
 
     resolveScripts(
         *compiled,

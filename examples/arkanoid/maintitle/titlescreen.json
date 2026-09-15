@@ -1,6 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "children": {
     "title": "title",
     "title_ball": "ball",
@@ -13,10 +12,15 @@
         "y": -10
       },
       "group": "wall_top",
-      "shape": {
-        "size": {
-          "width": 640
-        }
+      "size": {
+        "width": 640
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "right_wall": {
@@ -26,10 +30,15 @@
         "y": 0
       },
       "group": "wall_side",
-      "shape": {
-        "size": {
-          "height": 320
-        }
+      "size": {
+        "height": 320
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "left_wall": {
@@ -39,17 +48,21 @@
         "y": 0
       },
       "group": "wall_side",
-      "shape": {
-        "size": {
-          "height": 320
-        }
+      "size": {
+        "height": 320
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
-
     }
   },
-
-
-    "behavior": {
-      "scripts": [ "titlescreen" ]
-    }
+  "behavior": {
+    "scripts": [
+      "titlescreen"
+    ]
   }
+}

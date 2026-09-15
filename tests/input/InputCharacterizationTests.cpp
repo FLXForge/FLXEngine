@@ -244,12 +244,12 @@ namespace
         require(machine.input.directions[0].buffer == 0.0f, "default direction buffer should be zero");
     }
 
-    void testInputChipLoadsConsolidatedShape()
+    void testInputChipLoadsConsolidatedStructure()
     {
         Diagnostics diagnostics;
         const MachineDefinition machine =
             loadMachine(
-                "current_shape",
+                "current_input_structure",
                 "machine:\n"
                 "  input:\n"
                 "    system:\n"
@@ -1142,7 +1142,7 @@ int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "default machine input matches default mapping", testDefaultMachineInputMatchesDefaultMapping },
-        { "input chip loads consolidated shape", testInputChipLoadsConsolidatedShape },
+        { "input chip loads consolidated structure", testInputChipLoadsConsolidatedStructure },
         { "unsupported capabilities produce diagnostics", testUnsupportedCapabilitiesProduceDiagnostics },
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
         { "mapping capacity differences are warnings", testMappingCapacityDifferencesAreWarnings },

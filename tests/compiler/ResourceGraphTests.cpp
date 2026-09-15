@@ -57,8 +57,8 @@ namespace
             root / "game" / "root.json",
             "{\n"
             "  \"children\": {\n"
-            "    \"ship\": { \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 8 } } },\n"
-            "    \"laser\": { \"spawn\": \"manual\", \"shape\": { \"type\": \"block\", \"size\": { \"width\": 1, \"height\": 4 } } }\n"
+            "    \"ship\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } },\n"
+            "    \"laser\": { \"spawn\": \"manual\", \"size\": { \"width\": 1, \"height\": 4 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
             "  }\n"
             "}\n"
         );
@@ -97,7 +97,7 @@ namespace
             "    \"pattern\": [\"brick\"]\n"
             "  },\n"
             "  \"children\": {\n"
-            "    \"brick\": { \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 8 } } }\n"
+            "    \"brick\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
             "  }\n"
             "}\n"
         );
@@ -132,7 +132,7 @@ namespace
 
         writeFile(
             root / "game" / "objects" / "brick.json",
-            "{ \"group\": \"brick\", \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 4 } } }\n"
+            "{ \"group\": \"brick\", \"size\": { \"width\": 8, \"height\": 4 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
         );
 
         const CompilationResult result =
@@ -166,20 +166,20 @@ namespace
 
         writeFile(
             root / "game" / "root.json",
-            "{ \"shape\": \"/blocks/shapes:dot\" }\n"
+            "{ \"visual\": \"/blocks/shapes:dot\" }\n"
         );
 
         writeFile(
             root / "game" / "blocks" / "shapes.json",
-            "{ \"dot\": { \"type\": \"circle\", \"radius\": 3, \"color\": \"white\" } }\n"
+            "{ \"dot\": { \"color\": \"white\", \"representation\": [{ \"primitive\": \"ellipse\", \"size\": { \"width\": 6, \"height\": 6 } }] } }\n"
         );
 
         const CompilationResult result =
             compile(root / "game.flx");
 
         require(result.success, "valid FLX reference should compile");
-        require(rootObject(result.project).shapeType == "circle", "referenced shape should resolve");
-        require(rootObject(result.project).radius == 3.0f, "referenced radius should resolve");
+        require(rootObject(result.project).visual.representation.size() == 1, "referenced visual should resolve");
+        require(rootObject(result.project).visual.representation[0].primitive == "ellipse", "referenced primitive should resolve");
     }
 
     void testInvalidFlxReference()
@@ -199,7 +199,7 @@ namespace
 
         writeFile(
             root / "game" / "root.json",
-            "{ \"shape\": \"/missing:block\" }\n"
+            "{ \"visual\": \"/missing:block\" }\n"
         );
 
         const CompilationResult result =
@@ -207,6 +207,58 @@ namespace
 
         require(!result.success, "invalid FLX reference should fail");
         require(result.diagnostics.hasErrors(), "invalid FLX reference should report errors");
+    }
+
+    void testVisualRepresentationCompiles()
+    {
+        const std::filesystem::path root =
+            testRoot() / "visual_representation";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=Visual\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"size\": { \"width\": 20, \"height\": 10 },\n"
+            "  \"visual\": {\n"
+            "    \"color\": \"white\",\n"
+            "    \"depth\": 5,\n"
+            "    \"representation\": [\n"
+            "      { \"primitive\": \"rectangle\", \"size\": { \"width\": \"50%\", \"height\": 4 } },\n"
+            "      { \"geometry\": [{ \"x\": -2, \"y\": 0 }, { \"x\": 0, \"y\": -2 }, { \"x\": 2, \"y\": 0 }], \"mode\": \"fill\" },\n"
+            "      { \"text\": \"OK\", \"fontSize\": 8 }\n"
+            "    ]\n"
+            "  }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "visual representation should compile");
+
+        const ObjectDefinition& object =
+            rootObject(result.project);
+
+        require(object.hasSize, "object size should be present");
+        require(object.hasVisual, "visual block should be present");
+        require(object.visual.hasColor, "visual base color should be present");
+        require(object.visual.depth == 5, "visual depth should compile");
+        require(object.visual.representation.size() == 3, "representation order should compile");
+        require(object.visual.representation[0].kind == RepresentationElementKind::Primitive, "primitive element should compile");
+        require(object.visual.representation[0].size.width.percentage, "primitive percentage size should compile");
+        require(object.visual.representation[1].kind == RepresentationElementKind::Geometry, "geometry element should compile");
+        require(object.visual.representation[1].geometryMode == "fill", "geometry mode should compile");
+        require(object.visual.representation[2].kind == RepresentationElementKind::Text, "text element should compile");
+        require(object.visual.representation[2].fontSize == 8, "text font size should compile");
     }
 
     void testAutomaticInstantiationCycleFailsCompiledProjectValidation()
@@ -376,7 +428,7 @@ namespace
 
         writeFile(
             root / "game" / "b" / "title.json",
-            "{ \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 8 } } }\n"
+            "{ \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
         );
 
         const CompilationResult result =
@@ -406,6 +458,7 @@ int main()
         { "valid FLX reference", testValidFlxReference },
 
         { "invalid FLX reference", testInvalidFlxReference },
+        { "visual representation compiles", testVisualRepresentationCompiles },
         { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation },
         { "auto child cycle fails compilation", testAutoChildCycleFailsCompilation },
         { "manual child cycle compiles", testManualChildCycleCompiles },

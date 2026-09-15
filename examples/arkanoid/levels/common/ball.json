@@ -4,15 +4,6 @@
     "x": 0,
     "y": -9
   },
-  "shape": {
-    "type": "circle",
-    "mode": "fill",
-    "color": "white",
-    "size": {
-      "width": 10,
-      "height": 10
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -35,23 +26,35 @@
     "gun": "powerup",
     "big": {
       "like": "powerup",
-      "shape": {
-        "content": "B",
-        "color": "purple"
+      "visual": {
+        "color": "purple",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "small": {
       "like": "powerup",
-      "shape": {
-        "content": "S",
-        "color": "red"
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "broken": {
       "like": "powerup",
-      "shape": {
-        "content": "K",
-        "color": "green"
+      "visual": {
+        "color": "green",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   },
@@ -94,8 +97,8 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 10.0,
-        "height": 10.0
+        "width": 10,
+        "height": 10
       },
       "with": [
         "wall_side",
@@ -105,5 +108,18 @@
         "brick"
       ]
     }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "ellipse",
+        "mode": "fill"
+      }
+    ]
   }
 }

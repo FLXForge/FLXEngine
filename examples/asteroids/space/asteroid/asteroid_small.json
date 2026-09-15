@@ -1,40 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "shape": {
-    "type": "polygon",
-    "color": "white",
-    "mode": "outline",
-    "points": [
-      {
-        "x": 0,
-        "y": -8
-      },
-      {
-        "x": 7,
-        "y": -5
-      },
-      {
-        "x": 8,
-        "y": 2
-      },
-      {
-        "x": 4,
-        "y": 8
-      },
-      {
-        "x": -5,
-        "y": 6
-      },
-      {
-        "x": -8,
-        "y": -1
-      },
-      {
-        "x": -4,
-        "y": -7
-      }
-    ]
-  },
   "bounds": {
     "mode": "wrap",
     "overflow": false
@@ -66,8 +31,8 @@
           "brightness": 0.45,
           "roughness": 0.7,
           "noise": 0.35,
-          "resonance": 0.0,
-          "metal": 0.0
+          "resonance": 0,
+          "metal": 0
         }
       },
       "duration": 0.08,
@@ -90,8 +55,8 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 16.0,
-        "height": 16.0
+        "width": 16,
+        "height": 16
       },
       "with": [
         "ship",
@@ -99,5 +64,43 @@
         "laser"
       ]
     }
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "geometry": [
+          {
+            "x": 0,
+            "y": -8
+          },
+          {
+            "x": 7,
+            "y": -5
+          },
+          {
+            "x": 8,
+            "y": 2
+          },
+          {
+            "x": 4,
+            "y": 8
+          },
+          {
+            "x": -5,
+            "y": 6
+          },
+          {
+            "x": -8,
+            "y": -1
+          },
+          {
+            "x": -4,
+            "y": -7
+          }
+        ],
+        "mode": "close"
+      }
+    ]
   }
 }

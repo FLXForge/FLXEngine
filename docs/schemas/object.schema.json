@@ -45,12 +45,6 @@
       "type": "boolean"
     },
 
-    "depth": {
-      "type": "integer",
-      "default": 0,
-      "description": "Visual depth. Lower values are drawn first."
-    },
-
     "attach": {
       "type": "object",
       "additionalProperties": false,
@@ -82,10 +76,20 @@
       }
     },
 
-    "shape": {
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "width", "height" ],
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+
+    "visual": {
       "oneOf": [
         { "type": "string" },
-        { "$ref": "shape.schema.json" }
+        { "$ref": "visual.schema.json" }
       ]
     },
 
@@ -189,9 +193,10 @@
 
   "not": {
     "anyOf": [
-      { "required": [ "size" ] },
       { "required": [ "color" ] },
       { "required": [ "layer" ] },
+      { "required": [ "depth" ] },
+      { "required": [ "shape" ] },
       { "required": [ "speed" ] },
       { "required": [ "angle" ] },
       { "required": [ "motion" ] },

@@ -3,16 +3,36 @@
   "control": {
     "player": 1
   },
-
   "states": {
     "initial": "title",
-    "title": { "next": [ "to_level" ] },
-    "to_level": { "next": [ "playing" ] },
-    "playing": { "next": [ "to_level", "gameover", "congratulations" ] },
-    "gameover": { "next": [ "title" ] },
-    "congratulations": { "next": [ "title" ] }
+    "title": {
+      "next": [
+        "to_level"
+      ]
+    },
+    "to_level": {
+      "next": [
+        "playing"
+      ]
+    },
+    "playing": {
+      "next": [
+        "to_level",
+        "gameover",
+        "congratulations"
+      ]
+    },
+    "gameover": {
+      "next": [
+        "title"
+      ]
+    },
+    "congratulations": {
+      "next": [
+        "title"
+      ]
+    }
   },
-
   "children": {
     "title": "maintitle/titlescreen",
     "level1": "levels/level1",
@@ -23,6 +43,8 @@
     "congratulations": "levels/congratulations"
   },
   "behavior": {
-    "scripts": [ "game" ]
+    "scripts": [
+      "game"
+    ]
   }
 }

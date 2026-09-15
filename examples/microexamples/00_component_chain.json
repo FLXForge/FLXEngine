@@ -1,11 +1,15 @@
 {
-  "name":"tank",
-  "children":{
-    "turret":{
-      "component":true,
-      "children":{
-        "cannon":{"component":true},
-        "projectile":{"spawn":"manual"}
+  "name": "tank",
+  "children": {
+    "turret": {
+      "component": true,
+      "children": {
+        "cannon": {
+          "component": true
+        },
+        "projectile": {
+          "spawn": "manual"
+        }
       }
     }
   }

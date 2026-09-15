@@ -1,38 +1,41 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
   "like": "asteroid",
-  "shape": {
-    "type": "polygon",
-    "mode": "outline",
+  "visual": {
     "color": "orange",
-    "points": [
+    "representation": [
       {
-        "x": 0,
-        "y": -20
-      },
-      {
-        "x": 8,
-        "y": -16
-      },
-      {
-        "x": 20,
-        "y": -2
-      },
-      {
-        "x": 12,
-        "y": 18
-      },
-      {
-        "x": -4,
-        "y": 16
-      },
-      {
-        "x": -18,
-        "y": 6
-      },
-      {
-        "x": -16,
-        "y": -10
+        "geometry": [
+          {
+            "x": 0,
+            "y": -20
+          },
+          {
+            "x": 8,
+            "y": -16
+          },
+          {
+            "x": 20,
+            "y": -2
+          },
+          {
+            "x": 12,
+            "y": 18
+          },
+          {
+            "x": -4,
+            "y": 16
+          },
+          {
+            "x": -18,
+            "y": 6
+          },
+          {
+            "x": -16,
+            "y": -10
+          }
+        ],
+        "mode": "close"
       }
     ]
   }

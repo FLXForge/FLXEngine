@@ -24,17 +24,12 @@ namespace
 
         target.visible = source.visible;
         target.hasVisual = source.hasVisual;
-        target.depth = source.depth;
+        target.visual = source.visual;
 
         target.origin = source.origin;
         target.hasOrigin = source.hasOrigin;
         target.size = source.size;
-        target.color = source.color;
-        target.shapeMode = source.shapeMode;
-        target.shapeType = source.shapeType;
-        target.textContent = source.textContent;
-        target.radius = source.radius;
-        target.points = source.points;
+        target.hasSize = source.hasSize;
 
         target.mechanics = source.mechanics;
         target.inherit = source.inherit;

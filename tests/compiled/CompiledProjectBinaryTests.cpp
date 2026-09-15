@@ -378,7 +378,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "compiled project should read");
-        require(loaded.metadata.formatVersion == 8, "format version should be exposed");
+        require(loaded.metadata.formatVersion == flx::binary::CompiledProjectCodec::FormatVersion, "format version should be exposed");
         require(!loaded.metadata.producerVersion.empty(), "producer version should be exposed");
         require(loaded.project.context.name == compiled.project.context.name, "context name should survive roundtrip");
         require(loaded.project.rootId == compiled.project.rootId, "root id should survive roundtrip");
@@ -437,8 +437,8 @@ namespace
             "    \"pattern\": [\"brick\"]\n"
             "  },\n"
             "  \"children\": {\n"
-            "    \"brick\": { \"shape\": { \"type\": \"block\", \"size\": { \"width\": 8, \"height\": 8 } } },\n"
-            "    \"laser\": { \"spawn\": \"manual\", \"shape\": { \"type\": \"block\", \"size\": { \"width\": 1, \"height\": 4 } } }\n"
+            "    \"brick\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } },\n"
+            "    \"laser\": { \"spawn\": \"manual\", \"size\": { \"width\": 1, \"height\": 4 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
             "  }\n"
             "}\n"
         );
@@ -543,7 +543,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "input project should read");
-        require(loaded.metadata.formatVersion == 8, "input roundtrip should use current format");
+        require(loaded.metadata.formatVersion == flx::binary::CompiledProjectCodec::FormatVersion, "input roundtrip should use current format");
         require(loaded.project.context.machine.input.systemButtons == 9, "system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 3, "player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 12, "player button count should survive roundtrip");
@@ -611,7 +611,7 @@ namespace
             CompiledProjectReader::read(output.generic_string());
 
         require(loaded.success, "default input project should read");
-        require(loaded.metadata.formatVersion == 8, "default input roundtrip should use current format");
+        require(loaded.metadata.formatVersion == flx::binary::CompiledProjectCodec::FormatVersion, "default input roundtrip should use current format");
         require(loaded.project.context.machine.input.systemButtons == 2, "default system button count should survive roundtrip");
         require(loaded.project.context.machine.input.players == 1, "default player count should survive roundtrip");
         require(loaded.project.context.machine.input.playerButtons == 4, "default player button count should survive roundtrip");
@@ -1080,7 +1080,7 @@ namespace
 
         writeFile(
             root / "game" / "aaaa.json",
-            "{ \"children\": { \"bbbb\": { \"shape\": { \"type\": \"block\" } } } }\n"
+            "{ \"children\": { \"bbbb\": { \"size\": { \"width\": 1, \"height\": 1 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } } } }\n"
         );
 
         CompilationResult compiled =

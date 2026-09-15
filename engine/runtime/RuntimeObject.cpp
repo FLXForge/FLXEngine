@@ -17,13 +17,15 @@ RuntimeObject::RuntimeObject(
       origin(origin),
       position(origin),
       previousPosition(origin),
-      size(size),
-      color(color)
+      size(size)
 {
     this->hasOrigin = false;
+    this->hasSize = false;
+    this->hasVisualColor = false;
+    this->originalHasVisualColor = false;
+    this->visualColor = color;
+    this->originalVisualColor = color;
     this->originalOffset = Vector2{ 0.0f, 0.0f };
-    this->shapeMode = "fill";
-    this->radius = 0.0f;
     this->speed = 0.0f;
     this->angle = 0.0f;
     this->originSpeed = speed;
@@ -33,8 +35,6 @@ RuntimeObject::RuntimeObject(
     this->attachFollowX = false;
     this->attachFollowY = false;
     this->attachFollowAngle = false;
-    this->shapeType = "block";
-    this->textContent = "";
     this->rotationSpeed = 0.0f;
     this->acceleration = 0.0f;
     this->maxSpeed = 0.0f;

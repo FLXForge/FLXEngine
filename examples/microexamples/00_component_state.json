@@ -1,6 +1,13 @@
 {
-  "component":true,
-  "collisions":{
-    "attack":{"with":["enemy"],"states":["attack"]}
+  "component": true,
+  "collisions": {
+    "attack": {
+      "with": [
+        "enemy"
+      ],
+      "states": [
+        "attack"
+      ]
+    }
   }
 }

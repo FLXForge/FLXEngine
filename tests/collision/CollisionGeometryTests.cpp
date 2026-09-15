@@ -169,6 +169,7 @@ namespace
     )
     {
         RuntimeObject object(name, position, size, WHITE);
+        object.hasSize = true;
         object.runtimeId = name;
         object.group = group;
         object.collisions["body"].type = "box";
@@ -178,6 +179,7 @@ namespace
     RuntimeObject pongBall(Vector2 position, float angle)
     {
         RuntimeObject object("ball", position, Vector2{ 5.0f, 5.0f }, WHITE);
+        object.hasSize = true;
         object.runtimeId = "ball";
         object.group = "ball";
         object.mechanicsType = MechanicsType::Polar;
@@ -201,6 +203,7 @@ namespace
     )
     {
         RuntimeObject object(name, position, Vector2{ 320.0f, 10.0f }, WHITE);
+        object.hasSize = true;
         object.runtimeId = name;
         object.group = "wall";
 
@@ -1217,6 +1220,7 @@ namespace
         ScriptEngine scripts;
 
         RuntimeObject object("body", Vector2{ 100.0f, 50.0f }, Vector2{ 20.0f, 10.0f }, WHITE);
+        object.hasSize = true;
         object.runtimeId = "body";
 
         ColliderDefinition& collider =
@@ -1246,6 +1250,7 @@ namespace
         ScriptEngine scripts;
 
         RuntimeObject object("body", Vector2{ 100.0f, 50.0f }, Vector2{ 20.0f, 10.0f }, WHITE);
+        object.hasSize = true;
         object.runtimeId = "body";
 
         ColliderDefinition& collider =

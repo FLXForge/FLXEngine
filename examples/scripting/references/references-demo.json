@@ -11,14 +11,6 @@
         "x": 50,
         "y": 80
       },
-      "shape": {
-        "type": "block",
-        "color": "yellow",
-        "size": {
-          "width": 12,
-          "height": 12
-        }
-      },
       "mechanics": {
         "type": "direct",
         "motion": {
@@ -31,6 +23,18 @@
         "scripts": [
           "target"
         ]
+      },
+      "size": {
+        "width": 12,
+        "height": 12
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "marker": {
@@ -38,14 +42,18 @@
         "x": 50,
         "y": 120
       },
-      "shape": {
-        "type": "block",
-        "mode": "outline",
+      "size": {
+        "width": 16,
+        "height": 16
+      },
+      "visual": {
         "color": "cyan",
-        "size": {
-          "width": 16,
-          "height": 16
-        }
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          }
+        ]
       }
     }
   }

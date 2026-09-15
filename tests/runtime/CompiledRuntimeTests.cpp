@@ -54,8 +54,8 @@ namespace
             root / "game" / "root.json",
             "{\n"
             "  \"children\": {\n"
-            "    \"ball\": { \"shape\": { \"type\": \"circle\", \"radius\": 2 } },\n"
-            "    \"laser\": { \"spawn\": \"manual\", \"shape\": { \"type\": \"block\", \"size\": { \"width\": 1, \"height\": 4 } } }\n"
+            "    \"ball\": { \"size\": { \"width\": 4, \"height\": 4 }, \"visual\": { \"representation\": [{ \"primitive\": \"ellipse\" }] } },\n"
+            "    \"laser\": { \"spawn\": \"manual\", \"size\": { \"width\": 1, \"height\": 4 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
             "  }\n"
             "}\n"
         );

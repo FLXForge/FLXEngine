@@ -1,7 +1,8 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "behavior": {
-    "scripts": [ "crt" ]
+    "scripts": [
+      "crt"
+    ]
   }
 }

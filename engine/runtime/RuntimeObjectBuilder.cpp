@@ -75,20 +75,20 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.position = definition.origin;
     object.previousPosition = definition.origin;
     object.size = definition.size;
-    object.color = definition.color;
+    object.hasSize = definition.hasSize;
+    object.hasVisualColor = definition.visual.hasColor;
+    object.originalHasVisualColor = definition.visual.hasColor;
+    object.visualColor = definition.visual.color;
+    object.originalVisualColor = definition.visual.color;
     object.visible = definition.visible;
-    object.depth = definition.depth;
+    object.depth = definition.visual.depth;
     object.attached = definition.attachOnCreate;
     object.originalOffset = definition.offset;
     object.attachFollowX = definition.attachFollowX;
     object.attachFollowY = definition.attachFollowY;
     object.attachFollowAngle = definition.attachFollowAngle;
 
-    object.shapeMode = definition.shapeMode;
-    object.shapeType = definition.shapeType;
-    object.textContent = definition.textContent;
-    object.radius = definition.radius;
-    object.points = definition.points;
+    object.representation = definition.visual.representation;
 
     object.mechanics = definition.mechanics;
     object.inherit = definition.inherit;

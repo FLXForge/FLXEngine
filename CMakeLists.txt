@@ -227,8 +227,8 @@ add_executable(flx
     engine/graphics/VisualPrimitive.h
     engine/graphics/DrawingContext.h
     engine/graphics/DrawingContext.cpp
-    engine/graphics/ShapePrimitiveBuilder.h
-    engine/graphics/ShapePrimitiveBuilder.cpp
+    engine/graphics/RepresentationPrimitiveBuilder.h
+    engine/graphics/RepresentationPrimitiveBuilder.cpp
     engine/graphics/DrawingRenderer.h
     engine/graphics/DrawingRenderer.cpp
     engine/graphics/FadeSystem.h

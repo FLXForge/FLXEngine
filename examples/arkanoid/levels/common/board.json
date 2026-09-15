@@ -3,14 +3,6 @@
   "spawn": "manual",
   "children": {
     "top_wall": {
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 560,
-          "height": 10
-        }
-      },
       "origin": {
         "x": 320,
         "y": 50
@@ -20,17 +12,21 @@
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 560,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "left_wall": {
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 10,
-          "height": 250
-        }
-      },
       "origin": {
         "x": 45,
         "y": 170
@@ -40,17 +36,21 @@
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 10,
+        "height": 250
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "right_wall": {
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 10,
-          "height": 250
-        }
-      },
       "origin": {
         "x": 605,
         "y": 170
@@ -60,6 +60,18 @@
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 10,
+        "height": 250
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   }

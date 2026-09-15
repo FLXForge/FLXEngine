@@ -4,15 +4,6 @@
     "x": 320,
     "y": 160
   },
-  "shape": {
-    "type": "triangle",
-    "mode": "outline",
-    "color": "white",
-    "size": {
-      "width": 18,
-      "height": 24
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -61,7 +52,7 @@
           "roughness": 0.1,
           "noise": 0.02,
           "resonance": 0.1,
-          "metal": 0.0
+          "metal": 0
         }
       },
       "duration": 0.05,
@@ -86,7 +77,7 @@
           "roughness": 0.7,
           "noise": 0.1,
           "resonance": 0.15,
-          "metal": 0.0
+          "metal": 0
         }
       },
       "duration": 0.35,
@@ -104,9 +95,9 @@
         "material": {
           "brightness": 0.25,
           "roughness": 0.2,
-          "noise": 0.0,
-          "resonance": 0.0,
-          "metal": 0.0
+          "noise": 0,
+          "resonance": 0,
+          "metal": 0
         }
       },
       "duration": 0.05,
@@ -138,9 +129,22 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 20.0,
-        "height": 20.0
+        "width": 20,
+        "height": 20
       }
     }
+  },
+  "size": {
+    "width": 18,
+    "height": 24
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "triangle",
+        "mode": "outline"
+      }
+    ]
   }
 }

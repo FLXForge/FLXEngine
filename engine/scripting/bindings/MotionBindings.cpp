@@ -663,6 +663,8 @@ namespace
 
         object->size.y =
             static_cast<float>(height);
+        object->hasSize =
+            true;
 
         refreshRuntimeObjectView(context, argv[0], *object);
 
@@ -691,6 +693,8 @@ namespace
 
         object->size.x =
             static_cast<float>(width);
+        object->hasSize =
+            true;
 
         refreshRuntimeObjectView(context, argv[0], *object);
 
@@ -719,6 +723,8 @@ namespace
 
         object->size.y =
             static_cast<float>(height);
+        object->hasSize =
+            true;
 
         refreshRuntimeObjectView(context, argv[0], *object);
 

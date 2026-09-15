@@ -1,16 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "depth": 10,
-  "shape": {
-    "type": "text",
-    "content": "G",
-    "color": "blue",
-    "mode": "fill",
-    "size": {
-      "width": 10,
-      "height": 10
-    }
-  },
   "spawn": "manual",
   "mechanics": {
     "type": "direct",
@@ -30,5 +19,19 @@
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "color": "blue",
+    "depth": 10,
+    "representation": [
+      {
+        "text": "G",
+        "fontSize": 10
+      }
+    ]
   }
 }

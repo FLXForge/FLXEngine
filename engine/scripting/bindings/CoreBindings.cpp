@@ -365,6 +365,78 @@ namespace
         return JS_UNDEFINED;
     }
 
+    JSValue jsApplyColor(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "apply_color called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        const char* colorText =
+            JS_ToCString(context, argv[1]);
+
+        if (colorText == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        object->visualColor =
+            scriptEngine->parseColor(
+                colorText,
+                object->hasVisualColor ? object->visualColor : WHITE
+            );
+        object->hasVisualColor =
+            true;
+
+        JS_FreeCString(context, colorText);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsRestoreColor(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "restore_color called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        object->hasVisualColor =
+            object->originalHasVisualColor;
+        object->visualColor =
+            object->originalVisualColor;
+
+        return JS_UNDEFINED;
+    }
+
     JSValue jsDelta(
         JSContext* context,
         JSValueConst thisValue,
@@ -1162,6 +1234,20 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "depth",
         JS_NewCFunction(context, jsDepth, "depth", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "apply_color",
+        JS_NewCFunction(context, jsApplyColor, "apply_color", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "restore_color",
+        JS_NewCFunction(context, jsRestoreColor, "restore_color", 1)
     );
 
     JS_SetPropertyStr(

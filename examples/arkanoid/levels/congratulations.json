@@ -1,9 +1,9 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "spawn": "manual",
-
   "behavior": {
-    "scripts": [ "congratulations" ]
+    "scripts": [
+      "congratulations"
+    ]
   }
 }

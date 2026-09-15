@@ -68,6 +68,11 @@ public:
     bool deadCalled;
     bool attached = false;
     int depth = 0;
+    bool hasSize = false;
+    bool hasVisualColor = false;
+    bool originalHasVisualColor = false;
+    Color visualColor = WHITE;
+    Color originalVisualColor = WHITE;
 
     Vector2 origin;
     Vector2 position;
@@ -81,10 +86,6 @@ public:
 
     bool hasOrigin = false;
 
-    Color color;
-    std::string shapeMode;
-
-    float radius;
     MechanicsDefinition mechanics;
     InheritDefinition inherit;
     MechanicsType mechanicsType = MechanicsType::Direct;
@@ -106,9 +107,7 @@ public:
     float maxSpeed;
     float inertia;
 
-    std::string shapeType;
-    std::string textContent;
-    std::vector<Vector2> points;
+    std::vector<RepresentationElementDefinition> representation;
 
     std::string boundsMode;
     bool boundsOverflow;

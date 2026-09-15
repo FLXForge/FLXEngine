@@ -94,12 +94,16 @@ std::vector<EffectiveCollider> EffectiveColliderBuilder::build(
         const float width =
             declaration.size.hasWidth
             ? declaration.size.width
-            : object.size.x;
+            : object.hasSize
+                ? object.size.x
+                : 0.0f;
 
         const float height =
             declaration.size.hasHeight
             ? declaration.size.height
-            : object.size.y;
+            : object.hasSize
+                ? object.size.y
+                : 0.0f;
 
         EffectiveCollider collider;
         collider.owner = &object;

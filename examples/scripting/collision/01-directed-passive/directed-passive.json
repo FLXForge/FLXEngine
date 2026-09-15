@@ -7,14 +7,6 @@
         "y": 100
       },
       "group": "ball",
-      "shape": {
-        "type": "block",
-        "color": "yellow",
-        "size": {
-          "width": 10,
-          "height": 10
-        }
-      },
       "mechanics": {
         "type": "polar",
         "motion": {
@@ -37,6 +29,18 @@
         "scripts": [
           "directed-ball"
         ]
+      },
+      "size": {
+        "width": 10,
+        "height": 10
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "wall": {
@@ -45,16 +49,20 @@
         "y": 100
       },
       "group": "wall",
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 12,
-          "height": 100
-        }
-      },
       "collisions": {
         "body": {}
+      },
+      "size": {
+        "width": 12,
+        "height": 100
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   }

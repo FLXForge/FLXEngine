@@ -4,15 +4,6 @@
     "x": 335,
     "y": 275
   },
-  "shape": {
-    "type": "block",
-    "mode": "fill",
-    "color": "grey",
-    "size": {
-      "width": 70,
-      "height": 10
-    }
-  },
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -31,5 +22,18 @@
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 70,
+    "height": 10
+  },
+  "visual": {
+    "color": "grey",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

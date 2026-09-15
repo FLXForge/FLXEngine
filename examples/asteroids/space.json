@@ -11,15 +11,11 @@
   "children": {
     "level": "space/level"
   },
-
   "music": {
     "menu": {
-
       "tempo": 110,
       "loop": true,
-
       "channels": {
-
         "lead": {
           "instrument": {
             "source": {
@@ -30,26 +26,26 @@
               "material": {
                 "brightness": 0.8,
                 "roughness": 0.1,
-                "noise": 0.0,
+                "noise": 0,
                 "resonance": 0.2,
-                "metal": 0.0
+                "metal": 0
               },
               "envelope": {
-                "attack": 0.0,
+                "attack": 0,
                 "decay": 0.05,
                 "sustain": 0.5,
                 "release": 0.03
               },
               "space": {
                 "mode": "mono",
-                "width": 0.0,
-                "echo": 0.0
+                "width": 0,
+                "echo": 0
               }
             },
             "play": {
               "legato": false,
-              "glide": 0.0,
-              "vibrato": 0.0
+              "glide": 0,
+              "vibrato": 0
             },
             "range": {
               "min": "C0",
@@ -68,7 +64,6 @@
             "F4"
           ]
         },
-
         "bass": {
           "instrument": {
             "source": {

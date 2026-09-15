@@ -6,14 +6,6 @@
         "x": 60,
         "y": 125
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 70,
-          "height": 8
-        }
-      },
       "mechanics": {
         "type": "direct",
         "motion": {
@@ -26,6 +18,18 @@
         "scripts": [
           "platform"
         ]
+      },
+      "size": {
+        "width": 70,
+        "height": 8
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "passenger": {
@@ -33,17 +37,21 @@
         "x": 87,
         "y": 105
       },
-      "shape": {
-        "type": "block",
-        "color": "yellow",
-        "size": {
-          "width": 16,
-          "height": 20
-        }
-      },
       "behavior": {
         "scripts": [
           "passenger"
+        ]
+      },
+      "size": {
+        "width": 16,
+        "height": 20
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
         ]
       }
     }

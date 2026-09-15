@@ -11,7 +11,7 @@ enum class VisualPrimitiveKind
     Line,
     Rectangle,
     Text,
-    Shape
+    Representation
 };
 
 struct VisualPrimitive
@@ -28,12 +28,12 @@ struct VisualPrimitive
     Vector2 b = Vector2{ 0.0f, 0.0f };
     Vector2 size = Vector2{ 0.0f, 0.0f };
     float angle = 0.0f;
-    float radius = 0.0f;
     int fontSize = 10;
     Color color = WHITE;
 
-    std::string shapeType;
-    std::string shapeMode = "fill";
+    std::string primitive;
+    std::string primitiveMode = "fill";
+    std::string geometryMode = "open";
     std::string text;
     std::vector<Vector2> points;
 };

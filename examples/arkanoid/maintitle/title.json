@@ -4,17 +4,6 @@
     "x": 325,
     "y": 115
   },
-  "depth": 10,
-  "shape": {
-    "type": "text",
-    "content": "ARKANOID",
-    "color": "black",
-    "mode": "fill",
-    "size": {
-      "width": 370,
-      "height": 90
-    }
-  },
   "children": {
     "left_titlle": {
       "like": "wall",
@@ -23,10 +12,15 @@
         "y": 110
       },
       "group": "wall_side",
-      "shape": {
-        "size": {
-          "height": 60
-        }
+      "size": {
+        "height": 60
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "right_titlle": {
@@ -36,10 +30,15 @@
         "y": 110
       },
       "group": "wall_side",
-      "shape": {
-        "size": {
-          "height": 60
-        }
+      "size": {
+        "height": 60
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "bottom_top_titlle": {
@@ -49,11 +48,16 @@
         "y": 110
       },
       "group": "wall_top",
-      "shape": {
-        "size": {
-          "width": 350,
-          "height": 60
-        }
+      "size": {
+        "width": 350,
+        "height": 60
+      },
+      "visual": {
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   },
@@ -67,5 +71,19 @@
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 370,
+    "height": 90
+  },
+  "visual": {
+    "color": "black",
+    "depth": 10,
+    "representation": [
+      {
+        "text": "ARKANOID",
+        "fontSize": 90
+      }
+    ]
   }
 }

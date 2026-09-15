@@ -575,7 +575,7 @@ namespace
     )
     {
         static const std::vector<std::string> blockKeys = {
-            "shape",
+            "visual",
             "mechanics",
             "inherit",
             "bounds",
@@ -833,12 +833,6 @@ namespace
         return resolveBlockReferences(session, currentFile, resolved);
     }
 
-    bool hasShape(const Json& object)
-    {
-        return object.contains("shape") &&
-            object["shape"].is_object();
-    }
-
     void rejectRootProperty(
         const Json& object,
         const std::string& property,
@@ -863,13 +857,26 @@ namespace
         const std::string& owner
     )
     {
-        rejectRootProperty(object, "size", owner, "shape");
-        rejectRootProperty(object, "color", owner, "shape");
+        rejectRootProperty(object, "color", owner, "visual");
+        if (object.contains("shape"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'shape' was removed; use 'visual.representation'"
+            );
+        }
         if (object.contains("layer"))
         {
             throw std::runtime_error(
                 "Invalid FLX object '" + owner +
-                "': property 'layer' was replaced by root property 'depth'"
+                "': property 'layer' was removed; use 'visual.depth'"
+            );
+        }
+        if (object.contains("depth"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'depth' was removed; use 'visual.depth'"
             );
         }
         rejectRootProperty(object, "speed", owner, "mechanics");
@@ -914,91 +921,414 @@ namespace
         };
     }
 
-    Vector2 parseSize(const Json& object)
+    bool parseSize(const Json& object, Vector2& size)
     {
-        if (hasShape(object))
+        if (!object.contains("size"))
         {
-            const auto& shape = object["shape"];
-
-            if (shape.contains("size") && shape["size"].is_object())
-            {
-                const auto& size = shape["size"];
-
-                return Vector2{
-                    size.value("width", 0.0f),
-                    size.value("height", 0.0f)
-                };
-            }
+            size =
+                Vector2{ 0.0f, 0.0f };
+            return false;
         }
 
-        return Vector2{ 0.0f, 0.0f };
-    }
-
-    void parseShape(
-        const Json& object,
-        ObjectDefinition& definition
-    )
-    {
-        if (!hasShape(object))
-        {
-            definition.hasVisual = false;
-            return;
-        }
-
-        const auto& shape = object["shape"];
-
-        if (shape.contains("layer"))
+        if (!object["size"].is_object())
         {
             throw std::runtime_error(
-                "Invalid FLX object '" + definition.id +
-                "': property 'shape.layer' was replaced by root property 'depth'"
+                "Invalid FLX object size: expected object"
             );
         }
 
-        definition.hasVisual = true;
-        definition.shapeType =
-            TextTools::toLower(shape.value("type", "block"));
-        definition.shapeMode =
-            TextTools::toLower(shape.value("mode", "fill"));
-        definition.textContent =
-            shape.value("content", definition.textContent);
+        const auto& sizeNode =
+            object["size"];
 
-        if (shape.contains("color"))
+        if (!sizeNode.contains("width") || !sizeNode.contains("height"))
         {
+            throw std::runtime_error(
+                "Invalid FLX object size: expected width and height"
+            );
+        }
+
+        size =
+            Vector2{
+                sizeNode.value("width", 0.0f),
+                sizeNode.value("height", 0.0f)
+            };
+
+        return true;
+    }
+
+    SizeAxisDefinition parseRepresentationSizeAxis(const Json& value)
+    {
+        SizeAxisDefinition axis;
+
+        if (value.is_number())
+        {
+            axis.value =
+                value.get<float>();
+            axis.hasValue =
+                true;
+            return axis;
+        }
+
+        if (value.is_string())
+        {
+            std::string text =
+                value.get<std::string>();
+
+            if (!text.empty() && text.back() == '%')
+            {
+                text.pop_back();
+                axis.value =
+                    std::stof(text) / 100.0f;
+                axis.percentage =
+                    true;
+                axis.hasValue =
+                    true;
+                return axis;
+            }
+        }
+
+        throw std::runtime_error(
+            "Invalid Representation size axis: expected number or percentage string"
+        );
+    }
+
+    RepresentationSizeDefinition parseRepresentationSize(const Json& element)
+    {
+        RepresentationSizeDefinition size;
+
+        if (!element.contains("size"))
+        {
+            return size;
+        }
+
+        if (!element["size"].is_object())
+        {
+            throw std::runtime_error(
+                "Invalid Representation size: expected object"
+            );
+        }
+
+        const Json& sizeNode =
+            element["size"];
+
+        if (sizeNode.contains("width"))
+        {
+            size.width =
+                parseRepresentationSizeAxis(sizeNode["width"]);
+        }
+
+        if (sizeNode.contains("height"))
+        {
+            size.height =
+                parseRepresentationSizeAxis(sizeNode["height"]);
+        }
+
+        return size;
+    }
+
+    int familyCount(const Json& element)
+    {
+        int count = 0;
+
+        if (element.contains("primitive"))
+        {
+            ++count;
+        }
+
+        if (element.contains("geometry"))
+        {
+            ++count;
+        }
+
+        if (element.contains("text"))
+        {
+            ++count;
+        }
+
+        return count;
+    }
+
+    void rejectRepresentationProperty(
+        const Json& element,
+        const std::string& property,
+        const std::string& family
+    )
+    {
+        if (!element.contains(property))
+        {
+            return;
+        }
+
+        throw std::runtime_error(
+            "Invalid Representation " + family +
+            ": property '" + property + "' is not allowed"
+        );
+    }
+
+    RepresentationElementDefinition parseRepresentationElement(
+        JsonLoadSession& session,
+        const Json& rawElement,
+        const std::filesystem::path& sourceFile,
+        const std::string& field
+    )
+    {
+        Json element =
+            rawElement;
+
+        if (!element.is_object())
+        {
+            throw std::runtime_error(
+                "Invalid Representation element '" + field +
+                "': expected object"
+            );
+        }
+
+        if (element.contains("like"))
+        {
+            Json resolved;
+
+            if (!resolveLike(session, sourceFile, element, resolved, field))
+            {
+                throw std::runtime_error(
+                    "Representation element like could not be resolved: " +
+                    field
+                );
+            }
+
+            element =
+                resolved;
+        }
+
+        element.erase("__sourceFile");
+        element.erase("__behaviorSourceFile");
+        element.erase("__childSourceFiles");
+
+        const int families =
+            familyCount(element);
+
+        if (families != 1)
+        {
+            throw std::runtime_error(
+                "Invalid Representation element '" + field +
+                "': expected exactly one of primitive, geometry or text"
+            );
+        }
+
+        RepresentationElementDefinition definition;
+
+        if (element.contains("color"))
+        {
+            if (!element["color"].is_string())
+            {
+                throw std::runtime_error(
+                    "Invalid Representation element color: expected string"
+                );
+            }
+
             definition.color =
                 ColorParser::parse(
-                    shape["color"].get<std::string>(),
+                    element["color"].get<std::string>(),
                     WHITE
                 );
+            definition.hasColor =
+                true;
         }
 
-        if (shape.contains("radius"))
+        if (element.contains("primitive"))
         {
-            definition.radius =
-                shape["radius"].get<float>();
-        }
-        else
-        {
-            definition.radius =
-                std::max(
-                    definition.size.x,
-                    definition.size.y
-                ) / 2.0f;
-        }
+            rejectRepresentationProperty(element, "geometry", "primitive");
+            rejectRepresentationProperty(element, "text", "primitive");
+            rejectRepresentationProperty(element, "fontSize", "primitive");
 
-        definition.points.clear();
+            definition.kind =
+                RepresentationElementKind::Primitive;
+            definition.primitive =
+                TextTools::toLower(element["primitive"].get<std::string>());
+            definition.primitiveMode =
+                TextTools::toLower(element.value("mode", "fill"));
+            definition.size =
+                parseRepresentationSize(element);
 
-        if (shape.contains("points") && shape["points"].is_array())
-        {
-            for (const auto& point : shape["points"])
+            if (
+                definition.primitive != "rectangle" &&
+                definition.primitive != "triangle" &&
+                definition.primitive != "ellipse"
+                )
             {
-                definition.points.push_back(
+                throw std::runtime_error(
+                    "Invalid primitive Representation: unknown primitive '" +
+                    definition.primitive + "'"
+                );
+            }
+
+            if (
+                definition.primitiveMode != "fill" &&
+                definition.primitiveMode != "outline"
+                )
+            {
+                throw std::runtime_error(
+                    "Invalid primitive Representation mode: expected fill or outline"
+                );
+            }
+
+            return definition;
+        }
+
+        if (element.contains("geometry"))
+        {
+            rejectRepresentationProperty(element, "primitive", "geometry");
+            rejectRepresentationProperty(element, "text", "geometry");
+            rejectRepresentationProperty(element, "fontSize", "geometry");
+            rejectRepresentationProperty(element, "size", "geometry");
+
+            if (!element["geometry"].is_array())
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation: expected point array"
+                );
+            }
+
+            definition.kind =
+                RepresentationElementKind::Geometry;
+            definition.geometryMode =
+                TextTools::toLower(element.value("mode", "open"));
+
+            if (
+                definition.geometryMode != "open" &&
+                definition.geometryMode != "close" &&
+                definition.geometryMode != "fill"
+                )
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation mode: expected open, close or fill"
+                );
+            }
+
+            for (const auto& point : element["geometry"])
+            {
+                if (!point.is_object())
+                {
+                    throw std::runtime_error(
+                        "Invalid Geometry point: expected object"
+                    );
+                }
+
+                definition.geometry.push_back(
                     Vector2{
                         point.value("x", 0.0f),
                         point.value("y", 0.0f)
                     }
                 );
             }
+
+            return definition;
+        }
+
+        rejectRepresentationProperty(element, "primitive", "text");
+        rejectRepresentationProperty(element, "geometry", "text");
+        rejectRepresentationProperty(element, "mode", "text");
+        rejectRepresentationProperty(element, "size", "text");
+
+        definition.kind =
+            RepresentationElementKind::Text;
+        definition.text =
+            element.value("text", "");
+
+        if (!element.contains("fontSize") || !element["fontSize"].is_number_integer())
+        {
+            throw std::runtime_error(
+                "Invalid Text Representation: fontSize is required"
+            );
+        }
+
+        definition.fontSize =
+            element["fontSize"].get<int>();
+
+        return definition;
+    }
+
+    void parseVisual(
+        JsonLoadSession& session,
+        const Json& object,
+        const std::filesystem::path& sourceFile,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("visual"))
+        {
+            definition.hasVisual = false;
+            definition.visual.depth = 0;
+            return;
+        }
+
+        if (!object["visual"].is_object())
+        {
+            throw std::runtime_error(
+                "Invalid visual declaration in '" + definition.id +
+                "': expected object"
+            );
+        }
+
+        definition.hasVisual =
+            true;
+
+        const Json& visual =
+            object["visual"];
+
+        if (visual.contains("color"))
+        {
+            if (!visual["color"].is_string())
+            {
+                throw std::runtime_error(
+                    "Invalid visual.color in '" + definition.id +
+                    "': expected string"
+                );
+            }
+
+            definition.visual.color =
+                ColorParser::parse(
+                    visual["color"].get<std::string>(),
+                    WHITE
+                );
+            definition.visual.hasColor =
+                true;
+        }
+
+        definition.visual.depth =
+            visual.value("depth", 0);
+
+        if (!visual.contains("representation"))
+        {
+            definition.visual.hasRepresentation =
+                false;
+            return;
+        }
+
+        if (!visual["representation"].is_array())
+        {
+            throw std::runtime_error(
+                "Invalid visual.representation in '" + definition.id +
+                "': expected array"
+            );
+        }
+
+        definition.visual.hasRepresentation =
+            true;
+
+        int index = 0;
+
+        for (const auto& element : visual["representation"])
+        {
+            definition.visual.representation.push_back(
+                parseRepresentationElement(
+                    session,
+                    element,
+                    sourceFile,
+                    "visual.representation." + std::to_string(index)
+                )
+            );
+
+            ++index;
         }
     }
 
@@ -3174,8 +3504,8 @@ namespace
         definition.origin =
             parseOrigin(object);
 
-        definition.size =
-            parseSize(object);
+        definition.hasSize =
+            parseSize(object, definition.size);
 
         definition.group =
             object.value("group", definition.group);
@@ -3183,15 +3513,12 @@ namespace
         definition.visible =
             object.value("visible", definition.visible);
 
-        definition.depth =
-            object.value("depth", definition.depth);
-
         definition.component =
             object.value("component", definition.component);
 
         parseLocal(object, definition);
         parseControl(object, definition);
-        parseShape(object, definition);
+        parseVisual(session, object, sourceFile, definition);
         parseMechanics(object, definition);
         parseInherit(object, definition);
         parseAttach(object, definition);

@@ -4,6 +4,8 @@
     "player": 1
   },
   "behavior": {
-    "scripts": ["input-demo"]
+    "scripts": [
+      "input-demo"
+    ]
   }
 }

@@ -1,17 +1,21 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "shape": {
-    "type": "block",
-    "color": "white",
-    "size": {
-      "width": 10,
-      "height": 10
-    }
-  },
   "visible": false,
   "collisions": {
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "rectangle"
+      }
+    ]
   }
 }

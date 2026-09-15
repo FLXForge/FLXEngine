@@ -7,14 +7,6 @@
         "y": 120
       },
       "group": "player",
-      "shape": {
-        "type": "block",
-        "color": "green",
-        "size": {
-          "width": 14,
-          "height": 18
-        }
-      },
       "states": {
         "initial": "idle",
         "idle": {
@@ -62,6 +54,18 @@
         "scripts": [
           "state-attacker"
         ]
+      },
+      "size": {
+        "width": 14,
+        "height": 18
+      },
+      "visual": {
+        "color": "green",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "enemy": {
@@ -70,16 +74,20 @@
         "y": 120
       },
       "group": "enemy",
-      "shape": {
-        "type": "block",
-        "color": "red",
-        "size": {
-          "width": 20,
-          "height": 24
-        }
-      },
       "collisions": {
         "body": {}
+      },
+      "size": {
+        "width": 20,
+        "height": 24
+      },
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   }

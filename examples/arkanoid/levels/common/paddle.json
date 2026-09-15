@@ -18,15 +18,6 @@
     }
   },
   "spawn": "manual",
-  "shape": {
-    "type": "block",
-    "mode": "fill",
-    "color": "grey",
-    "size": {
-      "width": 70,
-      "height": 10
-    }
-  },
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -73,5 +64,18 @@
         "powerup"
       ]
     }
+  },
+  "size": {
+    "width": 70,
+    "height": 10
+  },
+  "visual": {
+    "color": "grey",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

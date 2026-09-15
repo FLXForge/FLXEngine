@@ -32,7 +32,7 @@ producerVersion
 ```
 Formato vigente:
 ```text
-FormatVersion = 6
+FormatVersion = 9
 ```
 Códigos:
 - FLX-BINARY-00013 InvalidCompiledProjectMagic

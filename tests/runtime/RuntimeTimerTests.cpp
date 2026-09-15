@@ -138,7 +138,6 @@ namespace
         ObjectDefinition definition;
         definition.id = id;
         definition.visible = true;
-        definition.shapeType = "none";
 
         if (!script.empty())
         {
@@ -701,12 +700,14 @@ namespace
         root.childResources["target"] = "target";
         root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
         target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);

@@ -165,7 +165,6 @@ namespace
         ObjectDefinition definition;
         definition.id = id;
         definition.visible = true;
-        definition.shapeType = "none";
 
         if (!script.empty())
         {
@@ -173,6 +172,25 @@ namespace
         }
 
         return definition;
+    }
+
+    void setRectangleVisual(ObjectDefinition& definition, Color color)
+    {
+        RepresentationElementDefinition element;
+        element.kind = RepresentationElementKind::Primitive;
+        element.primitive = "rectangle";
+
+        definition.hasVisual = true;
+        definition.visual.color = color;
+        definition.visual.hasColor = true;
+        definition.visual.representation = { element };
+        definition.visual.hasRepresentation = true;
+    }
+
+    void setVisualDepth(ObjectDefinition& definition, int depth)
+    {
+        definition.hasVisual = true;
+        definition.visual.depth = depth;
     }
 
     RuntimeObject& requireObject(
@@ -540,6 +558,7 @@ namespace
         root.origin = Vector2{ 20.0f, 20.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
@@ -548,6 +567,7 @@ namespace
         target.offset = Vector2{ 0.0f, 0.0f };
         target.hasOffset = true;
         target.size = Vector2{ 100.0f, 100.0f };
+        target.hasSize = true;
 
         ObjectDefinition actionChild =
             objectDefinition("actionChild", "phaseProbe");
@@ -669,17 +689,20 @@ namespace
             objectDefinition("motionVictim", "killInMotion");
         motionVictim.collisions["body"].with.push_back("target");
         motionVictim.size = Vector2{ 10.0f, 10.0f };
+        motionVictim.hasSize = true;
 
         ObjectDefinition collisionVictim =
             objectDefinition("collisionVictim", "killInCollision");
         collisionVictim.collisions["body"].with.push_back("target");
         collisionVictim.size = Vector2{ 10.0f, 10.0f };
+        collisionVictim.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
         target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(actionVictim);
@@ -1167,6 +1190,7 @@ namespace
         root.origin = Vector2{ 0.0f, 0.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
         root.mechanics.motion.speed.start = 100.0f;
 
         ObjectDefinition target =
@@ -1174,6 +1198,7 @@ namespace
         target.origin = Vector2{ 0.0f, 100.0f };
         target.hasOrigin = true;
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -1216,6 +1241,7 @@ namespace
         root.origin = Vector2{ 0.0f, 0.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
         root.mechanics.motion.speed.start = 100.0f;
 
         ObjectDefinition target =
@@ -1223,6 +1249,7 @@ namespace
         target.origin = Vector2{ 0.0f, 100.0f };
         target.hasOrigin = true;
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -1426,12 +1453,14 @@ namespace
         root.childResources["target"] = "target";
         root.collisions["body"].with.push_back("targetGroup");
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "targetGroup";
         target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -1592,6 +1621,7 @@ namespace
         root.origin = Vector2{ 12.0f, 18.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 10.0f, 20.0f };
+        root.hasSize = true;
 
         harness.addObject(root);
 
@@ -1632,6 +1662,7 @@ namespace
         root.origin = Vector2{ 0.0f, 0.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 100.0f, 100.0f };
+        root.hasSize = true;
         root.mechanics.motion.speed.start = 100.0f;
         root.childResources["target"] = "target";
 
@@ -1640,6 +1671,7 @@ namespace
         target.origin = Vector2{ 10.0f, 20.0f };
         target.hasOrigin = true;
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -1743,12 +1775,14 @@ namespace
         root.childResources["target"] = "target";
         root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
         target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -1795,9 +1829,9 @@ namespace
 
         ObjectDefinition hiddenBlock =
             objectDefinition("hiddenBlock", "hideOnBorn");
-        hiddenBlock.shapeType = "block";
         hiddenBlock.size = Vector2{ 4.0f, 4.0f };
-        hiddenBlock.color = GREEN;
+        hiddenBlock.hasSize = true;
+        setRectangleVisual(hiddenBlock, GREEN);
         hiddenBlock.origin = Vector2{ 4.0f, 4.0f };
         hiddenBlock.hasOrigin = true;
 
@@ -1805,27 +1839,27 @@ namespace
         harness.addObject(hiddenBlock);
 
         require(harness.load().success, "runtime should load hidden declarative draw project");
-        require(countRenderedColor(harness, GREEN) == 0, "hide should suppress declarative shape drawing");
+        require(countRenderedColor(harness, GREEN) == 0, "hide should suppress declarative representation drawing");
     }
 
-    void testBlockShapeDrawsAroundPivot()
+    void testRectangleRepresentationDrawsAroundPivot()
     {
         RuntimeHarness harness;
 
         ObjectDefinition root =
             objectDefinition("root");
-        root.childResources["block"] = "block";
+        root.childResources["rectangleChild"] = "rectangleChild";
 
-        ObjectDefinition block =
-            objectDefinition("block");
-        block.shapeType = "block";
-        block.origin = Vector2{ 1.0f, 1.0f };
-        block.hasOrigin = true;
-        block.size = Vector2{ 4.0f, 4.0f };
-        block.color = GREEN;
+        ObjectDefinition rectangleChild =
+            objectDefinition("rectangleChild");
+        rectangleChild.origin = Vector2{ 1.0f, 1.0f };
+        rectangleChild.hasOrigin = true;
+        rectangleChild.size = Vector2{ 4.0f, 4.0f };
+        rectangleChild.hasSize = true;
+        setRectangleVisual(rectangleChild, GREEN);
 
         harness.addObject(root);
-        harness.addObject(block);
+        harness.addObject(rectangleChild);
 
         require(harness.load().success, "runtime should load block spatial draw project");
 
@@ -1882,15 +1916,15 @@ namespace
 
         ObjectDefinition low =
             objectDefinition("low", "drawProbe");
-        low.depth = -10;
+        setVisualDepth(low, -10);
 
         ObjectDefinition same =
             objectDefinition("same", "drawProbe");
-        same.depth = 0;
+        setVisualDepth(same, 0);
 
         ObjectDefinition high =
             objectDefinition("high", "drawProbe");
-        high.depth = 10;
+        setVisualDepth(high, 10);
 
         harness.addObject(root);
         harness.addObject(low);
@@ -1933,16 +1967,16 @@ namespace
 
         ObjectDefinition lowPainter =
             objectDefinition("lowPainter", "paintRedPixel");
-        lowPainter.depth = -10;
+        setVisualDepth(lowPainter, -10);
 
         ObjectDefinition highBlock =
             objectDefinition("highBlock");
-        highBlock.depth = 10;
-        highBlock.shapeType = "block";
+        setVisualDepth(highBlock, 10);
         highBlock.size = Vector2{ 3.0f, 3.0f };
+        highBlock.hasSize = true;
         highBlock.origin = Vector2{ 5.0f, 5.0f };
         highBlock.hasOrigin = true;
-        highBlock.color = BLUE;
+        setRectangleVisual(highBlock, BLUE);
 
         harness.addObject(root);
         harness.addObject(lowPainter);
@@ -2182,12 +2216,14 @@ namespace
         collisionProbe.stateTransitions["b"] = {};
         collisionProbe.collisions["body"].with.push_back("target");
         collisionProbe.size = Vector2{ 8.0f, 8.0f };
+        collisionProbe.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
         target.collisions["body"];
         target.size = Vector2{ 8.0f, 8.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(motionProbe);
@@ -2251,11 +2287,13 @@ namespace
         child.attachFollowAngle = true;
         child.collisions["body"].with.push_back("parent");
         child.size = Vector2{ 10.0f, 10.0f };
+        child.hasSize = true;
         child.group = "child";
 
         parent.group = "parent";
         parent.collisions["body"];
         parent.size = Vector2{ 30.0f, 30.0f };
+        parent.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(parent);
@@ -2355,12 +2393,14 @@ namespace
         root.childResources["target"] = "target";
         root.collisions["body"].with.push_back("target");
         root.size = Vector2{ 10.0f, 10.0f };
+        root.hasSize = true;
 
         ObjectDefinition target =
             objectDefinition("target");
         target.group = "target";
         target.collisions["body"];
         target.size = Vector2{ 10.0f, 10.0f };
+        target.hasSize = true;
 
         harness.addObject(root);
         harness.addObject(target);
@@ -2505,7 +2545,7 @@ int main()
         { "keep_only prevents other objects from resurrecting", testKeepOnlyPreventsOtherObjectsFromResurrecting },
         { "hide suppresses draw but keeps runtime phases and show restores draw", testHideSuppressesDrawButKeepsRuntimePhasesAndShowRestoresDraw },
         { "hide suppresses declarative drawing", testHideSuppressesDeclarativeDrawing },
-        { "block shape draws around pivot", testBlockShapeDrawsAroundPivot },
+        { "rectangle representation draws around pivot", testRectangleRepresentationDrawsAroundPivot },
         { "visible is read-only from JavaScript", testVisibleIsReadOnlyFromJavaScript },
         { "draw callbacks follow stable depth order", testDrawCallbacksFollowStableDepthOrder },
         { "declarative draw and JS draw share object depth order", testDeclarativeDrawAndJsDrawShareObjectDepthOrder },

@@ -4,15 +4,6 @@
     "x": 320,
     "y": 240
   },
-  "shape": {
-    "type": "circle",
-    "mode": "fill",
-    "color": "white",
-    "size": {
-      "width": 10,
-      "height": 10
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -47,8 +38,8 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 10.0,
-        "height": 10.0
+        "width": 10,
+        "height": 10
       },
       "with": [
         "wall_side",
@@ -57,5 +48,18 @@
         "paddle"
       ]
     }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "ellipse",
+        "mode": "fill"
+      }
+    ]
   }
 }

@@ -50,7 +50,7 @@ configuración diferente
 papel diferente
 ```
 
-`component`, `children`, `shape`, `mechanics`, `collisions`, `states`, scripting o audio añaden capacidades/relaciones, no clases públicas distintas.
+`component`, `children`, `visual`, `mechanics`, `collisions`, `states`, scripting o audio añaden capacidades/relaciones, no clases públicas distintas.
 
 ## 4. Capacidades
 
@@ -59,7 +59,7 @@ Un componente puede tener todas las capacidades normales de RuntimeObject:
 ```text
 scripts
 mechanics
-shape
+visual
 collisions
 children
 states

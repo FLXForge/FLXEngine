@@ -8,7 +8,7 @@
 #include "../debug/Logger.h"
 #include "../graphics/DrawingContext.h"
 #include "../graphics/DrawingRenderer.h"
-#include "../graphics/ShapePrimitiveBuilder.h"
+#include "../graphics/RepresentationPrimitiveBuilder.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
@@ -497,14 +497,17 @@ void RuntimeWorld::draw(
 
         drawingContext.begin(*object, primitives);
 
-        VisualPrimitive shapePrimitive;
-
-        if (ShapePrimitiveBuilder::build(*object, shapePrimitive))
-        {
-            primitives.push_back(
-                std::move(shapePrimitive)
+        std::vector<VisualPrimitive> representationPrimitives =
+            RepresentationPrimitiveBuilder::build(
+                *object,
+                WHITE
             );
-        }
+
+        primitives.insert(
+            primitives.end(),
+            std::make_move_iterator(representationPrimitives.begin()),
+            std::make_move_iterator(representationPrimitives.end())
+        );
 
         for (const auto& scriptPath : object->resolvedScriptPaths)
         {

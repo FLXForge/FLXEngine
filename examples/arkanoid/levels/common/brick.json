@@ -4,18 +4,22 @@
     "x": 15,
     "y": 5
   },
-  "shape": {
-    "type": "block",
-    "mode": "fill",
-    "size": {
-      "width": 30,
-      "height": 10
-    }
-  },
   "group": "brick",
   "collisions": {
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 30,
+    "height": 10
+  },
+  "visual": {
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

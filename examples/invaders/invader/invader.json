@@ -4,15 +4,6 @@
     "x": 7,
     "y": 5
   },
-  "shape": {
-    "type": "block",
-    "mode": "fill",
-    "color": "green",
-    "size": {
-      "width": 14,
-      "height": 10
-    }
-  },
   "mechanics": {
     "type": "direct",
     "motion": {
@@ -44,5 +35,18 @@
         "laser"
       ]
     }
+  },
+  "size": {
+    "width": 14,
+    "height": 10
+  },
+  "visual": {
+    "color": "green",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

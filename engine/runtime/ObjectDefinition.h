@@ -117,6 +117,49 @@ struct ColliderDefinition
     std::vector<std::string> states;
 };
 
+struct SizeAxisDefinition
+{
+    float value = 0.0f;
+    bool percentage = false;
+    bool hasValue = false;
+};
+
+struct RepresentationSizeDefinition
+{
+    SizeAxisDefinition width;
+    SizeAxisDefinition height;
+};
+
+enum class RepresentationElementKind
+{
+    Primitive,
+    Geometry,
+    Text
+};
+
+struct RepresentationElementDefinition
+{
+    RepresentationElementKind kind = RepresentationElementKind::Primitive;
+    std::string primitive;
+    RepresentationSizeDefinition size;
+    std::string primitiveMode = "fill";
+    std::vector<Vector2> geometry;
+    std::string geometryMode = "open";
+    std::string text;
+    int fontSize = 0;
+    Color color = WHITE;
+    bool hasColor = false;
+};
+
+struct VisualDefinition
+{
+    Color color = WHITE;
+    bool hasColor = false;
+    int depth = 0;
+    std::vector<RepresentationElementDefinition> representation;
+    bool hasRepresentation = false;
+};
+
 struct ObjectDefinition
 {
     std::string id;
@@ -134,19 +177,13 @@ struct ObjectDefinition
 
     bool visible = true;
     bool hasVisual = false;
-    int depth = 0;
+    VisualDefinition visual;
 
     Vector2 origin = Vector2{ 0.0f, 0.0f };
     bool hasOrigin = false;
 
     Vector2 size = Vector2{ 0.0f, 0.0f };
-
-    Color color = WHITE;
-    std::string shapeMode = "fill";
-    std::string shapeType = "block";
-    std::string textContent;
-    float radius = 0.0f;
-    std::vector<Vector2> points;
+    bool hasSize = false;
 
     MechanicsDefinition mechanics;
     InheritDefinition inherit;

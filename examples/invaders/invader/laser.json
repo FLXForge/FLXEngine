@@ -1,14 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "shape": {
-    "type": "rectangle",
-    "mode": "fill",
-    "color": "red",
-    "size": {
-      "width": 2,
-      "height": 8
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -30,5 +21,18 @@
     "body": {
       "type": "box"
     }
+  },
+  "size": {
+    "width": 2,
+    "height": 8
+  },
+  "visual": {
+    "color": "red",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

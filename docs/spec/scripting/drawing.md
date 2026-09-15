@@ -14,10 +14,10 @@ No crean `RuntimeObject`, no participan en Collision y no se ejecutan como una c
 
 ## 2. Turno visual
 
-En cada draw pass, Runtime toma un snapshot de objetos candidatos vivos y visibles, los ordena de forma estable por `depth` y procesa cada objeto todavía vivo y visible:
+En cada draw pass, Runtime toma un snapshot de objetos candidatos vivos y visibles, los ordena de forma estable por `visual.depth` y procesa cada objeto todavía vivo y visible:
 
 ```text
-shape declarativa
+visual.representation declarativa
 → draw(object) JS
 → resolución de presentación
 → render
@@ -27,11 +27,13 @@ Un objeto anterior puede ocultar o matar un objeto posterior antes de su turno v
 
 ## 3. Depth
 
-`depth` es una propiedad root-level del objeto.
+`depth` es una propiedad de `visual`.
 
 ```json
 {
-  "depth": -10
+  "visual": {
+    "depth": -10
+  }
 }
 ```
 
@@ -82,13 +84,13 @@ Las primitivas locales capturan su transformación al emitirse. Si el objeto de 
 
 La captura incluye tanto la geometría mundial resultante como la información de presentación necesaria para `wrap`. Una primitiva local ya emitida no vuelve a consultar el estado vivo del objeto de referencia durante el render del mismo pass.
 
-La shape declarativa de un objeto se captura antes de ejecutar `draw(object)`. Si `draw(object)` modifica posición, tamaño, ángulo o presentación del mismo objeto, esa mutación no cambia retroactivamente la shape ya emitida en el pass actual.
+La representación declarativa de un objeto se captura antes de ejecutar `draw(object)`. Si `draw(object)` modifica posición, tamaño, ángulo o presentación del mismo objeto, esa mutación no cambia retroactivamente la representación ya emitida en el pass actual.
 
 ## 6. Presentación y wrap
 
 Una primitiva mundial no tiene fuente de presentación y no genera copias por wrap.
 
-Una primitiva local usa el objeto de referencia como fuente de presentación. Si ese objeto usa `bounds.wrap` y está en overflow, la primitiva comparte las mismas instancias de presentación que la shape de ese objeto.
+Una primitiva local usa el objeto de referencia como fuente de presentación. Si ese objeto usa `bounds.wrap` y está en overflow, la primitiva comparte las mismas instancias de presentación que la representación declarativa de ese objeto.
 
 `draw(object)` se ejecuta una sola vez por objeto, aunque existan copias visuales por wrap.
 
@@ -123,7 +125,7 @@ Fade no es parte de Immediate Drawing, no tiene `depth` y se dibuja por encima d
 ## 10. Invariantes
 
 - DRAW-001 `draw_*` solo produce salida dentro de `draw(object)`.
-- DRAW-002 Shape declarativa se emite antes que el dibujo inmediato del mismo objeto.
+- DRAW-002 `visual.representation` declarativa se emite antes que el dibujo inmediato del mismo objeto.
 - DRAW-003 El orden visual es estable por `depth`.
 - DRAW-004 Igual `depth` conserva orden de creación/carga.
 - DRAW-005 `depth(object,value)` no reordena el pass ya iniciado.
@@ -132,5 +134,5 @@ Fade no es parte de Immediate Drawing, no tiene `depth` y se dibuja por encima d
 - DRAW-008 La referencia de coordenadas no cambia el propietario visual.
 - DRAW-009 Los bindings JS no realizan escalado físico.
 - DRAW-010 Fade es overlay global independiente de Drawing.
-- DRAW-011 Shape y primitivas locales capturan presentación al emitirse.
+- DRAW-011 Representación declarativa y primitivas locales capturan presentación al emitirse.
 - DRAW-012 Mutaciones posteriores durante el mismo hook no alteran primitivas ya emitidas.

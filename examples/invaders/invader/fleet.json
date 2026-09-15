@@ -1,15 +1,12 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 70,
     "y": 40
   },
-
   "children": {
     "invader": "invader"
   },
-
   "creation": {
     "mode": "grid",
     "rules": {

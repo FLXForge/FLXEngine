@@ -1,13 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "shape": {
-    "type": "line",
-    "color": "red",
-    "size": {
-      "width": 1,
-      "height": 12
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -36,9 +28,31 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 4.0,
-        "height": 4.0
+        "width": 4,
+        "height": 4
       }
     }
+  },
+  "size": {
+    "width": 1,
+    "height": 12
+  },
+  "visual": {
+    "color": "red",
+    "representation": [
+      {
+        "geometry": [
+          {
+            "x": 0,
+            "y": -6
+          },
+          {
+            "x": 0,
+            "y": 6
+          }
+        ],
+        "mode": "open"
+      }
+    ]
   }
 }

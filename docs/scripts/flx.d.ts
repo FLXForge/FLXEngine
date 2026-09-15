@@ -421,6 +421,16 @@ declare function position_origin(object: RuntimeObject): void;
 declare function depth(object: RuntimeObject, value: number): void;
 
 /**
+ * Overrides the object's runtime visual color.
+ */
+declare function apply_color(object: RuntimeObject, color: string): void;
+
+/**
+ * Restores the visual color declared when the object was created.
+ */
+declare function restore_color(object: RuntimeObject): void;
+
+/**
  * Returns true according to a probability chance.
  *
  * By default, base is 100, so probability(40) means 40%.

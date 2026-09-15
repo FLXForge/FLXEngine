@@ -19,7 +19,9 @@ Permite declarar un elemento de dos formas equivalentes:
 
 ```json
 "algo": {
-  "type": "block"
+  "visual": {
+    "color": "white"
+  }
 }
 ```
 
@@ -73,8 +75,12 @@ Estas dos formas son conceptualmente equivalentes:
 
 ```json
 "laser": {
-  "shape": {
-    "type": "block"
+  "visual": {
+    "representation": [
+      {
+        "primitive": "rectangle"
+      }
+    ]
   }
 }
 ```
@@ -620,7 +626,7 @@ Lugar donde se encuentra el error dentro del recurso referenciado.
 Ejemplo:
 
 ```text
-weapons/laser.json [shape.type]
+weapons/laser.json [visual.representation[0].primitive]
 ```
 
 Las Tools deben poder distinguir:

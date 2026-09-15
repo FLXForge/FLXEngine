@@ -1,13 +1,5 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-  "shape": {
-    "type": "triangle",
-    "color": "blue",
-    "size": {
-      "width": 6,
-      "height": 8
-    }
-  },
   "mechanics": {
     "type": "polar",
     "motion": {
@@ -19,6 +11,18 @@
   "behavior": {
     "scripts": [
       "tail"
+    ]
+  },
+  "size": {
+    "width": 6,
+    "height": 8
+  },
+  "visual": {
+    "color": "blue",
+    "representation": [
+      {
+        "primitive": "triangle"
+      }
     ]
   }
 }

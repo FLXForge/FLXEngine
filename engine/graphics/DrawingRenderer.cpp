@@ -1,5 +1,6 @@
 #include "DrawingRenderer.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -288,53 +289,160 @@ namespace
         );
     }
 
-    void drawShapeText(
-        const VisualPrimitive& primitive,
-        Vector2 center,
+    void drawPath(
+        const std::vector<Vector2>& points,
+        bool close,
+        Color color,
         int scale
     )
     {
-        if (primitive.text.empty())
+        if (points.empty())
         {
             return;
         }
 
-        const int fontSize =
-            fitFontSize(
-                primitive.text,
-                primitive.size.x,
-                primitive.size.y
-            );
-
-        if (isOutlineMode(primitive.shapeMode))
+        if (points.size() == 1)
         {
-            drawCenteredText(
-                primitive.text,
-                center,
-                fontSize,
-                primitive.angle,
-                primitive.color,
-                scale
-            );
+            const Vector2 point =
+                scalePoint(points.front(), scale);
 
-            drawCenteredText(
-                primitive.text,
-                center,
-                std::max(1, static_cast<int>(fontSize * 0.82f)),
-                primitive.angle,
-                BLACK,
-                scale
+            DrawRectangle(
+                static_cast<int>(std::round(point.x)),
+                static_cast<int>(std::round(point.y)),
+                std::max(1, scale),
+                std::max(1, scale),
+                color
             );
 
             return;
         }
 
-        drawCenteredText(
-            primitive.text,
-            center,
-            fontSize,
-            primitive.angle,
-            primitive.color,
+        const size_t limit =
+            close ? points.size() : points.size() - 1;
+
+        for (size_t i = 0; i < limit; ++i)
+        {
+            DrawLineEx(
+                scalePoint(points[i], scale),
+                scalePoint(points[(i + 1) % points.size()], scale),
+                std::max(1.0f, static_cast<float>(scale)),
+                color
+            );
+        }
+    }
+
+    void drawEvenOddFill(
+        const std::vector<Vector2>& logicalPoints,
+        Color color,
+        int scale
+    )
+    {
+        if (logicalPoints.size() < 3)
+        {
+            drawPath(
+                logicalPoints,
+                false,
+                color,
+                scale
+            );
+
+            return;
+        }
+
+        std::vector<Vector2> points;
+        points.reserve(logicalPoints.size());
+
+        for (Vector2 point : logicalPoints)
+        {
+            points.push_back(scalePoint(point, scale));
+        }
+
+        float minY =
+            points.front().y;
+        float maxY =
+            points.front().y;
+
+        for (Vector2 point : points)
+        {
+            minY =
+                std::min(minY, point.y);
+            maxY =
+                std::max(maxY, point.y);
+        }
+
+        const int firstY =
+            static_cast<int>(std::ceil(minY));
+        const int lastY =
+            static_cast<int>(std::floor(maxY));
+
+        for (int y = firstY; y <= lastY; ++y)
+        {
+            const float scanY =
+                static_cast<float>(y) + 0.5f;
+
+            std::vector<float> intersections;
+
+            for (size_t i = 0; i < points.size(); ++i)
+            {
+                const Vector2 a =
+                    points[i];
+                const Vector2 b =
+                    points[(i + 1) % points.size()];
+
+                if (std::abs(a.y - b.y) <= 0.00001f)
+                {
+                    continue;
+                }
+
+                const float minEdgeY =
+                    std::min(a.y, b.y);
+                const float maxEdgeY =
+                    std::max(a.y, b.y);
+
+                if (scanY < minEdgeY || scanY >= maxEdgeY)
+                {
+                    continue;
+                }
+
+                const float t =
+                    (scanY - a.y) / (b.y - a.y);
+
+                intersections.push_back(
+                    a.x + t * (b.x - a.x)
+                );
+            }
+
+            std::sort(
+                intersections.begin(),
+                intersections.end()
+            );
+
+            for (size_t i = 0; i + 1 < intersections.size(); i += 2)
+            {
+                const int startX =
+                    static_cast<int>(std::ceil(intersections[i]));
+                const int endX =
+                    static_cast<int>(std::floor(intersections[i + 1]));
+
+                if (endX < startX)
+                {
+                    continue;
+                }
+
+                DrawLine(
+                    startX,
+                    y,
+                    endX,
+                    y,
+                    color
+                );
+            }
+        }
+
+        drawPath(
+            logicalPoints,
+            true,
+            color,
             scale
         );
     }
@@ -406,7 +514,7 @@ namespace
         const Vector2 center =
             add(primitive.a, offset);
 
-        if (primitive.shapeType == "triangle")
+        if (primitive.primitive == "triangle")
         {
             const Vector2 top =
                 rotateAround(
@@ -429,7 +537,7 @@ namespace
                     primitive.angle
                 );
 
-            if (isOutlineMode(primitive.shapeMode))
+            if (isOutlineMode(primitive.primitiveMode))
             {
                 DrawLineEx(scalePoint(top, scale), scalePoint(left, scale), std::max(1.0f, static_cast<float>(scale)), primitive.color);
                 DrawLineEx(scalePoint(left, scale), scalePoint(right, scale), std::max(1.0f, static_cast<float>(scale)), primitive.color);
@@ -448,11 +556,11 @@ namespace
             return;
         }
 
-        if (primitive.shapeType == "rectangle")
+        if (primitive.primitive == "rectangle")
         {
             drawPolygon(
                 rectanglePoints(center, primitive.size, primitive.angle),
-                primitive.shapeMode,
+                primitive.primitiveMode,
                 primitive.color,
                 scale
             );
@@ -460,40 +568,55 @@ namespace
             return;
         }
 
-        if (primitive.shapeType == "circle")
+        if (primitive.primitive == "ellipse")
         {
-            float radius =
-                primitive.radius;
+            const float radiusX =
+                primitive.size.x / 2.0f;
+            const float radiusY =
+                primitive.size.y / 2.0f;
 
-            if (radius <= 0.0f)
+            if (radiusX <= 0.0f || radiusY <= 0.0f)
             {
-                radius =
-                    std::max(primitive.size.x, primitive.size.y) / 2.0f;
+                return;
             }
 
-            if (isOutlineMode(primitive.shapeMode))
+            if (isOutlineMode(primitive.primitiveMode))
             {
-                const float scaledRadius =
-                    radius * scale;
                 const float thickness =
                     std::max(1.0f, static_cast<float>(scale));
+                const Vector2 physicalCenter =
+                    scalePoint(center, scale);
+                const float physicalRadiusX =
+                    radiusX * scale;
+                const float physicalRadiusY =
+                    radiusY * scale;
 
-                DrawRing(
-                    scalePoint(center, scale),
-                    std::max(0.0f, scaledRadius - thickness / 2.0f),
-                    scaledRadius + thickness / 2.0f,
-                    0.0f,
-                    360.0f,
-                    64,
+                DrawEllipseLines(
+                    static_cast<int>(std::round(physicalCenter.x)),
+                    static_cast<int>(std::round(physicalCenter.y)),
+                    physicalRadiusX,
+                    physicalRadiusY,
                     primitive.color
                 );
+
+                if (thickness > 1.0f)
+                {
+                    DrawEllipseLines(
+                        static_cast<int>(std::round(physicalCenter.x)),
+                        static_cast<int>(std::round(physicalCenter.y)),
+                        std::max(0.0f, physicalRadiusX - thickness),
+                        std::max(0.0f, physicalRadiusY - thickness),
+                        primitive.color
+                    );
+                }
             }
             else
             {
-                DrawCircle(
+                DrawEllipse(
                     static_cast<int>(std::round(center.x * scale)),
                     static_cast<int>(std::round(center.y * scale)),
-                    radius * scale,
+                    radiusX * scale,
+                    radiusY * scale,
                     primitive.color
                 );
             }
@@ -501,7 +624,7 @@ namespace
             return;
         }
 
-        if (primitive.shapeType == "polygon")
+        if (primitive.primitive == "geometry")
         {
             std::vector<Vector2> points;
             points.reserve(primitive.points.size());
@@ -517,89 +640,39 @@ namespace
                 );
             }
 
-            drawPolygon(
-                points,
-                primitive.shapeMode,
-                primitive.color,
-                scale
-            );
+            if (primitive.geometryMode == "fill")
+            {
+                drawEvenOddFill(
+                    points,
+                    primitive.color,
+                    scale
+                );
+            }
+            else
+            {
+                drawPath(
+                    points,
+                    primitive.geometryMode == "close",
+                    primitive.color,
+                    scale
+                );
+            }
 
             return;
         }
 
-        if (primitive.shapeType == "line")
+        if (primitive.primitive == "text")
         {
-            const float thickness =
-                std::max(1.0f, primitive.size.x * scale);
-
-            const Vector2 start =
-                scalePoint(
-                    rotateAround(
-                        Vector2{ center.x, center.y - primitive.size.y / 2.0f },
-                        center,
-                        primitive.angle
-                    ),
-                    scale
-                );
-
-            const Vector2 end =
-                scalePoint(
-                    rotateAround(
-                        Vector2{ center.x, center.y + primitive.size.y / 2.0f },
-                        center,
-                        primitive.angle
-                    ),
-                    scale
-                );
-
-            DrawLineEx(start, end, thickness, primitive.color);
-            return;
-        }
-
-        if (primitive.shapeType == "text")
-        {
-            drawShapeText(
-                primitive,
+            drawCenteredText(
+                primitive.text,
                 center,
+                primitive.fontSize,
+                primitive.angle,
+                primitive.color,
                 scale
             );
 
             return;
-        }
-
-        const std::string mode =
-            primitive.shapeMode;
-
-        const Vector2 size =
-            primitive.size;
-
-        if (isOutlineMode(mode))
-        {
-            drawPolygon(
-                rectanglePoints(center, size, 0.0f),
-                "outline",
-                primitive.color,
-                scale
-            );
-        }
-        else
-        {
-            const Vector2 topLeft =
-                scalePoint(
-                    Vector2{
-                        center.x - size.x / 2.0f,
-                        center.y - size.y / 2.0f
-                    },
-                    scale
-                );
-
-            DrawRectangle(
-                static_cast<int>(std::round(topLeft.x)),
-                static_cast<int>(std::round(topLeft.y)),
-                static_cast<int>(std::round(size.x * scale)),
-                static_cast<int>(std::round(size.y * scale)),
-                primitive.color
-            );
         }
     }
 }

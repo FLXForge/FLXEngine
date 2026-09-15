@@ -1,7 +1,7 @@
 # Modelo espacial de RuntimeObject
 
 **Estado:** Especificación normativa\
-**Ámbito:** RuntimeObject, Drawing/Shapes, Collision, Mechanics, Bounds
+**Ámbito:** RuntimeObject, Drawing/Visual Representation, Collision, Mechanics, Bounds
 y sistemas consumidores de posición y tamaño\
 **Versión objetivo:** FLX v0.3.0
 
@@ -17,13 +17,13 @@ Su objetivo es fijar de forma transversal:
 -   el significado de `origin`, `x`, `y`, `width` y `height`;
 -   la referencia espacial o **pivot** de un `RuntimeObject`;
 -   la relación entre el pivot y la geometría local;
--   la transformación de Shapes y Colliders;
+-   la transformación de Visual Representation y Colliders;
 -   el comportamiento espacial de `resize`;
 -   las invariantes que otros subsistemas DEBEN respetar.
 
 Este contrato pertenece a `RuntimeObject`.
 
-Drawing, Shapes, Collision, Mechanics, Bounds y otros subsistemas
+Drawing, Visual Representation, Collision, Mechanics, Bounds y otros subsistemas
 consumen este modelo, pero NO DEBEN redefinir el significado de las
 coordenadas del objeto.
 
@@ -46,10 +46,10 @@ representa la posición del pivot en el espacio del mundo.
 Por tanto:
 
 > El significado espacial de `x` e `y` pertenece a `RuntimeObject` y NO
-> depende de la existencia, número o tipo de Shapes, Colliders u otras
+> depende de la existencia, número o tipo de representaciones visuales, Colliders u otras
 > geometrías asociadas.
 
-Un objeto sin representación visual, un `block`, un `circle`, un `text`
+Un objeto sin representación visual, un `rectangle`, un `ellipse`, un `text`
 y un objeto con varios colliders comparten exactamente el mismo
 significado de `x` e `y`.
 
@@ -126,7 +126,7 @@ centro del objeto».
 
 Un `RuntimeObject` puede:
 
--   no tener Shape;
+-   no tener representación visual;
 -   contener una geometría asimétrica;
 -   tener varios Colliders;
 -   tener Colliders desplazados;
@@ -370,33 +370,31 @@ cómo se obtiene `localPoint`, pero NO cambiará el significado de
 
 ------------------------------------------------------------------------
 
-## 10. Shapes
+## 10. Visual Representation
 
-Un Shape consume el modelo espacial del RuntimeObject.
+`visual.representation` consume el modelo espacial del RuntimeObject.
 
-Un Shape NO define el significado de `x/y`.
+La representación visual NO define el significado de `x/y`.
 
 ### 10.1 Regla común
 
-Todos los tipos de Shape DEBEN utilizar la misma referencia espacial.
+Todos los elementos de representación DEBEN utilizar la misma referencia espacial.
 
-El significado de `x/y` NO PUEDE variar según `shape.type`.
+El significado de `x/y` NO PUEDE variar según el tipo de representación.
 
 Esto implica que:
 
 ``` text
-block
 rectangle
 triangle
-circle
-polygon
-line
+ellipse
+geometry
 text
 ```
 
 deben interpretarse respecto al mismo pivot.
 
-### 10.2 Shapes dimensionados
+### 10.2 Elementos dimensionados
 
 En v0.3.0, las geometrías dimensionadas ordinarias se construyen
 alrededor del pivot.
@@ -412,22 +410,21 @@ local bottom = +height / 2
 
 antes de aplicar las transformaciones correspondientes.
 
-### 10.3 Block
+### 10.3 Primitive
 
-`block` conserva su identidad como Shape rectangular simple.
+`primitive` admite `rectangle`, `triangle` y `ellipse`.
 
-La diferencia entre `block` y `rectangle` NO es el significado de `x/y`.
+Las diferencias entre primitives NO cambian el significado de `x/y`.
 
-Ambos comparten el mismo pivot.
+Todas comparten el mismo pivot.
 
-Las diferencias de capacidades ---por ejemplo, el tratamiento de la
-rotación--- pertenecen al contrato de Shapes/Drawing y no modifican el
-modelo espacial de RuntimeObject.
+Cada primitive puede declarar tamaño propio por eje. Si una dimensión no se
+declara, hereda la dimensión correspondiente del `RuntimeObject`.
 
 ### 10.4 Text
 
-La caja lógica de un Shape `text` se sitúa respecto al mismo pivot que
-el resto de Shapes.
+El texto declarativo se sitúa respecto al mismo pivot que el resto de
+representaciones.
 
 Para una caja de tamaño `width × height`, su esquina superior izquierda
 se deriva de la referencia central actual:
@@ -439,11 +436,11 @@ topLeft.y = y - height / 2
 
 La caja de texto NO redefine `x/y` como esquina superior izquierda.
 
-### 10.5 Polygon y geometrías asimétricas
+### 10.5 Geometry y geometrías asimétricas
 
-Los puntos de un polígono son geometría local respecto al pivot.
+Los puntos de `geometry` son geometría local respecto al pivot.
 
-Un polígono puede ser asimétrico y su centro geométrico puede no
+Una geometría puede ser asimétrica y su centro geométrico puede no
 coincidir con el pivot.
 
 Esto NO cambia el significado de `x/y`.
@@ -713,9 +710,9 @@ parent.position
 
 El resultado establece la posición inicial del pivot del child.
 
-Creation NO debe depender del tipo de Shape del objeto creado.
+Creation NO debe depender del tipo de representación visual del objeto creado.
 
-El tamaño de una celda y el tamaño de un Shape son conceptos diferentes.
+El tamaño de una celda y el tamaño de una representación son conceptos diferentes.
 
 ------------------------------------------------------------------------
 
@@ -753,7 +750,7 @@ object.height
 
 exponen las dimensiones vivas.
 
-El hecho de que el objeto posea un Shape determinado NO modifica el
+El hecho de que el objeto posea una representación visual determinada NO modifica el
 significado de estas propiedades.
 
 Las operaciones de posición modifican la posición del pivot.
@@ -790,12 +787,12 @@ contrato.
 
 ## 20. Separación respecto a Drawing
 
-Drawing y Shapes consumen el pivot y el espacio local definidos aquí.
+Drawing y Visual Representation consumen el pivot y el espacio local definidos aquí.
 
 Drawing puede definir:
 
--   cómo se rasteriza cada Shape;
--   qué Shapes admiten rotación;
+-   cómo se rasteriza cada representación;
+-   qué representaciones admiten rotación;
 -   modos fill/outline;
 -   propiedades específicas de geometría;
 -   comportamiento visual.
@@ -881,7 +878,7 @@ Las siguientes reglas son invariantes del modelo espacial de FLX:
 2.  `origin` representa la posición inicial de ese mismo pivot.
 3.  El origen `(0,0)` del mundo y `RuntimeObject.origin` son conceptos
     diferentes.
-4.  El significado de `x/y` NO depende de `shape.type`.
+4.  El significado de `x/y` NO depende del tipo de representación visual.
 5.  El significado de `x/y` NO depende de la existencia de un Collider.
 6.  Un RuntimeObject puede existir sin geometría y conservar exactamente
     el mismo modelo espacial.
@@ -920,12 +917,14 @@ Objeto:
     "x": 100,
     "y": 80
   },
-  "shape": {
-    "type": "block",
-    "size": {
-      "width": 40,
-      "height": 20
-    }
+  "size": {
+    "width": 40,
+    "height": 20
+  },
+  "visual": {
+    "representation": [
+      { "primitive": "rectangle" }
+    ]
   },
   "collisions": {
     "body": {
@@ -958,7 +957,7 @@ Representación conceptual:
        height = 20
 ```
 
-El Shape y el Collider heredado comparten la misma referencia.
+La representación y el Collider heredado comparten la misma referencia.
 
 Tras:
 
@@ -1069,7 +1068,7 @@ posteriormente a redefinir:
 
 La futura capacidad deberá especificar de forma independiente cómo se
 expresa la ubicación local del pivot y cómo interactúa con resize,
-Shapes y otras geometrías.
+Visual Representation y otras geometrías.
 
 Hasta que exista esa especificación, el pivot local permanece fijado
 según las reglas de v0.3.0.
@@ -1095,6 +1094,6 @@ estas preguntas:
 Estas tres cuestiones NO deben mezclarse.
 
 Mantener esta separación es la base para que futuras capacidades como
-pivots desplazables, nuevas Shapes, cámaras, scroll o transformaciones
+pivots desplazables, nuevas representaciones, cámaras, scroll o transformaciones
 adicionales puedan incorporarse sin alterar el contrato fundamental de
 `RuntimeObject`.

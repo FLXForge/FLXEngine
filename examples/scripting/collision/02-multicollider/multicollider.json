@@ -7,14 +7,6 @@
         "y": 110
       },
       "group": "scanner",
-      "shape": {
-        "type": "block",
-        "color": "cyan",
-        "size": {
-          "width": 12,
-          "height": 12
-        }
-      },
       "mechanics": {
         "type": "polar",
         "motion": {
@@ -50,6 +42,18 @@
         "scripts": [
           "multicollider-scanner"
         ]
+      },
+      "size": {
+        "width": 12,
+        "height": 12
+      },
+      "visual": {
+        "color": "cyan",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "enemy": {
@@ -58,16 +62,20 @@
         "y": 110
       },
       "group": "enemy",
-      "shape": {
-        "type": "block",
-        "color": "red",
-        "size": {
-          "width": 24,
-          "height": 30
-        }
-      },
       "collisions": {
         "body": {}
+      },
+      "size": {
+        "width": 24,
+        "height": 30
+      },
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   }

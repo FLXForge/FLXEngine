@@ -188,6 +188,210 @@ namespace flx::binary
             };
         }
 
+        uint8_t representationKindValue(RepresentationElementKind kind)
+        {
+            switch (kind)
+            {
+            case RepresentationElementKind::Primitive:
+                return 0u;
+            case RepresentationElementKind::Geometry:
+                return 1u;
+            case RepresentationElementKind::Text:
+                return 2u;
+            }
+
+            return 0u;
+        }
+
+        RepresentationElementKind representationKindFromValue(
+            uint8_t value,
+            const std::string& field
+        )
+        {
+            if (value == 0u)
+            {
+                return RepresentationElementKind::Primitive;
+            }
+
+            if (value == 1u)
+            {
+                return RepresentationElementKind::Geometry;
+            }
+
+            if (value == 2u)
+            {
+                return RepresentationElementKind::Text;
+            }
+
+            throw BinaryException(
+                DiagnosticCode::InvalidCompiledProjectValue,
+                "Invalid representation element kind",
+                field
+            );
+        }
+
+        void writeSizeAxis(
+            BinaryWriter& writer,
+            const SizeAxisDefinition& axis
+        )
+        {
+            writer.writeF32(axis.value);
+            writer.writeBool(axis.percentage);
+            writer.writeBool(axis.hasValue);
+        }
+
+        SizeAxisDefinition readSizeAxis(
+            BinaryReader& reader,
+            const std::string& field
+        )
+        {
+            SizeAxisDefinition axis;
+            axis.value = reader.readF32(field + ".value");
+            axis.percentage = reader.readBool(field + ".percentage");
+            axis.hasValue = reader.readBool(field + ".hasValue");
+            return axis;
+        }
+
+        void writeRepresentationSize(
+            BinaryWriter& writer,
+            const RepresentationSizeDefinition& size
+        )
+        {
+            writeSizeAxis(writer, size.width);
+            writeSizeAxis(writer, size.height);
+        }
+
+        RepresentationSizeDefinition readRepresentationSize(
+            BinaryReader& reader,
+            const std::string& field
+        )
+        {
+            RepresentationSizeDefinition size;
+            size.width = readSizeAxis(reader, field + ".width");
+            size.height = readSizeAxis(reader, field + ".height");
+            return size;
+        }
+
+        void writeRepresentationElement(
+            BinaryWriter& writer,
+            const RepresentationElementDefinition& element
+        )
+        {
+            writer.writeU8(representationKindValue(element.kind));
+            writer.writeString(element.primitive);
+            writeRepresentationSize(writer, element.size);
+            writer.writeString(element.primitiveMode);
+            writer.writeCount(
+                element.geometry.size(),
+                MaxPointCount,
+                "object.visual.representation.geometry"
+            );
+
+            for (Vector2 point : element.geometry)
+            {
+                writeVector2(writer, point);
+            }
+
+            writer.writeString(element.geometryMode);
+            writer.writeString(element.text);
+            writer.writeI32(element.fontSize);
+            writeColor(writer, element.color);
+            writer.writeBool(element.hasColor);
+        }
+
+        RepresentationElementDefinition readRepresentationElement(
+            BinaryReader& reader
+        )
+        {
+            RepresentationElementDefinition element;
+            element.kind =
+                representationKindFromValue(
+                    reader.readU8("object.visual.representation.kind"),
+                    "object.visual.representation.kind"
+                );
+            element.primitive =
+                reader.readString("object.visual.representation.primitive");
+            element.size =
+                readRepresentationSize(
+                    reader,
+                    "object.visual.representation.size"
+                );
+            element.primitiveMode =
+                reader.readString("object.visual.representation.primitive.mode");
+
+            const uint32_t pointCount =
+                reader.readCount(
+                    MaxPointCount,
+                    "object.visual.representation.geometry"
+                );
+
+            element.geometry.reserve(pointCount);
+
+            for (uint32_t i = 0; i < pointCount; ++i)
+            {
+                element.geometry.push_back(readVector2(reader));
+            }
+
+            element.geometryMode =
+                reader.readString("object.visual.representation.geometry.mode");
+            element.text =
+                reader.readString("object.visual.representation.text");
+            element.fontSize =
+                reader.readI32("object.visual.representation.fontSize");
+            element.color =
+                readColor(reader);
+            element.hasColor =
+                reader.readBool("object.visual.representation.color");
+            return element;
+        }
+
+        void writeVisual(
+            BinaryWriter& writer,
+            const VisualDefinition& visual
+        )
+        {
+            writeColor(writer, visual.color);
+            writer.writeBool(visual.hasColor);
+            writer.writeI32(visual.depth);
+            writer.writeCount(
+                visual.representation.size(),
+                MaxCollectionCount,
+                "object.visual.representation"
+            );
+
+            for (const RepresentationElementDefinition& element : visual.representation)
+            {
+                writeRepresentationElement(writer, element);
+            }
+
+            writer.writeBool(visual.hasRepresentation);
+        }
+
+        VisualDefinition readVisual(BinaryReader& reader)
+        {
+            VisualDefinition visual;
+            visual.color = readColor(reader);
+            visual.hasColor = reader.readBool("object.visual.color");
+            visual.depth = reader.readI32("object.visual.depth");
+
+            const uint32_t representationCount =
+                reader.readCount(
+                    MaxCollectionCount,
+                    "object.visual.representation"
+                );
+
+            visual.representation.reserve(representationCount);
+
+            for (uint32_t i = 0; i < representationCount; ++i)
+            {
+                visual.representation.push_back(readRepresentationElement(reader));
+            }
+
+            visual.hasRepresentation =
+                reader.readBool("object.visual.representation.present");
+            return visual;
+        }
+
         void writeStringVector(
             BinaryWriter& writer,
             const std::vector<std::string>& values
@@ -1043,25 +1247,11 @@ namespace flx::binary
             writer.writeBool(object.attachOnCreate);
             writer.writeBool(object.visible);
             writer.writeBool(object.hasVisual);
-            writer.writeI32(object.depth);
+            writeVisual(writer, object.visual);
             writeVector2(writer, object.origin);
             writer.writeBool(object.hasOrigin);
             writeVector2(writer, object.size);
-            writeColor(writer, object.color);
-            writer.writeString(object.shapeMode);
-            writer.writeString(object.shapeType);
-            writer.writeString(object.textContent);
-            writer.writeF32(object.radius);
-            writer.writeCount(
-                object.points.size(),
-                MaxPointCount,
-                "object.points"
-            );
-
-            for (Vector2 point : object.points)
-            {
-                writeVector2(writer, point);
-            }
+            writer.writeBool(object.hasSize);
 
             writeMechanics(writer, object.mechanics);
             writeInherit(writer, object.inherit);
@@ -1198,29 +1388,12 @@ namespace flx::binary
             object.attachFollowAngle = reader.readBool("object.attach.angle");
             object.attachOnCreate = reader.readBool("object.attach.born");
             object.visible = reader.readBool("object.visible");
-            object.hasVisual = reader.readBool("object.shape");
-            object.depth = reader.readI32("object.depth");
+            object.hasVisual = reader.readBool("object.visual");
+            object.visual = readVisual(reader);
             object.origin = readVector2(reader);
             object.hasOrigin = reader.readBool("object.origin");
             object.size = readVector2(reader);
-            object.color = readColor(reader);
-            object.shapeMode = reader.readString("object.shape.mode");
-            object.shapeType = reader.readString("object.shape.type");
-            object.textContent = reader.readString("object.shape.content");
-            object.radius = reader.readF32("object.shape.radius");
-
-            const uint32_t pointCount =
-                reader.readCount(
-                    MaxPointCount,
-                    "object.shape.points"
-                );
-
-            object.points.reserve(pointCount);
-
-            for (uint32_t i = 0; i < pointCount; ++i)
-            {
-                object.points.push_back(readVector2(reader));
-            }
+            object.hasSize = reader.readBool("object.size");
 
             object.mechanics = readMechanics(reader);
             object.inherit = readInherit(reader);
@@ -1458,7 +1631,7 @@ namespace flx::binary
     )
     {
         writer.writeU32(Magic);
-        writer.writeU32(FormatVersion);
+        writer.writeU32(CompiledProjectCodec::FormatVersion);
         writer.writeString(std::string(FlxVersion::Text));
         writeContext(writer, project.context);
         writer.writeString(project.rootId);

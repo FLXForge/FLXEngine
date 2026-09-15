@@ -111,9 +111,13 @@ namespace
             "{\n"
             "  \"children\": {\n"
             "    \"ship\": {\n"
-            "      \"shape\": {\n"
-            "        \"type\": \"circle\",\n"
-            "        \"radius\": 4,\n"
+            "      \"visual\": {\n"
+            "        \"representation\": [\n"
+            "          {\n"
+            "            \"primitive\": \"ellipse\",\n"
+            "            \"size\": { \"width\": 8, \"height\": 8 }\n"
+            "          }\n"
+            "        ],\n"
             "        \"color\": \"white\"\n"
             "      }\n"
             "    }\n"
@@ -134,8 +138,8 @@ namespace
             findChild(result, rootObject(result), "ship");
 
         require(ship != nullptr, "REF-002 inline child should exist");
-        require(ship->shapeType == "circle", "REF-002 inline child shape should be parsed");
-        require(ship->radius == 4.0f, "REF-002 inline child radius should be parsed");
+        require(ship->visual.representation.size() == 1, "REF-002 inline child representation should be parsed");
+        require(ship->visual.representation[0].primitive == "ellipse", "REF-002 inline child primitive should be parsed");
     }
 
     void testRef002RelativeObjectReference()
@@ -149,7 +153,7 @@ namespace
         );
         writeFile(
             project.world / "objects" / "ship.json",
-            "{ \"shape\": { \"type\": \"block\", \"size\": { \"width\": 12, \"height\": 6 } } }\n"
+            "{ \"size\": { \"width\": 12, \"height\": 6 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
         );
 
         const CompilationResult result =

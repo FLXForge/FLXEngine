@@ -101,7 +101,7 @@ collider.height = declared height ?? object.height
 
 Collision nunca inventa geometría. Todo collider debe resolver `effective width > 0` y `effective height > 0`.
 
-Un RuntimeObject no necesita Shape para tener collider.
+Un RuntimeObject no necesita representación visual para tener collider.
 
 ```json
 {
@@ -115,15 +115,15 @@ Un RuntimeObject no necesita Shape para tener collider.
 ```
 
 ## 6. Espacio local y transformación
-La geometría Collision es independiente de Shape.
+La geometría Collision es independiente de Visual Representation.
 
 ```text
 RuntimeObject
-├─ Shape
+├─ Visual Representation
 └─ Colliders
 ```
 
-Puede imaginarse el RuntimeObject como un lienzo o post-it: shape y colliders son elementos locales fijados a ese lienzo; mover o rotar el RuntimeObject transforma sus elementos.
+Puede imaginarse el RuntimeObject como un lienzo o post-it: la representación visual y los colliders son elementos locales fijados a ese lienzo; mover o rotar el RuntimeObject transforma sus elementos.
 
 ```text
 world collider transform
@@ -610,7 +610,7 @@ continuous collision detection
 - COL-002 Collider no es RuntimeObject ni identidad pública independiente.
 - COL-003 `collisions` puede contener múltiples colliders nombrados.
 - COL-004 `box` y `ellipse` son las geometrías públicas de 0.3.0.
-- COL-005 Collision geometry es independiente de Shape.
+- COL-005 Collision geometry es independiente de Visual Representation.
 - COL-006 Todo collider debe resolver tamaño efectivo positivo.
 - COL-007 `with` declara interacción dirigida.
 - COL-008 Ausencia o vacío de `with` produce collider pasivo.

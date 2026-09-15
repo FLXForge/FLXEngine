@@ -20,7 +20,7 @@
           "roughness": 0.8,
           "noise": 0.4,
           "resonance": 0.1,
-          "metal": 0.0
+          "metal": 0
         }
       },
       "duration": 0.18,
@@ -59,8 +59,8 @@
     "body": {
       "type": "ellipse",
       "size": {
-        "width": 32.0,
-        "height": 32.0
+        "width": 32,
+        "height": 32
       },
       "with": [
         "ship",

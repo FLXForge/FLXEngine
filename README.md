@@ -47,13 +47,16 @@ FLX is especially suited for:
     "y": 160
   },
 
-  "shape": {
-    "type": "triangle",
-    "color": "WHITE",
-    "size": {
-      "width": 18,
-      "height": 24
-    }
+  "size": {
+    "width": 18,
+    "height": 24
+  },
+
+  "visual": {
+    "color": "white",
+    "representation": [
+      { "primitive": "triangle" }
+    ]
   }
 }
 ```
@@ -69,8 +72,8 @@ function motion(ship) {
 FLX keeps game structure simple, readable and easy to modify.
 
 JSON files describe FLX objects. Objects gain capabilities from the
-properties they declare: `shape` makes them drawable, `collision` makes
-them collide, `behavior` attaches scripts and `children` declares what
+properties they declare: `visual.representation` makes them drawable,
+`collision` makes them collide, `behavior` attaches scripts and `children` declares what
 can exist below them.
 
 Objects can also declare local sounds:
@@ -254,7 +257,7 @@ leading slash points to the manifest `path`, not to the operating system root:
 ```json
 {
   "note": "/music/notes:a",
-  "shape": "/ui/title_shape"
+  "visual": "/ui/title_visual"
 }
 ```
 
@@ -264,7 +267,7 @@ character, fidelity and external audio resource support. Runtime support applies
 voice limits before generating waves. In `reserved` mode music and sound voices
 stay separate; in `shared` mode they form a common pool and `steal_from_music`
 can temporarily pause music so a sound effect can play. Synthesis/fidelity
-settings shape generated oscillators. File audio resources are validated but not
+settings affect generated oscillators. File audio resources are validated but not
 played yet.
 
 ---

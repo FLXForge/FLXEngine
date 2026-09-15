@@ -170,7 +170,6 @@ namespace
         ObjectDefinition definition;
         definition.id = id;
         definition.visible = true;
-        definition.shapeType = "none";
 
         if (!script.empty())
         {
@@ -178,6 +177,25 @@ namespace
         }
 
         return definition;
+    }
+
+    void setRectangleVisual(ObjectDefinition& definition, Color color)
+    {
+        RepresentationElementDefinition element;
+        element.kind = RepresentationElementKind::Primitive;
+        element.primitive = "rectangle";
+
+        definition.hasVisual = true;
+        definition.visual.color = color;
+        definition.visual.hasColor = true;
+        definition.visual.representation = { element };
+        definition.visual.hasRepresentation = true;
+    }
+
+    void setVisualDepth(ObjectDefinition& definition, int depth)
+    {
+        definition.hasVisual = true;
+        definition.visual.depth = depth;
     }
 
     RuntimeObject runtimeObject(const std::string& name)
@@ -319,6 +337,7 @@ namespace
         reference.position = Vector2{ 10.0f, 20.0f };
         reference.angle = 90.0f;
         reference.size = Vector2{ 100.0f, 100.0f };
+        reference.hasSize = true;
 
         DrawingContext context;
         std::vector<VisualPrimitive> primitives;
@@ -351,6 +370,7 @@ namespace
         reference.runtimeId = "reference#1";
         reference.position = Vector2{ 5.0f, 5.0f };
         reference.size = Vector2{ 6.0f, 6.0f };
+        reference.hasSize = true;
         reference.boundsMode = "wrap";
         reference.boundsOverflow = true;
 
@@ -426,6 +446,7 @@ namespace
         root.origin = Vector2{ 1.0f, 5.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 6.0f, 6.0f };
+        root.hasSize = true;
         root.boundsMode = "wrap";
         root.boundsOverflow = true;
 
@@ -436,7 +457,7 @@ namespace
         require(countRenderedColor(harness, BLUE, 1, 80, 60) == 2, "local primitive should share reference wrap presentation");
     }
 
-    void testShapePresentationSnapshotDoesNotChangeAfterDrawMutation()
+    void testRepresentationPresentationSnapshotDoesNotChangeAfterDrawMutation()
     {
         RuntimeHarness harness;
         harness.addScript(
@@ -448,15 +469,15 @@ namespace
         root.origin = Vector2{ 1.0f, 5.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 6.0f, 6.0f };
-        root.shapeType = "block";
-        root.color = RED;
+        root.hasSize = true;
+        setRectangleVisual(root, RED);
         root.boundsMode = "wrap";
         root.boundsOverflow = true;
 
         harness.addObject(root);
-        require(harness.load().success, "runtime should load shape snapshot project");
+        require(harness.load().success, "runtime should load representation snapshot project");
 
-        require(countRenderedColor(harness, RED, 1, 80, 60) > 36, "shape presentation should use snapshot captured before draw mutation");
+        require(countRenderedColor(harness, RED, 1, 80, 60) > 36, "representation should use snapshot captured before draw mutation");
     }
 
     void testLocalPrimitivePresentationSnapshotDoesNotChangeAfterReferenceMutation()
@@ -475,6 +496,7 @@ namespace
         root.origin = Vector2{ 1.0f, 5.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 6.0f, 6.0f };
+        root.hasSize = true;
         root.boundsMode = "wrap";
         root.boundsOverflow = true;
 
@@ -485,7 +507,7 @@ namespace
         require(countRenderedColor(harness, BLUE, 1, 80, 60) == 1, "second local primitive should use later non-overflow presentation snapshot");
     }
 
-    void testShapeAndLocalPrimitiveWrapUseSameSnapshot()
+    void testRepresentationAndLocalPrimitiveWrapUseSameSnapshot()
     {
         RuntimeHarness harness;
         harness.addScript(
@@ -497,16 +519,16 @@ namespace
         root.origin = Vector2{ 1.0f, 5.0f };
         root.hasOrigin = true;
         root.size = Vector2{ 6.0f, 6.0f };
-        root.shapeType = "block";
-        root.color = BLUE;
+        root.hasSize = true;
+        setRectangleVisual(root, BLUE);
         root.boundsMode = "wrap";
         root.boundsOverflow = true;
 
         harness.addObject(root);
         require(harness.load().success, "runtime should load matching wrap snapshot project");
 
-        require(countRenderedColor(harness, RED, 1, 80, 60) == 2, "local primitive should cover both shape presentation instances from the same snapshot");
-        require(countRenderedColor(harness, BLUE, 1, 80, 60) > 36, "shape should use the same wrap presentation snapshot as the local primitive");
+        require(countRenderedColor(harness, RED, 1, 80, 60) == 2, "local primitive should cover both representation presentation instances from the same snapshot");
+        require(countRenderedColor(harness, BLUE, 1, 80, 60) > 36, "representation should use the same wrap presentation snapshot as the local primitive");
     }
 
     void testDepthControlsStableObjectVisualTurnOrder()
@@ -529,10 +551,10 @@ namespace
 
         ObjectDefinition sameA = objectDefinition("sameA", "orderProbe");
         ObjectDefinition low = objectDefinition("low", "orderProbe");
-        low.depth = -10;
+        setVisualDepth(low, -10);
         ObjectDefinition sameB = objectDefinition("sameB", "orderProbe");
         ObjectDefinition high = objectDefinition("high", "orderProbe");
-        high.depth = 10;
+        setVisualDepth(high, 10);
 
         harness.addObject(root);
         harness.addObject(sameA);
@@ -575,9 +597,9 @@ namespace
         root.childResources["second"] = "second";
 
         ObjectDefinition first = objectDefinition("first", "raiseSelf");
-        first.depth = 0;
+        setVisualDepth(first, 0);
         ObjectDefinition second = objectDefinition("second", "stableProbe");
-        second.depth = 5;
+        setVisualDepth(second, 5);
 
         harness.addObject(root);
         harness.addObject(first);
@@ -618,9 +640,9 @@ namespace
         root.childResources["target"] = "target";
 
         ObjectDefinition hider = objectDefinition("hider", "hider");
-        hider.depth = -1;
+        setVisualDepth(hider, -1);
         ObjectDefinition target = objectDefinition("target", "targetDraw");
-        target.depth = 1;
+        setVisualDepth(target, 1);
 
         harness.addObject(root);
         harness.addObject(hider);
@@ -652,9 +674,9 @@ namespace
         root.childResources["target"] = "target";
 
         ObjectDefinition killer = objectDefinition("killer", "killer");
-        killer.depth = -1;
+        setVisualDepth(killer, -1);
         ObjectDefinition target = objectDefinition("target", "targetDraw");
-        target.depth = 1;
+        setVisualDepth(target, 1);
 
         harness.addObject(root);
         harness.addObject(killer);
@@ -705,7 +727,7 @@ namespace
         require(countRenderedColor(harness, RED, 1, 80, 60) == 1, "HUD should be drawn from draw() using state produced by action()");
     }
 
-    void testShapeAndImmediateDrawShareSameObjectDepth()
+    void testRepresentationAndImmediateDrawShareSameObjectDepth()
     {
         RuntimeHarness harness;
         harness.addScript(
@@ -718,26 +740,26 @@ namespace
         root.childResources["highBlock"] = "highBlock";
 
         ObjectDefinition lowPainter = objectDefinition("lowPainter", "paintRed");
-        lowPainter.depth = -5;
+        setVisualDepth(lowPainter, -5);
 
         ObjectDefinition highBlock = objectDefinition("highBlock");
-        highBlock.depth = 5;
-        highBlock.shapeType = "block";
+        setVisualDepth(highBlock, 5);
         highBlock.origin = Vector2{ 5.0f, 5.0f };
         highBlock.hasOrigin = true;
         highBlock.size = Vector2{ 3.0f, 3.0f };
-        highBlock.color = BLUE;
+        highBlock.hasSize = true;
+        setRectangleVisual(highBlock, BLUE);
 
         harness.addObject(root);
         harness.addObject(lowPainter);
         harness.addObject(highBlock);
 
         require(harness.load().success, "runtime should load shared depth project");
-        require(countRenderedColor(harness, BLUE, 1, 80, 60) == 9, "higher depth shape should cover lower depth immediate primitive");
+        require(countRenderedColor(harness, BLUE, 1, 80, 60) == 9, "higher depth representation should cover lower depth immediate primitive");
         require(countRenderedColor(harness, RED, 1, 80, 60) == 0, "immediate drawing should not run as a final overlay pipeline");
     }
 
-    void testJsonDepthIsRootLevelAndShapeLayerIsRejected()
+    void testJsonDepthIsVisualLevelAndRootDepthIsRejected()
     {
         const std::filesystem::path root = testRoot() / "drawing_depth_contract";
         std::filesystem::remove_all(root);
@@ -753,36 +775,31 @@ namespace
         writeFile(
             root / "game" / "root.json",
             "{\n"
-            "  \"depth\": 7,\n"
-            "  \"shape\": {\n"
-            "    \"type\": \"block\",\n"
+            "  \"size\": { \"width\": 2, \"height\": 2 },\n"
+            "  \"visual\": {\n"
+            "    \"depth\": 7,\n"
             "    \"color\": \"white\",\n"
-            "    \"size\": { \"width\": 2, \"height\": 2 }\n"
+            "    \"representation\": [{ \"primitive\": \"rectangle\" }]\n"
             "  }\n"
             "}\n"
         );
 
         CompilationResult valid = flx::test::compile(root / "game.flx");
-        require(valid.success, "root depth should compile");
+        require(valid.success, "visual depth should compile");
         const ObjectDefinition* compiledRoot = valid.project.resources.findObject(valid.project.rootId);
         require(compiledRoot != nullptr, "compiled root should exist");
-        require(compiledRoot->depth == 7, "root depth should reach compiled definition");
+        require(compiledRoot->visual.depth == 7, "visual depth should reach compiled definition");
 
         writeFile(
             root / "game" / "root.json",
             "{\n"
-            "  \"shape\": {\n"
-            "    \"type\": \"block\",\n"
-            "    \"layer\": 7,\n"
-            "    \"color\": \"white\",\n"
-            "    \"size\": { \"width\": 2, \"height\": 2 }\n"
-            "  }\n"
+            "  \"depth\": 7\n"
             "}\n"
         );
 
         CompilationResult invalid = flx::test::compile(root / "game.flx");
-        require(!invalid.success, "shape.layer should be rejected");
-        require(diagnosticsContain(invalid.diagnostics, "shape.layer"), "shape.layer rejection should be clear");
+        require(!invalid.success, "root depth should be rejected");
+        require(diagnosticsContain(invalid.diagnostics, "visual.depth"), "root depth rejection should point to visual.depth");
     }
 
     void testDepthPropertyIsReadonlyFromJavaScript()
@@ -797,7 +814,7 @@ namespace
         );
 
         ObjectDefinition root = objectDefinition("root", "writeDepth");
-        root.depth = 7;
+        setVisualDepth(root, 7);
         harness.addObject(root);
 
         require(harness.load().success, "runtime should load readonly depth project");
@@ -814,11 +831,11 @@ namespace
 
         std::vector<VisualPrimitive> primitives;
         VisualPrimitive circle;
-        circle.kind = VisualPrimitiveKind::Shape;
-        circle.shapeType = "circle";
-        circle.shapeMode = "outline";
+        circle.kind = VisualPrimitiveKind::Representation;
+        circle.primitive = "ellipse";
+        circle.primitiveMode = "outline";
         circle.a = Vector2{ 10.0f, 10.0f };
-        circle.radius = 5.0f;
+        circle.size = Vector2{ 10.0f, 10.0f };
         circle.color = RED;
         primitives.push_back(circle);
 
@@ -859,17 +876,17 @@ int main()
         { "Local primitive captures transform at emission", testLocalPrimitiveCapturesTransformAtEmission },
         { "Renderer scales logical pixel to physical pixels", testRendererScalesLogicalPixelToPhysicalPixels },
         { "Local primitive wraps with reference but world primitive does not", testLocalPrimitiveWrapsWithReferenceButWorldPrimitiveDoesNot },
-        { "Shape presentation snapshot does not change after draw mutation", testShapePresentationSnapshotDoesNotChangeAfterDrawMutation },
+        { "Representation presentation snapshot does not change after draw mutation", testRepresentationPresentationSnapshotDoesNotChangeAfterDrawMutation },
         { "Local primitive presentation snapshot does not change after reference mutation", testLocalPrimitivePresentationSnapshotDoesNotChangeAfterReferenceMutation },
-        { "Shape and local primitive wrap use same snapshot", testShapeAndLocalPrimitiveWrapUseSameSnapshot },
+        { "Representation and local primitive wrap use same snapshot", testRepresentationAndLocalPrimitiveWrapUseSameSnapshot },
         { "Depth controls stable object visual turn order", testDepthControlsStableObjectVisualTurnOrder },
         { "Depth change is live but affects next draw pass order", testDepthChangeIsLiveButAffectsNextDrawPassOrder },
         { "Earlier visual turn can hide later object", testEarlierVisualTurnCanHideLaterObject },
         { "Earlier visual turn can kill later object", testEarlierVisualTurnCanKillLaterObject },
         { "Immediate drawing outside draw callback does not render", testImmediateDrawingOutsideDrawCallbackDoesNotRender },
         { "HUD pattern reads state in draw after action", testHudPatternReadsStateInDrawAfterAction },
-        { "Shape and immediate draw share same object depth", testShapeAndImmediateDrawShareSameObjectDepth },
-        { "JSON depth is root-level and shape layer is rejected", testJsonDepthIsRootLevelAndShapeLayerIsRejected },
+        { "Representation and immediate draw share same object depth", testRepresentationAndImmediateDrawShareSameObjectDepth },
+        { "JSON depth is visual-level and root depth is rejected", testJsonDepthIsVisualLevelAndRootDepthIsRejected },
         { "Depth property is readonly from JavaScript", testDepthPropertyIsReadonlyFromJavaScript },
         { "Circle outline scales with output scale", testCircleOutlineScalesWithOutputScale }
     };

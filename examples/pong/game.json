@@ -6,14 +6,6 @@
         "x": 18.5,
         "y": 105
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 30
-        }
-      },
       "mechanics": {
         "type": "direct",
         "motion": {
@@ -35,20 +27,24 @@
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 5,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "enemy": {
       "origin": {
         "x": 301.5,
         "y": 105
-      },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 30
-        }
       },
       "mechanics": {
         "type": "direct",
@@ -68,20 +64,24 @@
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 5,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "ball": {
       "origin": {
         "x": 159.5,
         "y": 89.5
-      },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 5
-        }
       },
       "mechanics": {
         "type": "polar",
@@ -122,6 +122,18 @@
             "paddle"
           ]
         }
+      },
+      "size": {
+        "width": 5,
+        "height": 5
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "left_goal": {
@@ -129,20 +141,24 @@
         "x": -5,
         "y": 90
       },
-      "shape": {
-        "type": "block",
-        "color": "black",
-        "size": {
-          "width": 10,
-          "height": 180
-        }
-      },
       "group": "goal",
       "visible": false,
       "collisions": {
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 10,
+        "height": 180
+      },
+      "visual": {
+        "color": "black",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "right_goal": {
@@ -150,20 +166,24 @@
         "x": 325,
         "y": 90
       },
-      "shape": {
-        "type": "block",
-        "color": "black",
-        "size": {
-          "width": 10,
-          "height": 180
-        }
-      },
       "group": "goal",
       "visible": false,
       "collisions": {
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 10,
+        "height": 180
+      },
+      "visual": {
+        "color": "black",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "top_wall": {
@@ -171,20 +191,24 @@
         "x": 160,
         "y": -5
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 320,
-          "height": 10
-        }
-      },
       "group": "wall",
       "visible": false,
       "collisions": {
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 320,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "bottom_wall": {
@@ -192,20 +216,24 @@
         "x": 160,
         "y": 185
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 320,
-          "height": 10
-        }
-      },
       "group": "wall",
       "visible": false,
       "collisions": {
         "body": {
           "type": "box"
         }
+      },
+      "size": {
+        "width": 320,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     }
   }

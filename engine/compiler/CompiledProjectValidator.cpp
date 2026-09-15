@@ -227,12 +227,16 @@ namespace
         const float effectiveWidth =
             collider.size.hasWidth
             ? collider.size.width
-            : object.size.x;
+            : object.hasSize
+                ? object.size.x
+                : 0.0f;
 
         const float effectiveHeight =
             collider.size.hasHeight
             ? collider.size.height
-            : object.size.y;
+            : object.hasSize
+                ? object.size.y
+                : 0.0f;
 
         if (effectiveWidth <= 0.0f || effectiveHeight <= 0.0f)
         {

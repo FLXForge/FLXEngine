@@ -1,0 +1,5 @@
+{
+  "screen": { "width": 640, "height": 360 },
+  "children": [ "visual.json" ],
+  "program": { "scripts": [ "game.js" ] }
+}

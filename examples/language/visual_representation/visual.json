@@ -1,0 +1,155 @@
+{
+  "name": "visual-audit",
+  "children": [
+    {
+      "name": "rectangle",
+      "origin": { "x": 70, "y": 55 },
+      "size": { "width": 50, "height": 24 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "rectangle", "mode": "outline" }
+      ]}
+    },
+    {
+      "name": "triangle",
+      "origin": { "x": 150, "y": 55 },
+      "size": { "width": 50, "height": 30 },
+      "angle": { "start": 20 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "triangle", "mode": "outline" }
+      ]}
+    },
+    {
+      "name": "ellipse",
+      "origin": { "x": 235, "y": 55 },
+      "size": { "width": 54, "height": 20 },
+      "angle": { "start": 35 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "ellipse", "mode": "outline" }
+      ]}
+    },
+    {
+      "name": "axis-inheritance",
+      "origin": { "x": 335, "y": 55 },
+      "size": { "width": 60, "height": 28 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "rectangle", "mode": "outline", "size": { "width": 24 } }
+      ]}
+    },
+    {
+      "name": "percentage",
+      "origin": { "x": 430, "y": 55 },
+      "size": { "width": 70, "height": 30 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "rectangle", "mode": "outline",
+          "size": { "width": "50%", "height": "50%" } }
+      ]}
+    },
+    {
+      "name": "geometry-point",
+      "origin": { "x": 535, "y": 55 },
+      "visual": { "color": "white", "representation": [
+        { "geometry": [ { "x": 0, "y": 0 } ] }
+      ]}
+    },
+    {
+      "name": "geometry-open",
+      "origin": { "x": 75, "y": 135 },
+      "visual": { "color": "white", "representation": [
+        { "geometry": [
+            { "x": -25, "y": 12 }, { "x": 0, "y": -15 }, { "x": 25, "y": 12 }
+          ], "mode": "open" }
+      ]}
+    },
+    {
+      "name": "geometry-close",
+      "origin": { "x": 170, "y": 135 },
+      "visual": { "color": "white", "representation": [
+        { "geometry": [
+            { "x": -25, "y": 12 }, { "x": 0, "y": -15 }, { "x": 25, "y": 12 }
+          ], "mode": "close" }
+      ]}
+    },
+    {
+      "name": "geometry-fill",
+      "origin": { "x": 265, "y": 135 },
+      "visual": { "color": "white", "representation": [
+        { "geometry": [
+            { "x": -25, "y": 14 }, { "x": 0, "y": -17 }, { "x": 25, "y": 14 }
+          ], "mode": "fill" }
+      ]}
+    },
+    {
+      "name": "geometry-even-odd",
+      "origin": { "x": 365, "y": 135 },
+      "visual": { "color": "white", "representation": [
+        { "geometry": [
+            { "x": -28, "y": -18 }, { "x": 28, "y": 18 },
+            { "x": -28, "y": 18 }, { "x": 28, "y": -18 }
+          ], "mode": "fill" }
+      ]}
+    },
+    {
+      "name": "text-single",
+      "origin": { "x": 490, "y": 125 },
+      "visual": { "color": "white", "representation": [
+        { "text": "TEXT", "fontSize": 12 }
+      ]}
+    },
+    {
+      "name": "text-multiline",
+      "origin": { "x": 570, "y": 130 },
+      "visual": { "color": "white", "representation": [
+        { "text": "LONG\\nX", "fontSize": 12 }
+      ]}
+    },
+    {
+      "name": "text-rotated",
+      "origin": { "x": 75, "y": 225 },
+      "angle": { "start": -25 },
+      "visual": { "color": "white", "representation": [
+        { "text": "ROTATE", "fontSize": 10 }
+      ]}
+    },
+    {
+      "name": "composition",
+      "origin": { "x": 185, "y": 225 },
+      "size": { "width": 58, "height": 34 },
+      "visual": { "color": "white", "representation": [
+        { "primitive": "rectangle", "mode": "outline" },
+        { "geometry": [ { "x": -20, "y": 0 }, { "x": 20, "y": 0 } ], "color": "red" },
+        { "text": "A", "fontSize": 10 }
+      ]}
+    },
+    {
+      "name": "color-base",
+      "origin": { "x": 290, "y": 225 },
+      "size": { "width": 48, "height": 30 },
+      "visual": { "color": "red", "representation": [
+        { "primitive": "rectangle", "mode": "outline" },
+        { "primitive": "ellipse",
+          "size": { "width": "50%", "height": "50%" }, "color": "white" }
+      ]}
+    },
+    {
+      "name": "depth-back",
+      "origin": { "x": 395, "y": 225 },
+      "size": { "width": 45, "height": 30 },
+      "visual": { "color": "red", "depth": 0, "representation": [
+        { "primitive": "rectangle" }
+      ]}
+    },
+    {
+      "name": "depth-front",
+      "origin": { "x": 410, "y": 235 },
+      "size": { "width": 45, "height": 30 },
+      "visual": { "color": "white", "depth": 1, "representation": [
+        { "primitive": "rectangle", "mode": "outline" }
+      ]}
+    },
+    {
+      "name": "procedural",
+      "origin": { "x": 535, "y": 225 },
+      "scripts": [ "procedural.js" ]
+    }
+  ]
+}

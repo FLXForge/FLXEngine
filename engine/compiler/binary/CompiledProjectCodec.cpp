@@ -1021,6 +1021,7 @@ namespace flx::binary
             writeTone(writer, sound.tone);
             writer.writeF32(sound.duration);
             writer.writeF32(sound.volume);
+            writer.writeI32(sound.priority);
         }
 
         SoundDefinition readSound(BinaryReader& reader)
@@ -1034,6 +1035,7 @@ namespace flx::binary
             sound.tone = readTone(reader);
             sound.duration = reader.readF32("sound.duration");
             sound.volume = reader.readF32("sound.volume");
+            sound.priority = reader.readI32("sound.priority");
             return sound;
         }
 

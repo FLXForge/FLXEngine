@@ -116,6 +116,22 @@ Define:
 
 ---
 
+### [Audio](audio.md)
+
+Define:
+
+- intención del juego frente a capacidad de Machine;
+- Sound como evento independiente;
+- Music como estado global;
+- voces lógicas FLX;
+- modos `reserved`, `shared` y `preferred`;
+- políticas de overflow;
+- prioridad de sonidos;
+- frontera entre reemplazo de Sounds y robo de Music;
+- capacidades preservadas para iteraciones futuras.
+
+---
+
 ## Diagramas
 
 Los diagramas se incluyen dentro del documento al que pertenecen.

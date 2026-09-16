@@ -235,8 +235,10 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <code>voices.overflow</code> acepta <code>ignore</code>,
                 <code>replace_oldest</code>, <code>replace_newest</code>,
                 <code>replace_lowest_priority</code> y
-                <code>steal_from_music</code>. Los efectos generados actuales usan
-                la misma prioridad. En modo <code>shared</code>,
+                <code>steal_from_music</code>. Los efectos generados pueden
+                declarar <code>priority</code>, usado por
+                <code>replace_lowest_priority</code>. En modo
+                <code>shared</code>,
                 <code>steal_from_music</code> puede pausar una voz de musica para
                 reproducir un efecto y reanudar la musica cuando las voces de
                 sonido vuelven a quedar libres.
@@ -446,7 +448,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             }
         },
         "duration": 0.08,
-        "volume": 0.7
+        "volume": 0.7,
+        "priority": 0
     }
 }</code></pre>
 
@@ -483,6 +486,12 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 metal aportan caracter audible. <code>space.echo</code> anade
                 un pequeno delay; el ancho stereo esta preparado en el modelo de
                 datos, pero el generador actual sigue renderizando en mono.
+            </p>
+
+            <p>
+                <code>priority</code> es opcional y su valor por defecto es
+                <code>0</code>. Se usa cuando la politica de overflow del Audio
+                Chip es <code>replace_lowest_priority</code>.
             </p>
 
             <p>

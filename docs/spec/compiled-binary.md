@@ -4,7 +4,7 @@
 - Documento: especificación normativa
 - Ámbito: persistencia binaria de `CompiledProject`
 - Versión inicial: 0.3.0
-- Formato vigente: 3
+- Formato vigente: 10
 - Estado: consolidado
 
 ## 1. Propósito
@@ -32,7 +32,7 @@ producerVersion
 ```
 Formato vigente:
 ```text
-FormatVersion = 9
+FormatVersion = 10
 ```
 Códigos:
 - FLX-BINARY-00013 InvalidCompiledProjectMagic

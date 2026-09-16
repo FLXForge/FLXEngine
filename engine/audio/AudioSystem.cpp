@@ -564,6 +564,101 @@ void AudioSystem::configure(const AudioChipDefinition& audioChip)
         audioChip;
 }
 
+#ifdef FLX_TESTING
+bool AudioSystem::testPlayLogicalSound(const SoundDefinition& definition)
+{
+    if (!reserveSoundVoice())
+    {
+        return false;
+    }
+
+    activeSounds.push_back(
+        ActiveSound{
+            Sound{},
+            nextSoundOrder++,
+            0.0,
+            static_cast<double>(definition.duration),
+            definition.priority,
+            false
+        }
+    );
+
+    return true;
+}
+
+bool AudioSystem::testPlayLogicalSound(int priority)
+{
+    SoundDefinition definition;
+    definition.priority = priority;
+    definition.duration = 1000.0f;
+
+    return testPlayLogicalSound(definition);
+}
+
+void AudioSystem::testStartLogicalMusic(int voiceCount)
+{
+    activeMusic = ActiveMusic{};
+    activeMusic.loaded = true;
+    activeMusic.paused = false;
+    activeMusic.pausedBySound = false;
+    activeMusic.startedAt = nextSoundOrder++;
+    activeMusic.voiceCount = std::max(1, voiceCount);
+    activeMusic.synthetic = true;
+}
+
+void AudioSystem::testFinishAllSounds()
+{
+    activeSounds.clear();
+    resumeMusicAfterSoundSteal();
+}
+
+size_t AudioSystem::testActiveSoundCount() const
+{
+    return activeSounds.size();
+}
+
+std::vector<int> AudioSystem::testActiveSoundPriorities() const
+{
+    std::vector<int> priorities;
+    priorities.reserve(activeSounds.size());
+
+    for (const ActiveSound& activeSound : activeSounds)
+    {
+        priorities.push_back(activeSound.priority);
+    }
+
+    return priorities;
+}
+
+std::vector<uint64_t> AudioSystem::testActiveSoundOrders() const
+{
+    std::vector<uint64_t> orders;
+    orders.reserve(activeSounds.size());
+
+    for (const ActiveSound& activeSound : activeSounds)
+    {
+        orders.push_back(activeSound.startedAt);
+    }
+
+    return orders;
+}
+
+bool AudioSystem::testMusicLoaded() const
+{
+    return activeMusic.loaded;
+}
+
+bool AudioSystem::testMusicPaused() const
+{
+    return activeMusic.paused;
+}
+
+bool AudioSystem::testMusicPausedBySound() const
+{
+    return activeMusic.pausedBySound;
+}
+#endif
+
 void AudioSystem::cleanupFinished()
 {
     const double now =
@@ -578,6 +673,11 @@ void AudioSystem::cleanupFinished()
                 const bool durationFinished =
                     activeSound.duration > 0.0 &&
                     now >= activeSound.startedTime + activeSound.duration;
+
+                if (!activeSound.loaded)
+                {
+                    return durationFinished;
+                }
 
                 if (!durationFinished && IsSoundPlaying(activeSound.sound))
                 {
@@ -601,8 +701,11 @@ void AudioSystem::unloadActiveSound(size_t index)
         return;
     }
 
-    StopSound(activeSounds[index].sound);
-    UnloadSound(activeSounds[index].sound);
+    if (activeSounds[index].loaded)
+    {
+        StopSound(activeSounds[index].sound);
+        UnloadSound(activeSounds[index].sound);
+    }
 
     activeSounds.erase(
         activeSounds.begin() + static_cast<std::ptrdiff_t>(index)
@@ -619,6 +722,72 @@ bool AudioSystem::reserveSoundVoice()
     }
 
     return reserveReservedSoundVoice();
+}
+
+size_t AudioSystem::selectOldestSound() const
+{
+    size_t selectedIndex = 0;
+    uint64_t selectedOrder =
+        std::numeric_limits<uint64_t>::max();
+
+    for (size_t i = 0; i < activeSounds.size(); ++i)
+    {
+        if (activeSounds[i].startedAt < selectedOrder)
+        {
+            selectedIndex = i;
+            selectedOrder = activeSounds[i].startedAt;
+        }
+    }
+
+    return selectedIndex;
+}
+
+size_t AudioSystem::selectNewestSound() const
+{
+    size_t selectedIndex = 0;
+    uint64_t selectedOrder = 0;
+
+    for (size_t i = 0; i < activeSounds.size(); ++i)
+    {
+        if (activeSounds[i].startedAt >= selectedOrder)
+        {
+            selectedIndex = i;
+            selectedOrder = activeSounds[i].startedAt;
+        }
+    }
+
+    return selectedIndex;
+}
+
+size_t AudioSystem::selectLowestPrioritySound() const
+{
+    size_t selectedIndex = 0;
+    int selectedPriority =
+        std::numeric_limits<int>::max();
+
+    uint64_t selectedOrder =
+        std::numeric_limits<uint64_t>::max();
+
+    for (size_t i = 0; i < activeSounds.size(); ++i)
+    {
+        const ActiveSound& activeSound =
+            activeSounds[i];
+
+        if (
+            activeSound.priority < selectedPriority ||
+            (
+                activeSound.priority == selectedPriority &&
+                activeSound.startedAt < selectedOrder
+            )
+        )
+        {
+            selectedIndex = i;
+            selectedPriority = activeSound.priority;
+            selectedOrder = activeSound.startedAt;
+        }
+    }
+
+    return selectedIndex;
 }
 
 bool AudioSystem::reserveReservedSoundVoice()
@@ -645,8 +814,7 @@ bool AudioSystem::reserveReservedSoundVoice()
 
     if (
         chip.voicesOverflow == "ignore" ||
-        chip.voicesOverflow == "steal_from_music" ||
-        chip.voicesOverflow == "replace_newest"
+        chip.voicesOverflow == "steal_from_music"
     )
     {
         Logger::debug(
@@ -657,51 +825,18 @@ bool AudioSystem::reserveReservedSoundVoice()
         return false;
     }
 
-    size_t selectedIndex = 0;
-
     if (chip.voicesOverflow == "replace_lowest_priority")
     {
-        int selectedPriority =
-            std::numeric_limits<int>::max();
-
-        uint64_t selectedOrder =
-            std::numeric_limits<uint64_t>::max();
-
-        for (size_t i = 0; i < activeSounds.size(); ++i)
-        {
-            const ActiveSound& activeSound =
-                activeSounds[i];
-
-            if (
-                activeSound.priority < selectedPriority ||
-                (
-                    activeSound.priority == selectedPriority &&
-                    activeSound.startedAt < selectedOrder
-                )
-            )
-            {
-                selectedIndex = i;
-                selectedPriority = activeSound.priority;
-                selectedOrder = activeSound.startedAt;
-            }
-        }
+        unloadActiveSound(selectLowestPrioritySound());
+    }
+    else if (chip.voicesOverflow == "replace_newest")
+    {
+        unloadActiveSound(selectNewestSound());
     }
     else
     {
-        uint64_t oldestOrder =
-            std::numeric_limits<uint64_t>::max();
-
-        for (size_t i = 0; i < activeSounds.size(); ++i)
-        {
-            if (activeSounds[i].startedAt < oldestOrder)
-            {
-                selectedIndex = i;
-                oldestOrder = activeSounds[i].startedAt;
-            }
-        }
+        unloadActiveSound(selectOldestSound());
     }
-
-    unloadActiveSound(selectedIndex);
 
     return true;
 }
@@ -748,8 +883,7 @@ bool AudioSystem::reserveSharedSoundVoice()
     }
 
     if (
-        chip.voicesOverflow == "ignore" ||
-        chip.voicesOverflow == "replace_newest"
+        chip.voicesOverflow == "ignore"
     )
     {
         Logger::debug(
@@ -762,35 +896,33 @@ bool AudioSystem::reserveSharedSoundVoice()
 
     if (chip.voicesOverflow == "replace_oldest")
     {
-        bool replaceMusic =
-            activeMusicVoiceUse() > 0;
-
-        uint64_t oldestOrder =
-            replaceMusic
-            ? activeMusic.startedAt
-            : std::numeric_limits<uint64_t>::max();
-
-        size_t selectedIndex = 0;
-
-        for (size_t i = 0; i < activeSounds.size(); ++i)
+        if (activeSounds.empty())
         {
-            if (activeSounds[i].startedAt < oldestOrder)
-            {
-                replaceMusic = false;
-                selectedIndex = i;
-                oldestOrder = activeSounds[i].startedAt;
-            }
+            Logger::debug(
+                "audio",
+                "Sound ignored because shared voices are full"
+            );
+
+            return false;
         }
 
-        if (replaceMusic)
+        unloadActiveSound(selectOldestSound());
+        return true;
+    }
+
+    if (chip.voicesOverflow == "replace_newest")
+    {
+        if (activeSounds.empty())
         {
-            stopActiveMusic();
-        }
-        else if (!activeSounds.empty())
-        {
-            unloadActiveSound(selectedIndex);
+            Logger::debug(
+                "audio",
+                "Sound ignored because shared voices are full"
+            );
+
+            return false;
         }
 
+        unloadActiveSound(selectNewestSound());
         return true;
     }
 
@@ -806,33 +938,7 @@ bool AudioSystem::reserveSharedSoundVoice()
             return false;
         }
 
-        size_t selectedIndex = 0;
-        int selectedPriority =
-            std::numeric_limits<int>::max();
-
-        uint64_t selectedOrder =
-            std::numeric_limits<uint64_t>::max();
-
-        for (size_t i = 0; i < activeSounds.size(); ++i)
-        {
-            const ActiveSound& activeSound =
-                activeSounds[i];
-
-            if (
-                activeSound.priority < selectedPriority ||
-                (
-                    activeSound.priority == selectedPriority &&
-                    activeSound.startedAt < selectedOrder
-                )
-            )
-            {
-                selectedIndex = i;
-                selectedPriority = activeSound.priority;
-                selectedOrder = activeSound.startedAt;
-            }
-        }
-
-        unloadActiveSound(selectedIndex);
+        unloadActiveSound(selectLowestPrioritySound());
         return true;
     }
 
@@ -846,6 +952,21 @@ bool AudioSystem::reserveSharedSoundVoice()
 
 bool AudioSystem::stealMusicVoice()
 {
+#ifdef FLX_TESTING
+    if (activeMusic.loaded && activeMusic.synthetic && !activeMusic.paused)
+    {
+        activeMusic.paused = true;
+        activeMusic.pausedBySound = true;
+
+        Logger::debug(
+            "audio",
+            "Sound stole a shared music voice"
+        );
+
+        return true;
+    }
+#endif
+
     if (
         !activeMusic.loaded ||
         activeMusic.paused ||
@@ -874,6 +995,14 @@ void AudioSystem::stopActiveMusic()
         return;
     }
 
+#ifdef FLX_TESTING
+    if (activeMusic.synthetic)
+    {
+        activeMusic = ActiveMusic{};
+        return;
+    }
+#endif
+
     StopSound(activeMusic.sound);
     UnloadSound(activeMusic.sound);
 
@@ -888,7 +1017,14 @@ void AudioSystem::resumeMusicAfterSoundSteal()
         activeSounds.empty()
     )
     {
+#ifdef FLX_TESTING
+        if (!activeMusic.synthetic)
+        {
+            ResumeSound(activeMusic.sound);
+        }
+#else
         ResumeSound(activeMusic.sound);
+#endif
         activeMusic.paused = false;
         activeMusic.pausedBySound = false;
 
@@ -913,6 +1049,15 @@ int AudioSystem::sharedVoiceCount() const
 
 int AudioSystem::activeMusicVoiceUse() const
 {
+#ifdef FLX_TESTING
+    if (activeMusic.loaded && activeMusic.synthetic)
+    {
+        return activeMusic.paused
+            ? 0
+            : std::max(1, activeMusic.voiceCount);
+    }
+#endif
+
     if (
         !activeMusic.loaded ||
         activeMusic.paused ||
@@ -958,7 +1103,8 @@ void AudioSystem::play(const SoundDefinition& definition)
             nextSoundOrder++,
             GetTime(),
             static_cast<double>(std::max(definition.duration, 0.01f)),
-            0
+            definition.priority,
+            true
         }
     );
 }
@@ -1055,18 +1201,39 @@ void AudioSystem::togglePauseMusic()
 
     if (activeMusic.paused)
     {
+#ifdef FLX_TESTING
+        if (!activeMusic.synthetic)
+        {
+            ResumeSound(activeMusic.sound);
+        }
+#else
         ResumeSound(activeMusic.sound);
+#endif
         activeMusic.paused = false;
     }
     else
     {
+#ifdef FLX_TESTING
+        if (!activeMusic.synthetic)
+        {
+            PauseSound(activeMusic.sound);
+        }
+#else
         PauseSound(activeMusic.sound);
+#endif
         activeMusic.paused = true;
     }
 }
 
 bool AudioSystem::isMusicActive() const
 {
+#ifdef FLX_TESTING
+    if (activeMusic.loaded && activeMusic.synthetic)
+    {
+        return true;
+    }
+#endif
+
     return
         activeMusic.loaded &&
         (

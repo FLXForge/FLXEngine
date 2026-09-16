@@ -373,6 +373,7 @@ add_flx_test_suite(flx-cli-diagnostic-printer-tests tests/cli/DiagnosticPrinterT
 add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests.cpp)
 add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
+add_flx_test_suite(flx-audio-system-tests tests/audio/AudioSystemTests.cpp)
 add_flx_test_suite(flx-input-characterization-tests tests/input/InputCharacterizationTests.cpp)
 add_flx_test_suite(flx-collision-geometry-tests tests/collision/CollisionGeometryTests.cpp)
 add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTests.cpp)

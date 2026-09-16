@@ -1250,6 +1250,45 @@ namespace
         require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::DuplicateCompiledEntry), "duplicate sound should use entry diagnostic");
     }
 
+    void testSoundPriorityRoundTrip()
+    {
+        CompiledProject project =
+            makeSingleObjectProject();
+
+        ObjectDefinition root =
+            *project.resources.findObject("root");
+
+        SoundDefinition sound;
+        sound.duration = 0.1f;
+        sound.priority = 17;
+        root.sounds["laser"] = sound;
+
+        project = CompiledProject();
+        project.rootId = "root";
+        require(project.resources.addObject("root", root), "root with prioritized sound should register");
+
+        const std::filesystem::path output =
+            testRoot() / "sound_priority_roundtrip" / "game.flxc";
+
+        Diagnostics writeDiagnostics;
+
+        require(
+            CompiledProjectWriter::write(
+                output.generic_string(),
+                project,
+                writeDiagnostics
+            ),
+            "project with prioritized sound should write"
+        );
+
+        CompiledProjectBinaryResult loaded =
+            CompiledProjectReader::read(output.generic_string());
+
+        require(loaded.success, "project with prioritized sound should read");
+        require(rootObject(loaded.project).sounds.count("laser") == 1, "prioritized sound should survive roundtrip");
+        require(rootObject(loaded.project).sounds.at("laser").priority == 17, "sound priority should survive binary roundtrip");
+    }
+
     void testDuplicateChildResourceEntry()
     {
         CompiledProject project;
@@ -1499,6 +1538,8 @@ int main()
         { "duplicate music entry", testDuplicateMusicEntry },
 
         { "duplicate sound entry", testDuplicateSoundEntry },
+
+        { "sound priority roundtrip", testSoundPriorityRoundTrip },
 
         { "duplicate child resource entry", testDuplicateChildResourceEntry },
 

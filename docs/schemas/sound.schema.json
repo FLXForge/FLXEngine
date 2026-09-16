@@ -153,6 +153,11 @@
       "minimum": 0,
       "maximum": 1,
       "default": 0.4
+    },
+
+    "priority": {
+      "type": "integer",
+      "default": 0
     }
   }
 }

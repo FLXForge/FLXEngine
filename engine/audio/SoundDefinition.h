@@ -60,4 +60,5 @@ struct SoundDefinition
     AudioToneDefinition tone;
     float duration = 0.1f;
     float volume = 0.4f;
+    int priority = 0;
 };

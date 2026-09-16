@@ -2656,6 +2656,7 @@ namespace
             }
 
             SoundDefinition sound;
+            sound.priority = 0;
 
             if (data.contains("kind"))
             {
@@ -2743,6 +2744,22 @@ namespace
                     1.0f,
                     "sound '" + it.key() + "'.volume"
                 );
+            if (data.contains("priority"))
+            {
+                if (data["priority"].is_number_integer())
+                {
+                    sound.priority =
+                        data["priority"].get<int>();
+                }
+                else
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid priority in sound '" + it.key() +
+                        "': expected integer"
+                    );
+                }
+            }
 
             definition.sounds[it.key()] =
                 sound;

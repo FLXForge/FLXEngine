@@ -544,6 +544,7 @@ void AudioSystem::update()
     if (
         activeMusic.loaded &&
         !activeMusic.paused &&
+        !activeMusic.suspendedBySound &&
         !IsSoundPlaying(activeMusic.sound)
     )
     {
@@ -600,7 +601,7 @@ void AudioSystem::testStartLogicalMusic(int voiceCount)
     activeMusic = ActiveMusic{};
     activeMusic.loaded = true;
     activeMusic.paused = false;
-    activeMusic.pausedBySound = false;
+    activeMusic.suspendedBySound = false;
     activeMusic.startedAt = nextSoundOrder++;
     activeMusic.voiceCount = std::max(1, voiceCount);
     activeMusic.synthetic = true;
@@ -653,9 +654,9 @@ bool AudioSystem::testMusicPaused() const
     return activeMusic.paused;
 }
 
-bool AudioSystem::testMusicPausedBySound() const
+bool AudioSystem::testMusicSuspendedBySound() const
 {
-    return activeMusic.pausedBySound;
+    return activeMusic.suspendedBySound;
 }
 #endif
 
@@ -953,10 +954,14 @@ bool AudioSystem::reserveSharedSoundVoice()
 bool AudioSystem::stealMusicVoice()
 {
 #ifdef FLX_TESTING
-    if (activeMusic.loaded && activeMusic.synthetic && !activeMusic.paused)
+    if (
+        activeMusic.loaded &&
+        activeMusic.synthetic &&
+        !activeMusic.paused &&
+        !activeMusic.suspendedBySound
+    )
     {
-        activeMusic.paused = true;
-        activeMusic.pausedBySound = true;
+        activeMusic.suspendedBySound = true;
 
         Logger::debug(
             "audio",
@@ -970,6 +975,7 @@ bool AudioSystem::stealMusicVoice()
     if (
         !activeMusic.loaded ||
         activeMusic.paused ||
+        activeMusic.suspendedBySound ||
         !IsSoundPlaying(activeMusic.sound)
     )
     {
@@ -977,8 +983,7 @@ bool AudioSystem::stealMusicVoice()
     }
 
     PauseSound(activeMusic.sound);
-    activeMusic.paused = true;
-    activeMusic.pausedBySound = true;
+    activeMusic.suspendedBySound = true;
 
     Logger::debug(
         "audio",
@@ -1013,10 +1018,17 @@ void AudioSystem::resumeMusicAfterSoundSteal()
 {
     if (
         activeMusic.loaded &&
-        activeMusic.pausedBySound &&
+        activeMusic.suspendedBySound &&
         activeSounds.empty()
     )
     {
+        activeMusic.suspendedBySound = false;
+
+        if (activeMusic.paused)
+        {
+            return;
+        }
+
 #ifdef FLX_TESTING
         if (!activeMusic.synthetic)
         {
@@ -1025,8 +1037,6 @@ void AudioSystem::resumeMusicAfterSoundSteal()
 #else
         ResumeSound(activeMusic.sound);
 #endif
-        activeMusic.paused = false;
-        activeMusic.pausedBySound = false;
 
         Logger::debug(
             "audio",
@@ -1052,7 +1062,7 @@ int AudioSystem::activeMusicVoiceUse() const
 #ifdef FLX_TESTING
     if (activeMusic.loaded && activeMusic.synthetic)
     {
-        return activeMusic.paused
+        return activeMusic.paused || activeMusic.suspendedBySound
             ? 0
             : std::max(1, activeMusic.voiceCount);
     }
@@ -1061,6 +1071,7 @@ int AudioSystem::activeMusicVoiceUse() const
     if (
         !activeMusic.loaded ||
         activeMusic.paused ||
+        activeMusic.suspendedBySound ||
         !IsSoundPlaying(activeMusic.sound)
     )
     {
@@ -1178,7 +1189,7 @@ void AudioSystem::playMusic(const MusicDefinition& definition)
     activeMusic.loaded = true;
     activeMusic.loop = definition.loop;
     activeMusic.paused = false;
-    activeMusic.pausedBySound = false;
+    activeMusic.suspendedBySound = false;
     activeMusic.startedAt = nextSoundOrder++;
     activeMusic.voiceCount = channelCount;
 
@@ -1201,6 +1212,13 @@ void AudioSystem::togglePauseMusic()
 
     if (activeMusic.paused)
     {
+        activeMusic.paused = false;
+
+        if (activeMusic.suspendedBySound)
+        {
+            return;
+        }
+
 #ifdef FLX_TESTING
         if (!activeMusic.synthetic)
         {
@@ -1209,10 +1227,16 @@ void AudioSystem::togglePauseMusic()
 #else
         ResumeSound(activeMusic.sound);
 #endif
-        activeMusic.paused = false;
     }
     else
     {
+        activeMusic.paused = true;
+
+        if (activeMusic.suspendedBySound)
+        {
+            return;
+        }
+
 #ifdef FLX_TESTING
         if (!activeMusic.synthetic)
         {
@@ -1221,7 +1245,6 @@ void AudioSystem::togglePauseMusic()
 #else
         PauseSound(activeMusic.sound);
 #endif
-        activeMusic.paused = true;
     }
 }
 
@@ -1238,6 +1261,7 @@ bool AudioSystem::isMusicActive() const
         activeMusic.loaded &&
         (
             activeMusic.paused ||
+            activeMusic.suspendedBySound ||
             IsSoundPlaying(activeMusic.sound)
         );
 }

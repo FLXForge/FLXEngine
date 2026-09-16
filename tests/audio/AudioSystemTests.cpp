@@ -253,21 +253,29 @@ namespace
         requirePriorities(audio, { 9 }, "replace_lowest_priority should keep incoming sound");
     }
 
-    void testStealFromMusicPausesAndRestoresMusic()
+    void testStealFromMusicSuspendsAndRestoresMusicMaterialization()
     {
         AudioSystem audio;
         audio.configure(chip(1, 0, "shared", "steal_from_music"));
         audio.testStartLogicalMusic(1);
 
+        require(audio.isMusicActive(), "music should start active");
+        require(!audio.isMusicPaused(), "music should start logically playing");
+
         require(audio.testPlayLogicalSound(7), "steal_from_music should let sound borrow music capacity");
         require(audio.testMusicLoaded(), "steal_from_music should keep music loaded");
-        require(audio.testMusicPaused(), "steal_from_music should pause music while sound uses capacity");
-        require(audio.testMusicPausedBySound(), "music pause should be marked as sound-driven");
+        require(audio.isMusicActive(), "machine-suspended music should remain logically active");
+        require(!audio.isMusicPaused(), "steal_from_music must not change logical pause state");
+        require(!audio.testMusicPaused(), "test logical paused flag should remain false during steal");
+        require(audio.testMusicSuspendedBySound(), "music should be marked as machine-suspended");
 
         audio.testFinishAllSounds();
 
         require(audio.testMusicLoaded(), "music should remain loaded after sound finishes");
-        require(!audio.testMusicPaused(), "music should resume after stolen capacity is released");
+        require(!audio.testMusicPaused(), "music should remain logically playing after stolen capacity is released");
+        require(!audio.testMusicSuspendedBySound(), "music suspension should clear after sound finishes");
+        require(audio.isMusicActive(), "music should remain active after stolen capacity is released");
+        require(!audio.isMusicPaused(), "music_paused should remain false after automatic resume");
     }
 
     void testPauseMusicRemainsToggle()
@@ -289,6 +297,75 @@ namespace
         require(audio.isMusicActive(), "resumed music should be active");
         require(!audio.isMusicPaused(), "second toggle should resume music");
     }
+
+    void testPauseDuringStealSurvivesSoundFinish()
+    {
+        AudioSystem audio;
+        audio.configure(chip(1, 0, "shared", "steal_from_music"));
+        audio.testStartLogicalMusic(1);
+
+        require(audio.testPlayLogicalSound(7), "sound should steal music capacity");
+        require(audio.testMusicSuspendedBySound(), "music should be suspended while sound is active");
+        require(!audio.isMusicPaused(), "machine suspension should not appear as logical pause");
+
+        audio.togglePauseMusic();
+
+        require(audio.isMusicActive(), "paused music should remain active during steal");
+        require(audio.isMusicPaused(), "pause_music should set logical pause during steal");
+        require(audio.testMusicSuspendedBySound(), "machine suspension should remain while sound is active");
+
+        audio.testFinishAllSounds();
+
+        require(audio.isMusicActive(), "logically paused music should remain active after steal release");
+        require(audio.isMusicPaused(), "logical pause should survive steal release");
+        require(!audio.testMusicSuspendedBySound(), "machine suspension should clear after sound finishes");
+    }
+
+    void testResumeDuringStealWaitsForMachineRelease()
+    {
+        AudioSystem audio;
+        audio.configure(chip(1, 0, "shared", "steal_from_music"));
+        audio.testStartLogicalMusic(1);
+
+        require(audio.testPlayLogicalSound(7), "sound should steal music capacity");
+
+        audio.togglePauseMusic();
+        require(audio.isMusicPaused(), "first toggle during steal should logically pause music");
+
+        audio.togglePauseMusic();
+        require(!audio.isMusicPaused(), "second toggle during steal should return to logical playing");
+        require(audio.testMusicSuspendedBySound(), "music should stay machine-suspended until sound finishes");
+        require(audio.isMusicActive(), "music should remain logically active while waiting for capacity");
+
+        audio.testFinishAllSounds();
+
+        require(!audio.isMusicPaused(), "music should remain logically playing after machine release");
+        require(!audio.testMusicSuspendedBySound(), "machine suspension should clear after release");
+        require(audio.isMusicActive(), "music should remain active after release");
+    }
+
+    void testStopAndReplaceMusicResetLogicalAndMachineState()
+    {
+        AudioSystem audio;
+        audio.configure(chip(1, 0, "shared", "steal_from_music"));
+        audio.testStartLogicalMusic(1);
+
+        require(audio.testPlayLogicalSound(7), "sound should steal music capacity");
+        audio.togglePauseMusic();
+
+        audio.stopMusic();
+
+        require(!audio.isMusicActive(), "stop_music should clear active music");
+        require(!audio.isMusicPaused(), "stop_music should clear logical pause");
+        require(!audio.testMusicLoaded(), "stop_music should unload music");
+        require(!audio.testMusicSuspendedBySound(), "stop_music should clear machine suspension");
+
+        audio.testStartLogicalMusic(1);
+
+        require(audio.isMusicActive(), "new music should start active");
+        require(!audio.isMusicPaused(), "new music should start logically playing");
+        require(!audio.testMusicSuspendedBySound(), "new music should not inherit machine suspension");
+    }
 }
 
 int main()
@@ -306,8 +383,11 @@ int main()
         { "shared replace_oldest does not replace music", testSharedReplaceOldestDoesNotReplaceMusic },
         { "shared replace_newest does not replace music", testSharedReplaceNewestDoesNotReplaceMusic },
         { "shared replace_lowest_priority does not replace music", testSharedReplaceLowestPriorityDoesNotReplaceMusic },
-        { "steal_from_music pauses and restores music", testStealFromMusicPausesAndRestoresMusic },
-        { "pause_music remains toggle", testPauseMusicRemainsToggle }
+        { "steal_from_music suspends and restores music materialization", testStealFromMusicSuspendsAndRestoresMusicMaterialization },
+        { "pause_music remains toggle", testPauseMusicRemainsToggle },
+        { "pause during steal survives sound finish", testPauseDuringStealSurvivesSoundFinish },
+        { "resume during steal waits for machine release", testResumeDuringStealWaitsForMachineRelease },
+        { "stop and replace music reset logical and machine state", testStopAndReplaceMusicResetLogicalAndMachineState }
     };
 
     for (const auto& test : tests)

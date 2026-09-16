@@ -84,7 +84,37 @@ Debe conservar la posición musical.
 
 Los canales musicales son semánticos y ordenados. Si la Machine solo puede materializar `N` voces musicales, se usan los primeros `N` canales declarados y los restantes se omiten con diagnóstico o warning claro según la capa de ejecución.
 
-## 6. Modes
+## 6. Estado lógico y materialización Machine
+El estado observable de Music expresa la intención lógica del juego, no el estado físico instantáneo del backend de audio.
+
+Arquitectura:
+
+```text
+Declarative/logical state
+        ↓
+Machine capabilities/policies
+        ↓
+Effective materialization
+```
+
+La materialización efectiva no redefine hacia atrás el estado lógico.
+
+`music_active()` observa si existe una Music activa solicitada por el juego. Una Music lógicamente pausada o temporalmente suspendida por Machine sigue activa hasta que termina o se llama a `stop_music()`.
+
+`music_paused()` observa exclusivamente la pausa lógica solicitada por el juego mediante `pause_music()`. Una suspensión técnica de Machine, por ejemplo por `steal_from_music`, no convierte Music en pausada desde la API de scripting.
+
+Conceptualmente, el juego dice que Music debería reproducirse; Machine determina si puede materializar esa intención en cada momento.
+
+Por tanto, una Music puede estar:
+
+- activa y lógicamente reproduciéndose;
+- activa y lógicamente pausada;
+- activa y lógicamente reproduciéndose, pero temporalmente suspendida por Machine;
+- activa y lógicamente pausada, además de temporalmente suspendida por Machine.
+
+La reanudación física solo puede ocurrir cuando no exista pausa lógica y no exista suspensión técnica de Machine.
+
+## 7. Modes
 ### reserved
 En `reserved`, music y sound usan pools separados:
 
@@ -109,7 +139,7 @@ Compartir capacidad no autoriza a todas las políticas a expulsar Music. Las pol
 
 Las reglas exactas de préstamo y recuperación de `preferred` no forman parte del contrato funcional v0.3.0.
 
-## 7. Overflow
+## 8. Overflow
 `overflow` se aplica cuando llega un nuevo Sound y no existe capacidad Sound elegible disponible.
 
 El Sound entrante no forma parte de la selección de víctima. Primero se elige la víctima entre Sounds activos elegibles; después se admite el entrante.
@@ -146,7 +176,7 @@ steal_from_music
 
 Es la única política overflow que permite que Sound obtenga capacidad destinada u ocupada por Music.
 
-## 8. Frontera Sound / Music
+## 9. Frontera Sound / Music
 Las políticas:
 
 ```text
@@ -163,9 +193,13 @@ La política:
 steal_from_music
 ```
 
-sí puede cruzar la frontera Sound -> Music. En v0.3.0 puede suspender la Music completa mientras el Sound utiliza esa capacidad y retomarla cuando la capacidad vuelve a estar disponible.
+sí puede cruzar la frontera Sound -> Music. En v0.3.0 puede suspender la materialización efectiva de la Music completa mientras el Sound utiliza esa capacidad y retomarla cuando la capacidad vuelve a estar disponible.
 
-## 9. Machine synthesis y fidelity
+La suspensión producida por `steal_from_music` pertenece a Machine. No cambia el estado lógico de Music, no hace que `music_paused()` devuelva `true` y no equivale a una llamada del juego a `pause_music()`.
+
+Si el juego llama a `pause_music()` mientras Music está suspendida por `steal_from_music`, la pausa lógica debe sobrevivir a la liberación de la voz. Al terminar el Sound, Music solo se materializa de nuevo si ya no está lógicamente pausada.
+
+## 10. Machine synthesis y fidelity
 `audio.synthesis` y `audio.fidelity` describen capacidades de la Machine.
 
 El contrato actual conserva efectos audibles básicos para:
@@ -179,12 +213,12 @@ El contrato actual conserva efectos audibles básicos para:
 
 Los modelos de síntesis declarados que todavía no tienen materialización diferenciada quedan preservados como intención de arquitectura. No deben eliminarse por estar parcialmente implementados.
 
-## 10. Resources y fileAudio
+## 11. Resources y fileAudio
 La Machine puede declarar capacidades relacionadas con recursos de audio, como audio generado, samples, streams y `fileAudio.mode`.
 
 En v0.3.0 el contrato funcional se centra en audio generado. Samples, streams y modos de archivo quedan preservados para iteraciones posteriores.
 
-## 11. Capacidades preservadas / futuras
+## 12. Capacidades preservadas / futuras
 Las siguientes capacidades forman parte de la arquitectura y no se consideran abandonadas, aunque v0.3.0 no materialice todavía toda su semántica:
 
 - Sound source `impact`;
@@ -202,7 +236,7 @@ Las siguientes capacidades forman parte de la arquitectura y no se consideran ab
 
 No deben documentarse como promesas funcionales completas de v0.3.0.
 
-## 12. Rationale
+## 13. Rationale
 Las limitaciones de audio pueden producir comportamiento audible observable, como pérdida temporal de música cuando un efecto roba capacidad sonora.
 
 Este comportamiento representa máquinas con capacidad sonora limitada. Puede inspirarse en hardware histórico, pero FLX no debe convertir esa referencia en un preset nominal ni en una emulación concreta.

@@ -36,7 +36,7 @@ public:
     std::vector<uint64_t> testActiveSoundOrders() const;
     bool testMusicLoaded() const;
     bool testMusicPaused() const;
-    bool testMusicPausedBySound() const;
+    bool testMusicSuspendedBySound() const;
 #endif
 
 private:
@@ -56,7 +56,7 @@ private:
         bool loaded = false;
         bool loop = false;
         bool paused = false;
-        bool pausedBySound = false;
+        bool suspendedBySound = false;
         uint64_t startedAt = 0;
         int voiceCount = 0;
 #ifdef FLX_TESTING

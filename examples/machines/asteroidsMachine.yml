@@ -41,3 +41,5 @@
 
     fileAudio:
       mode: off
+
+  input: chips/input/asteroids.yml

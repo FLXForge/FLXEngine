@@ -1,10 +1,9 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    The ball always moves forward. The collision determines its trajectory depending on what it hits:
-        -If it collides with the goal, it returns to the starting point.
-        -If it collides with the wall, it bounces along the y-axis.
-        -If it collides with the paddle, it bounces along the x-axis and accelerates.
+    The ball always moves forward.
+    Collision tells the ball how to leave the surface it touched.
+    Goals reset the ball, and paddles make it move faster.
 */
 
 function motion(ball) {
@@ -12,24 +11,24 @@ function motion(ball) {
 }
 
 function collision(ball, other, contacts) {
-    const contact = contacts[0];
-
     if (other.group == "goal") {
         position_origin(ball);
         restore_speed(ball);
         return;
     }
 
-    position(
-        ball,
-        ball.x + contact.normalX * contact.penetration,
-        ball.y + contact.normalY * contact.penetration
-    );
+    for (const contact of contacts){
+        position(
+            ball,
+            ball.x + contact.normalX * contact.penetration,
+            ball.y + contact.normalY * contact.penetration
+        );
 
-    if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
-        reflect_x(ball);
-    } else {
-        reflect_y(ball);
+        if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
+            reflect_x(ball);
+        } else {
+            reflect_y(ball);
+        }
     }
 
     if (other.group == "paddle") {

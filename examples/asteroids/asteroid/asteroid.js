@@ -18,10 +18,6 @@ function born(asteroid) {
 }
 
 function motion(asteroid) {
-    if (read_global("inGame") == 0){
-        kill(asteroid);
-        return;
-    }
     advance(asteroid);
     rotate(asteroid);
 }

@@ -9,10 +9,7 @@ let stars = [];
 function born(game) {
     write_global("score", 0);
     write_global("asteroids", 0);
-    write_global("shipDead", 0);
-    write_global("score", 0);
-    write_global("inGame", 1);
-    write_global("asteroids", 0);
+    write_local(game, "ship", true);
 
     for(let i = 0; i < 100; i++){
         stars.push({
@@ -22,14 +19,14 @@ function born(game) {
     }
 }
 
-function motion(ui){
-    if (read_global("shipDead") == 1) {
-        spawn(ui, "ship");
-        write_global("shipDead", 0);
+function motion(game){
+    if (!read_local(game, "ship")) {
+        spawn(game, "ship");
+        write_local(game, "ship", true);
     }
 }
 
-function draw(space){
+function draw(game){
     for(let star of stars){
         draw_pixel(
             star.x,

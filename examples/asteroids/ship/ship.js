@@ -36,7 +36,8 @@ function action(ship) {
 
 function dead(ship) {
     play_sound(ship, "dead");
-    write_global("shipDead", 1);
+    const parent = find_parent(ship);
+    write_local(parent, "ship", false);
 
     spawn(ship, "fragment");
     spawn(ship, "fragment");

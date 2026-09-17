@@ -1,8 +1,7 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    DeepSpace periodically creates asteroids while the game is active.
-    The timer is reset while the game is stopped so spawning starts cleanly.
+    DeepSpace periodically creates asteroids.
 */
 
 const SPAWN_INTERVAL = 1.5;
@@ -13,12 +12,6 @@ function born(space) {
 }
 
 function motion(space) {
-    if (read_global("inGame") == 0) {
-        stop_timer(space, "spawn");
-        play_timer(space, "spawn", SPAWN_INTERVAL);
-        return;
-    }
-
     if (timer_active(space, "spawn")) {
         return;
     }

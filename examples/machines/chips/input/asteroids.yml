@@ -1,6 +1,6 @@
 input:
   system:
-    buttons: 2
+    buttons: 0
 
   players:
     count: 1

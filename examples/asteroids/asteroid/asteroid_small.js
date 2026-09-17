@@ -13,18 +13,6 @@ function born(asteroid) {
     write_local(asteroid, "destroyed_by_laser", 0);
 }
 
-function motion(asteroid) {
-    advance(asteroid);
-    rotate(asteroid);
-}
-
-function collision(asteroid, other) {
-    advance(asteroid);
-    advance(other);
-
-    return;
-}
-
 function dead(asteroid) {
     write_global("asteroids", read_global("asteroids") - 1);
     

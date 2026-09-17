@@ -42,7 +42,7 @@
   "group": "asteroid",
   "behavior": {
     "scripts": [
-      "asteroid"
+      "asteroid", "asteroid_move"
     ]
   },
   "children": {

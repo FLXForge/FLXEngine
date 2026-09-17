@@ -11,24 +11,12 @@ function motion(ball) {
     advance(ball);
 }
 
-function strongest_contact(contacts) {
-    if (contacts.length == 0) {
-        return null;
-    }
+function collision(ball, other, contacts) {
+    const contact = contacts[0];
 
-    let strongest = contacts[0];
-
-    for (const contact of contacts) {
-        if (contact.penetration > strongest.penetration) {
-            strongest = contact;
-        }
-    }
-
-    return strongest;
-}
-
-function separate(ball, contact) {
-    if (contact == null) {
+    if (other.group == "goal") {
+        position_origin(ball);
+        restore_speed(ball);
         return;
     }
 
@@ -37,19 +25,16 @@ function separate(ball, contact) {
         ball.x + contact.normalX * contact.penetration,
         ball.y + contact.normalY * contact.penetration
     );
-}
 
-function collision(ball, other, contacts) {
-    if (other.group == "goal") {
-        position_origin(ball);
-        restore_speed(ball);
-    } else if (other.group == "wall") {
-        separate(ball, strongest_contact(contacts));
-        reflect_y(ball);
-    } else if (other.group == "paddle") {
-        separate(ball, strongest_contact(contacts));
+    if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
         reflect_x(ball);
+    } else {
+        reflect_y(ball);
+    }
+
+    if (other.group == "paddle") {
         apply_speed(ball, ball.speed + 5);
     }
+
     play_sound(ball, "beep");
 }

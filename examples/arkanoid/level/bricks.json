@@ -4,10 +4,9 @@
     "x": 70,
     "y": 65
   },
-  "spawn": "manual",
   "children": {
     "purplebrick": {
-      "like": "../common/brick.json",
+      "like": "brick.json",
       "visual": {
         "color": "purple",
         "representation": [
@@ -18,7 +17,7 @@
       }
     },
     "redbrick": {
-      "like": "../common/brick.json",
+      "like": "brick.json",
       "visual": {
         "color": "red",
         "representation": [
@@ -29,7 +28,7 @@
       }
     },
     "bluebrick": {
-      "like": "../common/brick.json",
+      "like": "brick.json",
       "visual": {
         "color": "blue",
         "representation": [
@@ -40,7 +39,7 @@
       }
     },
     "yellowbrick": {
-      "like": "../common/brick.json",
+      "like": "brick.json",
       "visual": {
         "color": "yellow",
         "representation": [

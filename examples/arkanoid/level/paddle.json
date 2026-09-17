@@ -17,7 +17,6 @@
       ]
     }
   },
-  "spawn": "manual",
   "mechanics": {
     "type": "direct",
     "motion": {

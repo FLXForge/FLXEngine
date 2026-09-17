@@ -15,3 +15,5 @@ machine:
     output:
       scale: 3
       smoothing: false
+
+  input: chips/input/arkanoid.yml

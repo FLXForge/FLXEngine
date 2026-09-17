@@ -63,9 +63,7 @@
         "height": 32
       },
       "with": [
-        "ship",
-        "asteroid",
-        "laser"
+        "asteroid"
       ]
     }
   }

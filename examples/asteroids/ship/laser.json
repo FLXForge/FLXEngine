@@ -30,7 +30,10 @@
       "size": {
         "width": 4,
         "height": 4
-      }
+      },
+      "with": [
+        "asteroid"
+      ]
     }
   },
   "size": {

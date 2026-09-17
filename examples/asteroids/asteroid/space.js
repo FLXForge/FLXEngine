@@ -29,7 +29,5 @@ function motion(space) {
         spawn(space, "Asteroid_a");
     }
 
-    write_global("asteroids", read_global("asteroids") + 2);
-
     play_timer(space, "spawn", SPAWN_INTERVAL);
 }

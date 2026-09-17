@@ -22,3 +22,10 @@ function motion(laser) {
         kill(laser);
     }
 }
+
+function collision(laser, asteroid) {
+    write_local(asteroid, "destroyed_by_laser", 1);
+
+    kill(asteroid);
+    kill(laser);
+}

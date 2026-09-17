@@ -34,6 +34,11 @@ function action(ship) {
     }
 }
 
+function collision(ship, asteroid) {
+    kill(asteroid);
+    kill(ship);
+}
+
 function dead(ship) {
     play_sound(ship, "dead");
     const parent = find_parent(ship);

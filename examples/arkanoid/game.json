@@ -5,10 +5,5 @@
     "board": "level/board",
     "paddle": "level/paddle",
     "bricks": "level/bricks"
-  },
-  "behavior": {
-    "scripts": [
-      "level"
-    ]
   }
 }

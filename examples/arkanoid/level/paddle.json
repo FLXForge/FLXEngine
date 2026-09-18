@@ -59,7 +59,7 @@
     "body": {
       "type": "box",
       "with": [
-        "wall_side",
+        "wall",
         "powerup"
       ]
     }

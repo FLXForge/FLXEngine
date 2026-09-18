@@ -74,7 +74,7 @@ function update_respawn(paddle){
 }
 
 function collision(paddle, other) {
-    if (other.group == "wall_side") {
+    if (other.group == "wall") {
         if (paddle.x < other.x) {
             position_x(paddle, other.x - other.width / 2 - paddle.width / 2);
         } else {
@@ -99,6 +99,5 @@ function apply_powerup(paddle, powerup){
     if (powerup.name == "big") {
         stop_timer(paddle, "big");
         play_timer(paddle, "big", POWERUP_TIME);
-        stop_timer(paddle, "small");
     }
 }

@@ -75,14 +75,7 @@ function collision(ball, other, contacts) {
 
     const contact = strongest_contact(contacts);
 
-    if (other.group == "wall_top") {
-        separate(ball, contact);
-        reflect_from_contact(ball, contact);
-        play_sound(ball, "paddle");
-        return;
-    }
-
-    if (other.group == "wall_side") {
+    if (other.group == "wall") {
         separate(ball, contact);
         reflect_from_contact(ball, contact);
         play_sound(ball, "paddle");

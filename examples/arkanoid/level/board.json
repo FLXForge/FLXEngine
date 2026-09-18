@@ -6,7 +6,7 @@
         "x": 320,
         "y": 50
       },
-      "group": "wall_top",
+      "group": "wall",
       "collisions": {
         "body": {
           "type": "box"
@@ -30,7 +30,7 @@
         "x": 45,
         "y": 170
       },
-      "group": "wall_side",
+      "group": "wall",
       "collisions": {
         "body": {
           "type": "box"
@@ -54,7 +54,7 @@
         "x": 605,
         "y": 170
       },
-      "group": "wall_side",
+      "group": "wall",
       "collisions": {
         "body": {
           "type": "box"

@@ -30,7 +30,8 @@
         "color": "purple",
         "representation": [
           {
-            "primitive": "rectangle"
+            "text": "B",
+            "fontSize": 10
           }
         ]
       }
@@ -41,7 +42,8 @@
         "color": "red",
         "representation": [
           {
-            "primitive": "rectangle"
+            "text": "S",
+            "fontSize": 10
           }
         ]
       }
@@ -52,7 +54,8 @@
         "color": "green",
         "representation": [
           {
-            "primitive": "rectangle"
+            "text": "K",
+            "fontSize": 10
           }
         ]
       }

@@ -5,7 +5,6 @@
     It moves horizontally, respawns balls and applies temporary power-up effects.
 */
 
-const RESPAWN_TIME = 1;
 const POWERUP_TIME = 5;
 
 const BIG_FACTOR = 1.5;
@@ -22,8 +21,6 @@ function born(paddle){
 
     write_global("activeBroken", 0);
     write_global("activeGun", 0);
-
-    state_to(paddle, "playing");
 }
 
 function action(paddle){
@@ -77,23 +74,7 @@ function update_movement(paddle){
 }
 
 function update_respawn(paddle){
-    if (read_global("ball_lost") == 1) {
-        write_global("ball_lost", 0);
-
-        if (read_global("lives") > 0) {
-            stop_timer(paddle, "respawn");
-            play_timer(paddle, "respawn", RESPAWN_TIME);
-            state_to(paddle, "respawn");
-        } else {
-            write_global("show_hud", 0);
-            write_global("game_over", 1);
-        }
-    }
-
-    if (
-        state_active(paddle, "respawn")
-        && !timer_active(paddle, "respawn")
-    ){
+    if (state_active(paddle, "respawn")) {
         spawn(paddle, "ball");
         play_sound(paddle, "pop");
         state_to(paddle, "playing");

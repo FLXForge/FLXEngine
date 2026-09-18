@@ -907,9 +907,12 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </ul>
 
             <p>
-                El runtime usa el parent original y el offset original capturado
-                al crear el objeto.
                 El objeto nace detached salvo que <code>born</code> este declarado como <code>true</code>.
+                Cuando <code>born</code> es true, el attach inicial usa el offset capturado
+                al crear el objeto. Las llamadas posteriores a <code>attach(object)</code>
+                conservan el parent original, pero capturan la posicion relativa actual
+                del objeto como offset vivo para los ejes seguidos. <code>detach(object)</code>
+                solo suspende el seguimiento y no cambia el offset de creacion.
             </p>
 
             <h2 id="origin">Origin</h2>

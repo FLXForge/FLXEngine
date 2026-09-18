@@ -332,11 +332,14 @@ declare function follow_y(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Enables declared attach rules for an object and its original parent.
+ * Captures the object's current relative position as the new live attach offset
+ * for the followed axes.
  */
 declare function attach(object: RuntimeObject): void;
 
 /**
- * Disables attach rules. The object keeps its current position and angle.
+ * Disables attach rules. The object keeps its current position and angle, and
+ * the original creation offset remains unchanged.
  */
 declare function detach(object: RuntimeObject): void;
 

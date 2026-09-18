@@ -1,5 +1,6 @@
 #include "MotionBindings.h"
 #include "BindingHelpers.h"
+#include "../../runtime/AttachmentRuntimeState.h"
 #include "../../runtime/RuntimeConstants.h"
 #include "../../runtime/RuntimeHelpers.h"
 #include "../../runtime/RuntimeObject.h"
@@ -357,6 +358,25 @@ namespace
         if (object == nullptr)
         {
             return JS_UNDEFINED;
+        }
+
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* parent =
+            scriptEngine == nullptr
+                ? nullptr
+                : scriptEngine->findParent(object->runtimeId);
+
+        if (parent != nullptr)
+        {
+            AttachmentRuntimeState::setOffset(
+                object->runtimeId,
+                Vector2{
+                    object->position.x - parent->position.x,
+                    object->position.y - parent->position.y
+                }
+            );
         }
 
         object->attached =

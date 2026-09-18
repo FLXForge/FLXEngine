@@ -2310,9 +2310,133 @@ namespace
 
         require(nearlyEqual(localValue(runtimeChild, "motionX"), runtimeChild.origin.x), "child motion sees pre-attachment x");
         require(nearlyEqual(localValue(runtimeChild, "collisionX"), runtimeChild.position.x), "collision sees post-attachment x");
-        require(nearlyEqual(runtimeChild.position.x, runtimeParent.position.x + runtimeChild.originalOffset.x), "attached x follows parent plus stored original offset");
+        require(nearlyEqual(runtimeChild.position.x, runtimeParent.position.x + runtimeChild.originalOffset.x), "attached x follows parent plus creation offset");
         require(nearlyEqual(runtimeChild.position.y, runtimeChild.origin.y), "unattached y remains unchanged");
         require(nearlyEqual(runtimeChild.angle, 35.0), "attached angle follows parent angle");
+    }
+
+    void testRuntimeAttachCapturesCurrentRelativeOffset()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentMotion",
+            "function motion(o) { position_x(o, o.x + 10); position_y(o, o.y + 3); }"
+        );
+
+        harness.addScript(
+            "reattachChild",
+            "function action(o) {"
+            "  if (read_local(o, 'done') == null) {"
+            "    write_local(o, 'done', 1);"
+            "    detach(o);"
+            "    position_x(o, 125);"
+            "    position_y(o, 70);"
+            "    attach(o);"
+            "  }"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentMotion");
+        parent.childResources["child"] = "child";
+        parent.origin = Vector2{ 100.0f, 50.0f };
+        parent.hasOrigin = true;
+
+        ObjectDefinition child =
+            objectDefinition("child", "reattachChild");
+        child.offset = Vector2{ 0.0f, 5.0f };
+        child.hasOffset = true;
+        child.attachOnCreate = true;
+        child.attachFollowX = true;
+        child.attachFollowY = true;
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load reattach project");
+
+        RuntimeObject& runtimeChild =
+            requireObject(harness.world, "child");
+        RuntimeObject& runtimeParent =
+            requireObject(harness.world, "parent");
+
+        require(nearlyEqual(runtimeChild.position.x, 100.0f), "initial attach x should use declared offset");
+        require(nearlyEqual(runtimeChild.position.y, 55.0f), "initial attach y should use declared offset");
+
+        harness.update();
+
+        require(nearlyEqual(runtimeParent.position.x, 110.0f), "parent should move on x");
+        require(nearlyEqual(runtimeParent.position.y, 53.0f), "parent should move on y");
+        require(nearlyEqual(runtimeChild.position.x, 135.0f), "reattach should preserve current relative x");
+        require(nearlyEqual(runtimeChild.position.y, 73.0f), "reattach should preserve current relative y");
+        require(nearlyEqual(runtimeChild.originalOffset.x, 0.0f), "reattach must not overwrite original offset x");
+        require(nearlyEqual(runtimeChild.originalOffset.y, 5.0f), "reattach must not overwrite original offset y");
+    }
+
+    void testRuntimeAttachKeepsAxisConfiguration()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "parentMotion",
+            "function motion(o) { position_x(o, o.x + 10); position_y(o, o.y + 5); }"
+        );
+
+        harness.addScript(
+            "reattachChild",
+            "function action(o) {"
+            "  if (read_local(o, 'done') == null) {"
+            "    write_local(o, 'done', 1);"
+            "    detach(o);"
+            "    position_x(o, 125);"
+            "    position_y(o, 70);"
+            "    attach(o);"
+            "  }"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.childResources["parent"] = "parent";
+
+        ObjectDefinition parent =
+            objectDefinition("parent", "parentMotion");
+        parent.childResources["child"] = "child";
+        parent.origin = Vector2{ 100.0f, 50.0f };
+        parent.hasOrigin = true;
+
+        ObjectDefinition child =
+            objectDefinition("child", "reattachChild");
+        child.offset = Vector2{ 0.0f, 5.0f };
+        child.hasOffset = true;
+        child.attachOnCreate = true;
+        child.attachFollowX = true;
+        child.attachFollowY = false;
+
+        harness.addObject(root);
+        harness.addObject(parent);
+        harness.addObject(child);
+
+        require(harness.load().success, "runtime should load axis reattach project");
+
+        harness.update();
+
+        RuntimeObject& runtimeChild =
+            requireObject(harness.world, "child");
+        RuntimeObject& runtimeParent =
+            requireObject(harness.world, "parent");
+
+        require(nearlyEqual(runtimeParent.position.x, 110.0f), "parent should move on x");
+        require(nearlyEqual(runtimeParent.position.y, 55.0f), "parent should move on y");
+        require(nearlyEqual(runtimeChild.position.x, 135.0f), "reattach should follow configured x axis");
+        require(nearlyEqual(runtimeChild.position.y, 70.0f), "reattach must not make unconfigured y axis follow parent");
+        require(nearlyEqual(runtimeChild.originalOffset.y, 5.0f), "axis reattach must not overwrite original y offset");
     }
 
     void testFindByRuntimeIdNameDuplicatesAndPendingLookup()
@@ -2553,6 +2677,8 @@ int main()
         { "state machine single terminal invalid and absent states", testStateMachineSingleTerminalInvalidAndAbsentStates },
         { "state transitions from motion and collision enter next frame", testStateTransitionsFromMotionAndCollisionEnterNextFrame },
         { "attachments apply after motion before collision", testAttachmentsApplyAfterMotionBeforeCollision },
+        { "runtime attach captures current relative offset", testRuntimeAttachCapturesCurrentRelativeOffset },
+        { "runtime attach keeps axis configuration", testRuntimeAttachKeepsAxisConfiguration },
         { "find by runtime id name duplicates and pending lookup", testFindByRuntimeIdNameDuplicatesAndPendingLookup },
         { "script errors are logged and runtime continues", testScriptErrorsAreLoggedAndRuntimeContinues },
         { "automatic instantiation cycle fails runtime load", testAutomaticInstantiationCycleFailsRuntimeLoad },

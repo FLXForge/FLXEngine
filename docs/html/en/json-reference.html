@@ -906,9 +906,12 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </ul>
 
             <p>
-                The runtime uses the original parent and the original offset captured
-                when the object was created.
                 The object starts detached unless <code>born</code> is declared as <code>true</code>.
+                When <code>born</code> is true, the initial attachment uses the offset captured
+                when the object was created. Later calls to <code>attach(object)</code> keep
+                the original parent but capture the object's current relative position as
+                the live attach offset for the followed axes. <code>detach(object)</code> only
+                suspends following and does not change the creation offset.
             </p>
 
             <h2 id="origin">Origin</h2>

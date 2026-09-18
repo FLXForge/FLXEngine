@@ -1,4 +1,5 @@
 #include "RuntimeWorld.h"
+#include "AttachmentRuntimeState.h"
 #include "RuntimeHelpers.h"
 #include "RuntimeObjectBuilder.h"
 #include "../collision/CollisionGeometry.h"
@@ -307,6 +308,7 @@ RuntimeLoadResult RuntimeWorld::load(
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
+    AttachmentRuntimeState::clear();
     automaticInstantiationFailed = false;
     automaticInstantiationFailure.clear();
 
@@ -368,6 +370,7 @@ RuntimeLoadResult RuntimeWorld::load(
     objects.push_back(
         std::move(root)
     );
+    AttachmentRuntimeState::registerObject(objects.back());
 
     RuntimeObject rootSnapshot =
         objects.front();
@@ -376,6 +379,11 @@ RuntimeLoadResult RuntimeWorld::load(
         rootSnapshot,
         objects
     );
+
+    for (const auto& object : objects)
+    {
+        AttachmentRuntimeState::registerObject(object);
+    }
 
     if (automaticInstantiationFailed)
     {
@@ -1487,6 +1495,7 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
         objects.push_back(
             std::move(object)
         );
+        AttachmentRuntimeState::registerObject(objects.back());
 
         bornObject(
             objects.back(),
@@ -1680,16 +1689,19 @@ void RuntimeWorld::applyAttachments()
             continue;
         }
 
+        const Vector2 offset =
+            AttachmentRuntimeState::offsetFor(object);
+
         if (object.attached && object.attachFollowX)
         {
             object.position.x =
-                parent->position.x + object.originalOffset.x;
+                parent->position.x + offset.x;
         }
 
         if (object.attached && object.attachFollowY)
         {
             object.position.y =
-                parent->position.y + object.originalOffset.y;
+                parent->position.y + offset.y;
         }
 
         if (object.attached && object.attachFollowAngle)
@@ -1741,6 +1753,8 @@ void RuntimeWorld::cleanupDeadObjects()
         ),
         objects.end()
     );
+
+    AttachmentRuntimeState::pruneMissing(objects);
 }
 
 void RuntimeWorld::updateObjectTime(float delta)

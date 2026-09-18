@@ -823,7 +823,9 @@ if (balls.length > 0) {
             <p>
                 Enables the attach rules declared in JSON for the object.
                 The object follows its original parent only; this does not create
-                a new parent relationship. FLX v0.3.0 has no public reparenting.
+                a new parent relationship. When called at runtime, it captures
+                the object's current relative position to that parent for the
+                followed axes. FLX v0.3.0 has no public reparenting.
             </p>
 
             <div class="code-card">
@@ -834,7 +836,8 @@ if (balls.length > 0) {
             <h2>detach(object)</h2>
 
             <p>
-                Disables attach rules. The object keeps its current position and angle.
+                Disables attach rules. The object keeps its current position and angle,
+                and the creation offset remains unchanged.
             </p>
 
             <div class="code-card">

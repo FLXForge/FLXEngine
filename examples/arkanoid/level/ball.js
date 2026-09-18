@@ -111,19 +111,11 @@ function collision(ball, other, contacts) {
 
     if (other.group == "brick") {
         separate(ball, contact);
-
-        if (read_global("activeBroken") == 0) {
-            reflect_from_contact(ball, contact);
-        }
+        reflect_from_contact(ball, contact);
 
         kill(other);
 
         play_sound(ball, "paddle");
-
-        if (read_global("briks") <= 0) {
-            kill(ball);
-            return;
-        }
 
         try_spawn_powerup(ball);
     }

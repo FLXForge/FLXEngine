@@ -18,7 +18,6 @@ function born(paddle){
     normalWidth = paddle.width;
     targetWidth = normalWidth;
 
-    write_global("activeBroken", 0);
     write_global("activeGlue", 0);
 }
 
@@ -31,7 +30,6 @@ function action(paddle){
 }
 
 function update_powerup_flags(paddle){
-    write_global("activeBroken", timer_active(paddle, "broken") ? 1 : 0);
     write_global("activeGlue", timer_active(paddle, "glue") ? 1 : 0);
 }
 

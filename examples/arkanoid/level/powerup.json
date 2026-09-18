@@ -25,13 +25,6 @@
     "height": 10
   },
   "visual": {
-    "color": "blue",
-    "depth": 10,
-    "representation": [
-      {
-        "text": "G",
-        "fontSize": 10
-      }
-    ]
+    "depth": 10
   }
 }

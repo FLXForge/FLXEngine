@@ -23,9 +23,6 @@ function motion(ball){
     advance(ball);
 
     if (ball.y > 320) {
-        write_global("lives", read_global("lives") - 1);
-        write_global("ball_lost", 1);
-
         play_sound(ball, "lost");
         kill(ball);
     }
@@ -96,7 +93,7 @@ function collision(ball, other, contacts) {
         separate(ball, contact);
 
         if (
-            read_global("activeGun") == 1
+            read_global("activeGlue") == 1
             && !timer_active(ball, "detach")
         ){
             attach(ball);
@@ -121,9 +118,6 @@ function collision(ball, other, contacts) {
 
         kill(other);
 
-        write_global("score", read_global("score") + 100);
-        write_global("briks", read_global("briks") - 1);
-
         play_sound(ball, "paddle");
 
         if (read_global("briks") <= 0) {
@@ -140,12 +134,10 @@ function try_spawn_powerup(ball) {
         return;
     }
 
-    let p = parseInt(random(0, 4));
+    let p = parseInt(random(0, 2));
 
-    if (p == 0) spawn(ball, "gun");
+    if (p == 0) spawn(ball, "glue");
     if (p == 1) spawn(ball, "big");
-    if (p == 2) spawn(ball, "small");
-    if (p == 4) spawn(ball, "broken");
 }
 
 function dead(ball) {

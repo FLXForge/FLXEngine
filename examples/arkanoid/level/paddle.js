@@ -8,7 +8,6 @@
 const POWERUP_TIME = 5;
 
 const BIG_FACTOR = 1.5;
-const SMALL_FACTOR = 0.65;
 
 const RESIZE_SPEED = 180;
 
@@ -20,7 +19,7 @@ function born(paddle){
     targetWidth = normalWidth;
 
     write_global("activeBroken", 0);
-    write_global("activeGun", 0);
+    write_global("activeGlue", 0);
 }
 
 function action(paddle){
@@ -33,17 +32,12 @@ function action(paddle){
 
 function update_powerup_flags(paddle){
     write_global("activeBroken", timer_active(paddle, "broken") ? 1 : 0);
-    write_global("activeGun", timer_active(paddle, "gun") ? 1 : 0);
+    write_global("activeGlue", timer_active(paddle, "glue") ? 1 : 0);
 }
 
 function update_target_width(paddle){
     if (timer_active(paddle, "big")) {
         targetWidth = normalWidth * BIG_FACTOR;
-        return;
-    }
-
-    if (timer_active(paddle, "small")) {
-        targetWidth = normalWidth * SMALL_FACTOR;
         return;
     }
 
@@ -99,25 +93,14 @@ function collision(paddle, other) {
 }
 
 function apply_powerup(paddle, powerup){
-    if (powerup.name == "broken") {
-        stop_timer(paddle, "broken");
-        play_timer(paddle, "broken", POWERUP_TIME);
-    }
-
-    if (powerup.name == "gun") {
-        stop_timer(paddle, "gun");
-        play_timer(paddle, "gun", POWERUP_TIME);
+    if (powerup.name == "glue") {
+        stop_timer(paddle, "glue");
+        play_timer(paddle, "glue", POWERUP_TIME);
     }
 
     if (powerup.name == "big") {
         stop_timer(paddle, "big");
         play_timer(paddle, "big", POWERUP_TIME);
         stop_timer(paddle, "small");
-    }
-
-    if (powerup.name == "small") {
-        stop_timer(paddle, "small");
-        play_timer(paddle, "small", POWERUP_TIME);
-        stop_timer(paddle, "big");
     }
 }

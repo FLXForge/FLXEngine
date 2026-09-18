@@ -23,11 +23,10 @@
     "x": true
   },
   "children": {
-    "gun": "powerup",
     "big": {
       "like": "powerup",
       "visual": {
-        "color": "purple",
+        "color": "red",
         "representation": [
           {
             "text": "B",
@@ -36,25 +35,13 @@
         ]
       }
     },
-    "small": {
+    "glue": {
       "like": "powerup",
       "visual": {
-        "color": "red",
+        "color": "blue",
         "representation": [
           {
-            "text": "S",
-            "fontSize": 10
-          }
-        ]
-      }
-    },
-    "broken": {
-      "like": "powerup",
-      "visual": {
-        "color": "green",
-        "representation": [
-          {
-            "text": "K",
+            "text": "G",
             "fontSize": 10
           }
         ]

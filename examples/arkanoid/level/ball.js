@@ -147,3 +147,8 @@ function try_spawn_powerup(ball) {
     if (p == 2) spawn(ball, "small");
     if (p == 4) spawn(ball, "broken");
 }
+
+function dead(ball) {
+    const paddle = find_parent(ball);
+    state_to(paddle, "respawn");
+}

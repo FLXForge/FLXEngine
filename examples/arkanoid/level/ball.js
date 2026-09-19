@@ -28,88 +28,50 @@ function motion(ball){
     }
 }
 
-function strongest_contact(contacts) {
-    if (contacts.length == 0) {
-        return null;
-    }
-
-    let strongest = contacts[0];
-
-    for (const contact of contacts) {
-        if (contact.penetration > strongest.penetration) {
-            strongest = contact;
-        }
-    }
-
-    return strongest;
-}
-
-function separate(ball, contact) {
-    if (contact == null) {
-        return;
-    }
-
-    position(
-        ball,
-        ball.x + contact.normalX * contact.penetration,
-        ball.y + contact.normalY * contact.penetration
-    );
-}
-
-function reflect_from_contact(ball, contact) {
-    if (contact == null) {
-        return;
-    }
-
-    if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
-        reflect_x(ball);
-    } else {
-        reflect_y(ball);
-    }
-}
-
 function collision(ball, other, contacts) {
     if (attach_active(ball)) {
         return;
     }
 
-    const contact = strongest_contact(contacts);
+    for (const contact of contacts) {
+        position(
+            ball,
+            ball.x + contact.normalX * contact.penetration,
+            ball.y + contact.normalY * contact.penetration
+        );
 
-    if (other.group == "wall") {
-        separate(ball, contact);
-        reflect_from_contact(ball, contact);
-        play_sound(ball, "paddle");
-        return;
-    }
+        if (other.group == "paddle") {
+            if (
+                timer_active(other, "glue")
+                && !timer_active(ball, "detach")
+            ) {
+                attach(ball);
+                return;
+            }
 
-    if (other.group == "paddle") {
-        separate(ball, contact);
+            const hit = ball.x - other.x;
+            const factor = hit / (other.width / 2);
 
-        if (
-            read_global("activeGlue") == 1
-            && !timer_active(ball, "detach")
-        ){
-            attach(ball);
+            apply_angle(ball, factor * 60);
+            play_sound(ball, "paddle");
             return;
         }
 
-        let hit = ball.x - other.x;
-        let factor = hit / (other.width / 2);
+        if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
+            reflect_x(ball);
+        } else {
+            reflect_y(ball);
+        }
+    }
 
-        apply_angle(ball, factor * 60);
-
+    if (other.group == "wall") {
         play_sound(ball, "paddle");
         return;
     }
 
     if (other.group == "brick") {
-        separate(ball, contact);
-        reflect_from_contact(ball, contact);
-
         kill(other);
-
         play_sound(ball, "paddle");
-
         try_spawn_powerup(ball);
     }
 }

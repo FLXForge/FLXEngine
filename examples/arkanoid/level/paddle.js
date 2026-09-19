@@ -17,20 +17,13 @@ let targetWidth = 70;
 function born(paddle){
     normalWidth = paddle.width;
     targetWidth = normalWidth;
-
-    write_global("activeGlue", 0);
 }
 
 function action(paddle){
-    update_powerup_flags(paddle);
     update_target_width(paddle);
     update_resize(paddle);
     update_movement(paddle);
     update_respawn(paddle);
-}
-
-function update_powerup_flags(paddle){
-    write_global("activeGlue", timer_active(paddle, "glue") ? 1 : 0);
 }
 
 function update_target_width(paddle){

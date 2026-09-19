@@ -55,7 +55,7 @@
     ]
   },
   "sounds": {
-    "paddle": {
+    "bounce": {
       "kind": {
         "source": {
           "type": "oscillator",
@@ -86,10 +86,6 @@
   "collisions": {
     "body": {
       "type": "ellipse",
-      "size": {
-        "width": 10,
-        "height": 10
-      },
       "with": [
         "wall",
         "paddle",

@@ -13,7 +13,6 @@ function motion(ball){
     if (attach_active(ball)) {
         if (input_pressed(ball, FIRE_BUTTON)) {
             detach(ball);
-            apply_angle(ball, 135);
             play_timer(ball, "detach", DETACH_COOLDOWN);
         }
 
@@ -49,7 +48,7 @@ function collision(ball, other, contacts) {
             const factor = hit / (other.width / 2);
 
             apply_angle(ball, factor * 60);
-            play_sound(ball, "paddle");
+            play_sound(ball, "bounce");
             return;
         }
 
@@ -61,13 +60,13 @@ function collision(ball, other, contacts) {
     }
 
     if (other.group == "wall") {
-        play_sound(ball, "paddle");
+        play_sound(ball, "bounce");
         return;
     }
 
     if (other.group == "brick") {
         kill(other);
-        play_sound(ball, "paddle");
+        play_sound(ball, "bounce");
         try_spawn_powerup(ball);
     }
 }

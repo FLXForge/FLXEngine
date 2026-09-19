@@ -395,8 +395,19 @@ declare function apply_velocity(
  */
 declare function restore_speed(object: RuntimeObject): void;
 
-/** Places an object at the given logical coordinates. */
+/**
+ * Places an object at the given logical coordinates.
+ */
 declare function position(object: RuntimeObject, x: number, y: number): void;
+
+/**
+ * Applies a directed collision contact correction to the object's current
+ * position: position += contact.normal * contact.penetration.
+ *
+ * This does not reflect velocity, change angle, change speed, or perform
+ * automatic physics resolution.
+ */
+declare function position(object: RuntimeObject, contact: CollisionContact): void;
 
 /** Places an object on the X axis. */
 declare function position_x(object: RuntimeObject, x: number): void;

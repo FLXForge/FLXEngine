@@ -34,6 +34,57 @@ namespace
         return runtimeObjectViewFromArgument(context, value);
     }
 
+    bool readNumberProperty(
+        JSContext* context,
+        JSValueConst value,
+        const char* name,
+        double& output
+    )
+    {
+        JSValue property =
+            JS_GetPropertyStr(context, value, name);
+
+        const int result =
+            JS_ToFloat64(context, &output, property);
+
+        JS_FreeValue(context, property);
+
+        return result == 0 && std::isfinite(output);
+    }
+
+    bool contactCorrectionFromArgument(
+        JSContext* context,
+        JSValueConst value,
+        Vector2& correction
+    )
+    {
+        if (!JS_IsObject(value))
+        {
+            return false;
+        }
+
+        double normalX = 0.0;
+        double normalY = 0.0;
+        double penetration = 0.0;
+
+        if (!readNumberProperty(context, value, "normalX", normalX) ||
+            !readNumberProperty(context, value, "normalY", normalY) ||
+            !readNumberProperty(context, value, "penetration", penetration) ||
+            penetration < 0.0)
+        {
+            return false;
+        }
+
+        correction =
+            Vector2{
+                static_cast<float>(normalX * penetration),
+                static_cast<float>(normalY * penetration)
+            };
+
+        return std::isfinite(correction.x) &&
+            std::isfinite(correction.y);
+    }
+
     JSValue jsMoveHorizontal(
         JSContext* context,
         JSValueConst,
@@ -482,10 +533,31 @@ namespace
     )
     {
         RuntimeObject* object =
-            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
 
         if (object == nullptr)
         {
+            return JS_UNDEFINED;
+        }
+
+        if (argc == 2)
+        {
+            Vector2 correction =
+                Vector2{ 0.0f, 0.0f };
+
+            if (!contactCorrectionFromArgument(context, argv[1], correction))
+            {
+                return JS_UNDEFINED;
+            }
+
+            RuntimeHelpers::position(
+                *object,
+                object->position.x + correction.x,
+                object->position.y + correction.y
+            );
+
+            refreshRuntimeObjectView(context, argv[0], *object);
+
             return JS_UNDEFINED;
         }
 

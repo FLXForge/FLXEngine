@@ -1165,6 +1165,65 @@ namespace
         require(objects[0].position.y < -9.0f, "ball should move away from the wall on the next frame");
     }
 
+    void testPositionContactOverloadUsesProducedCollisionContact()
+    {
+        ScriptEngine scripts;
+        scripts.setFrameDelta(0.1f);
+        scripts.loadScript(
+            "contactPosition",
+            "function collision(o, other, contacts) {"
+            "  const contact = contacts[0];"
+            "  write_local(o, 'beforeX', o.x);"
+            "  write_local(o, 'beforeY', o.y);"
+            "  write_local(o, 'normalX', contact.normalX);"
+            "  write_local(o, 'normalY', contact.normalY);"
+            "  write_local(o, 'penetration', contact.penetration);"
+            "  position(o, contact);"
+            "  write_local(o, 'afterX', o.x);"
+            "  write_local(o, 'afterY', o.y);"
+            "  write_local(o, 'speed', o.speed);"
+            "  write_local(o, 'angle', o.angle);"
+            "  write_local(o, 'velocityX', o.velocityX);"
+            "  write_local(o, 'velocityY', o.velocityY);"
+            "  write_local(o, 'rotationSpeed', o.rotationSpeed);"
+            "  write_local(o, 'count', (read_local(o, 'count') || 0) + 1);"
+            "}"
+        );
+
+        std::vector<RuntimeObject> objects;
+        objects.push_back(runtimeBox("ball", Vector2{ 0.0f, -4.0f }, Vector2{ 10.0f, 10.0f }, "ball"));
+        objects.push_back(runtimeBox("wall", Vector2{ 0.0f, 0.0f }, Vector2{ 100.0f, 10.0f }, "wall"));
+
+        objects[0].speed = 20.0f;
+        objects[0].angle = 180.0f;
+        objects[0].velocity = Vector2{ 3.0f, -2.0f };
+        objects[0].rotationSpeed = 7.0f;
+        objects[0].resolvedScriptPaths.push_back("contactPosition");
+        objects[0].collisions["body"].with.push_back("wall");
+
+        CollisionSystem::run(objects, scripts);
+
+        const double beforeX =
+            localNumber(objects[0], "beforeX");
+        const double beforeY =
+            localNumber(objects[0], "beforeY");
+        const double normalX =
+            localNumber(objects[0], "normalX");
+        const double normalY =
+            localNumber(objects[0], "normalY");
+        const double penetration =
+            localNumber(objects[0], "penetration");
+
+        require(localNumber(objects[0], "count") == 1.0, "collision should produce one contact callback");
+        require(nearlyEqual(localNumber(objects[0], "afterX"), beforeX + normalX * penetration), "position(object, contact) should apply produced contact x correction");
+        require(nearlyEqual(localNumber(objects[0], "afterY"), beforeY + normalY * penetration), "position(object, contact) should apply produced contact y correction");
+        require(nearlyEqual(localNumber(objects[0], "speed"), 20.0), "position(object, contact) should not alter speed for produced contacts");
+        require(nearlyEqual(localNumber(objects[0], "angle"), 180.0), "position(object, contact) should not alter angle for produced contacts");
+        require(nearlyEqual(localNumber(objects[0], "velocityX"), 3.0), "position(object, contact) should not alter velocity x for produced contacts");
+        require(nearlyEqual(localNumber(objects[0], "velocityY"), -2.0), "position(object, contact) should not alter velocity y for produced contacts");
+        require(nearlyEqual(localNumber(objects[0], "rotationSpeed"), 7.0), "position(object, contact) should not alter rotation speed for produced contacts");
+    }
+
     void testScriptBoxSeparationPreventsRepeatedWallCallback()
     {
         ScriptEngine scripts;
@@ -1318,6 +1377,7 @@ int main()
         { "Pong exact top wall box bounce", testPongTopWallBoxBounceSeparatesAndMovesAway },
         { "Pong exact bottom wall box bounce", testPongBottomWallBoxBounceSeparatesAndMovesAway },
         { "script separation prevents repeated wall callback", testScriptSeparationPreventsRepeatedWallCallback },
+        { "position contact overload uses produced collision contact", testPositionContactOverloadUsesProducedCollisionContact },
         { "script box separation prevents repeated wall callback", testScriptBoxSeparationPreventsRepeatedWallCallback },
         { "collider inherits live size per axis", testColliderInheritsLiveSizePerAxis },
         { "collider offset uses object local space", testColliderOffsetUsesObjectLocalSpace }

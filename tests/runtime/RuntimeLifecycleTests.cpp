@@ -865,6 +865,71 @@ namespace
         );
     }
 
+    void testPositionContactOverloadUsesDirectedCorrection()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "positionContactProbe",
+            "function action(o) {"
+            "  position(o, 100, 50);"
+            "  write_local(o, 'absoluteX', o.x);"
+            "  write_local(o, 'absoluteY', o.y);"
+            "  apply_speed(o, 17);"
+            "  apply_angle(o, 33);"
+            "  apply_velocity(o, 0, 12);"
+            "  apply_rotation_speed(o, 5);"
+            "  write_local(o, 'speedBefore', o.speed);"
+            "  write_local(o, 'angleBefore', o.angle);"
+            "  write_local(o, 'velocityXBefore', o.velocityX);"
+            "  write_local(o, 'velocityYBefore', o.velocityY);"
+            "  write_local(o, 'rotationSpeedBefore', o.rotationSpeed);"
+            "  position(o, { normalX: -1, normalY: 0, penetration: 4 });"
+            "  write_local(o, 'horizontalX', o.x);"
+            "  write_local(o, 'horizontalY', o.y);"
+            "  position(o, 100, 50);"
+            "  position(o, { normalX: 0, normalY: 1, penetration: 3 });"
+            "  write_local(o, 'verticalX', o.x);"
+            "  write_local(o, 'verticalY', o.y);"
+            "  position(o, 100, 50);"
+            "  position(o, { normalX: 0.6, normalY: 0.8, penetration: 5 });"
+            "  write_local(o, 'diagonalX', o.x);"
+            "  write_local(o, 'diagonalY', o.y);"
+            "  write_local(o, 'speedAfter', o.speed);"
+            "  write_local(o, 'angleAfter', o.angle);"
+            "  write_local(o, 'velocityXAfter', o.velocityX);"
+            "  write_local(o, 'velocityYAfter', o.velocityY);"
+            "  write_local(o, 'rotationSpeedAfter', o.rotationSpeed);"
+            "}"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "positionContactProbe");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load position contact project");
+
+        harness.update();
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(nearlyEqual(localValue(runtimeRoot, "absoluteX"), 100.0), "position(object, x, y) should keep absolute x behavior");
+        require(nearlyEqual(localValue(runtimeRoot, "absoluteY"), 50.0), "position(object, x, y) should keep absolute y behavior");
+        require(nearlyEqual(localValue(runtimeRoot, "horizontalX"), 96.0), "position(object, contact) should apply horizontal normal correction");
+        require(nearlyEqual(localValue(runtimeRoot, "horizontalY"), 50.0), "horizontal contact correction should not alter y");
+        require(nearlyEqual(localValue(runtimeRoot, "verticalX"), 100.0), "vertical contact correction should not alter x");
+        require(nearlyEqual(localValue(runtimeRoot, "verticalY"), 53.0), "position(object, contact) should apply vertical normal correction");
+        require(nearlyEqual(localValue(runtimeRoot, "diagonalX"), 103.0), "position(object, contact) should apply diagonal normal x");
+        require(nearlyEqual(localValue(runtimeRoot, "diagonalY"), 54.0), "position(object, contact) should apply diagonal normal y");
+        require(nearlyEqual(localValue(runtimeRoot, "speedAfter"), localValue(runtimeRoot, "speedBefore")), "position contact correction must not alter speed");
+        require(nearlyEqual(localValue(runtimeRoot, "angleAfter"), localValue(runtimeRoot, "angleBefore")), "position contact correction must not alter angle");
+        require(nearlyEqual(localValue(runtimeRoot, "velocityXAfter"), localValue(runtimeRoot, "velocityXBefore")), "position contact correction must not alter velocity x");
+        require(nearlyEqual(localValue(runtimeRoot, "velocityYAfter"), localValue(runtimeRoot, "velocityYBefore")), "position contact correction must not alter velocity y");
+        require(nearlyEqual(localValue(runtimeRoot, "rotationSpeedAfter"), localValue(runtimeRoot, "rotationSpeedBefore")), "position contact correction must not alter rotation speed");
+    }
+
     void testFindFunctionsUseLiveWorldAndCreationOrder()
     {
         RuntimeHarness harness;
@@ -2648,6 +2713,7 @@ int main()
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "JS runtime object view is readonly and live", testJsRuntimeObjectViewIsReadonlyAndLive },
         { "JS runtime object view reads killed state in same callback", testJsRuntimeObjectViewReadsKilledStateInSameCallback },
+        { "position contact overload uses directed correction", testPositionContactOverloadUsesDirectedCorrection },
         { "find functions use live world and creation order", testFindFunctionsUseLiveWorldAndCreationOrder },
         { "find functions exclude dead objects and dead parents", testFindFunctionsExcludeDeadObjectsAndDeadParents },
         { "dead hook can find and kill live direct children", testDeadHookCanFindAndKillLiveDirectChildren },

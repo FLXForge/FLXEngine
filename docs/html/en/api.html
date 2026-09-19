@@ -352,11 +352,17 @@ accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
                 Places an object using logical coordinates. Use
                 <code>position_x(object, x)</code> and
                 <code>position_y(object, y)</code> to modify one axis.
+                <code>position(object, contact)</code> can also be used inside
+                collision callbacks to apply the directed
+                <code>normal * penetration</code> correction from a
+                <code>CollisionContact</code>. It does not reflect velocity or
+                perform automatic physics resolution.
             </p>
 
             <div class="code-card">
                 <div class="code-header">position</div>
 <pre><code>position(player, 160, 120);
+position(ball, contacts[0]);
 position_x(player, player.x + 4);</code></pre>
             </div>
 
@@ -1496,13 +1502,19 @@ stop_timer(paddle, "gun");
                 Places the object immediately at the specified logical
                 position. This does not change speed, velocity, angle, timers or
                 local state.
+                <code>position(object, contact)</code> applies the directed
+                correction from a <code>CollisionContact</code> to the current
+                position: <code>normal * penetration</code>. Collision remains
+                informative and explicit; FLX does not resolve collisions
+                automatically.
             </p>
 
             <div class="code-card">
                 <div class="code-header">position</div>
 
 
-<pre><code>position(ball, 160, 90);</code></pre>
+<pre><code>position(ball, 160, 90);
+position(ball, contacts[0]);</code></pre>
 
 
             </div>

@@ -11,11 +11,7 @@ function motion(asteroid) {
 
 function collision(asteroid, other, contacts) {
     for (const contact of contacts) {
-        position(
-            asteroid,
-            asteroid.x + contact.normalX * contact.penetration,
-            asteroid.y + contact.normalY * contact.penetration
-        );
+        position(asteroid, contact);
 
         if (Math.abs(contact.normalX) > Math.abs(contact.normalY)) {
             reflect_x(asteroid);

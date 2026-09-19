@@ -34,11 +34,7 @@ function collision(ball, other, contacts) {
     }
 
     for (const contact of contacts) {
-        position(
-            ball,
-            ball.x + contact.normalX * contact.penetration,
-            ball.y + contact.normalY * contact.penetration
-        );
+        position(ball, contact);
 
         if (other.group == "paddle") {
             if (

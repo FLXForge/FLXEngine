@@ -557,8 +557,6 @@ RuntimeLoadResult RuntimeWorld::load(
 
 void RuntimeWorld::update(
     ScriptEngine& scriptEngine,
-    float screenWidth,
-    float screenHeight,
     float delta
 )
 {
@@ -569,9 +567,6 @@ void RuntimeWorld::update(
 
     actionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
-
-    (void)screenWidth;
-    (void)screenHeight;
 
     motionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);

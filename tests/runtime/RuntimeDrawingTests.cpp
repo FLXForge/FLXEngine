@@ -909,7 +909,7 @@ namespace
 
         require(harness.load().success, "runtime should load action draw project");
         harness.scripts.setFrameDelta(0.016f);
-        harness.world.update(harness.scripts, ScreenWidth, ScreenHeight, 0.016f);
+        harness.world.update(harness.scripts, 0.016f);
 
         require(countRenderedColor(harness, RED, 1, 80, 60) == 0, "draw_pixel outside draw callback should not render");
     }
@@ -930,7 +930,7 @@ namespace
 
         require(harness.load().success, "runtime should load HUD pattern project");
         harness.scripts.setFrameDelta(0.016f);
-        harness.world.update(harness.scripts, ScreenWidth, ScreenHeight, 0.016f);
+        harness.world.update(harness.scripts, 0.016f);
 
         require(countRenderedColor(harness, RED, 1, 80, 60) == 1, "HUD should be drawn from draw() using state produced by action()");
     }

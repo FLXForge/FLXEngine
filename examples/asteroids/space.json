@@ -3,9 +3,19 @@
   "control": {
     "player": 1
   },
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+  "size": {
+    "width": 640,
+    "height": 320
+  },
+  "delimit": true,
   "behavior": {
     "scripts": [
-      "game", "ui"
+      "game",
+      "ui"
     ]
   },
   "children": {

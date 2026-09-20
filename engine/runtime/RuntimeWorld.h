@@ -37,8 +37,6 @@ public:
 
     void update(
         ScriptEngine& scriptEngine,
-        float screenWidth,
-        float screenHeight,
         float delta
     );
 

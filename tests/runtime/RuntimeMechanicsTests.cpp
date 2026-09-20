@@ -164,7 +164,7 @@ namespace
         void update(float delta = 0.1f)
         {
             scripts.setFrameDelta(delta);
-            world.update(scripts, 320.0f, 180.0f, delta);
+            world.update(scripts, delta);
         }
     };
 

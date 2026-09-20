@@ -148,7 +148,7 @@ namespace
         void update(float delta = FrameDelta)
         {
             scripts.setFrameDelta(delta);
-            world.update(scripts, ScreenWidth, ScreenHeight, delta);
+            world.update(scripts, delta);
         }
 
         void draw()
@@ -933,8 +933,6 @@ namespace
         harness.scripts.setFrameDelta(FrameDelta);
         harness.world.update(
             harness.scripts,
-            999.0f,
-            777.0f,
             FrameDelta
         );
 

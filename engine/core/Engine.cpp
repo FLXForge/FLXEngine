@@ -587,8 +587,6 @@ void Engine::update()
 
     world->update(
         scriptEngine,
-        static_cast<float>(context.machine.video.screenWidth),
-        static_cast<float>(context.machine.video.screenHeight),
         delta
     );
 

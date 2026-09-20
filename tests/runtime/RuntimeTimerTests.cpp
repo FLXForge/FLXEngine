@@ -126,7 +126,7 @@ namespace
         void update(float delta = FrameDelta)
         {
             scripts.setFrameDelta(delta);
-            world.update(scripts, ScreenWidth, ScreenHeight, delta);
+            world.update(scripts, delta);
         }
     };
 

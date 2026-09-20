@@ -1086,7 +1086,7 @@ namespace
         provider.setKeys({ KEY_W, KEY_SPACE });
         input.update(0.016f);
         scripts.setFrameDelta(0.016f);
-        world.update(scripts, 640.0f, 480.0f, 0.016f);
+        world.update(scripts, 0.016f);
 
         require(localNumber(*runtimeRoot, "upPressed") == 1.0, "player(1) direction should report pressed without control.player");
         require(localNumber(*runtimeRoot, "upDown") == 1.0, "player(1) direction should report down without control.player");
@@ -1096,7 +1096,7 @@ namespace
         provider.setKeys({});
         input.update(0.016f);
         scripts.setFrameDelta(0.016f);
-        world.update(scripts, 640.0f, 480.0f, 0.016f);
+        world.update(scripts, 0.016f);
 
         require(localNumber(*runtimeRoot, "upReleased") == 1.0, "player(1) direction should report released without control.player");
     }

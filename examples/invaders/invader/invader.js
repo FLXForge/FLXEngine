@@ -5,8 +5,6 @@
     Moves with the shared fleet direction and dies when hit by a laser.
 */
 
-let speed = 10;
-
 function born(invader) {
     write_global("invaders", (read_global("invaders") || 0) + 1);
 }
@@ -20,7 +18,6 @@ function motion(invader){
         spawn(invader, "laser");
     }
 
-    apply_speed(invader, speed);
     move_horizontal(invader, read_global("fleet_direction"));
 
     if (invader.x < 20) {
@@ -51,8 +48,4 @@ function collision(invader, other){
         write_global("score", read_global("score") + 100);
         write_global("invaders", read_global("invaders") - 1);
     }
-}
-
-function dead(invader){
-    speed += 0.6;
 }

@@ -1241,6 +1241,7 @@ namespace flx::binary
             writer.writeString(object.sourcePath);
             writer.writeString(object.spawnMode);
             writer.writeBool(object.component);
+            writer.writeBool(object.delimit);
             writeVector2(writer, object.offset);
             writer.writeBool(object.hasOffset);
             writer.writeBool(object.attachFollowX);
@@ -1383,6 +1384,7 @@ namespace flx::binary
             object.sourcePath = reader.readString("object.sourcePath");
             object.spawnMode = reader.readString("object.spawn");
             object.component = reader.readBool("object.component");
+            object.delimit = reader.readBool("object.delimit");
             object.offset = readVector2(reader);
             object.hasOffset = reader.readBool("object.offset");
             object.attachFollowX = reader.readBool("object.attach.x");

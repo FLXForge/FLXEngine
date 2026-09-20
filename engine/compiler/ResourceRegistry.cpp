@@ -13,6 +13,7 @@ namespace
         target.sourcePath = source.sourcePath;
         target.spawnMode = source.spawnMode;
         target.component = source.component;
+        target.delimit = source.delimit;
 
         target.offset = source.offset;
         target.hasOffset = source.hasOffset;

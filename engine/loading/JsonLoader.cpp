@@ -3540,6 +3540,9 @@ namespace
         definition.component =
             object.value("component", definition.component);
 
+        definition.delimit =
+            object.value("delimit", definition.delimit);
+
         parseLocal(object, definition);
         parseControl(object, definition);
         parseVisual(session, object, sourceFile, definition);

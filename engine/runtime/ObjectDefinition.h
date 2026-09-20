@@ -166,6 +166,7 @@ struct ObjectDefinition
     std::string sourcePath;
     std::string spawnMode = "auto";
     bool component = false;
+    bool delimit = false;
 
     Vector2 offset = Vector2{ 0.0f, 0.0f };
     bool hasOffset = false;

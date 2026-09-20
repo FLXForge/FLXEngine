@@ -24,6 +24,7 @@ namespace
         compiled.sourcePath = definition.sourcePath;
         compiled.spawnMode = definition.spawnMode;
         compiled.component = definition.component;
+        compiled.delimit = definition.delimit;
 
         compiled.offset = definition.offset;
         compiled.hasOffset = definition.hasOffset;

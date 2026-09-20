@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include "WorldExtent.h"
 #include "ScriptValue.h"
 
 #include <string>
@@ -48,7 +49,7 @@ public:
     std::vector<std::string> gridPattern;
     std::vector<std::vector<std::string>> gridRowPattern;
 
-    void applyBounds(float screenWidth, float screenHeight);
+    void applyBounds(const WorldExtent& worldExtent);
 
 public:
     std::string name;

@@ -49,8 +49,7 @@ RuntimeObject::RuntimeObject(
 }
 
 void RuntimeObject::applyBounds(
-    float screenWidth,
-    float screenHeight
+    const WorldExtent& worldExtent
 )
 {
     if (boundsMode != "wrap")
@@ -58,21 +57,33 @@ void RuntimeObject::applyBounds(
         return;
     }
 
-    if (position.x < 0.0f)
+    const float minX =
+        worldExtent.x;
+
+    const float maxX =
+        worldExtent.x + worldExtent.width;
+
+    const float minY =
+        worldExtent.y;
+
+    const float maxY =
+        worldExtent.y + worldExtent.height;
+
+    if (position.x < minX)
     {
-        position.x = screenWidth;
+        position.x = maxX;
     }
-    else if (position.x > screenWidth)
+    else if (position.x > maxX)
     {
-        position.x = 0.0f;
+        position.x = minX;
     }
 
-    if (position.y < 0.0f)
+    if (position.y < minY)
     {
-        position.y = screenHeight;
+        position.y = maxY;
     }
-    else if (position.y > screenHeight)
+    else if (position.y > maxY)
     {
-        position.y = 0.0f;
+        position.y = minY;
     }
 }

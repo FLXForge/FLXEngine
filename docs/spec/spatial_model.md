@@ -722,6 +722,17 @@ Bounds consume la posición espacial del RuntimeObject.
 
 El significado de `x/y` continúa siendo el pivot.
 
+`bounds.wrap` opera contra la extensión lógica del World, no contra el
+raster lógico de Machine Video.
+
+La extensión lógica del World se calcula en v0.3 a partir de los
+RuntimeObjects declarados con `delimit: true` durante la carga. Si no hay
+delimitadores, el World usa el default independiente `0,0 / 640x480`.
+
+Machine Video define el raster de salida. World y Machine Video son
+espacios distintos: para v0.3 la materialización World -> Video usa una
+política fija de stretch.
+
 Cuando una regla de bounds necesite conocer la extensión geométrica del
 objeto deberá derivarla expresamente del tamaño o de la geometría
 efectiva correspondiente.
@@ -812,7 +823,7 @@ local RuntimeObject space
         ↓
 world logical space
         ↓
-screen logical space
+Machine Video raster
         ↓
 display / physical pixels
 ```

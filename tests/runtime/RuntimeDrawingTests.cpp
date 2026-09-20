@@ -38,6 +38,16 @@ namespace
             project.context.machine.video.outputScale = 1;
             scripts.setScreenScale(1);
 
+            ObjectDefinition testWorld;
+            testWorld.id = "__test_world_extent";
+            testWorld.delimit = true;
+            testWorld.visible = false;
+            testWorld.origin = Vector2{ ScreenWidth / 2.0f, ScreenHeight / 2.0f };
+            testWorld.hasOrigin = true;
+            testWorld.size = Vector2{ ScreenWidth, ScreenHeight };
+            testWorld.hasSize = true;
+            addObject(testWorld);
+
             scripts.setFindObjectFunction(
                 [this](const std::string& name)
                 {
@@ -121,6 +131,12 @@ namespace
 
         void addObject(ObjectDefinition definition)
         {
+            if (definition.id == "root" && !definition.delimit)
+            {
+                definition.childResources["__test_world_extent"] =
+                    "__test_world_extent";
+            }
+
             if (definition.sourcePath.empty())
             {
                 definition.sourcePath = definition.id + ".json";
@@ -571,6 +587,56 @@ namespace
         UnloadRenderTexture(target);
 
         require(count == 9, "one logical pixel at scale 3 should draw nine physical pixels");
+    }
+
+    void testRendererStretchesWorldExtentToMachineRaster()
+    {
+        HiddenTestWindow window;
+
+        std::vector<VisualPrimitive> primitives;
+        VisualPrimitive pixel;
+        pixel.kind = VisualPrimitiveKind::Pixel;
+        pixel.a = Vector2{ 160.0f, 90.0f };
+        pixel.color = RED;
+        primitives.push_back(pixel);
+
+        std::vector<RuntimeObject> objects;
+        RenderTexture2D target = LoadRenderTexture(640, 480);
+
+        BeginTextureMode(target);
+        ClearBackground(BLACK);
+        DrawingRenderer::render(
+            primitives,
+            objects,
+            WorldExtent{ 0.0f, 0.0f, 320.0f, 180.0f },
+            640.0f,
+            480.0f
+        );
+        EndTextureMode();
+
+        Image image = LoadImageFromTexture(target.texture);
+
+        ColorBounds bounds;
+
+        for (int y = 0; y < image.height; ++y)
+        {
+            for (int x = 0; x < image.width; ++x)
+            {
+                if (sameColor(GetImageColor(image, x, y), RED))
+                {
+                    includePixel(bounds, x, y);
+                }
+            }
+        }
+
+        UnloadImage(image);
+        UnloadRenderTexture(target);
+
+        require(bounds.found, "stretched world pixel should render");
+        require(nearlyEqual(centerX(bounds), 320.0f, 2.0f), "world center x should stretch to machine raster center");
+        require(nearlyEqual(static_cast<float>(bounds.minY + bounds.maxY) / 2.0f, 240.0f, 2.0f), "world center y should stretch to machine raster center");
+        require(nearlyEqual(pixel.a.x, 160.0f), "renderer stretch must not mutate world x");
+        require(nearlyEqual(pixel.a.y, 90.0f), "renderer stretch must not mutate world y");
     }
 
     void testLocalPrimitiveWrapsWithReferenceButWorldPrimitiveDoesNot()
@@ -1165,6 +1231,7 @@ int main()
         { "World and local primitives capture owner reference and transform", testWorldAndLocalPrimitivesCaptureOwnerReferenceAndTransform },
         { "Local primitive captures transform at emission", testLocalPrimitiveCapturesTransformAtEmission },
         { "Renderer scales logical pixel to physical pixels", testRendererScalesLogicalPixelToPhysicalPixels },
+        { "Renderer stretches world extent to machine raster", testRendererStretchesWorldExtentToMachineRaster },
         { "Local primitive wraps with reference but world primitive does not", testLocalPrimitiveWrapsWithReferenceButWorldPrimitiveDoesNot },
         { "Representation presentation snapshot does not change after draw mutation", testRepresentationPresentationSnapshotDoesNotChangeAfterDrawMutation },
         { "Local primitive presentation snapshot does not change after reference mutation", testLocalPrimitivePresentationSnapshotDoesNotChangeAfterReferenceMutation },

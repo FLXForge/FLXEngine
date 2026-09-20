@@ -7,6 +7,34 @@
 
 namespace
 {
+    struct RenderTransform
+    {
+        WorldExtent world;
+        float rasterWidth = 0.0f;
+        float rasterHeight = 0.0f;
+
+        float scaleX() const
+        {
+            return rasterWidth / world.width;
+        }
+
+        float scaleY() const
+        {
+            return rasterHeight / world.height;
+        }
+
+        float lineWidth() const
+        {
+            return std::max(
+                1.0f,
+                std::min(
+                    std::abs(scaleX()),
+                    std::abs(scaleY())
+                )
+            );
+        }
+    };
+
     bool isOutlineMode(const std::string& mode)
     {
         return mode == "outline";
@@ -44,6 +72,28 @@ namespace
         return Vector2{
             center.x + translatedX * cosine - translatedY * sine,
             center.y + translatedX * sine + translatedY * cosine
+        };
+    }
+
+    Vector2 transformPoint(
+        Vector2 point,
+        const RenderTransform& transform
+    )
+    {
+        return Vector2{
+            (point.x - transform.world.x) * transform.scaleX(),
+            (point.y - transform.world.y) * transform.scaleY()
+        };
+    }
+
+    Vector2 transformSize(
+        Vector2 size,
+        const RenderTransform& transform
+    )
+    {
+        return Vector2{
+            size.x * transform.scaleX(),
+            size.y * transform.scaleY()
         };
     }
 
@@ -107,18 +157,9 @@ namespace
         return points;
     }
 
-    Vector2 scalePoint(Vector2 point, int scale)
-    {
-        return Vector2{
-            point.x * scale,
-            point.y * scale
-        };
-    }
-
     std::vector<Vector2> presentationOffsets(
         const VisualPrimitive& primitive,
-        float screenWidth,
-        float screenHeight
+        const WorldExtent& world
     )
     {
         std::vector<Vector2> offsets = {
@@ -141,56 +182,65 @@ namespace
                 primitive.presentationSize.y * primitive.presentationSize.y
             ) / 2.0f;
 
+        const float minX =
+            world.x;
+        const float maxX =
+            world.x + world.width;
+        const float minY =
+            world.y;
+        const float maxY =
+            world.y + world.height;
+
         const bool overflowLeft =
-            primitive.presentationPosition.x - radius < 0.0f;
+            primitive.presentationPosition.x - radius < minX;
 
         const bool overflowRight =
-            primitive.presentationPosition.x + radius > screenWidth;
+            primitive.presentationPosition.x + radius > maxX;
 
         const bool overflowTop =
-            primitive.presentationPosition.y - radius < 0.0f;
+            primitive.presentationPosition.y - radius < minY;
 
         const bool overflowBottom =
-            primitive.presentationPosition.y + radius > screenHeight;
+            primitive.presentationPosition.y + radius > maxY;
 
         if (overflowLeft)
         {
-            offsets.push_back(Vector2{ screenWidth, 0.0f });
+            offsets.push_back(Vector2{ world.width, 0.0f });
         }
 
         if (overflowRight)
         {
-            offsets.push_back(Vector2{ -screenWidth, 0.0f });
+            offsets.push_back(Vector2{ -world.width, 0.0f });
         }
 
         if (overflowTop)
         {
-            offsets.push_back(Vector2{ 0.0f, screenHeight });
+            offsets.push_back(Vector2{ 0.0f, world.height });
         }
 
         if (overflowBottom)
         {
-            offsets.push_back(Vector2{ 0.0f, -screenHeight });
+            offsets.push_back(Vector2{ 0.0f, -world.height });
         }
 
         if (overflowLeft && overflowTop)
         {
-            offsets.push_back(Vector2{ screenWidth, screenHeight });
+            offsets.push_back(Vector2{ world.width, world.height });
         }
 
         if (overflowLeft && overflowBottom)
         {
-            offsets.push_back(Vector2{ screenWidth, -screenHeight });
+            offsets.push_back(Vector2{ world.width, -world.height });
         }
 
         if (overflowRight && overflowTop)
         {
-            offsets.push_back(Vector2{ -screenWidth, screenHeight });
+            offsets.push_back(Vector2{ -world.width, world.height });
         }
 
         if (overflowRight && overflowBottom)
         {
-            offsets.push_back(Vector2{ -screenWidth, -screenHeight });
+            offsets.push_back(Vector2{ -world.width, -world.height });
         }
 
         return offsets;
@@ -200,7 +250,7 @@ namespace
         std::vector<Vector2> points,
         const std::string& mode,
         Color color,
-        int scale
+        const RenderTransform& transform
     )
     {
         if (points.size() < 2)
@@ -211,7 +261,7 @@ namespace
         for (Vector2& point : points)
         {
             point =
-                scalePoint(point, scale);
+                transformPoint(point, transform);
         }
 
         if (!isOutlineMode(mode) && points.size() >= 3)
@@ -234,57 +284,10 @@ namespace
             DrawLineEx(
                 points[i],
                 points[(i + 1) % points.size()],
-                std::max(1.0f, static_cast<float>(scale)),
+                transform.lineWidth(),
                 color
             );
         }
-    }
-
-    int fitFontSize(
-        const std::string& text,
-        float maxWidth,
-        float maxHeight
-    )
-    {
-        if (text.empty() || maxWidth <= 0.0f || maxHeight <= 0.0f)
-        {
-            return 1;
-        }
-
-        const Font font =
-            GetFontDefault();
-
-        constexpr float spacing = 1.0f;
-        int low = 1;
-        int high =
-            std::max(1, static_cast<int>(maxHeight));
-        int best = 1;
-
-        while (low <= high)
-        {
-            const int middle =
-                (low + high) / 2;
-
-            const Vector2 measured =
-                MeasureTextEx(
-                    font,
-                    text.c_str(),
-                    static_cast<float>(middle),
-                    spacing
-                );
-
-            if (measured.x <= maxWidth && measured.y <= maxHeight)
-            {
-                best = middle;
-                low = middle + 1;
-            }
-            else
-            {
-                high = middle - 1;
-            }
-        }
-
-        return best;
     }
 
     void drawCenteredText(
@@ -293,7 +296,7 @@ namespace
         int fontSize,
         float angle,
         Color color,
-        int scale
+        const RenderTransform& transform
     )
     {
         if (text.empty())
@@ -306,8 +309,17 @@ namespace
 
         constexpr float spacing = 1.0f;
 
+        const float textScale =
+            std::max(
+                1.0f,
+                std::min(
+                    std::abs(transform.scaleX()),
+                    std::abs(transform.scaleY())
+                )
+            );
+
         const float scaledFontSize =
-            static_cast<float>(fontSize * scale);
+            static_cast<float>(fontSize) * textScale;
 
         std::vector<std::string> lines;
         size_t start = 0;
@@ -332,7 +344,7 @@ namespace
                 font,
                 "A",
                 scaledFontSize,
-                spacing * scale
+                spacing * textScale
             );
 
         const float lineHeight =
@@ -340,10 +352,13 @@ namespace
                 scaledFontSize,
                 lineMetrics.y
             ) +
-            spacing * scale;
+            spacing * textScale;
 
         const float totalHeight =
             lineHeight * static_cast<float>(lines.size());
+
+        const Vector2 physicalCenter =
+            transformPoint(center, transform);
 
         for (size_t i = 0; i < lines.size(); ++i)
         {
@@ -357,7 +372,7 @@ namespace
                     font,
                     lines[i].c_str(),
                     scaledFontSize,
-                    spacing * scale
+                    spacing * textScale
                 );
 
             const Vector2 localLineCenter = {
@@ -369,21 +384,21 @@ namespace
             const Vector2 lineCenter =
                 rotateAround(
                     Vector2{
-                        center.x + localLineCenter.x / static_cast<float>(scale),
-                        center.y + localLineCenter.y / static_cast<float>(scale)
+                        physicalCenter.x + localLineCenter.x,
+                        physicalCenter.y + localLineCenter.y
                     },
-                    center,
+                    physicalCenter,
                     angle
                 );
 
             DrawTextPro(
                 font,
                 lines[i].c_str(),
-                scalePoint(lineCenter, scale),
+                lineCenter,
                 Vector2{ measured.x / 2.0f, lineHeight / 2.0f },
                 angle,
                 scaledFontSize,
-                spacing * scale,
+                spacing * textScale,
                 color
             );
         }
@@ -393,7 +408,7 @@ namespace
         const std::vector<Vector2>& points,
         bool close,
         Color color,
-        int scale
+        const RenderTransform& transform
     )
     {
         if (points.empty())
@@ -404,13 +419,13 @@ namespace
         if (points.size() == 1)
         {
             const Vector2 point =
-                scalePoint(points.front(), scale);
+                transformPoint(points.front(), transform);
 
             DrawRectangle(
                 static_cast<int>(std::round(point.x)),
                 static_cast<int>(std::round(point.y)),
-                std::max(1, scale),
-                std::max(1, scale),
+                static_cast<int>(std::ceil(transform.lineWidth())),
+                static_cast<int>(std::ceil(transform.lineWidth())),
                 color
             );
 
@@ -423,9 +438,9 @@ namespace
         for (size_t i = 0; i < limit; ++i)
         {
             DrawLineEx(
-                scalePoint(points[i], scale),
-                scalePoint(points[(i + 1) % points.size()], scale),
-                std::max(1.0f, static_cast<float>(scale)),
+                transformPoint(points[i], transform),
+                transformPoint(points[(i + 1) % points.size()], transform),
+                transform.lineWidth(),
                 color
             );
         }
@@ -434,7 +449,7 @@ namespace
     void drawEvenOddFill(
         const std::vector<Vector2>& logicalPoints,
         Color color,
-        int scale
+        const RenderTransform& transform
     )
     {
         if (logicalPoints.size() < 3)
@@ -443,7 +458,7 @@ namespace
                 logicalPoints,
                 false,
                 color,
-                scale
+                transform
             );
 
             return;
@@ -454,7 +469,7 @@ namespace
 
         for (Vector2 point : logicalPoints)
         {
-            points.push_back(scalePoint(point, scale));
+            points.push_back(transformPoint(point, transform));
         }
 
         float minY =
@@ -543,26 +558,29 @@ namespace
             logicalPoints,
             true,
             color,
-            scale
+            transform
         );
     }
 
     void drawPrimitiveAt(
         const VisualPrimitive& primitive,
         Vector2 offset,
-        int scale
+        const RenderTransform& transform
     )
     {
         if (primitive.kind == VisualPrimitiveKind::Pixel)
         {
             const Vector2 point =
-                scalePoint(add(primitive.a, offset), scale);
+                transformPoint(add(primitive.a, offset), transform);
+
+            const Vector2 size =
+                transformSize(Vector2{ 1.0f, 1.0f }, transform);
 
             DrawRectangle(
                 static_cast<int>(std::round(point.x)),
                 static_cast<int>(std::round(point.y)),
-                std::max(1, scale),
-                std::max(1, scale),
+                std::max(1, static_cast<int>(std::ceil(std::abs(size.x)))),
+                std::max(1, static_cast<int>(std::ceil(std::abs(size.y)))),
                 primitive.color
             );
 
@@ -572,9 +590,9 @@ namespace
         if (primitive.kind == VisualPrimitiveKind::Line)
         {
             DrawLineEx(
-                scalePoint(add(primitive.a, offset), scale),
-                scalePoint(add(primitive.b, offset), scale),
-                std::max(1.0f, static_cast<float>(scale)),
+                transformPoint(add(primitive.a, offset), transform),
+                transformPoint(add(primitive.b, offset), transform),
+                transform.lineWidth(),
                 primitive.color
             );
 
@@ -591,7 +609,7 @@ namespace
                 ),
                 "outline",
                 primitive.color,
-                scale
+                transform
             );
 
             return;
@@ -605,7 +623,7 @@ namespace
                 primitive.fontSize,
                 primitive.angle,
                 primitive.color,
-                scale
+                transform
             );
 
             return;
@@ -639,16 +657,16 @@ namespace
 
             if (isOutlineMode(primitive.primitiveMode))
             {
-                DrawLineEx(scalePoint(top, scale), scalePoint(left, scale), std::max(1.0f, static_cast<float>(scale)), primitive.color);
-                DrawLineEx(scalePoint(left, scale), scalePoint(right, scale), std::max(1.0f, static_cast<float>(scale)), primitive.color);
-                DrawLineEx(scalePoint(right, scale), scalePoint(top, scale), std::max(1.0f, static_cast<float>(scale)), primitive.color);
+                DrawLineEx(transformPoint(top, transform), transformPoint(left, transform), transform.lineWidth(), primitive.color);
+                DrawLineEx(transformPoint(left, transform), transformPoint(right, transform), transform.lineWidth(), primitive.color);
+                DrawLineEx(transformPoint(right, transform), transformPoint(top, transform), transform.lineWidth(), primitive.color);
             }
             else
             {
                 DrawTriangle(
-                    scalePoint(top, scale),
-                    scalePoint(left, scale),
-                    scalePoint(right, scale),
+                    transformPoint(top, transform),
+                    transformPoint(left, transform),
+                    transformPoint(right, transform),
                     primitive.color
                 );
             }
@@ -662,7 +680,7 @@ namespace
                 rectanglePoints(center, primitive.size, primitive.angle),
                 primitive.primitiveMode,
                 primitive.color,
-                scale
+                transform
             );
 
             return;
@@ -693,20 +711,20 @@ namespace
                     points,
                     true,
                     primitive.color,
-                    scale
+                    transform
                 );
             }
             else
             {
                 const Vector2 physicalCenter =
-                    scalePoint(center, scale);
+                    transformPoint(center, transform);
 
                 for (size_t i = 0; i < points.size(); ++i)
                 {
                     DrawTriangle(
                         physicalCenter,
-                        scalePoint(points[(i + 1) % points.size()], scale),
-                        scalePoint(points[i], scale),
+                        transformPoint(points[(i + 1) % points.size()], transform),
+                        transformPoint(points[i], transform),
                         primitive.color
                     );
                 }
@@ -736,7 +754,7 @@ namespace
                 drawEvenOddFill(
                     points,
                     primitive.color,
-                    scale
+                    transform
                 );
             }
             else
@@ -745,7 +763,7 @@ namespace
                     points,
                     primitive.geometryMode == "close",
                     primitive.color,
-                    scale
+                    transform
                 );
             }
 
@@ -760,7 +778,7 @@ namespace
                 primitive.fontSize,
                 primitive.angle,
                 primitive.color,
-                scale
+                transform
             );
 
             return;
@@ -773,7 +791,29 @@ Vector2 DrawingRenderer::logicalToPhysical(
     int scale
 )
 {
-    return scalePoint(point, scale);
+    return Vector2{
+        point.x * scale,
+        point.y * scale
+    };
+}
+
+Vector2 DrawingRenderer::logicalToPhysical(
+    Vector2 point,
+    const WorldExtent& worldExtent,
+    float rasterWidth,
+    float rasterHeight
+)
+{
+    if (worldExtent.width <= 0.0f ||
+        worldExtent.height <= 0.0f)
+    {
+        return Vector2{ 0.0f, 0.0f };
+    }
+
+    return Vector2{
+        (point.x - worldExtent.x) * (rasterWidth / worldExtent.width),
+        (point.y - worldExtent.y) * (rasterHeight / worldExtent.height)
+    };
 }
 
 void DrawingRenderer::render(
@@ -784,15 +824,50 @@ void DrawingRenderer::render(
     float screenHeight
 )
 {
+    render(
+        primitives,
+        objects,
+        WorldExtent{
+            0.0f,
+            0.0f,
+            screenWidth,
+            screenHeight
+        },
+        screenWidth * static_cast<float>(scale),
+        screenHeight * static_cast<float>(scale)
+    );
+}
+
+void DrawingRenderer::render(
+    const std::vector<VisualPrimitive>& primitives,
+    const std::vector<RuntimeObject>& objects,
+    const WorldExtent& worldExtent,
+    float rasterWidth,
+    float rasterHeight
+)
+{
     (void)objects;
+
+    if (worldExtent.width <= 0.0f ||
+        worldExtent.height <= 0.0f ||
+        rasterWidth <= 0.0f ||
+        rasterHeight <= 0.0f)
+    {
+        return;
+    }
+
+    const RenderTransform transform{
+        worldExtent,
+        rasterWidth,
+        rasterHeight
+    };
 
     for (const VisualPrimitive& primitive : primitives)
     {
         const std::vector<Vector2> offsets =
             presentationOffsets(
                 primitive,
-                screenWidth,
-                screenHeight
+                worldExtent
             );
 
         for (Vector2 offset : offsets)
@@ -800,9 +875,8 @@ void DrawingRenderer::render(
             drawPrimitiveAt(
                 primitive,
                 offset,
-                scale
+                transform
             );
         }
     }
 }
-

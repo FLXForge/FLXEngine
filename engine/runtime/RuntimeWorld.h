@@ -18,6 +18,13 @@ struct RuntimeLoadResult
     Diagnostics diagnostics;
 };
 
+struct WorldExtentContribution
+{
+    Vector2 position{ 0.0f, 0.0f };
+    Vector2 size{ 0.0f, 0.0f };
+    bool hasSize = false;
+};
+
 class RuntimeWorld
 {
 public:
@@ -36,6 +43,8 @@ public:
     );
 
     void setCollisionDebugEnabled(bool enabled);
+
+    const WorldExtent& getWorldExtent() const;
 
     void draw(
         ScriptEngine& scriptEngine,
@@ -138,9 +147,7 @@ private:
     void actionPhase(ScriptEngine& scriptEngine);
 
     void motionPhase(
-        ScriptEngine& scriptEngine,
-        float screenWidth,
-        float screenHeight
+        ScriptEngine& scriptEngine
     );
 
     void drawPhase(ScriptEngine& scriptEngine);
@@ -153,7 +160,17 @@ private:
 
     void updateObjectTime(float delta);
 
-    void drawCollisionDebug(int screenScale) const;
+    void drawCollisionDebug(
+        float rasterWidth,
+        float rasterHeight
+    ) const;
+
+    bool computeWorldExtent(Diagnostics& diagnostics);
+
+    void collectWorldExtentContribution(
+        const RuntimeObject& object,
+        const ObjectDefinition& definition
+    );
 
     std::string createRuntimeId(const std::string& name);
 
@@ -162,6 +179,9 @@ private:
     const ResourceRegistry* resources = nullptr;
     std::vector<RuntimeObject> objects;
     std::vector<RuntimeObject> pendingObjects;
+    WorldExtent worldExtent;
+    std::vector<WorldExtentContribution> worldExtentContributions;
+    bool collectingWorldExtentContributions = false;
     CollisionDebugFrame collisionDebugFrame;
     bool collisionDebugEnabled = false;
     bool automaticInstantiationFailed = false;

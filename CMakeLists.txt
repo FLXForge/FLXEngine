@@ -192,6 +192,7 @@ add_executable(flx
     engine/runtime/ScriptValue.h
     engine/runtime/RuntimeObject.cpp 
     engine/runtime/ObjectDefinition.h
+    engine/runtime/WorldExtent.h
     engine/runtime/AttachmentRuntimeState.h
     engine/runtime/AttachmentRuntimeState.cpp
     engine/runtime/RuntimeObjectBuilder.h

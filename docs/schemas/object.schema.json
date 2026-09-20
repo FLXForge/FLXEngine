@@ -114,6 +114,10 @@
       ]
     },
 
+    "delimit": {
+      "type": "boolean"
+    },
+
     "group": {
       "type": "string"
     },

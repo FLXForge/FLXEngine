@@ -849,7 +849,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><a class="link" href="#shape">shape</a>: object's visual information. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#mechanics">mechanics</a>: movement and rotation rules, if any. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#inherit">inherit</a>: live state inherited from the parent at creation time or while linked. <i>[ Optional ]</i></li>
-                <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching screen boundaries. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#bounds">bounds</a>: object behavior when reaching world boundaries. <i>[ Optional ]</i></li>
+                <li><a class="link" href="#delimit">delimit</a>: contributes this object to the logical World extent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#manual-children">manual children</a>: children created later with <code>spawn()</code>. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: rules used when the object follows its original parent. <i>[ Optional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: sound declarations owned by this object. <i>[ Optional ]</i></li>
@@ -1144,10 +1145,37 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><code>live.angle = "copy"</code>: keeps the child angle synchronized with the original parent.</li>
             </ul>
 
+            <h2 id="delimit">Delimit</h2>
+
+            <p>
+                <code>delimit: true</code> marks the object as a declarative
+                contributor to the logical World extent. The World extent is the
+                bounding rectangle of all delimit objects at load time. Runtime
+                movement, resize, spawn and kill do not recalculate it.
+            </p>
+
+            <p>
+                If no object declares <code>delimit: true</code>, FLX uses the
+                default World extent <code>0,0 / 640x480</code>. This default is
+                independent from the Machine Video raster, even if both defaults
+                currently share the same size.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">delimit</div>
+<pre><code>{
+    "origin": { "x": 160, "y": 90 },
+    "size": { "width": 320, "height": 180 },
+    "delimit": true
+}</code></pre>
+            </div>
+
             <h2 id="bounds">Bounds</h2>
 
             <p>
-                Defines the object's behavior when reaching screen boundaries.
+                Defines the object's behavior when reaching World boundaries.
+                <code>bounds.wrap</code> uses the logical World extent, not the
+                Machine Video screen size.
             </p>
 
             <div class="code-card">

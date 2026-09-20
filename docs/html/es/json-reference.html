@@ -849,7 +849,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><a class="link" href="#shape">shape</a>: informaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n visual del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#mechanics">mechanics</a>: reglas de movimiento y rotacion, si existen. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#inherit">inherit</a>: estado vivo heredado del parent al crear o mientras hay vinculo. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites de la pantalla. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los limites del World. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#delimit">delimit</a>: hace que este objeto contribuya a la extension logica del World. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
@@ -1126,10 +1127,38 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><code>live.angle = "copy"</code>: mantiene sincronizado el angulo del child con su parent original.</li>
             </ul>
 
+            <h2 id="delimit">Delimit</h2>
+
+            <p>
+                <code>delimit: true</code> marca el objeto como contribuidor
+                declarativo de la extension logica del World. La extension del
+                World es la envolvente rectangular de todos los objetos delimit
+                al cargar. Movimiento, resize, spawn y kill en runtime no la
+                recalculan.
+            </p>
+
+            <p>
+                Si ningun objeto declara <code>delimit: true</code>, FLX usa la
+                extension World por defecto <code>0,0 / 640x480</code>. Este
+                default es independiente del raster de Machine Video, aunque
+                ambos defaults compartan inicialmente el mismo tamano.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">delimit</div>
+<pre><code>{
+    "origin": { "x": 160, "y": 90 },
+    "size": { "width": 320, "height": 180 },
+    "delimit": true
+}</code></pre>
+            </div>
+
             <h2 id="bounds">Bounds</h2>
 
             <p>
-                Define comportamiento del objeto al alcanzar los lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites de la pantalla.
+                Define comportamiento del objeto al alcanzar los limites del
+                World. <code>bounds.wrap</code> usa la extension logica del
+                World, no el tamano de pantalla de Machine Video.
             </p>
 
             <div class="code-card">

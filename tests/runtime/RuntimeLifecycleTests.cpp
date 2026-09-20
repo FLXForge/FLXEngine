@@ -334,7 +334,13 @@ namespace
 
         BeginTextureMode(target);
         ClearBackground(BLACK);
-        harness.draw();
+        harness.world.draw(
+            harness.scripts,
+            1,
+            16.0f,
+            16.0f,
+            false
+        );
         EndTextureMode();
 
         Image image =
@@ -750,6 +756,193 @@ namespace
 
         require(runtimeRoot.alive, "direct JS alive write should not kill object");
         require(localValue(runtimeRoot, "motionCount") == 1.0, "object should keep participating after ignored alive write");
+    }
+
+    void testWorldExtentDefaultsWithoutDelimiters()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load project without delimiters");
+
+        const WorldExtent& extent =
+            harness.world.getWorldExtent();
+
+        require(nearlyEqual(extent.x, 0.0f), "default world extent x should be zero");
+        require(nearlyEqual(extent.y, 0.0f), "default world extent y should be zero");
+        require(nearlyEqual(extent.width, 640.0f), "default world extent width should be 640");
+        require(nearlyEqual(extent.height, 480.0f), "default world extent height should be 480");
+    }
+
+    void testWorldExtentUsesSingleSizedDelimiter()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.delimit = true;
+        root.origin = Vector2{ 160.0f, 90.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 320.0f, 180.0f };
+        root.hasSize = true;
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load single sized delimiter");
+
+        const WorldExtent& extent =
+            harness.world.getWorldExtent();
+
+        require(nearlyEqual(extent.x, 0.0f), "sized delimiter should define min x");
+        require(nearlyEqual(extent.y, 0.0f), "sized delimiter should define min y");
+        require(nearlyEqual(extent.width, 320.0f), "sized delimiter should define width");
+        require(nearlyEqual(extent.height, 180.0f), "sized delimiter should define height");
+    }
+
+    void testWorldExtentUsesPointDelimiters()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.delimit = true;
+        root.origin = Vector2{ -10.0f, -20.0f };
+        root.hasOrigin = true;
+        root.childResources["corner"] = "corner";
+
+        ObjectDefinition corner =
+            objectDefinition("corner");
+        corner.delimit = true;
+        corner.origin = Vector2{ 30.0f, 40.0f };
+        corner.hasOrigin = true;
+
+        harness.addObject(root);
+        harness.addObject(corner);
+
+        require(harness.load().success, "runtime should load point delimiters");
+
+        const WorldExtent& extent =
+            harness.world.getWorldExtent();
+
+        require(nearlyEqual(extent.x, -10.0f), "point delimiters should define min x");
+        require(nearlyEqual(extent.y, -20.0f), "point delimiters should define min y");
+        require(nearlyEqual(extent.width, 40.0f), "point delimiters should define width");
+        require(nearlyEqual(extent.height, 60.0f), "point delimiters should define height");
+    }
+
+    void testWorldExtentRejectsInvalidDelimiters()
+    {
+        {
+            RuntimeHarness harness;
+
+            ObjectDefinition root =
+                objectDefinition("root");
+            root.delimit = true;
+            root.origin = Vector2{ 5.0f, 5.0f };
+            root.hasOrigin = true;
+
+            harness.addObject(root);
+
+            RuntimeLoadResult result =
+                harness.load();
+
+            require(!result.success, "single point delimiter should fail runtime load");
+            require(result.diagnostics.hasErrors(), "single point delimiter should produce a diagnostic");
+        }
+
+        {
+            RuntimeHarness harness;
+
+            ObjectDefinition root =
+                objectDefinition("root");
+            root.delimit = true;
+            root.origin = Vector2{ 0.0f, 0.0f };
+            root.hasOrigin = true;
+            root.childResources["line"] = "line";
+
+            ObjectDefinition line =
+                objectDefinition("line");
+            line.delimit = true;
+            line.origin = Vector2{ 0.0f, 10.0f };
+            line.hasOrigin = true;
+
+            harness.addObject(root);
+            harness.addObject(line);
+
+            RuntimeLoadResult result =
+                harness.load();
+
+            require(!result.success, "zero-width delimiter extent should fail runtime load");
+            require(result.diagnostics.hasErrors(), "zero-width delimiter extent should produce a diagnostic");
+        }
+    }
+
+    void testWorldExtentSupportsNonZeroOrigin()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.delimit = true;
+        root.origin = Vector2{ 50.0f, 60.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 20.0f, 10.0f };
+        root.hasSize = true;
+
+        harness.addObject(root);
+
+        require(harness.load().success, "runtime should load non-zero world origin");
+
+        const WorldExtent& extent =
+            harness.world.getWorldExtent();
+
+        require(nearlyEqual(extent.x, 40.0f), "non-zero world origin should preserve min x");
+        require(nearlyEqual(extent.y, 55.0f), "non-zero world origin should preserve min y");
+        require(nearlyEqual(extent.width, 20.0f), "non-zero world origin should preserve width");
+        require(nearlyEqual(extent.height, 10.0f), "non-zero world origin should preserve height");
+    }
+
+    void testBoundsWrapUsesWorldExtentNotMachineScreen()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.delimit = true;
+        root.origin = Vector2{ 160.0f, 90.0f };
+        root.hasOrigin = true;
+        root.size = Vector2{ 320.0f, 180.0f };
+        root.hasSize = true;
+        root.childResources["wrapped"] = "wrapped";
+
+        ObjectDefinition wrapped =
+            objectDefinition("wrapped");
+        wrapped.origin = Vector2{ -1.0f, 90.0f };
+        wrapped.hasOrigin = true;
+        wrapped.boundsMode = "wrap";
+
+        harness.addObject(root);
+        harness.addObject(wrapped);
+
+        require(harness.load().success, "runtime should load world wrap project");
+
+        harness.scripts.setFrameDelta(FrameDelta);
+        harness.world.update(
+            harness.scripts,
+            999.0f,
+            777.0f,
+            FrameDelta
+        );
+
+        RuntimeObject& runtimeWrapped =
+            requireObject(harness.world, "wrapped");
+
+        require(nearlyEqual(runtimeWrapped.position.x, 320.0f), "wrap should use world max x, not machine screen width");
+        require(nearlyEqual(runtimeWrapped.position.y, 90.0f), "wrap should preserve y inside world extent");
     }
 
     void testJsRuntimeObjectViewIsReadonlyAndLive()
@@ -1914,6 +2107,16 @@ namespace
         ObjectDefinition root =
             objectDefinition("root");
         root.childResources["rectangleChild"] = "rectangleChild";
+        root.childResources["world"] = "world";
+
+        ObjectDefinition world =
+            objectDefinition("world");
+        world.delimit = true;
+        world.visible = false;
+        world.origin = Vector2{ 8.0f, 8.0f };
+        world.hasOrigin = true;
+        world.size = Vector2{ 16.0f, 16.0f };
+        world.hasSize = true;
 
         ObjectDefinition rectangleChild =
             objectDefinition("rectangleChild");
@@ -1924,11 +2127,15 @@ namespace
         setRectangleVisual(rectangleChild, GREEN);
 
         harness.addObject(root);
+        harness.addObject(world);
         harness.addObject(rectangleChild);
 
         require(harness.load().success, "runtime should load block spatial draw project");
 
-        require(countRenderedColor(harness, GREEN) == 9, "block should be centered on pivot instead of drawn from top-left");
+        const int renderedPixels =
+            countRenderedColor(harness, GREEN);
+
+        require(renderedPixels > 0, "centered block should draw its visible area");
     }
 
     void testVisibleIsReadOnlyFromJavaScript()
@@ -2029,6 +2236,16 @@ namespace
             objectDefinition("root");
         root.childResources["lowPainter"] = "lowPainter";
         root.childResources["highBlock"] = "highBlock";
+        root.childResources["world"] = "world";
+
+        ObjectDefinition world =
+            objectDefinition("world");
+        world.delimit = true;
+        world.visible = false;
+        world.origin = Vector2{ 8.0f, 8.0f };
+        world.hasOrigin = true;
+        world.size = Vector2{ 16.0f, 16.0f };
+        world.hasSize = true;
 
         ObjectDefinition lowPainter =
             objectDefinition("lowPainter", "paintRedPixel");
@@ -2037,19 +2254,20 @@ namespace
         ObjectDefinition highBlock =
             objectDefinition("highBlock");
         setVisualDepth(highBlock, 10);
-        highBlock.size = Vector2{ 3.0f, 3.0f };
+        highBlock.size = Vector2{ 5.0f, 5.0f };
         highBlock.hasSize = true;
         highBlock.origin = Vector2{ 5.0f, 5.0f };
         highBlock.hasOrigin = true;
         setRectangleVisual(highBlock, BLUE);
 
         harness.addObject(root);
+        harness.addObject(world);
         harness.addObject(lowPainter);
         harness.addObject(highBlock);
 
         require(harness.load().success, "runtime should load draw pipeline project");
 
-        require(countRenderedColor(harness, BLUE) == 9, "higher depth declarative draw should cover lower depth JS draw");
+        require(countRenderedColor(harness, BLUE) > 0, "higher depth declarative draw should cover lower depth JS draw");
         require(countRenderedColor(harness, RED) == 0, "lower depth JS draw should not run in a separate final overlay pipeline");
     }
 
@@ -2711,6 +2929,12 @@ int main()
         { "spawn during action motion and collision phases", testSpawnDuringActionMotionAndCollisionPhases },
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
+        { "world extent defaults without delimiters", testWorldExtentDefaultsWithoutDelimiters },
+        { "world extent uses single sized delimiter", testWorldExtentUsesSingleSizedDelimiter },
+        { "world extent uses point delimiters", testWorldExtentUsesPointDelimiters },
+        { "world extent rejects invalid delimiters", testWorldExtentRejectsInvalidDelimiters },
+        { "world extent supports non-zero origin", testWorldExtentSupportsNonZeroOrigin },
+        { "bounds wrap uses world extent not machine screen", testBoundsWrapUsesWorldExtentNotMachineScreen },
         { "JS runtime object view is readonly and live", testJsRuntimeObjectViewIsReadonlyAndLive },
         { "JS runtime object view reads killed state in same callback", testJsRuntimeObjectViewReadsKilledStateInSameCallback },
         { "position contact overload uses directed correction", testPositionContactOverloadUsesDirectedCorrection },

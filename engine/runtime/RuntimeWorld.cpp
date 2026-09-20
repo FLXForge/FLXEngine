@@ -23,6 +23,82 @@ namespace
     constexpr size_t MaxLoadSpawnFlushPasses = 128;
     constexpr size_t MaxLoadSpawnedObjects = 4096;
     constexpr size_t MaxAutomaticInstantiationObjects = 4096;
+    constexpr WorldExtent DefaultWorldExtent = WorldExtent{
+        0.0f,
+        0.0f,
+        640.0f,
+        480.0f
+    };
+
+    struct WorldExtentAccumulator
+    {
+        bool hasAny = false;
+        size_t delimiters = 0;
+        size_t pointDelimiters = 0;
+        float minX = 0.0f;
+        float minY = 0.0f;
+        float maxX = 0.0f;
+        float maxY = 0.0f;
+
+        void includePoint(Vector2 point)
+        {
+            if (!hasAny)
+            {
+                minX = point.x;
+                maxX = point.x;
+                minY = point.y;
+                maxY = point.y;
+                hasAny = true;
+                return;
+            }
+
+            minX = std::min(minX, point.x);
+            maxX = std::max(maxX, point.x);
+            minY = std::min(minY, point.y);
+            maxY = std::max(maxY, point.y);
+        }
+
+        void includeContribution(const WorldExtentContribution& contribution)
+        {
+            ++delimiters;
+
+            if (!contribution.hasSize)
+            {
+                ++pointDelimiters;
+                includePoint(contribution.position);
+                return;
+            }
+
+            const Vector2 halfSize = Vector2{
+                contribution.size.x / 2.0f,
+                contribution.size.y / 2.0f
+            };
+
+            includePoint(
+                Vector2{
+                    contribution.position.x - halfSize.x,
+                    contribution.position.y - halfSize.y
+                }
+            );
+
+            includePoint(
+                Vector2{
+                    contribution.position.x + halfSize.x,
+                    contribution.position.y + halfSize.y
+                }
+            );
+        }
+
+        WorldExtent toWorldExtent() const
+        {
+            return WorldExtent{
+                minX,
+                minY,
+                maxX - minX,
+                maxY - minY
+            };
+        }
+    };
 
     Vector2 rayDirection(float angle)
     {
@@ -138,14 +214,6 @@ namespace
         };
     }
 
-    Vector2 scaledPoint(Vector2 point, int scale)
-    {
-        return Vector2{
-            point.x * scale,
-            point.y * scale
-        };
-    }
-
     Color colliderDebugColor(const EffectiveCollider& collider)
     {
         if (!collider.declaredEnabled)
@@ -166,13 +234,30 @@ namespace
         return GREEN;
     }
 
-    void drawDebugLine(Vector2 start, Vector2 end, int scale, Color color)
+    void drawDebugLine(
+        Vector2 start,
+        Vector2 end,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
+        Color color
+    )
     {
         const Vector2 scaledStart =
-            scaledPoint(start, scale);
+            DrawingRenderer::logicalToPhysical(
+                start,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
 
         const Vector2 scaledEnd =
-            scaledPoint(end, scale);
+            DrawingRenderer::logicalToPhysical(
+                end,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
 
         DrawLine(
             static_cast<int>(std::round(scaledStart.x)),
@@ -185,7 +270,9 @@ namespace
 
     void drawDebugBox(
         const EffectiveCollider& collider,
-        int scale,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
         Color color
     )
     {
@@ -201,7 +288,9 @@ namespace
             drawDebugLine(
                 corners[i],
                 corners[(i + 1) % 4],
-                scale,
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
                 color
             );
         }
@@ -209,7 +298,9 @@ namespace
 
     void drawDebugEllipse(
         const EffectiveCollider& collider,
-        int scale,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
         Color color
     )
     {
@@ -238,7 +329,14 @@ namespace
                     collider.angle
                 );
 
-            drawDebugLine(previous, current, scale, color);
+            drawDebugLine(
+                previous,
+                current,
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
+                color
+            );
             previous =
                 current;
         }
@@ -246,7 +344,9 @@ namespace
 
     void drawDebugCollider(
         const EffectiveCollider& collider,
-        int scale
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight
     )
     {
         const Color color =
@@ -254,11 +354,23 @@ namespace
 
         if (collider.type == "ellipse")
         {
-            drawDebugEllipse(collider, scale, color);
+            drawDebugEllipse(
+                collider,
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
+                color
+            );
             return;
         }
 
-        drawDebugBox(collider, scale, color);
+        drawDebugBox(
+            collider,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
+            color
+        );
     }
 
     void applyInheritedCreationMotion(
@@ -293,6 +405,8 @@ namespace
 RuntimeWorld::RuntimeWorld()
 {
     nextRuntimeId = 1;
+    worldExtent =
+        DefaultWorldExtent;
 }
 
 RuntimeLoadResult RuntimeWorld::load(
@@ -308,6 +422,11 @@ RuntimeLoadResult RuntimeWorld::load(
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
+    worldExtent =
+        DefaultWorldExtent;
+    worldExtentContributions.clear();
+    collectingWorldExtentContributions =
+        false;
     AttachmentRuntimeState::clear();
     automaticInstantiationFailed = false;
     automaticInstantiationFailure.clear();
@@ -360,12 +479,20 @@ RuntimeLoadResult RuntimeWorld::load(
         return result;
     }
 
+    collectingWorldExtentContributions =
+        true;
+
     RuntimeObject root =
         createRuntimeObject(
             *rootDefinition,
             project.rootId,
             ""
         );
+
+    collectWorldExtentContribution(
+        root,
+        *rootDefinition
+    );
 
     objects.push_back(
         std::move(root)
@@ -387,6 +514,9 @@ RuntimeLoadResult RuntimeWorld::load(
 
     if (automaticInstantiationFailed)
     {
+        collectingWorldExtentContributions =
+            false;
+
         result.diagnostics.error(
             DiagnosticCode::RuntimeWorldLoadFailed,
             automaticInstantiationFailure,
@@ -396,6 +526,17 @@ RuntimeLoadResult RuntimeWorld::load(
 
         return result;
     }
+
+    if (!computeWorldExtent(result.diagnostics))
+    {
+        collectingWorldExtentContributions =
+            false;
+
+        return result;
+    }
+
+    collectingWorldExtentContributions =
+        false;
 
     for (auto& object : objects)
     {
@@ -429,7 +570,10 @@ void RuntimeWorld::update(
     actionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
 
-    motionPhase(scriptEngine, screenWidth, screenHeight);
+    (void)screenWidth;
+    (void)screenHeight;
+
+    motionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
 
     applyAttachments();
@@ -458,6 +602,11 @@ void RuntimeWorld::setCollisionDebugEnabled(bool enabled)
     {
         collisionDebugFrame.clear();
     }
+}
+
+const WorldExtent& RuntimeWorld::getWorldExtent() const
+{
+    return worldExtent;
 }
 
 void RuntimeWorld::draw(
@@ -531,7 +680,7 @@ void RuntimeWorld::draw(
         DrawingRenderer::render(
             primitives,
             objects,
-            screenScale,
+            worldExtent,
             screenWidth,
             screenHeight
         );
@@ -541,7 +690,12 @@ void RuntimeWorld::draw(
 
     if (debugCollisions)
     {
-        drawCollisionDebug(screenScale);
+        (void)screenScale;
+
+        drawCollisionDebug(
+            screenWidth,
+            screenHeight
+        );
     }
 }
 
@@ -761,6 +915,11 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.position.y - parent.position.y
     };
 
+    collectWorldExtentContribution(
+        child,
+        definition
+    );
+
     return child;
 }
 
@@ -808,6 +967,11 @@ RuntimeObject RuntimeWorld::createGridChild(
         child.position.x - parent.position.x,
         child.position.y - parent.position.y
     };
+
+    collectWorldExtentContribution(
+        child,
+        definition
+    );
 
     return child;
 }
@@ -1617,9 +1781,7 @@ void RuntimeWorld::actionPhase(ScriptEngine& scriptEngine)
 }
 
 void RuntimeWorld::motionPhase(
-    ScriptEngine& scriptEngine,
-    float screenWidth,
-    float screenHeight
+    ScriptEngine& scriptEngine
 )
 {
     for (auto& object : objects)
@@ -1643,7 +1805,7 @@ void RuntimeWorld::motionPhase(
             scriptEngine.getFrameDelta()
         );
 
-        object.applyBounds(screenWidth, screenHeight);
+        object.applyBounds(worldExtent);
     }
 }
 
@@ -1797,11 +1959,19 @@ void RuntimeWorld::updateObjectTime(float delta)
     }
 }
 
-void RuntimeWorld::drawCollisionDebug(int screenScale) const
+void RuntimeWorld::drawCollisionDebug(
+    float rasterWidth,
+    float rasterHeight
+) const
 {
     for (const EffectiveCollider& collider : collisionDebugFrame.colliders)
     {
-        drawDebugCollider(collider, screenScale);
+        drawDebugCollider(
+            collider,
+            worldExtent,
+            rasterWidth,
+            rasterHeight
+        );
     }
 
     for (const CollisionDebugContact& contact : collisionDebugFrame.contacts)
@@ -1809,10 +1979,18 @@ void RuntimeWorld::drawCollisionDebug(int screenScale) const
         const Vector2 point =
             contact.contact.point;
 
+        const Vector2 physicalPoint =
+            DrawingRenderer::logicalToPhysical(
+                point,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
         DrawCircle(
-            static_cast<int>(std::round(point.x * screenScale)),
-            static_cast<int>(std::round(point.y * screenScale)),
-            std::max(2.0f, 2.0f * static_cast<float>(screenScale)),
+            static_cast<int>(std::round(physicalPoint.x)),
+            static_cast<int>(std::round(physicalPoint.y)),
+            2.0f,
             YELLOW
         );
 
@@ -1822,7 +2000,9 @@ void RuntimeWorld::drawCollisionDebug(int screenScale) const
                 point.x + contact.contact.normal.x * 10.0f,
                 point.y + contact.contact.normal.y * 10.0f
             },
-            screenScale,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
             YELLOW
         );
     }
@@ -1832,7 +2012,9 @@ void RuntimeWorld::drawCollisionDebug(int screenScale) const
         drawDebugLine(
             ray.origin,
             ray.end,
-            screenScale,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
             Color{ 80, 180, 255, 255 }
         );
 
@@ -1841,10 +2023,18 @@ void RuntimeWorld::drawCollisionDebug(int screenScale) const
             continue;
         }
 
+        const Vector2 physicalHitPoint =
+            DrawingRenderer::logicalToPhysical(
+                ray.hitPoint,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
         DrawCircle(
-            static_cast<int>(std::round(ray.hitPoint.x * screenScale)),
-            static_cast<int>(std::round(ray.hitPoint.y * screenScale)),
-            std::max(2.0f, 2.0f * static_cast<float>(screenScale)),
+            static_cast<int>(std::round(physicalHitPoint.x)),
+            static_cast<int>(std::round(physicalHitPoint.y)),
+            2.0f,
             SKYBLUE
         );
 
@@ -1854,10 +2044,80 @@ void RuntimeWorld::drawCollisionDebug(int screenScale) const
                 ray.hitPoint.x + ray.hitNormal.x * 10.0f,
                 ray.hitPoint.y + ray.hitNormal.y * 10.0f
             },
-            screenScale,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
             BLUE
         );
     }
+}
+
+bool RuntimeWorld::computeWorldExtent(Diagnostics& diagnostics)
+{
+    WorldExtentAccumulator accumulator;
+
+    for (const WorldExtentContribution& contribution : worldExtentContributions)
+    {
+        accumulator.includeContribution(contribution);
+    }
+
+    if (accumulator.delimiters == 0)
+    {
+        worldExtent =
+            DefaultWorldExtent;
+        return true;
+    }
+
+    worldExtent =
+        accumulator.toWorldExtent();
+
+    if (accumulator.delimiters == 1 &&
+        accumulator.pointDelimiters == 1)
+    {
+        diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "A single delimit object without size cannot define a bidimensional world extent",
+            "runtime",
+            "delimit"
+        );
+
+        return false;
+    }
+
+    if (worldExtent.width <= 0.0f ||
+        worldExtent.height <= 0.0f)
+    {
+        diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Delimit objects do not define a valid bidimensional world extent",
+            "runtime",
+            "delimit"
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+void RuntimeWorld::collectWorldExtentContribution(
+    const RuntimeObject& object,
+    const ObjectDefinition& definition
+)
+{
+    if (!collectingWorldExtentContributions ||
+        !definition.delimit)
+    {
+        return;
+    }
+
+    worldExtentContributions.push_back(
+        WorldExtentContribution{
+            object.position,
+            object.size,
+            object.hasSize
+        }
+    );
 }
 
 std::string RuntimeWorld::createRuntimeId(const std::string& name)

@@ -7,7 +7,7 @@ engine=0.3.0
 # Configuration
 path=.
 root=input-demo
-machine=../../machines/pongMachine.yml
+machine=machine-2way.yml
 input.mapping=shared.input
 
 # Notes

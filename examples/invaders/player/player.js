@@ -10,7 +10,7 @@ const FIRE_BUTTON = button(0);
 const MOVE = direction(0);
 
 function action(player){
-    if (read_global("game_over") == 1 || read_global("victory") == 1) {
+    if (read_global("game_over") == 1) {
         return;
     }
 

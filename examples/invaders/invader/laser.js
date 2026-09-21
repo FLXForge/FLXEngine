@@ -8,7 +8,7 @@
 function motion(laser){
     advance(laser);
 
-    if (laser.y > 450) {
+    if (laser.y > 490) {
         kill(laser);
     }
 }

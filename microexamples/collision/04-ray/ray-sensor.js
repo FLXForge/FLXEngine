@@ -1,15 +1,17 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
+const RAY_DISTANCE = 180;
+const ROTATION_SPEED = 60;
+
 function action(sensor) {
+    rotate(sensor, 1);
+
     const hit = ray(sensor, sensor.angle, 180);
 
     if (hit === undefined) {
+        restore_color(sensor);
         return;
     }
 
-    if (hit.object.group === "enemy") {
-        // Turn away after the first successful query.
-        // ray() did not need with[] and did not dispatch collision().
-        apply_angle(sensor, 270);
-    }
+    apply_color(sensor, "green");
 }

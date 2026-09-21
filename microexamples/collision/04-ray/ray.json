@@ -7,9 +7,11 @@
         "y": 120
       },
       "mechanics": {
-        "type": "direct",
+        "type": "polar",
         "rotation": {
-          "angle": 90
+          "speed": {
+            "start": 60
+          }
         }
       },
       "behavior": {

@@ -16,12 +16,21 @@
     "player": 1
   },
   "group": "player",
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "enemy",
+        "invader"
+      ]
+    }
+  },
   "children": {
     "laser": {
       "like": "laser",
       "spawn": "manual",
       "offset": {
-        "x": 11,
+        "x": 0,
         "y": -10
       }
     }

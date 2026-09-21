@@ -31,5 +31,10 @@ function action(player){
 }
 
 function collision(player, other){
+    kill(other);
+    kill(player);
+}
 
+function dead(player){
+    write_global("game_over", 1);
 }

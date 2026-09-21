@@ -26,10 +26,7 @@
   },
   "collisions": {
     "body": {
-      "type": "box",
-      "with": [
-        "laser"
-      ]
+      "type": "box"
     }
   },
   "size": {

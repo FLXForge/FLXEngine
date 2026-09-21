@@ -1,8 +1,8 @@
 /// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
 
 /*
-    Player laser.
-    Travels upward and disappears outside the screen.
+    Enemy laser.
+    Travels downward and disappears outside the playfield.
 */
 
 function motion(laser){

@@ -19,7 +19,10 @@
   },
   "collisions": {
     "body": {
-      "type": "box"
+      "type": "box",
+      "with": [
+        "invader"
+      ]
     }
   },
   "size": {

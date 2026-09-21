@@ -8,7 +8,7 @@
     "type": "direct",
     "motion": {
       "speed": {
-        "start": 10
+        "start": 30
       }
     }
   },

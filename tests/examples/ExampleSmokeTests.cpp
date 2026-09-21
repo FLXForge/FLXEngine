@@ -17,27 +17,27 @@ namespace
         const std::filesystem::path sourceRoot =
             std::filesystem::path(FLX_SOURCE_DIR);
 
-        const std::vector<std::string> examples = {
-            "pong.flx",
-            "asteroids.flx",
-            "arkanoid.flx",
-            "invaders.flx",
-            "scripting/input/input-demo.flx"
+        const std::vector<std::filesystem::path> examples = {
+            sourceRoot / "examples" / "pong.flx",
+            sourceRoot / "examples" / "asteroids.flx",
+            sourceRoot / "examples" / "arkanoid.flx",
+            sourceRoot / "examples" / "invaders.flx",
+            sourceRoot / "microexamples" / "input" / "digital" / "input-demo.flx"
         };
 
-        for (const std::string& example : examples)
+        for (const std::filesystem::path& example : examples)
         {
             CompilationResult compiled =
-                compile(sourceRoot / "examples" / example);
+                compile(example);
 
             require(
                 compiled.success,
-                "known example should compile before compiled roundtrip: " + example
+                "known example should compile before compiled roundtrip: " + example.generic_string()
             );
 
             const std::filesystem::path output =
                 testRoot() / "compiled_examples" /
-                std::filesystem::path(example).replace_extension(".flxc");
+                example.filename().replace_extension(".flxc");
 
             Diagnostics writeDiagnostics;
 
@@ -47,7 +47,7 @@ namespace
                     compiled.project,
                     writeDiagnostics
                 ),
-                "known example should write compiled file: " + example
+                "known example should write compiled file: " + example.generic_string()
             );
 
             CompiledProjectBinaryResult loaded =
@@ -55,12 +55,12 @@ namespace
 
             require(
                 loaded.success,
-                "known example should read compiled file: " + example
+                "known example should read compiled file: " + example.generic_string()
             );
 
             require(
                 loaded.project.resources.objectCount() == compiled.project.resources.objectCount(),
-                "known example object count should survive compiled roundtrip: " + example
+                "known example object count should survive compiled roundtrip: " + example.generic_string()
             );
         }
     }
@@ -70,27 +70,27 @@ namespace
         const std::filesystem::path sourceRoot =
             std::filesystem::path(FLX_SOURCE_DIR);
 
-        const std::vector<std::string> examples = {
-            "pong.flx",
-            "asteroids.flx",
-            "arkanoid.flx",
-            "invaders.flx",
-            "scripting/input/input-demo.flx"
+        const std::vector<std::filesystem::path> examples = {
+            sourceRoot / "examples" / "pong.flx",
+            sourceRoot / "examples" / "asteroids.flx",
+            sourceRoot / "examples" / "arkanoid.flx",
+            sourceRoot / "examples" / "invaders.flx",
+            sourceRoot / "microexamples" / "input" / "digital" / "input-demo.flx"
         };
 
-        for (const std::string& example : examples)
+        for (const std::filesystem::path& example : examples)
         {
             const CompilationResult result =
-                compile(sourceRoot / "examples" / example);
+                compile(example);
 
             require(
                 result.success,
-                "known example should compile: " + example
+                "known example should compile: " + example.generic_string()
             );
 
             require(
                 result.project.resources.findObject(result.project.rootId) != nullptr,
-                "known example should register root definition: " + example
+                "known example should register root definition: " + example.generic_string()
             );
         }
     }

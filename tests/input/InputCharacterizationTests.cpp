@@ -280,6 +280,33 @@ namespace
         require(machine.input.directions[1].simultaneous == "neutral", "second simultaneous should load");
     }
 
+    void testInputChipLoadsDirectCapabilityStructure()
+    {
+        Diagnostics diagnostics;
+        const MachineDefinition machine =
+            loadMachine(
+                "direct_input_structure",
+                "input:\n"
+                "  system:\n"
+                "    buttons: 2\n"
+                "  players:\n"
+                "    count: 1\n"
+                "    controls:\n"
+                "      directions:\n"
+                "        - type: 2way\n"
+                "          simultaneous: last\n"
+                "          buffer: 0\n"
+                "      buttons: 4\n",
+                diagnostics
+            );
+
+        require(!diagnostics.hasErrors(), "valid direct machine input chip should not produce errors");
+        require(machine.input.players == 1, "direct machine players count should load");
+        require(machine.input.playerButtons == 4, "direct machine player buttons should load");
+        require(machine.input.directions.size() == 1, "direct machine direction should load");
+        require(machine.input.directions[0].type == "2way", "direct machine direction type should load");
+    }
+
     void testUnsupportedCapabilitiesProduceDiagnostics()
     {
         Diagnostics diagnostics;
@@ -1136,6 +1163,145 @@ namespace
         require(result.project.context.machine.input.directions.size() == 1, "zero-config machine should expose one direction");
         require(result.project.context.machine.input.directions[0].type == "4way", "zero-config direction should be 4way");
     }
+
+    struct DirectionExpectation
+    {
+        int key;
+        double horizontal;
+        double vertical;
+    };
+
+    void testProjectInputDirectionProjection(
+        const std::string& name,
+        const std::string& directionType,
+        const std::vector<DirectionExpectation>& expectations
+    )
+    {
+        const std::filesystem::path root =
+            testRoot() / "input_characterization" / name;
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=InputDirectionProjection\n"
+            "path=game\n"
+            "root=root\n"
+            "machine=machine.yml\n"
+            "input.mapping=shared.input\n"
+        );
+
+        writeFile(
+            root / "machine.yml",
+            "input:\n"
+            "  system:\n"
+            "    buttons: 2\n"
+            "  players:\n"
+            "    count: 1\n"
+            "    controls:\n"
+            "      directions:\n"
+            "        - type: " + directionType + "\n"
+            "          simultaneous: last\n"
+            "          buffer: 0\n"
+            "      buttons: 4\n"
+        );
+
+        writeFile(
+            root / "shared.input",
+            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.right=KEY_D\n"
+            "players.1.directions.0.down=KEY_S\n"
+            "players.1.directions.0.left=KEY_A\n"
+            "players.1.buttons.0=KEY_SPACE\n"
+            "system.buttons.0=KEY_ENTER\n"
+            "system.buttons.1=KEY_ESCAPE\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"control\": { \"player\": 1 },\n"
+            "  \"behavior\": { \"scripts\": [\"input-probe\"] }\n"
+            "}\n"
+        );
+
+        writeFile(
+            root / "game" / "input-probe.js",
+            "const MOVE = direction(0);\n"
+            "function action(root) {\n"
+            "  write_local(root, 'horizontal', input_direction(root, MOVE, HORIZONTAL));\n"
+            "  write_local(root, 'vertical', input_direction(root, MOVE, VERTICAL));\n"
+            "}\n"
+        );
+
+        CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "project should compile with direct machine input");
+        require(result.project.context.machine.input.directions.size() == 1, "compiled machine direction should exist");
+        require(result.project.context.machine.input.directions[0].type == directionType, "compiled machine direction type should be preserved");
+
+        FakeInputProvider provider;
+        InputSystem input;
+        input.configure(result.project.context.machine.input);
+        input.setPhysicalInputProvider(&provider);
+        input.setMapping(result.project.context.inputMapping);
+
+        ScriptEngine scripts;
+        scripts.setInputSystem(&input);
+        scripts.setScreenScale(1);
+
+        RuntimeWorld world;
+        RuntimeLoadResult loadResult =
+            world.load(result.project, scripts);
+
+        require(loadResult.success, "runtime should load input projection project");
+
+        RuntimeObject* runtimeRoot =
+            world.findByName("root");
+
+        require(runtimeRoot != nullptr, "runtime root should exist");
+
+        for (const DirectionExpectation& expectation : expectations)
+        {
+            provider.setKeys({ expectation.key });
+            input.update(0.016f);
+            scripts.setFrameDelta(0.016f);
+            world.update(scripts, 0.016f);
+
+            require(localNumber(*runtimeRoot, "horizontal") == expectation.horizontal, "horizontal projection should match machine direction");
+            require(localNumber(*runtimeRoot, "vertical") == expectation.vertical, "vertical projection should match machine direction");
+        }
+    }
+
+    void testTwoWayProjectInputDirectionProjectsBothAxes()
+    {
+        testProjectInputDirectionProjection(
+            "twoway_project_input_direction",
+            "2way",
+            {
+                { KEY_W, 1.0, 1.0 },
+                { KEY_D, 1.0, 1.0 },
+                { KEY_S, -1.0, -1.0 },
+                { KEY_A, -1.0, -1.0 }
+            }
+        );
+    }
+
+    void testFourWayProjectInputDirectionKeepsSpatialAxes()
+    {
+        testProjectInputDirectionProjection(
+            "fourway_project_input_direction",
+            "4way",
+            {
+                { KEY_W, 0.0, 1.0 },
+                { KEY_D, 1.0, 0.0 },
+                { KEY_S, 0.0, -1.0 },
+                { KEY_A, -1.0, 0.0 }
+            }
+        );
+    }
 }
 
 int main()
@@ -1143,6 +1309,7 @@ int main()
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "default machine input matches default mapping", testDefaultMachineInputMatchesDefaultMapping },
         { "input chip loads consolidated structure", testInputChipLoadsConsolidatedStructure },
+        { "input chip loads direct capability structure", testInputChipLoadsDirectCapabilityStructure },
         { "unsupported capabilities produce diagnostics", testUnsupportedCapabilitiesProduceDiagnostics },
         { "mapping accepts keyboard gamepad combination and directions", testMappingAcceptsKeyboardGamepadCombinationAndDirections },
         { "mapping capacity differences are warnings", testMappingCapacityDifferencesAreWarnings },
@@ -1173,7 +1340,9 @@ int main()
         { "invalid queries return false", testInvalidQueriesReturnFalse },
         { "mapping does not expose gameplay names", testMappingDoesNotExposeGameplayNames },
         { "project without machine uses default direction from player subject", testProjectWithoutMachineUsesDefaultDirectionFromPlayerSubject },
-        { "project without machine and input has no input coverage warnings", testProjectWithoutMachineAndInputHasNoInputCoverageWarnings }
+        { "project without machine and input has no input coverage warnings", testProjectWithoutMachineAndInputHasNoInputCoverageWarnings },
+        { "two way project input direction projects both axes", testTwoWayProjectInputDirectionProjectsBothAxes },
+        { "four way project input direction keeps spatial axes", testFourWayProjectInputDirectionKeepsSpatialAxes }
     };
 
     for (const auto& test : tests)

@@ -1058,37 +1058,52 @@ namespace
         }
     }
 
-    bool validMachineRoot(
+    YAML::Node machineRootNode(
         const YAML::Node& root,
         const std::string& path
     )
     {
         if (!root || !root.IsDefined())
         {
-            return false;
+            return {};
         }
 
-        if (!root.IsMap() || !root["machine"])
-        {
-            Logger::error(
-                "machine",
-                "Machine YAML must contain a root 'machine' block: " + path
-            );
-
-            return false;
-        }
-
-        if (!root["machine"].IsMap())
+        if (!root.IsMap())
         {
             Logger::error(
                 "machine",
                 "Machine root must be an object: " + path
             );
 
-            return false;
+            return {};
         }
 
-        return true;
+        if (root["machine"])
+        {
+            if (!root["machine"].IsMap())
+            {
+                Logger::error(
+                    "machine",
+                    "Machine root must be an object: " + path
+                );
+
+                return {};
+            }
+
+            return YAML::Clone(root["machine"]);
+        }
+
+        if (root["video"] || root["audio"] || root["input"])
+        {
+            return YAML::Clone(root);
+        }
+
+        Logger::error(
+            "machine",
+            "Machine YAML must contain machine capabilities: " + path
+        );
+
+        return {};
     }
 }
 
@@ -1146,7 +1161,10 @@ MachineDefinition MachineLoader::load(
     YAML::Node root =
         loadYamlNode(path);
 
-    if (!validMachineRoot(root, path))
+    const YAML::Node machineNode =
+        machineRootNode(root, path);
+
+    if (!machineNode)
     {
         Logger::warning(
             "machine",
@@ -1155,9 +1173,6 @@ MachineDefinition MachineLoader::load(
 
         return defaultMachine();
     }
-
-    const YAML::Node machineNode =
-        root["machine"];
 
     const std::string machineDirectory =
         directoryOf(path);

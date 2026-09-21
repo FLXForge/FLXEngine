@@ -4,13 +4,9 @@
     "x": 7,
     "y": 5
   },
-  "mechanics": {
-    "type": "direct",
-    "motion": {
-      "speed": {
-        "start": 10
-      }
-    }
+  "attach": {
+    "born": true,
+    "position": true
   },
   "children": {
     "laser": {

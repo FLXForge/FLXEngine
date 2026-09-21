@@ -17,27 +17,6 @@ function motion(invader){
     if (probability(5, 10000)){
         spawn(invader, "laser");
     }
-
-    move_horizontal(invader, read_global("fleet_direction"));
-
-    if (invader.x < 20) {
-        write_global("fleet_direction", RIGHT);
-        write_global("fleet_drop", read_global("invaders"));
-    }
-
-    if (invader.x > 600) {
-        write_global("fleet_direction", LEFT);
-        write_global("fleet_drop", read_global("invaders"));
-    }
-
-    if (read_global("fleet_drop") >= 1) {
-        position_y(invader, invader.y + 8);
-        write_global("fleet_drop", read_global("fleet_drop") - 1);
-    }
-
-    if (invader.y > 450) {
-        write_global("game_over", 1);
-    }
 }
 
 function collision(invader, other){

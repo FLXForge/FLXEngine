@@ -3,9 +3,10 @@
   "children": {
     "platform": {
       "origin": {
-        "x": 60,
-        "y": 125
+        "x": 0,
+        "y": 150
       },
+      "group": "platform",
       "mechanics": {
         "type": "direct",
         "motion": {
@@ -13,6 +14,9 @@
             "start": 65
           }
         }
+      },
+      "collisions": {
+        "body": {}
       },
       "behavior": {
         "scripts": [
@@ -34,8 +38,24 @@
     },
     "passenger": {
       "origin": {
-        "x": 87,
-        "y": 105
+        "x": 60,
+        "y": 80
+      },
+      "group": "passenger",
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 45
+          }
+        }
+      },
+      "collisions": {
+        "body": {
+          "with": [
+            "platform"
+          ]
+        }
       },
       "behavior": {
         "scripts": [

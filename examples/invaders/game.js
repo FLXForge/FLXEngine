@@ -2,11 +2,7 @@
 
 function born(game){
     write_global("score", 0);
-    write_global("invaders", 0);
     write_global("game_over", 0);
-
-    write_global("fleet_direction", RIGHT);
-    write_global("fleet_drop", 0);
 }
 
 function draw(game){

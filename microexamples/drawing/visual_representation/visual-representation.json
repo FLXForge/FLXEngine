@@ -1,0 +1,292 @@
+{
+  "children": {
+    "rectangle": {
+      "origin": {
+        "x": 80,
+        "y": 60
+      },
+      "size": {
+        "width": 60,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          }
+        ]
+      }
+    },
+
+    "triangle": {
+      "origin": {
+        "x": 180,
+        "y": 60
+      },
+      "size": {
+        "width": 60,
+        "height": 40
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "triangle",
+            "mode": "fill"
+          }
+        ]
+      }
+    },
+
+    "ellipse": {
+      "origin": {
+        "x": 280,
+        "y": 60
+      },
+      "size": {
+        "width": 60,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "ellipse",
+            "mode": "outline"
+          }
+        ]
+      }
+    },
+
+    "percentage": {
+      "origin": {
+        "x": 390,
+        "y": 60
+      },
+      "size": {
+        "width": 80,
+        "height": 40
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          },
+          {
+            "primitive": "rectangle",
+            "mode": "fill",
+            "size": {
+              "width": "50%",
+              "height": "50%"
+            },
+            "color": "red"
+          }
+        ]
+      }
+    },
+
+    "geometry-open": {
+      "origin": {
+        "x": 80,
+        "y": 150
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "geometry": [
+              {
+                "x": -25,
+                "y": 15
+              },
+              {
+                "x": 0,
+                "y": -20
+              },
+              {
+                "x": 25,
+                "y": 15
+              }
+            ],
+            "mode": "open"
+          }
+        ]
+      }
+    },
+
+    "geometry-close": {
+      "origin": {
+        "x": 180,
+        "y": 150
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "geometry": [
+              {
+                "x": -25,
+                "y": 15
+              },
+              {
+                "x": 0,
+                "y": -20
+              },
+              {
+                "x": 25,
+                "y": 15
+              }
+            ],
+            "mode": "close"
+          }
+        ]
+      }
+    },
+
+    "geometry-fill": {
+      "origin": {
+        "x": 280,
+        "y": 150
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "geometry": [
+              {
+                "x": -25,
+                "y": 15
+              },
+              {
+                "x": 0,
+                "y": -20
+              },
+              {
+                "x": 25,
+                "y": 15
+              }
+            ],
+            "mode": "fill"
+          }
+        ]
+      }
+    },
+
+    "text": {
+      "origin": {
+        "x": 400,
+        "y": 150
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "text": "FLX",
+            "fontSize": 16
+          }
+        ]
+      }
+    },
+
+    "multiline": {
+      "origin": {
+        "x": 80,
+        "y": 240
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "text": "FLX\nENGINE",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+
+    "composition": {
+      "origin": {
+        "x": 200,
+        "y": 240
+      },
+      "size": {
+        "width": 70,
+        "height": 40
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          },
+          {
+            "geometry": [
+              {
+                "x": -25,
+                "y": 0
+              },
+              {
+                "x": 25,
+                "y": 0
+              }
+            ],
+            "mode": "open",
+            "color": "red"
+          },
+          {
+            "text": "A",
+            "fontSize": 12,
+            "color": "yellow"
+          }
+        ]
+      }
+    },
+
+    "depth-back": {
+      "origin": {
+        "x": 330,
+        "y": 240
+      },
+      "size": {
+        "width": 60,
+        "height": 40
+      },
+      "visual": {
+        "color": "red",
+        "depth": 0,
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "fill"
+          }
+        ]
+      }
+    },
+
+    "depth-front": {
+      "origin": {
+        "x": 350,
+        "y": 250
+      },
+      "size": {
+        "width": 60,
+        "height": 40
+      },
+      "visual": {
+        "color": "white",
+        "depth": 1,
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          }
+        ]
+      }
+    }
+  }
+}

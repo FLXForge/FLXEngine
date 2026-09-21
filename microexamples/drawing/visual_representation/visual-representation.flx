@@ -1,0 +1,12 @@
+# Game data
+title=Visual Representation
+name=visual-representation
+version=1.0.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=visual-representation
+
+# Notes
+notes=Declarative Visual Representation microexample

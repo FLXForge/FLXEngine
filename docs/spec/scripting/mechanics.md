@@ -302,6 +302,15 @@ move_horizontal(object, intent);
 
 Mueve horizontalmente usando Mechanics efectivo del eje. `intent` está normalizado en `[-1,+1]`.
 
+En coordenadas World:
+
+```text
++1 → incrementa X → derecha
+-1 → decrementa X → izquierda
+```
+
+Estos signos expresan desplazamiento espacial World. No son la convención semántica de `input_direction()`.
+
 ## `move_vertical`
 
 ```js
@@ -309,6 +318,15 @@ move_vertical(object, intent);
 ```
 
 Mueve verticalmente usando Mechanics efectivo del eje. `intent` está normalizado en `[-1,+1]`.
+
+En coordenadas World:
+
+```text
++1 → incrementa Y → abajo
+-1 → decrementa Y → arriba
+```
+
+Estos signos expresan desplazamiento espacial World. No son la convención semántica de `input_direction()`.
 
 Input digital produce normalmente `-1`, `0`, `+1`; un futuro input analógico podrá usar valores intermedios sin cambiar Mechanics.
 
@@ -466,6 +484,45 @@ restore_speed(ball);
 
 Son responsabilidades distintas.
 
+# Carry
+
+## `carry`
+
+```js
+carry(object, carrier);
+```
+
+Aplica a `object` el desplazamiento realizado por `carrier` durante el frame actual.
+
+Conceptualmente:
+
+```text
+delta = carrier.position - carrier.previousPosition
+object.position += delta
+```
+
+`carry()` opera sobre movimiento vivo. No crea una relación persistente entre los RuntimeObjects y no implica:
+
+- parent/child;
+- Component;
+- Attachment;
+- Collision;
+- ownership.
+
+La decisión de cuándo aplicar `carry()` pertenece al comportamiento.
+
+Un caso natural es una plataforma móvil. Collision detecta y describe el contacto; el comportamiento puede resolver la penetración y aplicar después el desplazamiento del carrier:
+
+```js
+function collision(object, other, contacts) {
+    // seleccionar el contacto relevante
+    // resolver la penetración mediante position(...)
+    carry(object, other);
+}
+```
+
+Collision no ejecuta `carry()` automáticamente.
+
 # `inherit`
 
 `inherit` es un bloque del objeto, separado de `mechanics`.
@@ -568,6 +625,21 @@ LEFT  = -1
 DOWN  = -1
 ```
 
+Esta convención pertenece a la intención de Input, no a los ejes espaciales de World.
+
+Por tanto, una intención vertical procedente directamente de Input puede necesitar ser transformada por el comportamiento antes de aplicarse a `move_vertical()`.
+
+Por ejemplo, si `UP = +1` debe producir movimiento hacia arriba en World:
+
+```js
+const vertical =
+    input_direction(object, MOVE, VERTICAL);
+
+move_vertical(object, -vertical);
+```
+
+Input expresa intención. Mechanics opera sobre movimiento espacial.
+
 En 4way:
 
 - HORIZONTAL consulta únicamente LEFT/RIGHT.
@@ -643,6 +715,7 @@ move_horizontal
 move_vertical
 advance
 accelerate
+carry
 ```
 
 ## Mechanics / Rotation

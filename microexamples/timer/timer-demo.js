@@ -39,8 +39,8 @@ function draw(demo)
     draw_text(105, 216, "DONE: " + timer_done(demo, TIMER_NAME), 22, "white");
     draw_text(105, 246, "LEFT: " + timer_left(demo, TIMER_NAME).toFixed(2), 22, "white");
 
-    draw_text(175, 309, "SPACE  play / redefine to 5.00", 18, "lightgray");
-    draw_text(80, 334, "P      pause", 18, "lightgray");
-    draw_text(165, 359, "R      resume / replay done", 18, "lightgray");
-    draw_text(155, 384, "S      stop (becomes absent)", 18, "lightgray");
+    draw_text(175, 309, "SPACE     redefine to 5.00", 18, "lightgray");
+    draw_text(175, 334, "CTRL      pause", 18, "lightgray");
+    draw_text(175, 359, "SHIFT     resume / replay done", 18, "lightgray");
+    draw_text(175, 384, "Z         stop (becomes absent)", 18, "lightgray");
 }

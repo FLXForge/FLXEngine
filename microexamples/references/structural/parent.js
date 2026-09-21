@@ -18,6 +18,3 @@ function draw(object) {
     draw_text(70, 15, "STRUCTURAL RELATION", 10);
     draw_text(60, 28, "live children: " + children.length, 8);
 }
-function dead(object) {
-    for (const child of find_children(object)) kill(child);
-}

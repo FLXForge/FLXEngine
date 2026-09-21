@@ -50,7 +50,7 @@
             "height": 12
           },
           "visual": {
-            "color": "cyan",
+            "color": "blue",
             "representation": [
               {
                 "primitive": "rectangle"

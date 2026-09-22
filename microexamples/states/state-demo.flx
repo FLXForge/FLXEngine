@@ -1,0 +1,12 @@
+# Game data
+title=State Demo
+name=state-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=state-demo
+
+# Notes
+notes=Minimal state machine demo

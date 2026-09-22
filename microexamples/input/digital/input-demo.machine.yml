@@ -1,0 +1,20 @@
+machine:
+  video:
+    screen:
+      width: 320
+      height: 240
+    output:
+      scale: 2
+      smoothing: false
+
+  input:
+    system:
+      buttons: 1
+    players:
+      count: 1
+      controls:
+        directions:
+          - type: 4way
+            simultaneous: last
+            buffer: 0
+        buttons: 1

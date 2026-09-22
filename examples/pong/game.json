@@ -1,83 +1,113 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 160,
+    "y": 90
+  },
+  "size": {
+    "width": 320,
+    "height": 180
+  },
+  "delimit": true,
   "children": {
     "player": {
       "origin": {
-        "x": 16,
-        "y": 90
+        "x": 18.5,
+        "y": 105
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 30
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 120
+          }
         }
       },
-      "motion": {
-        "speed": 120
+      "control": {
+        "player": 1
       },
       "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
       "behavior": {
-        "scripts": [ "player" ]
+        "scripts": [
+          "player"
+        ]
+      },
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      },
+      "size": {
+        "width": 5,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "enemy": {
       "origin": {
-        "x": 299,
-        "y": 90
+        "x": 301.5,
+        "y": 105
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 30
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 55
+          }
         }
       },
-      "motion": {
-        "speed": 55
-      },
       "group": "paddle",
-      "collision": {
-        "type": "box"
-      },
       "behavior": {
-        "scripts": [ "enemy" ]
+        "scripts": [
+          "enemy"
+        ]
+      },
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      },
+      "size": {
+        "width": 5,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "ball": {
       "origin": {
-        "x": 157,
-        "y": 87
+        "x": 159.5,
+        "y": 89.5
       },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 5,
-          "height": 5
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": {
+            "start": 90
+          }
+        },
+        "rotation": {
+          "angle": 45
         }
       },
-      "motion": {
-        "speed": 90,
-        "angle": 45
-      },
       "group": "ball",
-      "collision": {
-        "type": "box",
-        "active": true,
-        "with": [
-          "wall",
-          "goal",
-          "paddle"
-        ]
-      },
       "behavior": {
-        "scripts": [ "ball" ]
+        "scripts": [
+          "ball"
+        ]
       },
       "sounds": {
         "beep": {
@@ -91,83 +121,129 @@
           "duration": 0.08,
           "volume": 0.7
         }
+      },
+      "collisions": {
+        "body": {
+          "type": "box",
+          "with": [
+            "wall",
+            "goal",
+            "paddle"
+          ]
+        }
+      },
+      "size": {
+        "width": 5,
+        "height": 5
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
       }
     },
     "left_goal": {
       "origin": {
-        "x": -10,
-        "y": 0
-      },
-      "shape": {
-        "type": "block",
-        "color": "black",
-        "size": {
-          "width": 10,
-          "height": 180
-        }
+        "x": -5,
+        "y": 90
       },
       "group": "goal",
-      "collision": {
-        "type": "box"
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       },
-      "visible": false
+      "size": {
+        "width": 10,
+        "height": 180
+      },
+      "visual": {
+        "color": "black",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
     },
     "right_goal": {
       "origin": {
-        "x": 320,
-        "y": 0
-      },
-      "shape": {
-        "type": "block",
-        "color": "black",
-        "size": {
-          "width": 10,
-          "height": 180
-        }
+        "x": 325,
+        "y": 90
       },
       "group": "goal",
-      "collision": {
-        "type": "box"
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       },
-      "visible": false
+      "size": {
+        "width": 10,
+        "height": 180
+      },
+      "visual": {
+        "color": "black",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
     },
     "top_wall": {
       "origin": {
-        "x": 0,
-        "y": -10
-      },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 320,
-          "height": 10
-        }
+        "x": 160,
+        "y": -5
       },
       "group": "wall",
-      "collision": {
-        "type": "box"
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       },
-      "visible": false
+      "size": {
+        "width": 320,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
     },
     "bottom_wall": {
       "origin": {
-        "x": 0,
-        "y": 180
-      },
-      "shape": {
-        "type": "block",
-        "color": "white",
-        "size": {
-          "width": 320,
-          "height": 10
-        }
+        "x": 160,
+        "y": 185
       },
       "group": "wall",
-      "collision": {
-        "type": "box"
+      "visible": false,
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
       },
-      "visible": false
+      "size": {
+        "width": 320,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
     }
   }
 }

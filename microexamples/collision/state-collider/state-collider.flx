@@ -1,0 +1,12 @@
+# Game data
+title=Collision: State collider
+name=state-collider
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=state-collider
+
+# Notes
+notes=A directed collider becomes effective only while its RuntimeObject is in attack State

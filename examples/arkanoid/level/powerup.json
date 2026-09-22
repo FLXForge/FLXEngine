@@ -1,0 +1,30 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "spawn": "manual",
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 30
+      }
+    }
+  },
+  "group": "powerup",
+  "behavior": {
+    "scripts": [
+      "powerup"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "depth": 10
+  }
+}

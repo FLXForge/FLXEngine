@@ -1,416 +1,329 @@
 #include "InputSystem.h"
-#include "../debug/Logger.h"
+
+#include <raylib.h>
 
 #include <algorithm>
-#include <cctype>
-#include <fstream>
-#include <sstream>
-#include <unordered_map>
 
 namespace
 {
-    std::unordered_map<std::string, int> buildKeyMap()
+    class RaylibPhysicalInputProvider : public PhysicalInputProvider
     {
-        std::unordered_map<std::string, int> keys;
-
-        for (char letter = 'A'; letter <= 'Z'; ++letter)
+    public:
+        bool keyDown(int key) const override
         {
-            keys["KEY_" + std::string(1, letter)] = KEY_A + (letter - 'A');
+            return IsKeyDown(key);
         }
 
-        for (char digit = '0'; digit <= '9'; ++digit)
+        bool keyPressed(int key) const override
         {
-            keys["KEY_" + std::string(1, digit)] = KEY_ZERO + (digit - '0');
+            return IsKeyPressed(key);
         }
 
-        keys["KEY_SPACE"] = KEY_SPACE;
-        keys["KEY_ENTER"] = KEY_ENTER;
-        keys["KEY_ESCAPE"] = KEY_ESCAPE;
-        keys["KEY_TAB"] = KEY_TAB;
-        keys["KEY_BACKSPACE"] = KEY_BACKSPACE;
-        keys["KEY_LEFT"] = KEY_LEFT;
-        keys["KEY_RIGHT"] = KEY_RIGHT;
-        keys["KEY_UP"] = KEY_UP;
-        keys["KEY_DOWN"] = KEY_DOWN;
-        keys["KEY_LEFT_SHIFT"] = KEY_LEFT_SHIFT;
-        keys["KEY_RIGHT_SHIFT"] = KEY_RIGHT_SHIFT;
-        keys["KEY_LEFT_CONTROL"] = KEY_LEFT_CONTROL;
-        keys["KEY_RIGHT_CONTROL"] = KEY_RIGHT_CONTROL;
-        keys["KEY_LEFT_ALT"] = KEY_LEFT_ALT;
-        keys["KEY_RIGHT_ALT"] = KEY_RIGHT_ALT;
-        keys["KEY_MINUS"] = KEY_MINUS;
-        keys["KEY_EQUAL"] = KEY_EQUAL;
-        keys["KEY_LEFT_BRACKET"] = KEY_LEFT_BRACKET;
-        keys["KEY_RIGHT_BRACKET"] = KEY_RIGHT_BRACKET;
-        keys["KEY_BACKSLASH"] = KEY_BACKSLASH;
-        keys["KEY_SEMICOLON"] = KEY_SEMICOLON;
-        keys["KEY_APOSTROPHE"] = KEY_APOSTROPHE;
-        keys["KEY_GRAVE"] = KEY_GRAVE;
-        keys["KEY_COMMA"] = KEY_COMMA;
-        keys["KEY_PERIOD"] = KEY_PERIOD;
-        keys["KEY_SLASH"] = KEY_SLASH;
-
-        for (int index = 1; index <= 12; ++index)
+        bool gamepadButtonDown(int device, int button) const override
         {
-            keys["KEY_F" + std::to_string(index)] = KEY_F1 + index - 1;
+            return IsGamepadAvailable(device) &&
+                IsGamepadButtonDown(device, button);
         }
 
-        return keys;
-    }
-
-    std::unordered_map<std::string, int> buildGamepadButtonMap()
-    {
-        return {
-            { "A", GAMEPAD_BUTTON_RIGHT_FACE_DOWN },
-            { "B", GAMEPAD_BUTTON_RIGHT_FACE_RIGHT },
-            { "X", GAMEPAD_BUTTON_RIGHT_FACE_LEFT },
-            { "Y", GAMEPAD_BUTTON_RIGHT_FACE_UP },
-            { "START", GAMEPAD_BUTTON_MIDDLE_RIGHT },
-            { "SELECT", GAMEPAD_BUTTON_MIDDLE_LEFT },
-            { "UP", GAMEPAD_BUTTON_LEFT_FACE_UP },
-            { "DOWN", GAMEPAD_BUTTON_LEFT_FACE_DOWN },
-            { "LEFT", GAMEPAD_BUTTON_LEFT_FACE_LEFT },
-            { "RIGHT", GAMEPAD_BUTTON_LEFT_FACE_RIGHT },
-            { "L1", GAMEPAD_BUTTON_LEFT_TRIGGER_1 },
-            { "R1", GAMEPAD_BUTTON_RIGHT_TRIGGER_1 }
-        };
-    }
-
-    const std::unordered_map<std::string, int>& keyMap()
-    {
-        static const std::unordered_map<std::string, int> keys =
-            buildKeyMap();
-
-        return keys;
-    }
-
-    const std::unordered_map<std::string, int>& gamepadButtonMap()
-    {
-        static const std::unordered_map<std::string, int> buttons =
-            buildGamepadButtonMap();
-
-        return buttons;
-    }
-
-    bool startsWith(const std::string& value, const std::string& prefix)
-    {
-        return value.rfind(prefix, 0) == 0;
-    }
-
-    int parseInt(const std::string& value, int fallback = -1)
-    {
-        try
+        bool gamepadButtonPressed(int device, int button) const override
         {
-            return std::stoi(value);
+            return IsGamepadAvailable(device) &&
+                IsGamepadButtonPressed(device, button);
         }
-        catch (...)
-        {
-            return fallback;
-        }
-    }
+    };
+
+    RaylibPhysicalInputProvider defaultProvider;
 }
 
 void InputSystem::configure(const InputChipDefinition& inputChip)
 {
     chip = inputChip;
+    resizeRuntimeState();
 }
 
-void InputSystem::loadMapping(const std::string& path)
-{
-    systemButtons.clear();
-    players.clear();
-
-    if (path.empty())
-    {
-        Logger::warning(
-            "input",
-            "No input mapping defined. Normalized Input API will not receive mapped controls."
-        );
-
-        return;
-    }
-
-    std::ifstream file(path);
-
-    if (!file.is_open())
-    {
-        Logger::warning(
-            "input",
-            "Input mapping could not be opened: " + path
-        );
-
-        return;
-    }
-
-    std::string line;
-    int lineNumber = 0;
-
-    while (std::getline(file, line))
-    {
-        ++lineNumber;
-        line = trim(line);
-
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-
-        const size_t separator =
-            line.find('=');
-
-        if (separator == std::string::npos)
-        {
-            Logger::warning(
-                "input",
-                "Ignoring invalid mapping line " + std::to_string(lineNumber)
-            );
-
-            continue;
-        }
-
-        parseLine(
-            trim(line.substr(0, separator)),
-            trim(line.substr(separator + 1)),
-            lineNumber
-        );
-    }
-
-    Logger::debug(
-        "input",
-        "Loaded input mapping: " + path
-    );
-}
-
-void InputSystem::loadMappingContent(
-    const std::string& sourceName,
-    const std::string& content
+void InputSystem::setPhysicalInputProvider(
+    PhysicalInputProvider* nextProvider
 )
 {
-    systemButtons.clear();
-    players.clear();
+    provider = nextProvider;
+}
 
-    if (content.empty())
+void InputSystem::setMapping(const InputMapping& nextMapping)
+{
+    mapping = nextMapping;
+    resizeRuntimeState();
+}
+
+void InputSystem::update(float delta)
+{
+    const PhysicalInputProvider* activeProvider =
+        provider == nullptr
+        ? &defaultProvider
+        : provider;
+
+    for (int button = 0; button < chip.systemButtons; ++button)
     {
-        Logger::warning(
-            "input",
-            "No input mapping defined. Normalized Input API will not receive mapped controls."
-        );
+        ButtonState& state =
+            systemButtonStates[button];
 
-        return;
-    }
+        state.previous = state.current;
 
-    std::stringstream stream(content);
-    std::string line;
-    int lineNumber = 0;
+        const auto mappingIt =
+            mapping.systemButtons.find(button);
 
-    while (std::getline(stream, line))
-    {
-        ++lineNumber;
-        line = trim(line);
+        state.current =
+            mappingIt != mapping.systemButtons.end() &&
+            std::any_of(
+                mappingIt->second.alternatives.begin(),
+                mappingIt->second.alternatives.end(),
+                [this, activeProvider](const InputCombination& combination)
+                {
+                    return !combination.inputs.empty() &&
+                        std::all_of(
+                            combination.inputs.begin(),
+                            combination.inputs.end(),
+                            [this, activeProvider](const PhysicalInput& input)
+                            {
+                                if (input.type == PhysicalType::Key)
+                                {
+                                    return activeProvider->keyDown(input.code);
+                                }
 
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-
-        const size_t separator =
-            line.find('=');
-
-        if (separator == std::string::npos)
-        {
-            Logger::warning(
-                "input",
-                "Ignoring invalid mapping line " + std::to_string(lineNumber)
+                                return activeProvider->gamepadButtonDown(
+                                    input.device,
+                                    input.code
+                                );
+                            }
+                        );
+                }
             );
+    }
 
-            continue;
+    for (int player = 1; player <= chip.players; ++player)
+    {
+        PlayerState& state =
+            playerStates[player];
+
+        PlayerMapping& playerMapping =
+            mapping.players[player];
+
+        for (int button = 0; button < chip.playerButtons; ++button)
+        {
+            ButtonState& buttonState =
+                state.buttons[button];
+
+            buttonState.previous = buttonState.current;
+
+            const auto mappingIt =
+                playerMapping.buttons.find(button);
+
+            buttonState.current =
+                mappingIt != playerMapping.buttons.end() &&
+                actionDown(mappingIt->second);
         }
 
-        parseLine(
-            trim(line.substr(0, separator)),
-            trim(line.substr(separator + 1)),
-            lineNumber
-        );
-    }
+        for (int direction = 0; direction < static_cast<int>(chip.directions.size()); ++direction)
+        {
+            DirectionState& directionState =
+                state.directions[direction];
 
-    Logger::debug(
-        "input",
-        "Loaded input mapping: " + sourceName
-    );
+            directionState.previous =
+                directionState.current;
+
+            DirectionMapping directionMapping;
+
+            if (direction < static_cast<int>(playerMapping.directions.size()))
+            {
+                directionMapping =
+                    playerMapping.directions[direction];
+            }
+
+            directionState.current =
+                resolveDirection(
+                    chip.directions[direction],
+                    directionMapping,
+                    directionState,
+                    delta
+                );
+        }
+    }
 }
 
-void InputSystem::update(
-    float delta,
-    int screenWidth,
-    int screenHeight,
-    Rectangle screenArea
-)
+bool InputSystem::systemButtonPressed(int button) const
 {
-    if (chip.pointer)
-    {
-        const float scaleX =
-            screenArea.width <= 0.0f
-            ? 1.0f
-            : static_cast<float>(screenWidth) / screenArea.width;
+    const ButtonState state =
+        buttonState(systemButtonStates, button);
 
-        const float scaleY =
-            screenArea.height <= 0.0f
-            ? 1.0f
-            : static_cast<float>(screenHeight) / screenArea.height;
-
-        mousePointer.x =
-            (static_cast<float>(GetMouseX()) - screenArea.x) * scaleX;
-
-        mousePointer.y =
-            (static_cast<float>(GetMouseY()) - screenArea.y) * scaleY;
-
-        mousePointer.x =
-            std::clamp(mousePointer.x, 0.0f, static_cast<float>(screenWidth));
-
-        mousePointer.y =
-            std::clamp(mousePointer.y, 0.0f, static_cast<float>(screenHeight));
-
-        return;
-    }
-
-    if (!virtualPointerInitialized)
-    {
-        virtualPointer = Vector2{
-            static_cast<float>(screenWidth) * 0.5f,
-            static_cast<float>(screenHeight) * 0.5f
-        };
-        virtualPointerInitialized = true;
-    }
-
-    constexpr float speed = 160.0f;
-
-    if (playerLeft(1))
-    {
-        virtualPointer.x -= speed * delta;
-    }
-
-    if (playerRight(1))
-    {
-        virtualPointer.x += speed * delta;
-    }
-
-    if (playerUp(1))
-    {
-        virtualPointer.y -= speed * delta;
-    }
-
-    if (playerDown(1))
-    {
-        virtualPointer.y += speed * delta;
-    }
-
-    virtualPointer.x =
-        std::clamp(virtualPointer.x, 0.0f, static_cast<float>(screenWidth));
-
-    virtualPointer.y =
-        std::clamp(virtualPointer.y, 0.0f, static_cast<float>(screenHeight));
+    return !state.previous && state.current;
 }
 
-bool InputSystem::systemDown(int button) const
+bool InputSystem::systemButtonDown(int button) const
 {
-    const auto it =
-        systemButtons.find(button);
-
-    return it != systemButtons.end() && actionDown(it->second);
+    return buttonState(systemButtonStates, button).current;
 }
 
-bool InputSystem::systemPressed(int button) const
+bool InputSystem::systemButtonReleased(int button) const
 {
-    const auto it =
-        systemButtons.find(button);
+    const ButtonState state =
+        buttonState(systemButtonStates, button);
 
-    return it != systemButtons.end() && actionPressed(it->second);
-}
-
-bool InputSystem::playerUp(int player) const
-{
-    const auto it = players.find(player);
-    return it != players.end() && actionDown(it->second.up);
-}
-
-bool InputSystem::playerDown(int player) const
-{
-    const auto it = players.find(player);
-    return it != players.end() && actionDown(it->second.down);
-}
-
-bool InputSystem::playerLeft(int player) const
-{
-    const auto it = players.find(player);
-    return it != players.end() && actionDown(it->second.left);
-}
-
-bool InputSystem::playerRight(int player) const
-{
-    const auto it = players.find(player);
-    return it != players.end() && actionDown(it->second.right);
-}
-
-bool InputSystem::playerButtonDown(int player, int button) const
-{
-    const auto playerIt = players.find(player);
-
-    if (playerIt == players.end())
-    {
-        return false;
-    }
-
-    const auto buttonIt =
-        playerIt->second.buttons.find(button);
-
-    return buttonIt != playerIt->second.buttons.end() &&
-        actionDown(buttonIt->second);
+    return state.previous && !state.current;
 }
 
 bool InputSystem::playerButtonPressed(int player, int button) const
 {
-    const auto playerIt = players.find(player);
+    const auto playerIt =
+        playerStates.find(player);
 
-    if (playerIt == players.end())
+    if (playerIt == playerStates.end())
     {
         return false;
     }
 
-    const auto buttonIt =
-        playerIt->second.buttons.find(button);
+    const ButtonState state =
+        buttonState(playerIt->second.buttons, button);
 
-    return buttonIt != playerIt->second.buttons.end() &&
-        actionPressed(buttonIt->second);
+    return !state.previous && state.current;
 }
 
-float InputSystem::pointerX() const
+bool InputSystem::playerButtonDown(int player, int button) const
 {
-    return chip.pointer ? mousePointer.x : virtualPointer.x;
+    const auto playerIt =
+        playerStates.find(player);
+
+    return playerIt != playerStates.end() &&
+        buttonState(playerIt->second.buttons, button).current;
 }
 
-float InputSystem::pointerY() const
+bool InputSystem::playerButtonReleased(int player, int button) const
 {
-    return chip.pointer ? mousePointer.y : virtualPointer.y;
-}
+    const auto playerIt =
+        playerStates.find(player);
 
-bool InputSystem::pointerDown(int button) const
-{
-    if (chip.pointer)
+    if (playerIt == playerStates.end())
     {
-        return IsMouseButtonDown(button);
+        return false;
     }
 
-    return button == 0 && playerButtonDown(1, 0);
+    const ButtonState state =
+        buttonState(playerIt->second.buttons, button);
+
+    return state.previous && !state.current;
 }
 
-bool InputSystem::pointerPressed(int button) const
+bool InputSystem::playerDirectionPressed(
+    int player,
+    int direction,
+    InputComponent component
+) const
 {
-    if (chip.pointer)
+    if (!validDirection(direction))
     {
-        return IsMouseButtonPressed(button);
+        return false;
     }
 
-    return button == 0 && playerButtonPressed(1, 0);
+    const DirectionState state =
+        directionState(player, direction);
+
+    const InputDirectionDefinition& definition =
+        chip.directions[direction];
+
+    return !componentMatches(definition, state.previous, component) &&
+        componentMatches(definition, state.current, component);
+}
+
+bool InputSystem::playerDirectionDown(
+    int player,
+    int direction,
+    InputComponent component
+) const
+{
+    if (!validDirection(direction))
+    {
+        return false;
+    }
+
+    const DirectionState state =
+        directionState(player, direction);
+
+    return componentMatches(
+        chip.directions[direction],
+        state.current,
+        component
+    );
+}
+
+bool InputSystem::playerDirectionReleased(
+    int player,
+    int direction,
+    InputComponent component
+) const
+{
+    if (!validDirection(direction))
+    {
+        return false;
+    }
+
+    const DirectionState state =
+        directionState(player, direction);
+
+    const InputDirectionDefinition& definition =
+        chip.directions[direction];
+
+    return componentMatches(definition, state.previous, component) &&
+        !componentMatches(definition, state.current, component);
+}
+
+bool InputSystem::validPlayer(int player) const
+{
+    return player >= 1 && player <= chip.players;
+}
+
+bool InputSystem::validSystemButton(int button) const
+{
+    return button >= 0 && button < chip.systemButtons;
+}
+
+bool InputSystem::validPlayerButton(int button) const
+{
+    return button >= 0 && button < chip.playerButtons;
+}
+
+bool InputSystem::validDirection(int direction) const
+{
+    return direction >= 0 &&
+        direction < static_cast<int>(chip.directions.size());
+}
+
+bool InputSystem::componentAllowed(
+    int direction,
+    InputComponent component
+) const
+{
+    if (!validDirection(direction))
+    {
+        return false;
+    }
+
+    const std::string& type =
+        chip.directions[direction].type;
+
+    if (component == InputComponent::Negative || component == InputComponent::Positive)
+    {
+        return type == "2way" || type == "4way";
+    }
+
+    if (
+        component == InputComponent::Up ||
+        component == InputComponent::Right ||
+        component == InputComponent::Down ||
+        component == InputComponent::Left
+    )
+    {
+        return type == "4way";
+    }
+
+    return false;
 }
 
 bool InputSystem::actionDown(const InputAction& action) const
@@ -471,351 +384,306 @@ bool InputSystem::combinationPressed(
 
 bool InputSystem::physicalDown(const PhysicalInput& input) const
 {
+    const PhysicalInputProvider* activeProvider =
+        provider == nullptr
+        ? &defaultProvider
+        : provider;
+
     if (input.type == PhysicalType::Key)
     {
-        return IsKeyDown(input.code);
+        return activeProvider->keyDown(input.code);
     }
 
-    return IsGamepadAvailable(input.device) &&
-        IsGamepadButtonDown(input.device, input.code);
+    return activeProvider->gamepadButtonDown(input.device, input.code);
 }
 
 bool InputSystem::physicalPressed(const PhysicalInput& input) const
 {
+    const PhysicalInputProvider* activeProvider =
+        provider == nullptr
+        ? &defaultProvider
+        : provider;
+
     if (input.type == PhysicalType::Key)
     {
-        return IsKeyPressed(input.code);
+        return activeProvider->keyPressed(input.code);
     }
 
-    return IsGamepadAvailable(input.device) &&
-        IsGamepadButtonPressed(input.device, input.code);
+    return activeProvider->gamepadButtonPressed(input.device, input.code);
 }
 
-void InputSystem::parseLine(
-    const std::string& key,
-    const std::string& value,
-    int lineNumber
-)
+void InputSystem::resizeRuntimeState()
 {
-    if (startsWith(key, "system.buttons."))
+    for (int button = 0; button < chip.systemButtons; ++button)
     {
-        parseSystemButton(key, value, lineNumber);
-        return;
+        systemButtonStates.try_emplace(button);
     }
 
-    if (startsWith(key, "players."))
+    for (int player = 1; player <= chip.players; ++player)
     {
-        parsePlayerInput(key, value, lineNumber);
-        return;
-    }
+        PlayerState& state =
+            playerStates[player];
 
-    Logger::warning(
-        "input",
-        "Ignoring unknown mapping key '" + key +
-        "' at line " + std::to_string(lineNumber)
-    );
+        state.directions.resize(chip.directions.size());
+
+        for (int button = 0; button < chip.playerButtons; ++button)
+        {
+            state.buttons.try_emplace(button);
+        }
+
+        mapping.players[player].directions.resize(chip.directions.size());
+    }
 }
 
-void InputSystem::parseSystemButton(
-    const std::string& key,
-    const std::string& value,
-    int lineNumber
-)
-{
-    const std::string indexText =
-        key.substr(std::string("system.buttons.").size());
-
-    const int button =
-        parseInt(indexText);
-
-    if (!validSystemButton(button, lineNumber))
-    {
-        return;
-    }
-
-    systemButtons[button] =
-        parseAction(value, lineNumber);
-}
-
-void InputSystem::parsePlayerInput(
-    const std::string& key,
-    const std::string& value,
-    int lineNumber
-)
-{
-    const std::vector<std::string> parts =
-        split(key, '.');
-
-    if (parts.size() < 4 || parts[0] != "players")
-    {
-        Logger::warning(
-            "input",
-            "Ignoring invalid player mapping at line " +
-            std::to_string(lineNumber)
-        );
-
-        return;
-    }
-
-    const int player =
-        parseInt(parts[1]);
-
-    if (!validPlayer(player, lineNumber))
-    {
-        return;
-    }
-
-    if (parts[2] == "direction" && parts.size() == 4)
-    {
-        if (!directionMappingAllowed(lineNumber))
-        {
-            return;
-        }
-
-        InputAction action =
-            parseAction(value, lineNumber);
-
-        if (parts[3] == "up")
-        {
-            players[player].up = action;
-        }
-        else if (parts[3] == "down")
-        {
-            players[player].down = action;
-        }
-        else if (parts[3] == "left")
-        {
-            players[player].left = action;
-        }
-        else if (parts[3] == "right")
-        {
-            players[player].right = action;
-        }
-        else
-        {
-            Logger::warning(
-                "input",
-                "Ignoring unknown direction '" + parts[3] +
-                "' at line " + std::to_string(lineNumber)
-            );
-        }
-
-        return;
-    }
-
-    if (parts[2] == "buttons" && parts.size() == 4)
-    {
-        const int button =
-            parseInt(parts[3]);
-
-        if (!validPlayerButton(button, lineNumber))
-        {
-            return;
-        }
-
-        players[player].buttons[button] =
-            parseAction(value, lineNumber);
-
-        return;
-    }
-
-    Logger::warning(
-        "input",
-        "Ignoring invalid player mapping at line " +
-        std::to_string(lineNumber)
-    );
-}
-
-InputSystem::InputAction InputSystem::parseAction(
-    const std::string& value,
-    int lineNumber
+InputSystem::ButtonState InputSystem::buttonState(
+    const std::unordered_map<int, ButtonState>& buttons,
+    int button
 ) const
 {
-    InputAction action;
+    const auto it =
+        buttons.find(button);
 
-    for (const std::string& alternative : split(value, ','))
-    {
-        InputCombination combination;
-
-        for (const std::string& token : split(alternative, '+'))
-        {
-            PhysicalInput input;
-
-            if (!parsePhysicalInput(token, input))
-            {
-                Logger::warning(
-                    "input",
-                    "Ignoring unknown input token '" + token +
-                    "' at line " + std::to_string(lineNumber)
-                );
-
-                combination.inputs.clear();
-                break;
-            }
-
-            combination.inputs.push_back(input);
-        }
-
-        if (!combination.inputs.empty())
-        {
-            action.alternatives.push_back(combination);
-        }
-    }
-
-    return action;
+    return it == buttons.end()
+        ? ButtonState{}
+        : it->second;
 }
 
-bool InputSystem::parsePhysicalInput(
-    const std::string& token,
-    PhysicalInput& input
+InputSystem::DirectionState InputSystem::directionState(
+    int player,
+    int direction
 ) const
 {
-    const auto keyIt =
-        keyMap().find(token);
+    const auto playerIt =
+        playerStates.find(player);
 
-    if (keyIt != keyMap().end())
+    if (
+        playerIt == playerStates.end() ||
+        direction < 0 ||
+        direction >= static_cast<int>(playerIt->second.directions.size())
+    )
     {
-        input.type = PhysicalType::Key;
-        input.code = keyIt->second;
-        return true;
+        return DirectionState{};
     }
 
-    if (!startsWith(token, "JOY"))
-    {
-        return false;
-    }
-
-    const size_t separator =
-        token.find('_');
-
-    if (separator == std::string::npos || separator <= 3)
-    {
-        return false;
-    }
-
-    const int player =
-        parseInt(token.substr(3, separator - 3));
-
-    if (player <= 0)
-    {
-        return false;
-    }
-
-    const std::string buttonName =
-        token.substr(separator + 1);
-
-    const auto buttonIt =
-        gamepadButtonMap().find(buttonName);
-
-    if (buttonIt == gamepadButtonMap().end())
-    {
-        return false;
-    }
-
-    input.type = PhysicalType::GamepadButton;
-    input.device = player - 1;
-    input.code = buttonIt->second;
-    return true;
+    return playerIt->second.directions[direction];
 }
 
-bool InputSystem::validPlayer(int player, int lineNumber) const
+InputComponent InputSystem::resolveDirection(
+    const InputDirectionDefinition& definition,
+    const DirectionMapping& mapping,
+    DirectionState& state,
+    float delta
+) const
 {
-    if (player <= 0 || player > chip.players)
+    std::vector<InputComponent> active;
+
+    const std::vector<InputComponent> components =
+        definition.type == "2way"
+        ? std::vector<InputComponent>{ InputComponent::Negative, InputComponent::Positive }
+        : std::vector<InputComponent>{
+            InputComponent::Up,
+            InputComponent::Right,
+            InputComponent::Down,
+            InputComponent::Left
+        };
+
+    for (InputComponent component : components)
     {
-        Logger::warning(
-            "input",
-            "Ignoring player mapping outside Input Chip players at line " +
-            std::to_string(lineNumber)
-        );
+        const int index =
+            componentIndex(component);
 
-        return false;
-    }
+        const auto mappingIt =
+            mapping.components.find(component);
 
-    return true;
-}
+        const bool isDown =
+            mappingIt != mapping.components.end() &&
+            actionDown(mappingIt->second);
 
-bool InputSystem::validPlayerButton(int button, int lineNumber) const
-{
-    if (button < 0 || button >= chip.playerButtons)
-    {
-        Logger::warning(
-            "input",
-            "Ignoring player button outside Input Chip limit at line " +
-            std::to_string(lineNumber)
-        );
-
-        return false;
-    }
-
-    return true;
-}
-
-bool InputSystem::validSystemButton(int button, int lineNumber) const
-{
-    if (button < 0 || button >= chip.systemButtons)
-    {
-        Logger::warning(
-            "input",
-            "Ignoring system button outside Input Chip limit at line " +
-            std::to_string(lineNumber)
-        );
-
-        return false;
-    }
-
-    return true;
-}
-
-bool InputSystem::directionMappingAllowed(int lineNumber) const
-{
-    if (chip.direction == "none")
-    {
-        Logger::warning(
-            "input",
-            "Ignoring direction mapping because Input Chip direction is none at line " +
-            std::to_string(lineNumber)
-        );
-
-        return false;
-    }
-
-    return true;
-}
-
-std::string InputSystem::trim(const std::string& value)
-{
-    const size_t start =
-        value.find_first_not_of(" \t\r\n");
-
-    if (start == std::string::npos)
-    {
-        return "";
-    }
-
-    const size_t end =
-        value.find_last_not_of(" \t\r\n");
-
-    return value.substr(start, end - start + 1);
-}
-
-std::vector<std::string> InputSystem::split(
-    const std::string& value,
-    char separator
-)
-{
-    std::vector<std::string> parts;
-    std::stringstream stream(value);
-    std::string part;
-
-    while (std::getline(stream, part, separator))
-    {
-        part = trim(part);
-
-        if (!part.empty())
+        if (isDown && !state.physical[index])
         {
-            parts.push_back(part);
+            state.order[index] =
+                state.nextOrder++;
+        }
+
+        state.physical[index] =
+            isDown;
+
+        if (isDown)
+        {
+            active.push_back(component);
         }
     }
 
-    return parts;
+    if (definition.simultaneous == "first")
+    {
+        return resolveFirst(active, definition, state, delta);
+    }
+
+    if (definition.simultaneous == "neutral")
+    {
+        state.pending = InputComponent::Neutral;
+        state.pendingLeft = 0.0f;
+        return resolveNeutral(active);
+    }
+
+    state.pending = InputComponent::Neutral;
+    state.pendingLeft = 0.0f;
+    return resolveLast(active, state);
+}
+
+InputComponent InputSystem::resolveLast(
+    const std::vector<InputComponent>& active,
+    const DirectionState& state
+) const
+{
+    InputComponent result =
+        InputComponent::Neutral;
+
+    int bestOrder = -1;
+
+    for (InputComponent component : active)
+    {
+        const int order =
+            state.order[componentIndex(component)];
+
+        if (order > bestOrder)
+        {
+            bestOrder = order;
+            result = component;
+        }
+    }
+
+    return result;
+}
+
+InputComponent InputSystem::resolveNeutral(
+    const std::vector<InputComponent>& active
+) const
+{
+    return active.size() == 1
+        ? active.front()
+        : InputComponent::Neutral;
+}
+
+InputComponent InputSystem::resolveFirst(
+    const std::vector<InputComponent>& active,
+    const InputDirectionDefinition& definition,
+    DirectionState& state,
+    float delta
+) const
+{
+    const auto isActive =
+        [&active](InputComponent component)
+        {
+            return std::find(active.begin(), active.end(), component) != active.end();
+        };
+
+    if (state.pending != InputComponent::Neutral)
+    {
+        state.pendingLeft =
+            std::max(0.0f, state.pendingLeft - delta);
+
+        if (state.pendingLeft <= 0.0f || !isActive(state.pending))
+        {
+            state.pending = InputComponent::Neutral;
+            state.pendingLeft = 0.0f;
+        }
+    }
+
+    for (InputComponent component : active)
+    {
+        if (
+            state.current != InputComponent::Neutral &&
+            component != state.current &&
+            state.physical[componentIndex(component)] &&
+            state.order[componentIndex(component)] == state.nextOrder - 1 &&
+            definition.buffer > 0.0f
+        )
+        {
+            state.pending = component;
+            state.pendingLeft = definition.buffer;
+        }
+    }
+
+    if (
+        state.current != InputComponent::Neutral &&
+        isActive(state.current)
+    )
+    {
+        return state.current;
+    }
+
+    if (
+        state.pending != InputComponent::Neutral &&
+        isActive(state.pending)
+    )
+    {
+        const InputComponent pending =
+            state.pending;
+
+        state.pending = InputComponent::Neutral;
+        state.pendingLeft = 0.0f;
+        return pending;
+    }
+
+    InputComponent result =
+        InputComponent::Neutral;
+
+    int bestOrder = 0;
+
+    for (InputComponent component : active)
+    {
+        const int order =
+            state.order[componentIndex(component)];
+
+        if (bestOrder == 0 || order < bestOrder)
+        {
+            bestOrder = order;
+            result = component;
+        }
+    }
+
+    return result;
+}
+
+bool InputSystem::componentMatches(
+    const InputDirectionDefinition& definition,
+    InputComponent value,
+    InputComponent query
+) const
+{
+    if (query == InputComponent::Negative)
+    {
+        if (definition.type == "2way")
+        {
+            return value == InputComponent::Negative;
+        }
+
+        if (definition.type == "4way")
+        {
+            return value == InputComponent::Down ||
+                value == InputComponent::Left;
+        }
+    }
+
+    if (query == InputComponent::Positive)
+    {
+        if (definition.type == "2way")
+        {
+            return value == InputComponent::Positive;
+        }
+
+        if (definition.type == "4way")
+        {
+            return value == InputComponent::Up ||
+                value == InputComponent::Right;
+        }
+    }
+
+    return value == query;
+}
+
+int InputSystem::componentIndex(InputComponent component)
+{
+    return static_cast<int>(component);
 }

@@ -1,88 +1,56 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "control": {
+    "player": 1
+  },
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+  "size": {
+    "width": 640,
+    "height": 320
+  },
+  "delimit": true,
   "behavior": {
     "scripts": [
-      "game"
+      "game",
+      "ui"
     ]
   },
   "children": {
-    "level": "space/level"
-  },
-
-  "music": {
-    "menu": {
-
-      "tempo": 110,
-      "loop": true,
-
-      "channels": {
-
-        "lead": {
-          "instrument": {
-            "source": {
-              "type": "oscillator",
-              "wave": "square"
-            },
-            "tone": {
-              "material": {
-                "brightness": 0.8,
-                "roughness": 0.1,
-                "noise": 0.0,
-                "resonance": 0.2,
-                "metal": 0.0
-              },
-              "envelope": {
-                "attack": 0.0,
-                "decay": 0.05,
-                "sustain": 0.5,
-                "release": 0.03
-              },
-              "space": {
-                "mode": "mono",
-                "width": 0.0,
-                "echo": 0.0
-              }
-            },
-            "play": {
-              "legato": false,
-              "glide": 0.0,
-              "vibrato": 0.0
-            },
-            "range": {
-              "min": "C0",
-              "max": "B8"
-            }
-          },
-          "length": "1/16",
-          "notes": [
-            "C4",
-            "E4",
-            "G4",
-            "E4",
-            "D4",
-            "F4",
-            "A4",
-            "F4"
-          ]
+    "DeepSpaceLeft": {
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 20,
+        "y": 20
+      }
+    },
+    "DeepSpaceRight": {
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 620,
+        "y": 20
+      }
+    },
+    "ship_spawn": {
+      "origin": {
+        "x": 320,
+        "y": 160
+      },
+      "creation": {
+        "mode": "iterator",
+        "rules": {
+          "concurrent": 1,
+          "repeat": true
         },
-
-        "bass": {
-          "instrument": {
-            "source": {
-              "type": "oscillator",
-              "wave": "triangle"
-            }
-          },
-          "notes": [
-            "C2",
-            "-",
-            "C2",
-            "-",
-            "F2",
-            "-",
-            "F2",
-            "-"
-          ]
+        "pattern": [
+          "ship"
+        ]
+      },
+      "children": {
+        "ship": {
+          "like": "ship/ship"
         }
       }
     }

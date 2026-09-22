@@ -1,0 +1,76 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "parent": {
+      "origin": {
+        "x": 150,
+        "y": 90
+      },
+      "behavior": {
+        "scripts": [
+          "parent"
+        ]
+      },
+      "children": {
+        "child_a": {
+          "offset": {
+            "x": -45,
+            "y": 40
+          },
+          "behavior": {
+            "scripts": [
+              "child"
+            ]
+          },
+          "size": {
+            "width": 12,
+            "height": 12
+          },
+          "visual": {
+            "color": "yellow",
+            "representation": [
+              {
+                "primitive": "rectangle"
+              }
+            ]
+          }
+        },
+        "child_b": {
+          "offset": {
+            "x": 45,
+            "y": 40
+          },
+          "behavior": {
+            "scripts": [
+              "child"
+            ]
+          },
+          "size": {
+            "width": 12,
+            "height": 12
+          },
+          "visual": {
+            "color": "blue",
+            "representation": [
+              {
+                "primitive": "rectangle"
+              }
+            ]
+          }
+        }
+      },
+      "size": {
+        "width": 20,
+        "height": 20
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

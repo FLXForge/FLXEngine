@@ -1,0 +1,11 @@
+#pragma once
+
+#include <string_view>
+
+namespace FlxVersion
+{
+    inline constexpr int Major = @FLX_VERSION_MAJOR@;
+    inline constexpr int Minor = @FLX_VERSION_MINOR@;
+    inline constexpr int Patch = @FLX_VERSION_PATCH@;
+    inline constexpr std::string_view Text = "@FLX_VERSION@";
+}

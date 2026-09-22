@@ -1,28 +1,41 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
-  "shape": {
-    "type": "block",
-    "mode": "fill",
-    "color": "blue",
-    "size": {
-      "width": 2,
-      "height": 8
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 160
+      }
+    },
+    "rotation": {
+      "angle": 0
     }
   },
-
-  "motion": {
-    "speed": 160,
-    "angle": 0
-  },
-
   "group": "laser",
-
-  "collision": {
-    "type": "box"
-  },
-
   "behavior": {
-    "scripts": [ "laser" ]
+    "scripts": [
+      "laser"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "invader"
+      ]
+    }
+  },
+  "size": {
+    "width": 2,
+    "height": 8
+  },
+  "visual": {
+    "color": "blue",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

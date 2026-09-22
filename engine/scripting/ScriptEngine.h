@@ -2,7 +2,9 @@
 
 #include "../runtime/RuntimeObject.h"
 #include "../runtime/ObjectDefinition.h"
+#include "../runtime/ScriptValue.h"
 #include "../runtime/RayCastResult.h"
+#include "../collision/CollisionContact.h"
 #include "../machine/MachineDefinition.h"
 #include "../persistence/PersistenceSystem.h"
 #include "ScriptModule.h"
@@ -14,11 +16,13 @@
 #include <functional>
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include <quickjs.h>
 
 class FadeSystem;
 class AudioSystem;
 class InputSystem;
+class DrawingContext;
 struct JSRuntime;
 struct JSContext;
 
@@ -53,11 +57,31 @@ public:
         RuntimeObject& other
     );
 
+    void callScriptFunction(
+        const std::string& script,
+        const std::string& function,
+        RuntimeObject& object,
+        RuntimeObject& other,
+        const std::vector<CollisionContact>& contacts
+    );
+
     using FindObjectFunction =
         std::function<RuntimeObject* (const std::string&)>;
 
     using FindObjectByIdFunction =
         std::function<RuntimeObject* (const std::string&)>;
+
+    using FindObjectsByNameFunction =
+        std::function<std::vector<RuntimeObject*> (const std::string&)>;
+
+    using FindParentFunction =
+        std::function<RuntimeObject* (const std::string&)>;
+
+    using FindChildrenFunction =
+        std::function<std::vector<RuntimeObject*> (const std::string&)>;
+
+    using FindObjectDefinitionFunction =
+        std::function<const ObjectDefinition* (const std::string&)>;
 
     using SpawnObjectFunction =
         std::function<void(
@@ -65,9 +89,13 @@ public:
             const std::string& resourceId
             )>;
 
+    using CreationActiveFunction =
+        std::function<bool(const RuntimeObject&)>;
+
     using RayCastFunction =
         std::function<RayCastResult(
             RuntimeObject& source,
+            ScriptEngine& scriptEngine,
             float angle,
             float distance
             )>;
@@ -75,9 +103,18 @@ public:
     using KeepOnlyFunction =
         std::function<void(const std::string&)>;
 
+    using ObjectRuntimeFunction =
+        std::function<void(const std::string&)>;
+
     void setFindObjectFunction(FindObjectFunction function);
+    void setFindObjectsByNameFunction(FindObjectsByNameFunction function);
+    void setFindParentFunction(FindParentFunction function);
+    void setFindChildrenFunction(FindChildrenFunction function);
 
     RuntimeObject* findObjectByName(const std::string& name);
+    std::vector<RuntimeObject*> findObjectsByName(const std::string& name);
+    RuntimeObject* findParent(const std::string& runtimeId);
+    std::vector<RuntimeObject*> findChildren(const std::string& runtimeId);
 
     void setSpawnObjectFunction(SpawnObjectFunction function);
 
@@ -85,6 +122,9 @@ public:
         RuntimeObject& source,
         const std::string& resourceId
     );
+
+    void setCreationActiveFunction(CreationActiveFunction function);
+    bool creationActive(const RuntimeObject& object) const;
 
     void setRayCastFunction(RayCastFunction function);
 
@@ -98,6 +138,15 @@ public:
 
     void keepOnly(const std::string& runtimeId);
 
+    void setKillObjectFunction(ObjectRuntimeFunction function);
+    void killObject(const std::string& runtimeId);
+
+    void setShowObjectFunction(ObjectRuntimeFunction function);
+    void showObject(const std::string& runtimeId);
+
+    void setHideObjectFunction(ObjectRuntimeFunction function);
+    void hideObject(const std::string& runtimeId);
+
     void setFindObjectByIdFunction(
         FindObjectByIdFunction function
     );
@@ -106,14 +155,66 @@ public:
         const std::string& id
     );
 
+    RuntimeObject* resolveRuntimeObjectReference(
+        const std::string& id,
+        uint64_t invocationId
+    );
+    RuntimeObject* effectiveStateObject(RuntimeObject& object);
+    const RuntimeObject* effectiveStateObject(const RuntimeObject& object) const;
+    bool hasStateMachine(const RuntimeObject& object) const;
+
+    bool isCurrentScriptInvocation(uint64_t invocationId) const;
+    uint64_t currentScriptInvocationId() const;
+    bool hasActiveScriptInvocation() const;
+
+    JSValue createRuntimeObjectView(RuntimeObject& object);
+
+    void setFindObjectDefinitionFunction(
+        FindObjectDefinitionFunction function
+    );
+
+    const ObjectDefinition* findObjectDefinition(
+        const std::string& id
+    ) const;
+
     void setScreenScale(int scale);
     int getScreenScale() const;
     void setVideoChip(const VideoChipDefinition* videoChip);
+    void setDrawingContext(DrawingContext* drawingContext);
     Color parseColor(
         const std::string& color,
         Color fallback
     ) const;
     Color projectColor(Color color) const;
+    bool drawWorldPixel(Vector2 point, Color color);
+    bool drawLocalPixel(const RuntimeObject& reference, Vector2 point, Color color);
+    bool drawWorldLine(Vector2 start, Vector2 end, Color color);
+    bool drawLocalLine(
+        const RuntimeObject& reference,
+        Vector2 start,
+        Vector2 end,
+        Color color
+    );
+    bool drawWorldRectangle(Vector2 center, Vector2 size, Color color);
+    bool drawLocalRectangle(
+        const RuntimeObject& reference,
+        Vector2 center,
+        Vector2 size,
+        Color color
+    );
+    bool drawWorldText(
+        Vector2 center,
+        const std::string& text,
+        int fontSize,
+        Color color
+    );
+    bool drawLocalText(
+        const RuntimeObject& reference,
+        Vector2 center,
+        const std::string& text,
+        int fontSize,
+        Color color
+    );
     void setFrameDelta(float delta);
     float getFrameDelta() const;
     void setRuntimeFrame(uint64_t frame);
@@ -161,12 +262,19 @@ public:
         const std::string& key
     );
 
+    void writeGlobalValue(
+        const std::string& key,
+        const ScriptValue& value
+    );
+
+    std::optional<ScriptValue> readGlobalValue(
+        const std::string& key
+    ) const;
+
 private:
     JSValue createJsObject(RuntimeObject& object);
-    void applyJsObject(RuntimeObject& source, JSValue jsObject);
-    JSValue createGlobalObject();
-    void applyGlobalObject(JSValue globalObject);
-    void exposeGlobalObject(JSValue globalObject);
+    uint64_t beginScriptInvocation();
+    void endScriptInvocation(uint64_t invocationId);
     void cacheScriptModule(const std::string& path);
     JSValue getCachedFunction(
         const std::string& script,
@@ -177,20 +285,32 @@ private:
     float frameDelta = 1.0f / 60.0f;
     uint64_t runtimeFrame = 0;
     const VideoChipDefinition* videoChip = nullptr;
+    DrawingContext* drawingContext = nullptr;
     JSRuntime* runtime;
     JSContext* context;
-    std::unordered_map<std::string, double> globalState;
+    std::unordered_map<std::string, ScriptValue> globalState;
+    std::unordered_map<std::string, RuntimeObject*> activeScriptObjects;
+    std::unordered_set<std::string> invalidScriptObjectReferences;
+    uint64_t nextScriptInvocationId = 1;
+    uint64_t activeScriptInvocationId = 0;
     std::unordered_set<std::string> loadedScripts;
     std::unordered_map<
         std::string,
         ScriptModule
     > scriptModules;
-    std::string keepOnlyRuntimeId;
+    ObjectRuntimeFunction killObjectFunction;
+    ObjectRuntimeFunction showObjectFunction;
+    ObjectRuntimeFunction hideObjectFunction;
     SpawnObjectFunction spawnObjectFunction;
+    CreationActiveFunction creationActiveFunction;
     RayCastFunction rayCastFunction;
     KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;
     FindObjectByIdFunction findObjectById;
+    FindObjectsByNameFunction findObjectsByNameFunction;
+    FindParentFunction findParentFunction;
+    FindChildrenFunction findChildrenFunction;
+    FindObjectDefinitionFunction findObjectDefinitionById;
     FadeSystem* fadeSystem = nullptr;
     AudioSystem* audioSystem = nullptr;
     InputSystem* inputSystem = nullptr;

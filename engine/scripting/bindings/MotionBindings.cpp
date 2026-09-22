@@ -1,6 +1,8 @@
 #include "MotionBindings.h"
 #include "BindingHelpers.h"
+#include "../../runtime/AttachmentRuntimeState.h"
 #include "../../runtime/RuntimeConstants.h"
+#include "../../runtime/RuntimeHelpers.h"
 #include "../../runtime/RuntimeObject.h"
 
 #include <quickjs.h>
@@ -24,86 +26,119 @@ namespace
         return scriptEngine->getFrameDelta();
     }
 
-    JSValue jsMoveX(
+    RuntimeObject* runtimeObjectFromArgument(
         JSContext* context,
-        JSValueConst thisValue,
+        JSValueConst value
+    )
+    {
+        return runtimeObjectViewFromArgument(context, value);
+    }
+
+    bool readNumberProperty(
+        JSContext* context,
+        JSValueConst value,
+        const char* name,
+        double& output
+    )
+    {
+        JSValue property =
+            JS_GetPropertyStr(context, value, name);
+
+        const int result =
+            JS_ToFloat64(context, &output, property);
+
+        JS_FreeValue(context, property);
+
+        return result == 0 && std::isfinite(output);
+    }
+
+    bool contactCorrectionFromArgument(
+        JSContext* context,
+        JSValueConst value,
+        Vector2& correction
+    )
+    {
+        if (!JS_IsObject(value))
+        {
+            return false;
+        }
+
+        double normalX = 0.0;
+        double normalY = 0.0;
+        double penetration = 0.0;
+
+        if (!readNumberProperty(context, value, "normalX", normalX) ||
+            !readNumberProperty(context, value, "normalY", normalY) ||
+            !readNumberProperty(context, value, "penetration", penetration) ||
+            penetration < 0.0)
+        {
+            return false;
+        }
+
+        correction =
+            Vector2{
+                static_cast<float>(normalX * penetration),
+                static_cast<float>(normalY * penetration)
+            };
+
+        return std::isfinite(correction.x) &&
+            std::isfinite(correction.y);
+    }
+
+    JSValue jsMoveHorizontal(
+        JSContext* context,
+        JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        if (argc < 2)
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        double direction = 0.0;
-        JS_ToFloat64(context, &direction, argv[1]);
+        double intent = 0.0;
+        JS_ToFloat64(context, &intent, argv[1]);
 
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double x = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &speed, speedValue);
-
-        x += direction * speed * frameDelta(context);
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "x",
-            JS_NewFloat64(context, x)
+        RuntimeHelpers::moveHorizontal(
+            *object,
+            static_cast<float>(intent),
+            static_cast<float>(frameDelta(context))
         );
 
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, speedValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
 
-    JSValue jsMoveY(
+    JSValue jsMoveVertical(
         JSContext* context,
-        JSValueConst thisValue,
+        JSValueConst,
         int argc,
         JSValueConst* argv
     )
     {
-        if (argc < 2)
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        double direction = 0.0;
-        JS_ToFloat64(context, &direction, argv[1]);
+        double intent = 0.0;
+        JS_ToFloat64(context, &intent, argv[1]);
 
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double y = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &y, yValue);
-        JS_ToFloat64(context, &speed, speedValue);
-
-        y += direction * speed * frameDelta(context);
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "y",
-            JS_NewFloat64(context, y)
+        RuntimeHelpers::moveVertical(
+            *object,
+            static_cast<float>(intent),
+            static_cast<float>(frameDelta(context))
         );
 
-        JS_FreeValue(context, yValue);
-        JS_FreeValue(context, speedValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
@@ -115,145 +150,62 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue self = argv[0];
+        RuntimeHelpers::advance(
+            *object,
+            static_cast<float>(frameDelta(context))
+        );
 
-        JSValue xValue = JS_GetPropertyStr(context, self, "x");
-        JSValue yValue = JS_GetPropertyStr(context, self, "y");
-        JSValue speedValue = JS_GetPropertyStr(context, self, "speed");
-        JSValue angleValue = JS_GetPropertyStr(context, self, "angle");
-        JSValue velocityXValue = JS_GetPropertyStr(context, self, "velocityX");
-        JSValue velocityYValue = JS_GetPropertyStr(context, self, "velocityY");
-        JSValue motionValue = JS_GetPropertyStr(context, self, "motion");
-        JSValue accelerationValue = JS_GetPropertyStr(context, motionValue, "acceleration");
-        JSValue inertiaValue = JS_GetPropertyStr(context, motionValue, "inertia");
-
-        double x = 0.0;
-        double y = 0.0;
-        double speed = 0.0;
-        double angle = 0.0;
-        double velocityX = 0.0;
-        double velocityY = 0.0;
-        double acceleration = 0.0;
-        double inertia = 1.0;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &y, yValue);
-        JS_ToFloat64(context, &speed, speedValue);
-        JS_ToFloat64(context, &angle, angleValue);
-        JS_ToFloat64(context, &velocityX, velocityXValue);
-        JS_ToFloat64(context, &velocityY, velocityYValue);
-        JS_ToFloat64(context, &acceleration, accelerationValue);
-        JS_ToFloat64(context, &inertia, inertiaValue);
-
-        const double delta =
-            frameDelta(context);
-
-        if (acceleration > 0.0)
-        {
-            x += velocityX * delta;
-            y += velocityY * delta;
-
-            velocityX *= inertia;
-            velocityY *= inertia;
-
-            JS_SetPropertyStr(context, self, "velocityX", JS_NewFloat64(context, velocityX));
-            JS_SetPropertyStr(context, self, "velocityY", JS_NewFloat64(context, velocityY));
-        }
-        else
-        {
-            const double radians =
-                (angle - 90.0) * DEG2RAD;
-
-            x +=
-                (
-                    std::cos(radians) * speed +
-                    velocityX
-                ) * delta;
-
-            y +=
-                (
-                    std::sin(radians) * speed +
-                    velocityY
-                ) * delta;
-        }
-
-        JS_SetPropertyStr(context, self, "x", JS_NewFloat64(context, x));
-        JS_SetPropertyStr(context, self, "y", JS_NewFloat64(context, y));
-
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, yValue);
-        JS_FreeValue(context, speedValue);
-        JS_FreeValue(context, angleValue);
-        JS_FreeValue(context, velocityXValue);
-        JS_FreeValue(context, velocityYValue);
-        JS_FreeValue(context, accelerationValue);
-        JS_FreeValue(context, inertiaValue);
-        JS_FreeValue(context, motionValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
 
-    JSValue jsBounceX(
+    JSValue jsReflectX(
         JSContext* context,
         JSValueConst thisValue,
         int argc,
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue angleValue =
-            JS_GetPropertyStr(context, argv[0], "angle");
-
-        double angle = 0.0;
-        JS_ToFloat64(context, &angle, angleValue);
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "angle",
-            JS_NewFloat64(context, -angle)
-        );
-
-        JS_FreeValue(context, angleValue);
+        RuntimeHelpers::reflectX(*object);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
 
-    JSValue jsBounceY(
+    JSValue jsReflectY(
         JSContext* context,
         JSValueConst thisValue,
         int argc,
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue angleValue =
-            JS_GetPropertyStr(context, argv[0], "angle");
-
-        double angle = 0.0;
-        JS_ToFloat64(context, &angle, angleValue);
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "angle",
-            JS_NewFloat64(context, 180.0 - angle)
-        );
-
-        JS_FreeValue(context, angleValue);
+        RuntimeHelpers::reflectY(*object);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
@@ -265,94 +217,28 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue self = argv[0];
+        double intent = 1.0;
 
         if (argc >= 2)
         {
-            double amount = 0.0;
-            JS_ToFloat64(context, &amount, argv[1]);
-
-            JSValue speedValue =
-                JS_GetPropertyStr(context, self, "speed");
-
-            double speed = 0.0;
-            JS_ToFloat64(context, &speed, speedValue);
-
-            JS_SetPropertyStr(
-                context,
-                self,
-                "speed",
-                JS_NewFloat64(context, speed + amount)
-            );
-
-            JS_FreeValue(context, speedValue);
-
-            return JS_UNDEFINED;
+            JS_ToFloat64(context, &intent, argv[1]);
         }
 
-        JSValue motionValue = JS_GetPropertyStr(context, self, "motion");
-        JSValue accelerationValue = JS_GetPropertyStr(context, motionValue, "acceleration");
-        JSValue maxSpeedValue = JS_GetPropertyStr(context, motionValue, "maxSpeed");
-        JSValue angleValue = JS_GetPropertyStr(context, self, "angle");
-        JSValue velocityXValue = JS_GetPropertyStr(context, self, "velocityX");
-        JSValue velocityYValue = JS_GetPropertyStr(context, self, "velocityY");
+        RuntimeHelpers::accelerate(
+            *object,
+            static_cast<float>(intent),
+            static_cast<float>(frameDelta(context))
+        );
 
-        double acceleration = 0.0;
-        double maxSpeed = 0.0;
-        double angle = 0.0;
-        double velocityX = 0.0;
-        double velocityY = 0.0;
-
-        JS_ToFloat64(context, &acceleration, accelerationValue);
-        JS_ToFloat64(context, &maxSpeed, maxSpeedValue);
-        JS_ToFloat64(context, &angle, angleValue);
-        JS_ToFloat64(context, &velocityX, velocityXValue);
-        JS_ToFloat64(context, &velocityY, velocityYValue);
-
-        if (acceleration > 0.0)
-        {
-            const double radians =
-                (angle - 90.0) * DEG2RAD;
-
-            const double delta =
-                frameDelta(context);
-
-            velocityX += std::cos(radians) * acceleration * delta;
-            velocityY += std::sin(radians) * acceleration * delta;
-
-            if (maxSpeed > 0.0)
-            {
-                const double currentSpeed =
-                    std::sqrt(
-                        velocityX * velocityX +
-                        velocityY * velocityY
-                    );
-
-                if (currentSpeed > maxSpeed)
-                {
-                    const double factor =
-                        maxSpeed / currentSpeed;
-
-                    velocityX *= factor;
-                    velocityY *= factor;
-                }
-            }
-
-            JS_SetPropertyStr(context, self, "velocityX", JS_NewFloat64(context, velocityX));
-            JS_SetPropertyStr(context, self, "velocityY", JS_NewFloat64(context, velocityY));
-        }
-
-        JS_FreeValue(context, motionValue);
-        JS_FreeValue(context, accelerationValue);
-        JS_FreeValue(context, maxSpeedValue);
-        JS_FreeValue(context, angleValue);
-        JS_FreeValue(context, velocityXValue);
-        JS_FreeValue(context, velocityYValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
@@ -364,43 +250,28 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 2)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue self = argv[0];
+        double intent = 1.0;
 
-        double direction = 0.0;
-        JS_ToFloat64(context, &direction, argv[1]);
+        if (argc >= 2)
+        {
+            JS_ToFloat64(context, &intent, argv[1]);
+        }
 
-        JSValue angleValue =
-            JS_GetPropertyStr(context, self, "angle");
-
-        JSValue motionValue =
-            JS_GetPropertyStr(context, self, "motion");
-
-        JSValue rotationSpeedValue =
-            JS_GetPropertyStr(context, motionValue, "rotationSpeed");
-
-        double angle = 0.0;
-        double rotationSpeed = 0.0;
-
-        JS_ToFloat64(context, &angle, angleValue);
-        JS_ToFloat64(context, &rotationSpeed, rotationSpeedValue);
-
-        angle += direction * rotationSpeed * frameDelta(context);
-
-        JS_SetPropertyStr(
-            context,
-            self,
-            "angle",
-            JS_NewFloat64(context, angle)
+        RuntimeHelpers::rotate(
+            *object,
+            static_cast<float>(intent),
+            static_cast<float>(frameDelta(context))
         );
 
-        JS_FreeValue(context, angleValue);
-        JS_FreeValue(context, motionValue);
-        JS_FreeValue(context, rotationSpeedValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
@@ -412,55 +283,30 @@ namespace
         JSValueConst* argv
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (argc < 2 || scriptEngine == nullptr)
+        if (argc < 2)
         {
             return JS_UNDEFINED;
         }
 
-        const char* targetName =
-            JS_ToCString(context, argv[1]);
-
-        if (targetName == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
+        RuntimeObject* source =
+            runtimeObjectFromArgument(context, argv[0]);
 
         RuntimeObject* target =
-            scriptEngine->findObjectByName(targetName);
+            runtimeObjectFromArgument(context, argv[1]);
 
-        JS_FreeCString(context, targetName);
-
-        if (target == nullptr)
+        if (source == nullptr || target == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
-
-        JSValue heightValue =
-            JS_GetPropertyStr(context, argv[0], "height");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double y = 0.0;
-        double height = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &y, yValue);
-        JS_ToFloat64(context, &height, heightValue);
-        JS_ToFloat64(context, &speed, speedValue);
+        double y =
+            source->position.y;
 
         const double distance =
-            (target->position.y + target->size.y / 2.0) -
-            (y + height / 2.0);
+            target->position.y - source->position.y;
 
         const double maxStep =
-            std::abs(speed) * frameDelta(context);
+            std::abs(source->speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {
@@ -475,16 +321,17 @@ namespace
             y -= maxStep;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "y",
-            JS_NewFloat64(context, y)
+        RuntimeHelpers::position(
+            *source,
+            source->position.x,
+            static_cast<float>(y)
         );
 
-        JS_FreeValue(context, yValue);
-        JS_FreeValue(context, heightValue);
-        JS_FreeValue(context, speedValue);
+        refreshRuntimeObjectView(
+            context,
+            argv[0],
+            *source
+        );
 
         return JS_UNDEFINED;
     }
@@ -496,55 +343,30 @@ namespace
         JSValueConst* argv
     )
     {
-        ScriptEngine* scriptEngine =
-            scriptEngineFromContext(context);
-
-        if (argc < 2 || scriptEngine == nullptr)
+        if (argc < 2)
         {
             return JS_UNDEFINED;
         }
 
-        const char* targetName =
-            JS_ToCString(context, argv[1]);
-
-        if (targetName == nullptr)
-        {
-            return JS_UNDEFINED;
-        }
+        RuntimeObject* source =
+            runtimeObjectFromArgument(context, argv[0]);
 
         RuntimeObject* target =
-            scriptEngine->findObjectByName(targetName);
+            runtimeObjectFromArgument(context, argv[1]);
 
-        JS_FreeCString(context, targetName);
-
-        if (target == nullptr)
+        if (source == nullptr || target == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
-
-        JSValue widthValue =
-            JS_GetPropertyStr(context, argv[0], "width");
-
-        JSValue speedValue =
-            JS_GetPropertyStr(context, argv[0], "speed");
-
-        double x = 0.0;
-        double width = 0.0;
-        double speed = 120.0;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &width, widthValue);
-        JS_ToFloat64(context, &speed, speedValue);
+        double x =
+            source->position.x;
 
         const double distance =
-            (target->position.x + target->size.x / 2.0) -
-            (x + width / 2.0);
+            target->position.x - source->position.x;
 
         const double maxStep =
-            std::abs(speed) * frameDelta(context);
+            std::abs(source->speed) * frameDelta(context);
 
         if (std::abs(distance) <= maxStep)
         {
@@ -559,16 +381,17 @@ namespace
             x -= maxStep;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "x",
-            JS_NewFloat64(context, x)
+        RuntimeHelpers::position(
+            *source,
+            static_cast<float>(x),
+            source->position.y
         );
 
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, widthValue);
-        JS_FreeValue(context, speedValue);
+        refreshRuntimeObjectView(
+            context,
+            argv[0],
+            *source
+        );
 
         return JS_UNDEFINED;
     }
@@ -580,17 +403,35 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "attached",
-            JS_NewBool(context, true)
-        );
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* parent =
+            scriptEngine == nullptr
+                ? nullptr
+                : scriptEngine->findParent(object->runtimeId);
+
+        if (parent != nullptr)
+        {
+            AttachmentRuntimeState::setOffset(
+                object->runtimeId,
+                Vector2{
+                    object->position.x - parent->position.x,
+                    object->position.y - parent->position.y
+                }
+            );
+        }
+
+        object->attached =
+            true;
 
         return JS_UNDEFINED;
     }
@@ -602,17 +443,16 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "attached",
-            JS_NewBool(context, false)
-        );
+        object->attached =
+            false;
 
         return JS_UNDEFINED;
     }
@@ -624,20 +464,15 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_NewBool(context, false);
         }
 
-        JSValue attachedValue =
-            JS_GetPropertyStr(context, argv[0], "attached");
-
-        const bool attached =
-            JS_ToBool(context, attachedValue);
-
-        JS_FreeValue(context, attachedValue);
-
-        return JS_NewBool(context, attached);
+        return JS_NewBool(context, object->attached);
     }
 
     JSValue jsCarry(
@@ -647,103 +482,399 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 2)
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        RuntimeObject* carrier =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[1]);
+
+        if (object == nullptr || carrier == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
+        object->position.x +=
+            carrier->position.x - carrier->previousPosition.x;
 
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
+        object->position.y +=
+            carrier->position.y - carrier->previousPosition.y;
 
-        JSValue carrierXValue =
-            JS_GetPropertyStr(context, argv[1], "x");
-
-        JSValue carrierYValue =
-            JS_GetPropertyStr(context, argv[1], "y");
-
-        JSValue carrierPreviousXValue =
-            JS_GetPropertyStr(context, argv[1], "previousX");
-
-        JSValue carrierPreviousYValue =
-            JS_GetPropertyStr(context, argv[1], "previousY");
-
-        double x = 0.0;
-        double y = 0.0;
-        double carrierX = 0.0;
-        double carrierY = 0.0;
-        double carrierPreviousX = 0.0;
-        double carrierPreviousY = 0.0;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &y, yValue);
-        JS_ToFloat64(context, &carrierX, carrierXValue);
-        JS_ToFloat64(context, &carrierY, carrierYValue);
-        JS_ToFloat64(context, &carrierPreviousX, carrierPreviousXValue);
-        JS_ToFloat64(context, &carrierPreviousY, carrierPreviousYValue);
-
-        x += carrierX - carrierPreviousX;
-        y += carrierY - carrierPreviousY;
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "x",
-            JS_NewFloat64(context, x)
-        );
-
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "y",
-            JS_NewFloat64(context, y)
-        );
-
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, yValue);
-        JS_FreeValue(context, carrierXValue);
-        JS_FreeValue(context, carrierYValue);
-        JS_FreeValue(context, carrierPreviousXValue);
-        JS_FreeValue(context, carrierPreviousYValue);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
 
-    JSValue jsToOrigin(
+    JSValue jsPositionOrigin(
         JSContext* context,
         JSValueConst thisValue,
         int argc,
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JSValue self = argv[0];
+        RuntimeHelpers::positionOrigin(*object);
+        refreshRuntimeObjectView(context, argv[0], *object);
 
-        JSValue originXValue = JS_GetPropertyStr(context, self, "originX");
-        JSValue originYValue = JS_GetPropertyStr(context, self, "originY");
-        JSValue originSpeedValue = JS_GetPropertyStr(context, self, "originSpeed");
+        return JS_UNDEFINED;
+    }
 
-        double originX = 0.0;
-        double originY = 0.0;
-        double originSpeed = 0.0;
+    JSValue jsPosition(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
 
-        JS_ToFloat64(context, &originX, originXValue);
-        JS_ToFloat64(context, &originY, originYValue);
-        JS_ToFloat64(context, &originSpeed, originSpeedValue);
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
 
-        JS_SetPropertyStr(context, self, "x", JS_NewFloat64(context, originX));
-        JS_SetPropertyStr(context, self, "y", JS_NewFloat64(context, originY));
-        JS_SetPropertyStr(context, self, "speed", JS_NewFloat64(context, originSpeed));
+        if (argc == 2)
+        {
+            Vector2 correction =
+                Vector2{ 0.0f, 0.0f };
 
-        JS_FreeValue(context, originXValue);
-        JS_FreeValue(context, originYValue);
-        JS_FreeValue(context, originSpeedValue);
+            if (!contactCorrectionFromArgument(context, argv[1], correction))
+            {
+                return JS_UNDEFINED;
+            }
+
+            RuntimeHelpers::position(
+                *object,
+                object->position.x + correction.x,
+                object->position.y + correction.y
+            );
+
+            refreshRuntimeObjectView(context, argv[0], *object);
+
+            return JS_UNDEFINED;
+        }
+
+        double x = object->position.x;
+        double y = object->position.y;
+
+        JS_ToFloat64(context, &x, argv[1]);
+        JS_ToFloat64(context, &y, argv[2]);
+
+        RuntimeHelpers::position(
+            *object,
+            static_cast<float>(x),
+            static_cast<float>(y)
+        );
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsApplySpeed(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double speed =
+            object->speed;
+
+        JS_ToFloat64(context, &speed, argv[1]);
+
+        RuntimeHelpers::applySpeed(
+            *object,
+            static_cast<float>(speed)
+        );
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsRestoreSpeed(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeHelpers::restoreSpeed(*object);
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsApplyVelocity(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double direction =
+            object->angle;
+
+        double speed =
+            0.0;
+
+        JS_ToFloat64(context, &direction, argv[1]);
+        JS_ToFloat64(context, &speed, argv[2]);
+
+        RuntimeHelpers::applyVelocity(
+            *object,
+            static_cast<float>(direction),
+            static_cast<float>(speed)
+        );
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsPositionX(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double x =
+            object->position.x;
+
+        JS_ToFloat64(context, &x, argv[1]);
+
+        RuntimeHelpers::position(
+            *object,
+            static_cast<float>(x),
+            object->position.y
+        );
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsPositionY(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double y =
+            object->position.y;
+
+        JS_ToFloat64(context, &y, argv[1]);
+
+        RuntimeHelpers::position(
+            *object,
+            object->position.x,
+            static_cast<float>(y)
+        );
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsResize(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 3 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double width =
+            object->size.x;
+
+        double height =
+            object->size.y;
+
+        JS_ToFloat64(context, &width, argv[1]);
+        JS_ToFloat64(context, &height, argv[2]);
+
+        object->size.x =
+            static_cast<float>(width);
+
+        object->size.y =
+            static_cast<float>(height);
+        object->hasSize =
+            true;
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsResizeWidth(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double width =
+            object->size.x;
+
+        JS_ToFloat64(context, &width, argv[1]);
+
+        object->size.x =
+            static_cast<float>(width);
+        object->hasSize =
+            true;
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsResizeHeight(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double height =
+            object->size.y;
+
+        JS_ToFloat64(context, &height, argv[1]);
+
+        object->size.y =
+            static_cast<float>(height);
+        object->hasSize =
+            true;
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsApplyAngle(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double angle =
+            object->angle;
+
+        JS_ToFloat64(context, &angle, argv[1]);
+
+        object->angle =
+            static_cast<float>(angle);
+
+        refreshRuntimeObjectView(context, argv[0], *object);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsApplyRotationSpeed(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        double speed =
+            object->rotationSpeed;
+
+        JS_ToFloat64(context, &speed, argv[1]);
+
+        object->rotationSpeed =
+            static_cast<float>(speed);
+
+        refreshRuntimeObjectView(context, argv[0], *object);
 
         return JS_UNDEFINED;
     }
@@ -754,8 +885,8 @@ void MotionBindings::registerAll(JSContext* context)
     JSValue global =
         JS_GetGlobalObject(context);
 
-    JS_SetPropertyStr(context, global, "move_x", JS_NewCFunction(context, jsMoveX, "move_x", 2));
-    JS_SetPropertyStr(context, global, "move_y", JS_NewCFunction(context, jsMoveY, "move_y", 2));
+    JS_SetPropertyStr(context, global, "move_horizontal", JS_NewCFunction(context, jsMoveHorizontal, "move_horizontal", 2));
+    JS_SetPropertyStr(context, global, "move_vertical", JS_NewCFunction(context, jsMoveVertical, "move_vertical", 2));
     JS_SetPropertyStr(context, global, "advance", JS_NewCFunction(context, jsAdvance, "advance", 1));
     JS_SetPropertyStr(context, global, "follow_x", JS_NewCFunction(context, jsFollowX, "follow_x", 2));
     JS_SetPropertyStr(context, global, "follow_y", JS_NewCFunction(context, jsFollowY, "follow_y", 2));
@@ -763,11 +894,22 @@ void MotionBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(context, global, "detach", JS_NewCFunction(context, jsDetach, "detach", 1));
     JS_SetPropertyStr(context, global, "attach_active", JS_NewCFunction(context, jsAttachActive, "attach_active", 1));
     JS_SetPropertyStr(context, global, "carry", JS_NewCFunction(context, jsCarry, "carry", 2));
-    JS_SetPropertyStr(context, global, "bounce_x", JS_NewCFunction(context, jsBounceX, "bounce_x", 1));
-    JS_SetPropertyStr(context, global, "bounce_y", JS_NewCFunction(context, jsBounceY, "bounce_y", 1));
+    JS_SetPropertyStr(context, global, "reflect_x", JS_NewCFunction(context, jsReflectX, "reflect_x", 1));
+    JS_SetPropertyStr(context, global, "reflect_y", JS_NewCFunction(context, jsReflectY, "reflect_y", 1));
     JS_SetPropertyStr(context, global, "accelerate", JS_NewCFunction(context, jsAccelerate, "accelerate", 2));
     JS_SetPropertyStr(context, global, "rotate", JS_NewCFunction(context, jsRotate, "rotate", 2));
-    JS_SetPropertyStr(context, global, "to_origin", JS_NewCFunction(context, jsToOrigin, "to_origin", 1));
+    JS_SetPropertyStr(context, global, "position", JS_NewCFunction(context, jsPosition, "position", 3));
+    JS_SetPropertyStr(context, global, "position_x", JS_NewCFunction(context, jsPositionX, "position_x", 2));
+    JS_SetPropertyStr(context, global, "position_y", JS_NewCFunction(context, jsPositionY, "position_y", 2));
+    JS_SetPropertyStr(context, global, "position_origin", JS_NewCFunction(context, jsPositionOrigin, "position_origin", 1));
+    JS_SetPropertyStr(context, global, "apply_speed", JS_NewCFunction(context, jsApplySpeed, "apply_speed", 2));
+    JS_SetPropertyStr(context, global, "apply_velocity", JS_NewCFunction(context, jsApplyVelocity, "apply_velocity", 3));
+    JS_SetPropertyStr(context, global, "apply_angle", JS_NewCFunction(context, jsApplyAngle, "apply_angle", 2));
+    JS_SetPropertyStr(context, global, "apply_rotation_speed", JS_NewCFunction(context, jsApplyRotationSpeed, "apply_rotation_speed", 2));
+    JS_SetPropertyStr(context, global, "resize", JS_NewCFunction(context, jsResize, "resize", 3));
+    JS_SetPropertyStr(context, global, "resize_width", JS_NewCFunction(context, jsResizeWidth, "resize_width", 2));
+    JS_SetPropertyStr(context, global, "resize_height", JS_NewCFunction(context, jsResizeHeight, "resize_height", 2));
+    JS_SetPropertyStr(context, global, "restore_speed", JS_NewCFunction(context, jsRestoreSpeed, "restore_speed", 1));
 
     JS_FreeValue(context, global);
 }

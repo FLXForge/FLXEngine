@@ -1,0 +1,12 @@
+# Game data
+title=Drawing Basic
+name=drawing-basic
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=basic
+
+# Notes
+notes=Basic immediate Drawing in World and Local coordinates

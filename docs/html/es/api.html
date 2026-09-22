@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API FLX | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="api">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>FLX API</h1>
+
+            <p>
+                Esta sección documenta las funciones JavaScript expuestas por FLX al runtime.
+            </p>
+
+            <p class="placeholder">
+                FLX está en desarrollo activo. Algunas funciones pueden cambiar durante las versiones 0.x.
+            </p>
+
+            <hr />
+
+            <h2>Constantes</h2>
+
+            <p>
+                FLX expone constantes globales para trabajar con componentes
+                logicos de direccion de forma legible. Los scripts no deben
+                depender de su representacion numerica.
+            </p>
+
+            <h3>Dirección</h3>
+
+            <ul>
+                <li><code>UP</code>: componente logico arriba.</li>
+                <li><code>DOWN</code>: componente logico abajo.</li>
+                <li><code>LEFT</code>: componente logico izquierda.</li>
+                <li><code>RIGHT</code>: componente logico derecha.</li>
+                <li><code>NEGATIVE</code>: componente logico negativo.</li>
+                <li><code>POSITIVE</code>: componente logico positivo.</li>
+                <li><code>STOP</code>: movimiento neutro o detenido.</li>
+            </ul>
+
+            <hr />
+
+            <h2>RuntimeObject</h2>
+
+            <p>
+                Los objetos recibidos por las funciones de scripting
+                son instancias de <code>RuntimeObject</code>.
+            </p>
+
+            <p>
+                Un RuntimeObject representa una entidad viva dentro del runtime
+                y contiene tanto datos definidos mediante JSON
+                como estado generado durante la ejecución.
+            </p>
+
+            <p>
+                El scripting conserva identidad; el Runtime conserva el mundo vivo.
+                Los RuntimeObjects se resuelven, no se persisten. Guarda
+                <code>object.id</code> como string y vuelve a resolverlo con
+                <code>find_id()</code> cuando lo necesites.
+            </p>
+
+            <p>
+                Las vistas RuntimeObject son temporales y de solo lectura. Una
+                referencia normal caduca al terminar el hook actual y tambien
+                caduca inmediatamente cuando muere su instancia.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">RuntimeObject</div>
+<pre><code>function motion(ship) {
+
+    position_x(ship, ship.x + 10);
+
+    console.log(ship.id);
+}
+</code></pre>
+            </div>
+
+            <h3>id</h3>
+
+            <p>
+                Identificador único de la instancia dentro del runtime.
+            </p>
+
+            <p>
+                A diferencia de <code>name</code>,
+                cada objeto generado recibe un identificador exclusivo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">id</div>
+<pre><code>console.log(ship.id);</code></pre>
+            </div>
+
+            <h3>name</h3>
+
+            <p>
+                Nombre lógico del objeto.
+            </p>
+
+            <p>
+                Habitualmente proviene de la definición JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">name</div>
+<pre><code>console.log(ship.name);</code></pre>
+            </div>
+
+            <h3>Estado local</h3>
+
+            <p>
+                El estado persistente de una instancia se consulta y modifica
+                mediante <code>read_local()</code> y <code>write_local()</code>.
+                El objeto JavaScript no expone <code>object.local</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">local state</div>
+<pre><code>const timer = (read_local(ship, "timer") || 0) + delta();
+write_local(ship, "timer", timer);
+</code></pre>
+            </div>
+
+            <h3>group</h3>
+
+            <p>
+                Grupo lógico asociado al objeto.
+            </p>
+
+            <p>
+                Puede utilizarse para clasificar entidades
+                o para futuros sistemas de filtrado.
+            </p>
+
+            <h3>Posición y tamaño</h3>
+
+            <p>
+                Estas propiedades son una vista viva de solo lectura. Para
+                cambiar la posición o el tamaño usa <code>position()</code>,
+                <code>position_x()</code>, <code>position_y()</code>,
+                <code>resize()</code>, <code>resize_width()</code> o
+                <code>resize_height()</code>.
+            </p>
+
+            <ul>
+                <li><code>x</code>: posición horizontal.</li>
+                <li><code>y</code>: posición vertical.</li>
+                <li><code>width</code>: ancho.</li>
+                <li><code>height</code>: alto.</li>
+            </ul>
+
+            <h3>Movimiento</h3>
+
+            <p>
+                Estas propiedades también son de solo lectura. Para cambiar el
+                estado vivo usa funciones explícitas como
+                <code>apply_speed()</code>, <code>apply_angle()</code>,
+                <code>apply_velocity()</code> o
+                <code>apply_rotation_speed()</code>.
+            </p>
+
+            <ul>
+                <li><code>speed</code>: velocidad actual.</li>
+                <li><code>velocityX</code>: velocidad horizontal.</li>
+                <li><code>velocityY</code>: velocidad vertical.</li>
+                <li><code>rotationSpeed</code>: velocidad angular actual.</li>
+            </ul>
+
+            <h3>angle</h3>
+
+            <p>
+                La propiedad <code>angle</code>
+                representa la rotación actual del objeto en grados.
+            </p>
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
+
+            <p>
+                FLX utiliza la siguiente convención:
+            </p>
+
+            <ul>
+                <li><code>0</code>: arriba.</li>
+                <li><code>90</code>: derecha.</li>
+                <li><code>180</code>: abajo.</li>
+                <li><code>270</code>: izquierda.</li>
+            </ul>
+
+            <hr />
+
+            <h2>accelerate(object, intent)</h2>
+
+            <p>
+                Aplica aceleracion usando la declaracion <code>mechanics</code>
+                del objeto y lo mueve durante el mismo frame.
+                <code>intent</code> es opcional y por defecto vale <code>1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">accelerate</div>
+<pre><code>accelerate(ship);
+accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>mechanics.motion.acceleration</code>: tasa de aceleracion.</li>
+                <li><code>mechanics.motion.speed.limit</code>: velocidad viva maxima.</li>
+                <li><code>angle</code>: direccion actual en mecanicas polares.</li>
+                <li><code>velocityX</code> y <code>velocityY</code>: velocidad acumulada.</li>
+            </ul>
+
+            <hr />
+
+            <h2>apply_speed(object, value)</h2>
+
+            <p>
+                Aplica una velocidad viva sin cambiar la declaracion JSON. Si
+                <code>mechanics.motion.speed.limit</code> es mayor que cero, FLX
+                limita el valor solicitado a ese maximo.
+                En mecanicas polares cambia la velocidad polar propia del objeto;
+                la velocity heredada o acumulada en <code>velocityX</code>/<code>velocityY</code>
+                permanece separada. En mecanicas directas, el movimiento por eje
+                sin aceleracion usa esta velocidad viva.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_speed</div>
+<pre><code>apply_speed(ball, ball.speed + 5);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>apply_velocity(object, direction, speed)</h2>
+
+            <p>
+                Sustituye la velocity lineal viva del objeto por un vector usando
+                <code>direction</code> en grados FLX y <code>speed</code> como
+                magnitud. No desplaza el objeto inmediatamente.
+                Si <code>mechanics.motion.speed.limit</code> es mayor que cero,
+                FLX limita la magnitud solicitada a ese maximo y registra un warning.
+            </p>
+
+            <p>
+                <code>speed</code> es la velocidad escalar viva usada por helpers
+                como <code>apply_speed()</code>. <code>velocityX</code> y
+                <code>velocityY</code> son el vector lineal vivo. <code>angle</code>
+                es la orientacion viva. <code>apply_velocity()</code> cambia solo
+                el vector, de modo que un objeto direct puede moverse en una
+                trayectoria estable mientras <code>rotate()</code> cambia su
+                orientacion visual.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_velocity</div>
+<pre><code>apply_velocity(asteroid, random(0, 360), random(20, 70));</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>apply_angle(object, angle)</h2>
+
+            <p>
+                Cambia el ángulo vivo del objeto sin modificar su declaración JSON.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_angle</div>
+<pre><code>apply_angle(ball, -45);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>apply_rotation_speed(object, speed)</h2>
+
+            <p>
+                Cambia la velocidad angular viva del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">apply_rotation_speed</div>
+<pre><code>apply_rotation_speed(fragment, 180);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>restore_speed(object)</h2>
+
+            <p>
+                Restaura la velocidad viva a
+                <code>mechanics.motion.speed.start</code>.
+                No reconstruye la velocity lineal acumulada.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">restore_speed</div>
+<pre><code>restore_speed(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>advance(object)</h2>
+
+            <p>
+                Avanza el objeto usando su estado de mecanicas actual.
+            </p>
+
+            <p>
+                En objetos polares, <code>advance()</code> usa angulo y velocidad
+                vivos. Si la velocidad viva esta en cero, puede reactivar el
+                movimiento desde <code>mechanics.motion.speed.start</code>.
+                Cualquier velocity lineal acumulada o heredada se suma una sola
+                vez como contribucion separada.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">advance</div>
+<pre><code>function motion(ship) {
+    advance(ship);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>position(object, x, y)</h2>
+
+            <p>
+                Coloca un objeto en coordenadas lógicas. También existen
+                <code>position_x(object, x)</code> y
+                <code>position_y(object, y)</code> para modificar un solo eje.
+                <code>position(object, contact)</code> tambien puede usarse
+                dentro de callbacks de collision para aplicar la correccion
+                dirigida <code>normal * penetration</code> de un
+                <code>CollisionContact</code>. No refleja velocidad ni realiza
+                resolucion fisica automatica.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position</div>
+<pre><code>position(player, 160, 120);
+position(ball, contacts[0]);
+position_x(player, player.x + 4);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>resize(object, width, height)</h2>
+
+            <p>
+                Cambia el tamaño vivo del objeto. También existen
+                <code>resize_width(object, width)</code> y
+                <code>resize_height(object, height)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">resize</div>
+<pre><code>resize(paddle, 48, paddle.height);
+resize_width(paddle, paddle.width + 8);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>reflect_x(object)</h2>
+
+            <p>
+                Refleja la componente horizontal del movimiento vivo del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">reflect_x</div>
+<pre><code>reflect_x(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>reflect_y(object)</h2>
+
+            <p>
+                Refleja la componente vertical del movimiento vivo del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">reflect_y</div>
+<pre><code>reflect_y(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>console.log(...values)</h2>
+
+            <p>
+                Envía mensajes al logger interno de FLX.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">console.log</div>
+<pre><code>console.log("Ship position:", ship.x, ship.y);</code></pre>
+            </div>
+
+            <hr />
+
+            <hr />
+
+            <h2>delta()</h2>
+
+            <p>
+                Nota: FLX limita <code>delta()</code> a un maximo seguro de
+                <code>1 / 30</code> segundos para evitar saltos grandes al mover
+                la ventana, pausar el sistema o recuperar el foco.
+            </p>
+
+            <p>
+                Retorna el tiempo transcurrido, en segundos, desde el frame anterior.
+            </p>
+
+            <p>
+                Permite crear movimientos, temporizadores y comportamientos independientes
+                de la velocidad de ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>function motion(spawner) {
+
+    const timer = (read_local(spawner, "timer") || 0) + delta();
+    write_local(spawner, "timer", timer);
+
+    if (timer > 3) {
+        spawn(spawner, "asteroid");
+        write_local(spawner, "timer", 0);
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>draw_text(x, y, text, size, color)</h2>
+
+            <p>
+                Dibuja texto inmediato durante el hook
+                <code>draw(object)</code> actual.
+            </p>
+
+            <p>
+                Las coordenadas se expresan en el espacio lógico del mundo FLX
+                y representan el centro del texto. Si se pasa un
+                <code>RuntimeObject</code> como primer argumento, las
+                coordenadas son locales a ese objeto y rotan con él. Usa
+                <code>shape.type = "text"</code> cuando el texto sea un objeto
+                persistente del mundo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">timer</div>
+<pre><code>draw_text( 10, 10, "HELLO ");
+draw_text( 40, 10, "WORLD!", 15);
+draw_text( 10, 30, "READY", 10, "#ffffff");
+draw_text(ship, 0, -12, "LOCK", 8, "yellow");
+</code></pre>
+            </div>
+
+            <p>
+                *<code>size</code> es opcional, por defecto es 10.
+                <code>color</code> es opcional y usa blanco por defecto.
+            </p>
+
+            <hr />
+
+            <h2>draw_pixel(x, y, color)</h2>
+
+            <p>
+                Dibuja un pixel lógico inmediato durante el hook
+                <code>draw(object)</code> actual. Con un
+                <code>RuntimeObject</code> como primer argumento, las
+                coordenadas son locales a ese objeto.
+            </p>
+
+            <p>
+                No crea RuntimeObjects ni colisiona. El dibujo inmediato
+                pertenece al turno visual del objeto cuyo <code>draw()</code>
+                se está ejecutando.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">pixels</div>
+<pre><code>function draw(space) {
+    draw_pixel(4, 10);
+    draw_pixel(10, 10, "white");
+    draw_pixel(20, 20, "#ffcc00");
+    draw_pixel(ship, 0, -6, "white");
+}</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> es opcional y usa blanco por defecto.
+                Acepta colores con nombre de FLX y valores hexadecimales.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <hr />
+
+            <h2>draw_line(x, y, x1, y1, color)</h2>
+
+            <p>
+                Dibuja una línea inmediata durante el hook
+                <code>draw(object)</code> actual. Con un
+                <code>RuntimeObject</code> como primer argumento, los extremos
+                son locales a ese objeto.
+            </p>
+
+            <p>
+                No crea RuntimeObjects ni colisiona.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">line</div>
+<pre><code>draw_line(10, 10, 40, 10);
+draw_line(10, 20, 40, 40, "#ffcc00");
+draw_line(ship, 0, 0, 0, -12, "white");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> es opcional y usa blanco por defecto.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <hr />
+
+            <h2>draw_rectangle(x, y, width, height, color)</h2>
+
+            <p>
+                Dibuja el contorno de un rectángulo inmediato durante el hook
+                <code>draw(object)</code> actual. <code>x</code> e
+                <code>y</code> son el centro del rectángulo.
+            </p>
+
+            <p>
+                Con un <code>RuntimeObject</code> como primer argumento, el
+                centro es local a ese objeto y el rectángulo rota con él. No
+                crea RuntimeObjects ni colisiona.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rectangle</div>
+<pre><code>draw_rectangle(8, 8, 40, 20);
+draw_rectangle(60, 8, 30, 30, "green");
+draw_rectangle(ship, 0, 0, 12, 8, "cyan");</code></pre>
+            </div>
+
+            <p>
+                <code>color</code> es opcional y usa blanco por defecto.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <hr />
+
+            <h2>fade_on(color)</h2>
+
+            <p>
+                Inicia un desvanecimiento de pantalla completa desde transparente
+                hasta opaco. La superposición es global y se dibuja por encima
+                del mundo y del dibujo inmediato.
+            </p>
+
+            <p>
+                El parametro <code>color</code> es opcional.
+                Si no se indica, se usa negro.
+                Se admiten colores con nombre y colores hexadecimales como
+                <code>#000</code>
+                y
+                <code>#000000</code>.
+                El color final se proyecta mediante el chip de video activo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_on</div>
+<pre><code>fade_on();
+fade_on("black");
+fade_on("#000000");</code></pre>
+            </div>
+
+            <p>
+                La transicion dura actualmente un segundo y queda completamente
+                cubierta al finalizar.
+            </p>
+
+            <hr />
+
+            <h2>fade_off(color)</h2>
+
+            <p>
+                Inicia un desvanecimiento de pantalla completa desde opaco
+                hasta transparente. Al terminar, la superposicion queda inactiva.
+            </p>
+
+            <p>
+                El parametro <code>color</code> es opcional y sigue las mismas
+                reglas de color que <code>fade_on()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_off</div>
+<pre><code>fade_off();
+fade_off("black");
+fade_off("#000000");</code></pre>
+            </div>
+
+            <p>
+                Los parametros de duracion e intensidad no forman parte de la API
+                todavia. Quedan planteados como ampliaciones futuras.
+            </p>
+
+            <hr />
+
+            <h2>fade_set(alpha, color)</h2>
+
+            <p>
+                Establece inmediatamente el alpha del fundido.
+                <code>0</code> significa pantalla descubierta y <code>1</code>
+                pantalla completamente cubierta. El valor se limita entre
+                <code>0</code> y <code>1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">fade_set</div>
+<pre><code>function born(title) {
+    fade_set(1);
+    fade_off();
+}
+
+fade_set(0, "black");</code></pre>
+            </div>
+
+            <p>
+                El parametro <code>color</code> es opcional y usa negro por defecto.
+            </p>
+
+            <hr />
+
+            <h2>fade_active()</h2>
+
+            <p>
+                Devuelve <code>true</code> mientras hay una transicion de fundido
+                en curso. Devuelve <code>false</code> cuando el overlay esta estable.
+            </p>
+
+            <h2>fade_done()</h2>
+
+            <p>
+                Devuelve <code>true</code> cuando no hay ninguna transicion de
+                fundido en curso. Sirve para continuar una transicion de escena
+                de forma segura.
+            </p>
+
+            <h2>fade_alpha()</h2>
+
+            <p>
+                Devuelve el alpha actual del fundido.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">transicion segura</div>
+<pre><code>function action(title) {
+    if (input_pressed(title, button(0))) {
+        write_local(title, "leaving", 1);
+        fade_on();
+    }
+
+    if (read_local(title, "leaving") == 1 && fade_done()) {
+        // cargar siguiente escena
+    }
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>find_id(id)</h2>
+
+            <p>
+                Resuelve un objeto vivo por runtime id durante el hook actual.
+                Los valores <code>RuntimeObject</code> son vistas vivas temporales;
+                si una referencia debe sobrevivir entre hooks, guarda su id como
+                string y vuelve a resolverlo con <code>find_id()</code>.
+            </p>
+
+            <h2>find_name(name)</h2>
+
+            <p>
+                Devuelve todos los objetos vivos con el nombre logico indicado,
+                en orden de mundo desde el mas antiguo al mas nuevo. El array
+                devuelto es una fotografia JavaScript normal, no una coleccion
+                reactiva.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">find_name</div>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
+            </div>
+
+            <h2>find_parent(object)</h2>
+
+            <p>
+                Devuelve el parent vivo de un objeto, o <code>undefined</code>
+                si el objeto no tiene parent vivo.
+            </p>
+
+            <p>
+                El parent estructural permanece estable durante la vida de la
+                instancia, pero no implica ownership y FLX v0.3.0 no expone
+                reparenting publico. Durante <code>dead(object)</code>, el objeto
+                muerto puede usarse como contexto estructural final; el parent
+                devuelto debe seguir vivo.
+            </p>
+
+            <h2>find_children(object)</h2>
+
+            <p>
+                Devuelve los hijos directos vivos de un objeto en orden de mundo.
+                No devuelve capacidades de spawn manual, objetos pendientes,
+                nietos, descendientes ni hijos muertos.
+            </p>
+
+            <p>
+                El array devuelto es una fotografia JavaScript normal. Durante
+                <code>dead(object)</code>, el objeto muerto puede usarse como
+                contexto estructural final; los resultados siguen siendo solo
+                objetos vivos.
+            </p>
+
+            <hr />
+
+            <h2>follow_x(object, target)</h2>
+
+            <p>
+                Mueve un objeto horizontalmente hacia otro objeto.
+                El objetivo debe ser un <code>RuntimeObject</code> vivo.
+                No es un nombre ni un id string.
+                Solo modifica la posicion X del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_x</div>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_x(cursor, balls[0]);
+}</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que se mueve.</li>
+                <li><code>target</code>: objeto vivo que se sigue.</li>
+            </ul>
+
+            <hr />
+
+            <h2>follow_y(object, target)</h2>
+
+            <p>
+                Mueve un objeto verticalmente hacia otro objeto.
+                El objetivo debe ser un <code>RuntimeObject</code> vivo.
+                No es un nombre ni un id string.
+                Solo modifica la posicion Y del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">follow_y</div>
+<pre><code>const balls = find_name("ball");
+
+if (balls.length > 0) {
+    follow_y(enemy, balls[0]);
+}</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que se mueve.</li>
+                <li><code>target</code>: objeto vivo que se sigue.</li>
+            </ul>
+
+            <hr />
+
+            <h2>attach(object)</h2>
+
+            <p>
+                Activa las reglas de attach declaradas en JSON para el objeto.
+                El objeto sigue solo a su parent original; no crea una nueva
+                relacion de parent. Cuando se llama en runtime, captura la
+                posicion relativa actual del objeto respecto a ese parent para
+                los ejes seguidos. FLX v0.3.0 no expone reparenting publico.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>attach(ball);</code></pre>
+            </div>
+
+            <h2>detach(object)</h2>
+
+            <p>
+                Desactiva las reglas de attach. El objeto conserva su posicion y angulo actuales,
+                y el offset de creacion permanece intacto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">detach</div>
+<pre><code>if (attach_active(ball) && input_pressed(ball, button(0))) {
+    detach(ball);
+    apply_angle(ball, -45);
+}</code></pre>
+            </div>
+
+            <h2>attach_active(object)</h2>
+
+            <p>
+                Devuelve si el objeto esta unido actualmente a su parent original.
+            </p>
+
+            <hr />
+
+            <h2>carry(object, carrier)</h2>
+
+            <p>
+                Aplica al objeto el desplazamiento del carrier durante el frame actual.
+                No cambia parent, attach, offset, ownership ni collision.
+                Es una operacion de un solo frame, no una relacion persistente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">carry</div>
+<pre><code>function collision(player, platform) {
+    carry(player, platform);
+}</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Input</h2>
+
+            <p>
+                Input lee controles logicos declarados en el archivo
+                <code>input.mapping</code> del proyecto y consumidos por el Input
+                Chip activo. Si el manifiesto omite <code>input.mapping</code>,
+                FLX compila el mapping por defecto. Las diferencias de cobertura
+                entre Machine e Input generan warnings, no errores de compilacion.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Input</div>
+<pre><code>const EXIT = button(0);
+const FIRE = button(0);
+const MOVE = direction(0);
+
+if (input_pressed(system(), EXIT)) {
+    exit();
+}
+
+move_vertical(player, input_direction(player, MOVE, VERTICAL));
+
+if (input_pressed(player, FIRE)) {
+    spawn(player, "laser");
+}
+</code></pre>
+            </div>
+
+            <ul>
+                <li><code>button(index)</code>: descriptor de boton logico.</li>
+                <li><code>direction(index)</code>: descriptor de direccion logica.</li>
+                <li><code>player(index)</code>: sujeto explicito de jugador.</li>
+                <li><code>system()</code>: sujeto de sistema.</li>
+                <li><code>input_pressed(subject, button)</code>: true en el frame en que se pulsa un boton mapeado.</li>
+                <li><code>input_down(subject, button)</code>: true mientras un boton mapeado esta pulsado.</li>
+                <li><code>input_released(subject, button)</code>: true en el frame en que se suelta un boton mapeado.</li>
+                <li><code>input_pressed(subject, direction, component)</code>, <code>input_down(...)</code> e <code>input_released(...)</code>: consulta un componente de direccion como <code>UP</code>, <code>LEFT</code>, <code>NEGATIVE</code> o <code>POSITIVE</code>.</li>
+            </ul>
+
+            <hr />
+
+            <h2>kill(object)</h2>
+
+            <p>
+                Marca un objeto para ser destruido.
+            </p>
+
+            <p>
+                El objeto no se elimina inmediatamente, sino al final del frame actual.
+                Esto evita modificar la lista de objetos mientras el runtime la está procesando.
+            </p>
+
+            <p>
+                Antes de la eliminación definitiva,
+                el runtime ejecutará la fase
+                <code>dead(object)</code>.
+                Esa fase no puede cancelar la destrucción.
+                Escribir <code>object.alive</code> desde JavaScript se ignora;
+                usa <code>kill(object)</code> como API explícita de destrucción.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">kill</div>
+<pre><code>function collision(object, other, contacts) {
+    kill(object);
+}</code></pre>
+            </div>
+
+            <h2>show(object)</h2>
+
+            <p>
+                Vuelve a hacer visible un runtime object.
+                La visibilidad solo afecta al dibujado: action, motion, collision,
+                timers y state time siguen ejecutándose.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">show</div>
+<pre><code>show(player);
+</code></pre>
+            </div>
+
+            <h2>hide(object)</h2>
+
+            <p>
+                Oculta un runtime object sin destruirlo.
+                Los objetos ocultos no dibujan su shape declarativa ni ejecutan
+                su callback JavaScript <code>draw(object)</code>.
+                Escribir <code>object.visible</code> desde JavaScript se ignora.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">hide</div>
+<pre><code>hide(player);
+</code></pre>
+            </div>
+
+            <h2>keep_only(object)</h2>
+
+            <p>
+                Marca para destruccion todos los runtime objects vivos excepto el
+                objeto exacto pasado como parametro. El objeto indicado se conserva,
+                pero sus hijos no se conservan automaticamente.
+            </p>
+
+            <p>
+                Los objetos eliminados por <code>keep_only()</code> siguen el flujo
+                normal de <code>dead()</code> y cleanup. El runtime no se modifica
+                inmediatamente mientras los scripts estan iterando.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">transicion de escena</div>
+<pre><code>function action(game) {
+    if (read_global("startLevel") == 1) {
+        keep_only(game);
+        spawn(game, "level1");
+    }
+}</code></pre>
+            </div>
+
+            <h2>exit()</h2>
+
+            <p>
+                Solicita el cierre ordenado del proyecto actual. El runtime
+                termina el bucle principal y despues libera recursos normalmente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">exit</div>
+<pre><code>function action(menu) {
+    if (input_pressed(system(), button(0))) {
+        exit();
+    }
+}</code></pre>
+            </div>
+
+            <h2>save(name, key, value)</h2>
+
+            <p>
+                Guarda un boolean, number o string en un archivo binario
+                <code>saves/&lt;name&gt;.flxsave</code>. Guardar una clave no elimina
+                las demas claves del mismo archivo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">save</div>
+<pre><code>save("progress", "pong_completed", true);
+save("progress", "score", 12500);
+save("settings", "music", false);</code></pre>
+            </div>
+
+            <h2>load(name, key, defaultValue)</h2>
+
+            <p>
+                Carga un valor guardado. Si el archivo no existe, la clave no
+                existe, el archivo esta corrupto o el tipo guardado no coincide
+                con <code>defaultValue</code>, FLX devuelve
+                <code>defaultValue</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">load</div>
+<pre><code>let completed = load("progress", "pong_completed", false);
+let score = load("progress", "score", 0);
+let music = load("settings", "music", true);</code></pre>
+            </div>
+
+            <p>
+                Los archivos de guardado no son JSON ni texto plano. Incluyen
+                version de formato, entradas tipadas, ofuscacion ligera y un
+                checksum simple para detectar ediciones casuales o corrupcion.
+            </p>
+
+            <h2>move_horizontal(object, intent)</h2>
+
+            <p>
+                Desplaza el objeto horizontalmente usando sus mecanicas declaradas
+                y una intencion normalizada en el rango <code>-1..1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_horizontal</div>
+<pre><code>move_horizontal(tofu, input_direction(tofu, direction(0), HORIZONTAL));</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>move_vertical(object, intent)</h2>
+
+            <p>
+                Desplaza el objeto verticalmente usando sus mecanicas declaradas
+                y una intencion normalizada en el rango <code>-1..1</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">move_vertical</div>
+<pre><code>move_vertical(tofu, input_direction(tofu, direction(0), VERTICAL));</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>input_direction(subject, direction, axis)</h2>
+
+            <p>
+                Devuelve intencion direccional normalizada para una direccion
+                logica: <code>-1</code>, <code>0</code> o <code>1</code> en la
+                implementacion digital actual.
+                <code>RIGHT</code> y <code>UP</code> son positivos;
+                <code>LEFT</code> y <code>DOWN</code> son negativos.
+                En una direccion <code>4way</code>, <code>HORIZONTAL</code> lee
+                solo <code>LEFT</code>/<code>RIGHT</code> y
+                <code>VERTICAL</code> lee solo <code>UP</code>/<code>DOWN</code>.
+                En una direccion <code>2way</code>, la intencion positiva/negativa
+                puede proyectarse sobre cualquiera de los dos ejes. Los archivos
+                de mapping siguen declarando solo <code>up</code>,
+                <code>right</code>, <code>down</code> y <code>left</code>;
+                <code>up</code>/<code>right</code> se normalizan a positivo y
+                <code>down</code>/<code>left</code> a negativo en chips
+                <code>2way</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input_direction</div>
+<pre><code>const MOVE = direction(0);
+
+move_horizontal(tofu, input_direction(tofu, MOVE, HORIZONTAL));
+move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));</code></pre>
+            </div>
+
+            <p>
+                <code>system()</code> no es un subject valido para
+                <code>input_direction()</code>.
+            </p>
+
+            <hr />
+
+            <h2>ray(source, angle, distance)</h2>
+
+            <p>
+                Lanza un rayo invisible desde un runtime object y devuelve el impacto
+                compatible mas cercano.
+            </p>
+
+            <p>
+                El rayo nace en <code>source.position</code>, usa coordenadas logicas
+                FLX y sigue la misma convencion de angulo que <code>advance()</code>.
+                No dibuja nada en pantalla.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ray</div>
+<pre><code>function motion(tank) {
+    let sight = ray(tank, tank.angle, 200);
+
+    if (sight !== undefined && sight.object.group == "player") {
+        spawn(tank, "bullet");
+    }
+}</code></pre>
+            </div>
+
+            <h3>Valor devuelto</h3>
+
+            <ul>
+                <li>Sin impacto: <code>undefined</code></li>
+                <li>Con impacto: <code>{ object, collider, pointX, pointY, normalX, normalY, distance }</code></li>
+            </ul>
+
+            <h3>Reglas de colision</h3>
+
+            <ul>
+                <li>El rayo usa colliders nombrados efectivos.</li>
+                <li>Los objetos invisibles pueden ser detectados si su collider es valido.</li>
+                <li>Se ignoran la entidad logica origen, objetos muertos y colliders invalidos.</li>
+                <li>Esta version soporta colisiones <code>ellipse</code> y <code>box</code>.</li>
+            </ul>
+
+            <hr />
+
+            <h2>probability(chance, base)</h2>
+
+            <p>
+                Retorna <code>true</code> de forma aleatoria en función
+                de la probabilidad indicada.
+            </p>
+
+            <p>
+                Si no se especifica <code>base</code>,
+                el valor por defecto es <code>100</code>.
+            </p>
+
+            <p>
+                Por ejemplo:
+            </p>
+
+            <ul>
+                <li><code>probability(30)</code> → aproximadamente 30 de cada 100 llamadas.</li>
+                <li><code>probability(20, 1000)</code> → aproximadamente 20 de cada 1000 llamadas.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">probability</div>
+<pre><code>if (probability(5)) {
+    spawn(object, "enemy");
+}
+
+if (probability(1, 1000)) {
+    spawn(object, "rare_enemy");
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>play_sound(object, id)</h2>
+
+            <p>
+                Reproduce un sonido declarado en el bloque
+                <code>sounds</code>
+                del objeto.
+            </p>
+
+            <p>
+                El parametro <code>id</code> identifica la declaracion de sonido
+                que pertenece a ese objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_sound</div>
+<pre><code>if (input_pressed(ship, button(0))) {
+    play_sound(ship, "laser");
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que posee la declaracion de sonido.</li>
+                <li><code>id</code>: nombre del sonido declarado en JSON.</li>
+            </ul>
+
+            <hr />
+
+            <h2>play_music(object, id)</h2>
+
+            <p>
+                Reproduce musica generada declarada en el bloque
+                <code>music</code>
+                del objeto. Si ya hay otra cancion sonando, se sustituye.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">play_music</div>
+<pre><code>function born(game) {
+    play_music(game, "theme");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuracion utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto que posee la declaracion de musica.</li>
+                <li><code>id</code>: nombre de la cancion declarada en JSON.</li>
+            </ul>
+
+            <p>
+                La musica usa <code>voices.music</code> del Audio Chip. Los
+                canales sobrantes se ignoran con un warning.
+            </p>
+
+            <hr />
+
+            <h2>stop_music()</h2>
+
+            <p>
+                Detiene la musica generada actual.
+            </p>
+
+            <hr />
+
+            <h2>pause_music()</h2>
+
+            <p>
+                Pausa la musica actual, o la reanuda si ya estaba pausada.
+            </p>
+
+            <hr />
+
+            <h2>music_active()</h2>
+
+            <p>
+                Devuelve <code>true</code> mientras hay musica generada activa.
+            </p>
+
+            <hr />
+
+            <h2>music_paused()</h2>
+
+            <p>
+                Devuelve <code>true</code> cuando la musica actual esta pausada.
+            </p>
+
+            <hr />
+
+            <h2>random(min, max)</h2>
+
+            <p>
+                Retorna un valor aleatorio comprendido entre
+                <code>min</code> y <code>max</code>.
+            </p>
+
+            <p>
+                Resulta útil para variaciones de movimiento,
+                generación procedural y comportamiento dinámico.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">random</div>
+<pre><code>apply_angle(asteroid, random(0, 360));
+apply_speed(asteroid, random(20, 80));
+</code></pre>
+            </div>
+
+            <h3>Parámetros</h3>
+
+            <ul>
+                <li><code>min</code>: valor mínimo.</li>
+                <li><code>max</code>: valor máximo.</li>
+            </ul>
+
+            <hr />
+
+            <h2>rotate(object, direction)</h2>
+
+            <p>
+                Rota el objeto usando sus mecanicas de rotacion declaradas,
+                <code>rotationSpeed</code> vivo y el tiempo de frame.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">rotate</div>
+<pre><code>rotate(ship, LEFT);
+rotate(ship, RIGHT);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>spawn(object, childName)</h2>
+
+            <p>
+                Crea una instancia de un hijo declarado en el bloque
+                <code>children</code> del objeto.
+            </p>
+
+            <p>
+                El parámetro <code>childName</code> identifica qué definición hija debe instanciarse.
+            </p>
+
+            <p>
+                Los hijos con <code>spawn: "manual"</code> esperan hasta que
+                se llama a <code>spawn()</code>. Los hijos con
+                <code>spawn: "auto"</code> nacen cuando el padre entra en el
+                mundo, pero <code>spawn()</code> tambien puede crear otra
+                instancia mas tarde.
+            </p>
+
+            <p>
+                El objeto generado hereda la posición y orientación
+                necesarias para aplicar correctamente dicho offset.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">spawn</div>
+<pre><code>if (input_pressed(ship, button(0))) {
+    spawn(ship, "laser");
+}
+</code></pre>
+            </div>
+
+            <h3>Configuración utilizada</h3>
+
+            <ul>
+                <li><code>object</code>: objeto desde el que se ejecuta el spawn.</li>
+                <li><code>childName</code>: nombre del hijo declarado en el JSON.</li>
+            </ul>
+
+            <p>
+                Internamente, los objetos generados no se insertan
+                inmediatamente en el mundo.
+            </p>
+
+            <p>
+                FLX utiliza una cola de spawn para evitar modificar
+                la colección de objetos mientras el runtime la está recorriendo.
+            </p>
+
+            <hr />
+
+            <h2>creation_active(object)</h2>
+
+            <p>
+                Devuelve si un objeto con <code>creation.mode = "iterator"</code>
+                aun tiene trabajo de creacion activo.
+            </p>
+
+            <p>
+                En un iterator finito, devuelve <code>true</code> mientras el
+                pattern tenga entradas pendientes de consumir o mientras queden
+                vivas o pendientes instancias creadas por ese iterator. En un
+                iterator repetitivo, se mantiene en <code>true</code> mientras
+                exista el objeto propietario. Los modos individual y grid
+                devuelven <code>false</code>.
+            </p>
+
+<pre><code>if (!creation_active(wave)) {
+    state_to(game, "next_wave");
+}
+</code></pre>
+
+            <hr />
+
+            <h2>state_to(object, stateName)</h2>
+
+            <p>
+                Solicita una transicion para un objeto que declara
+                <code>states</code> en JSON. La transicion se valida contra la
+                lista <code>next</code> del estado actual.
+            </p>
+
+<pre><code>if (state_active(game, "title") &amp;&amp; input_pressed(game, button(0))) {
+    state_to(game, "playing");
+}
+</code></pre>
+
+            <ul>
+                <li><code>state_current(object)</code>: devuelve el estado actual, o <code>""</code> si el objeto no tiene maquina de estados.</li>
+                <li><code>state_active(object, "name")</code>: comprueba el estado actual. Los objetos sin maquina de estados siempre devuelven <code>false</code>.</li>
+                <li><code>state_entered(object)</code>: true solo durante el primer frame completo de runtime despues de que el objeto entra en su estado actual.</li>
+                <li><code>state_time(object)</code>: segundos transcurridos desde la entrada en el estado actual. El primer frame completo devuelve <code>0</code>.</li>
+            </ul>
+
+            <p>
+                Los estados no ejecutan callbacks automaticos. Los scripts
+                siguen decidiendo cuando ocurren las transiciones y que hace
+                cada estado. <code>state_to</code> no tiene alias heredado.
+            </p>
+
+            <hr />
+
+            <h2>play_timer(object, name, duration?)</h2>
+
+            <p>
+                Inicia, reanuda o redefine un temporizador nombrado propiedad
+                del objeto. El runtime actualiza los temporizadores
+                automaticamente y se destruyen junto con su propietario.
+                Un temporizador terminado permanece observable como done hasta
+                que se reproduzca otra vez, se elimine con
+                <code>stop_timer()</code>, o se destruya su propietario.
+            </p>
+
+<pre><code>play_timer(paddle, "gun", 5);
+
+if (timer_active(paddle, "gun")) {
+    attach(ball);
+}
+
+pause_timer(paddle, "gun");
+play_timer(paddle, "gun");
+stop_timer(paddle, "gun");
+</code></pre>
+
+            <ul>
+                <li><code>play_timer(object, "name")</code>: reanuda un temporizador pausado o reproduce uno terminado desde su duracion conocida.</li>
+                <li><code>play_timer(object, "name", duration)</code>: crea o reajusta un temporizador usando duracion total y conserva el tiempo transcurrido si ya existe.</li>
+                <li><code>pause_timer(object, "name")</code>: pausa un temporizador en marcha sin eliminarlo.</li>
+                <li><code>stop_timer(object, "name")</code>: elimina el temporizador inmediatamente. Stop no es done.</li>
+                <li><code>timer_active(object, "name")</code>: true mientras el temporizador esta en marcha o pausado.</li>
+                <li><code>timer_paused(object, "name")</code>: true solo mientras el temporizador esta pausado.</li>
+                <li><code>timer_done(object, "name")</code>: true solo tras finalizacion natural.</li>
+                <li><code>timer_left(object, "name")</code>: segundos restantes, o <code>0</code> cuando esta ausente, detenido o terminado.</li>
+            </ul>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estado</th>
+                        <th>active</th>
+                        <th>paused</th>
+                        <th>done</th>
+                        <th>left</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>ausente</td><td>false</td><td>false</td><td>false</td><td>0</td></tr>
+                    <tr><td>running</td><td>true</td><td>false</td><td>false</td><td>&gt; 0</td></tr>
+                    <tr><td>paused</td><td>true</td><td>true</td><td>false</td><td>congelado &gt; 0</td></tr>
+                    <tr><td>done</td><td>false</td><td>false</td><td>true</td><td>0</td></tr>
+                </tbody>
+            </table>
+
+            <hr />
+
+            <h2>position(object, x, y)</h2>
+
+            <p>
+                Coloca el objeto inmediatamente en la posicion logica indicada.
+                No cambia velocidad, angulo, timers ni estado local.
+                <code>position(object, contact)</code> aplica a la posicion
+                actual la correccion dirigida de un
+                <code>CollisionContact</code>: <code>normal * penetration</code>.
+                Collision sigue siendo informativo y explicito; FLX no resuelve
+                colisiones automaticamente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position</div>
+<pre><code>position(ball, 160, 90);
+position(ball, contacts[0]);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>position_origin(object)</h2>
+
+            <p>
+                Coloca el objeto en su origen efectivo de runtime. Para restaurar
+                tambien la velocidad viva, llama explicitamente a
+                <code>restore_speed(object)</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">position_origin</div>
+<pre><code>position_origin(ball);
+restore_speed(ball);</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentación está organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>↓ <a class="link" href="index.html">Introducción</a></li>
+                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
+                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
+                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
+                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
+                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
+                <li class="current">↓ FLX API ← Estás aquí</li>
+                <li class="recommended"><a class="link" href="examples.html">Ejemplos</a> → Recomendado</li>
+                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
+                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

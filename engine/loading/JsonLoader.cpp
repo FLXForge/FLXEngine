@@ -8,6 +8,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <unordered_map>
@@ -23,10 +24,18 @@ namespace
         bool ok = false;
         Json data;
         std::filesystem::path sourceFile;
+        std::filesystem::path resolvedPath;
+        std::string member;
     };
 
-    std::filesystem::path projectJsonRoot;
-    std::unordered_map<std::string, Json> jsonCache;
+    struct JsonLoadSession
+    {
+        std::filesystem::path projectJsonRoot;
+        std::unordered_map<std::string, Json> jsonCache;
+        Diagnostics* diagnostics = nullptr;
+        std::vector<std::string> likeStack;
+        std::vector<std::string> definitionStack;
+    };
 
     std::string ensureExtension(
         const std::string& path,
@@ -58,6 +67,61 @@ namespace
         return result;
     }
 
+    std::string definitionStackKey(
+        const std::filesystem::path& sourceFile,
+        const std::string& id
+    )
+    {
+        return
+            std::filesystem::absolute(sourceFile).lexically_normal().generic_string() +
+            "#" +
+            id;
+    }
+
+    bool definitionIsActive(
+        const JsonLoadSession& session,
+        const std::filesystem::path& sourceFile,
+        const std::string& id
+    )
+    {
+        const std::string key =
+            definitionStackKey(
+                sourceFile,
+                id
+            );
+
+        return std::find(
+            session.definitionStack.begin(),
+            session.definitionStack.end(),
+            key
+        ) != session.definitionStack.end();
+    }
+
+    struct ScopedDefinitionStackEntry
+    {
+        JsonLoadSession& session;
+
+        ScopedDefinitionStackEntry(
+            JsonLoadSession& loadSession,
+            const std::filesystem::path& sourceFile,
+            const std::string& id
+        )
+            : session(loadSession)
+        {
+            session.definitionStack.push_back(
+                definitionStackKey(
+                    sourceFile,
+                    id
+                )
+            );
+        }
+
+        ~ScopedDefinitionStackEntry()
+        {
+            session.definitionStack.pop_back();
+        }
+    };
+
     std::filesystem::path normalizedRelativePath(
         const std::string& path,
         const std::string& extension
@@ -84,6 +148,42 @@ namespace
         return (
             parentFile.parent_path() /
             normalizedRelativePath(child, ".json")
+        ).lexically_normal();
+    }
+
+    std::filesystem::path resolveReferencedPath(
+        const JsonLoadSession& session,
+        const std::filesystem::path& sourceFile,
+        const std::string& reference,
+        const std::string& extension
+    )
+    {
+        if (!reference.empty() && reference.front() == '/')
+        {
+            std::string normalized =
+                reference;
+
+            while (!normalized.empty() && normalized.front() == '/')
+            {
+                normalized.erase(normalized.begin());
+            }
+
+            std::replace(
+                normalized.begin(),
+                normalized.end(),
+                '\\',
+                '/'
+            );
+
+            return (
+                std::filesystem::absolute(session.projectJsonRoot) /
+                normalizedRelativePath(normalized, extension)
+            ).lexically_normal();
+        }
+
+        return (
+            sourceFile.parent_path() /
+            normalizedRelativePath(reference, extension)
         ).lexically_normal();
     }
 
@@ -131,7 +231,78 @@ namespace
         return true;
     }
 
+    void addReferenceError(
+        JsonLoadSession& session,
+        DiagnosticCode code,
+        const std::string& message,
+        const std::filesystem::path& declaringFile,
+        const std::string& field,
+        const std::string& reference,
+        const std::filesystem::path& resolvedPath,
+        const std::string& member = ""
+    )
+    {
+        std::string details =
+            message +
+            "\nReference: " +
+            reference;
+
+        if (!resolvedPath.empty())
+        {
+            details +=
+                "\nResolved path: " +
+                genericPathString(resolvedPath);
+        }
+
+        if (!member.empty())
+        {
+            details +=
+                "\nMember: " +
+                member;
+        }
+
+        if (session.diagnostics != nullptr)
+        {
+            session.diagnostics->error(
+                code,
+                details,
+                genericPathString(declaringFile),
+                field
+            );
+        }
+
+        Logger::error(
+            "json",
+            details
+        );
+    }
+
+    void addStateMachineError(
+        JsonLoadSession& session,
+        DiagnosticCode code,
+        const std::string& message,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
+    )
+    {
+        if (session.diagnostics != nullptr)
+        {
+            session.diagnostics->error(
+                code,
+                message,
+                genericPathString(declaringFile),
+                field
+            );
+        }
+
+        Logger::error(
+            "json",
+            message
+        );
+    }
+
     bool loadJsonCached(
+        JsonLoadSession& session,
         const std::filesystem::path& path,
         Json& data
     )
@@ -143,9 +314,9 @@ namespace
             normalized.generic_string();
 
         const auto found =
-            jsonCache.find(key);
+            session.jsonCache.find(key);
 
-        if (found != jsonCache.end())
+        if (found != session.jsonCache.end())
         {
             data = found->second;
             return true;
@@ -156,7 +327,7 @@ namespace
             return false;
         }
 
-        jsonCache[key] = data;
+        session.jsonCache[key] = data;
 
         return true;
     }
@@ -209,10 +380,11 @@ namespace
     }
 
     std::filesystem::path resolveFlxReferencePath(
+        JsonLoadSession& session,
         const std::string& path
     )
     {
-        if (projectJsonRoot.empty())
+        if (session.projectJsonRoot.empty())
         {
             Logger::error(
                 "json",
@@ -261,7 +433,7 @@ namespace
         }
 
         const std::filesystem::path root =
-            std::filesystem::absolute(projectJsonRoot).lexically_normal();
+            std::filesystem::absolute(session.projectJsonRoot).lexically_normal();
         const std::filesystem::path resolved =
             std::filesystem::absolute(root / relative).lexically_normal();
 
@@ -303,16 +475,22 @@ namespace
     }
 
     bool resolveLike(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         const Json& object,
-        Json& resolved
+        Json& resolved,
+        const std::string& field
     );
 
     ResolvedJsonReference resolveJsonReference(
-        const std::string& reference
+        JsonLoadSession& session,
+        const std::string& reference,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
     );
 
     bool resolveBlockReference(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         Json& object,
         const std::string& key
@@ -329,7 +507,12 @@ namespace
         if (isFlxReference(reference))
         {
             ResolvedJsonReference resolvedReference =
-                resolveJsonReference(reference);
+                resolveJsonReference(
+                    session,
+                    reference,
+                    currentFile,
+                    key
+                );
 
             if (!resolvedReference.ok)
             {
@@ -368,7 +551,7 @@ namespace
 
         Json resolvedBlock;
 
-        if (!resolveLike(blockPath, block, resolvedBlock))
+        if (!resolveLike(session, blockPath, block, resolvedBlock, key))
         {
             return false;
         }
@@ -386,15 +569,17 @@ namespace
     }
 
     bool resolveBlockReferences(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         Json& object
     )
     {
         static const std::vector<std::string> blockKeys = {
-            "shape",
-            "motion",
+            "visual",
+            "mechanics",
+            "inherit",
             "bounds",
-            "collision",
+            "collisions",
             "behavior",
             "creation",
             "states"
@@ -402,7 +587,7 @@ namespace
 
         for (const auto& key : blockKeys)
         {
-            if (!resolveBlockReference(currentFile, object, key))
+            if (!resolveBlockReference(session, currentFile, object, key))
             {
                 return false;
             }
@@ -412,9 +597,11 @@ namespace
     }
 
     bool resolveLike(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
         const Json& object,
-        Json& resolved
+        Json& resolved,
+        const std::string& field
     )
     {
         if (!object.is_object())
@@ -426,7 +613,29 @@ namespace
         {
             resolved = object;
             resolved["__sourceFile"] = genericPathString(currentFile);
-            return resolveBlockReferences(currentFile, resolved);
+
+            if (object.contains("behavior"))
+            {
+                resolved["__behaviorSourceFile"] =
+                    genericPathString(currentFile);
+            }
+
+            if (object.contains("children") && object["children"].is_object())
+            {
+                Json childSourceFiles =
+                    Json::object();
+
+                for (auto it = object["children"].begin(); it != object["children"].end(); ++it)
+                {
+                    childSourceFiles[it.key()] =
+                        genericPathString(currentFile);
+                }
+
+                resolved["__childSourceFiles"] =
+                    childSourceFiles;
+            }
+
+            return resolveBlockReferences(session, currentFile, resolved);
         }
 
         const std::string likeReference =
@@ -435,7 +644,12 @@ namespace
         if (isFlxReference(likeReference))
         {
             ResolvedJsonReference resolvedReference =
-                resolveJsonReference(likeReference);
+                resolveJsonReference(
+                    session,
+                    likeReference,
+                    currentFile,
+                    field.empty() ? "like" : field + ".like"
+                );
 
             if (!resolvedReference.ok || !resolvedReference.data.is_object())
             {
@@ -452,6 +666,36 @@ namespace
 
             override.erase("like");
 
+            if (override.contains("behavior"))
+            {
+                override["__behaviorSourceFile"] =
+                    genericPathString(currentFile);
+            }
+
+            if (override.contains("children") && override["children"].is_object())
+            {
+                Json childSourceFiles =
+                    Json::object();
+
+                if (
+                    resolvedReference.data.contains("__childSourceFiles") &&
+                    resolvedReference.data["__childSourceFiles"].is_object()
+                )
+                {
+                    childSourceFiles =
+                        resolvedReference.data["__childSourceFiles"];
+                }
+
+                for (auto it = override["children"].begin(); it != override["children"].end(); ++it)
+                {
+                    childSourceFiles[it.key()] =
+                        genericPathString(currentFile);
+                }
+
+                override["__childSourceFiles"] =
+                    childSourceFiles;
+            }
+
             mergeJson(resolvedReference.data, override);
 
             resolved =
@@ -460,6 +704,7 @@ namespace
                 genericPathString(resolvedReference.sourceFile);
 
             return resolveBlockReferences(
+                session,
                 resolvedReference.sourceFile,
                 resolved
             );
@@ -471,13 +716,61 @@ namespace
                 likeReference
             );
 
+        const std::string baseKey =
+            std::filesystem::absolute(basePath).lexically_normal().generic_string();
+
+        if (
+            std::find(
+                session.likeStack.begin(),
+                session.likeStack.end(),
+                baseKey
+            ) != session.likeStack.end()
+        )
+        {
+            std::string chain;
+
+            for (const std::string& entry : session.likeStack)
+            {
+                if (!chain.empty())
+                {
+                    chain += " -> ";
+                }
+
+                chain += entry;
+            }
+
+            if (!chain.empty())
+            {
+                chain += " -> ";
+            }
+
+            chain += baseKey;
+
+            addReferenceError(
+                session,
+                DiagnosticCode::ResourceReferenceCycle,
+                "Resource reference cycle detected.\nChain: " + chain,
+                currentFile,
+                field.empty() ? "like" : field + ".like",
+                likeReference,
+                basePath
+            );
+
+            return false;
+        }
+
         Json base;
 
         if (!loadJson(basePath, base))
         {
-            Logger::error(
-                "json",
-                "Like target could not be loaded: " + genericPathString(basePath)
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "Like target could not be loaded.",
+                currentFile,
+                field.empty() ? "like" : field + ".like",
+                likeReference,
+                basePath
             );
 
             return false;
@@ -485,7 +778,14 @@ namespace
 
         Json resolvedBase;
 
-        if (!resolveLike(basePath, base, resolvedBase))
+        session.likeStack.push_back(baseKey);
+
+        const bool baseResolved =
+            resolveLike(session, basePath, base, resolvedBase, field);
+
+        session.likeStack.pop_back();
+
+        if (!baseResolved)
         {
             return false;
         }
@@ -495,18 +795,42 @@ namespace
 
         override.erase("like");
 
+        if (override.contains("behavior"))
+        {
+            override["__behaviorSourceFile"] =
+                genericPathString(currentFile);
+        }
+
+        if (override.contains("children") && override["children"].is_object())
+        {
+            Json childSourceFiles =
+                Json::object();
+
+            if (
+                resolvedBase.contains("__childSourceFiles") &&
+                resolvedBase["__childSourceFiles"].is_object()
+            )
+            {
+                childSourceFiles =
+                    resolvedBase["__childSourceFiles"];
+            }
+
+            for (auto it = override["children"].begin(); it != override["children"].end(); ++it)
+            {
+                childSourceFiles[it.key()] =
+                    genericPathString(currentFile);
+            }
+
+            override["__childSourceFiles"] =
+                childSourceFiles;
+        }
+
         mergeJson(resolvedBase, override);
 
         resolved = resolvedBase;
         resolved["__sourceFile"] = genericPathString(basePath);
 
-        return resolveBlockReferences(currentFile, resolved);
-    }
-
-    bool hasShape(const Json& object)
-    {
-        return object.contains("shape") &&
-            object["shape"].is_object();
+        return resolveBlockReferences(session, currentFile, resolved);
     }
 
     void rejectRootProperty(
@@ -533,11 +857,53 @@ namespace
         const std::string& owner
     )
     {
-        rejectRootProperty(object, "size", owner, "shape");
-        rejectRootProperty(object, "color", owner, "shape");
-        rejectRootProperty(object, "layer", owner, "shape");
-        rejectRootProperty(object, "speed", owner, "motion");
-        rejectRootProperty(object, "angle", owner, "motion");
+        rejectRootProperty(object, "color", owner, "visual");
+        if (object.contains("shape"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'shape' was removed; use 'visual.representation'"
+            );
+        }
+        if (object.contains("layer"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'layer' was removed; use 'visual.depth'"
+            );
+        }
+        if (object.contains("depth"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'depth' was removed; use 'visual.depth'"
+            );
+        }
+        rejectRootProperty(object, "speed", owner, "mechanics");
+        rejectRootProperty(object, "angle", owner, "mechanics");
+        if (object.contains("role"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'role' was removed in v0.3"
+            );
+        }
+
+        if (object.contains("collision"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'collision' was replaced by 'collisions'"
+            );
+        }
+
+        if (object.contains("motion"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': property 'motion' was replaced by 'mechanics'"
+            );
+        }
     }
 
     Vector2 parseOrigin(const Json& object)
@@ -555,141 +921,702 @@ namespace
         };
     }
 
-    Vector2 parseSize(const Json& object)
+    bool parseSize(const Json& object, Vector2& size)
     {
-        if (hasShape(object))
+        if (!object.contains("size"))
         {
-            const auto& shape = object["shape"];
+            size =
+                Vector2{ 0.0f, 0.0f };
+            return false;
+        }
 
-            if (shape.contains("size") && shape["size"].is_object())
+        if (!object["size"].is_object())
+        {
+            throw std::runtime_error(
+                "Invalid FLX object size: expected object"
+            );
+        }
+
+        const auto& sizeNode =
+            object["size"];
+
+        if (!sizeNode.contains("width") || !sizeNode.contains("height"))
+        {
+            throw std::runtime_error(
+                "Invalid FLX object size: expected width and height"
+            );
+        }
+
+        size =
+            Vector2{
+                sizeNode.value("width", 0.0f),
+                sizeNode.value("height", 0.0f)
+            };
+
+        return true;
+    }
+
+    SizeAxisDefinition parseRepresentationSizeAxis(const Json& value)
+    {
+        SizeAxisDefinition axis;
+
+        if (value.is_number())
+        {
+            axis.value =
+                value.get<float>();
+            axis.hasValue =
+                true;
+            return axis;
+        }
+
+        if (value.is_string())
+        {
+            std::string text =
+                value.get<std::string>();
+
+            if (!text.empty() && text.back() == '%')
             {
-                const auto& size = shape["size"];
-
-                return Vector2{
-                    size.value("width", 0.0f),
-                    size.value("height", 0.0f)
-                };
+                text.pop_back();
+                axis.value =
+                    std::stof(text) / 100.0f;
+                axis.percentage =
+                    true;
+                axis.hasValue =
+                    true;
+                return axis;
             }
         }
 
-        return Vector2{ 0.0f, 0.0f };
+        throw std::runtime_error(
+            "Invalid Representation size axis: expected number or percentage string"
+        );
     }
 
-    void parseShape(
-        const Json& object,
-        ObjectDefinition& definition
+    RepresentationSizeDefinition parseRepresentationSize(const Json& element)
+    {
+        RepresentationSizeDefinition size;
+
+        if (!element.contains("size"))
+        {
+            return size;
+        }
+
+        if (!element["size"].is_object())
+        {
+            throw std::runtime_error(
+                "Invalid Representation size: expected object"
+            );
+        }
+
+        const Json& sizeNode =
+            element["size"];
+
+        if (sizeNode.contains("width"))
+        {
+            size.width =
+                parseRepresentationSizeAxis(sizeNode["width"]);
+        }
+
+        if (sizeNode.contains("height"))
+        {
+            size.height =
+                parseRepresentationSizeAxis(sizeNode["height"]);
+        }
+
+        return size;
+    }
+
+    int familyCount(const Json& element)
+    {
+        int count = 0;
+
+        if (element.contains("primitive"))
+        {
+            ++count;
+        }
+
+        if (element.contains("geometry"))
+        {
+            ++count;
+        }
+
+        if (element.contains("text"))
+        {
+            ++count;
+        }
+
+        return count;
+    }
+
+    void rejectRepresentationProperty(
+        const Json& element,
+        const std::string& property,
+        const std::string& family
     )
     {
-        if (!hasShape(object))
+        if (!element.contains(property))
         {
-            definition.hasVisual = false;
             return;
         }
 
-        const auto& shape = object["shape"];
+        throw std::runtime_error(
+            "Invalid Representation " + family +
+            ": property '" + property + "' is not allowed"
+        );
+    }
 
-        definition.hasVisual = true;
-        definition.shapeType =
-            TextTools::toLower(shape.value("type", "block"));
-        definition.shapeMode =
-            TextTools::toLower(shape.value("mode", "fill"));
-        definition.textContent =
-            shape.value("content", definition.textContent);
+    RepresentationElementDefinition parseRepresentationElement(
+        JsonLoadSession& session,
+        const Json& rawElement,
+        const std::filesystem::path& sourceFile,
+        const std::string& field
+    )
+    {
+        Json element =
+            rawElement;
 
-        definition.layer =
-            shape.value("layer", definition.layer);
-
-        if (shape.contains("color"))
+        if (!element.is_object())
         {
+            throw std::runtime_error(
+                "Invalid Representation element '" + field +
+                "': expected object"
+            );
+        }
+
+        if (element.contains("like"))
+        {
+            Json resolved;
+
+            if (!resolveLike(session, sourceFile, element, resolved, field))
+            {
+                throw std::runtime_error(
+                    "Representation element like could not be resolved: " +
+                    field
+                );
+            }
+
+            element =
+                resolved;
+        }
+
+        element.erase("__sourceFile");
+        element.erase("__behaviorSourceFile");
+        element.erase("__childSourceFiles");
+
+        const int families =
+            familyCount(element);
+
+        if (families != 1)
+        {
+            throw std::runtime_error(
+                "Invalid Representation element '" + field +
+                "': expected exactly one of primitive, geometry or text"
+            );
+        }
+
+        RepresentationElementDefinition definition;
+
+        if (element.contains("color"))
+        {
+            if (!element["color"].is_string())
+            {
+                throw std::runtime_error(
+                    "Invalid Representation element color: expected string"
+                );
+            }
+
             definition.color =
                 ColorParser::parse(
-                    shape["color"].get<std::string>(),
+                    element["color"].get<std::string>(),
                     WHITE
                 );
+            definition.hasColor =
+                true;
         }
 
-        if (shape.contains("radius"))
+        if (element.contains("primitive"))
         {
-            definition.radius =
-                shape["radius"].get<float>();
-        }
-        else
-        {
-            definition.radius =
-                std::max(
-                    definition.size.x,
-                    definition.size.y
-                ) / 2.0f;
-        }
+            rejectRepresentationProperty(element, "geometry", "primitive");
+            rejectRepresentationProperty(element, "text", "primitive");
+            rejectRepresentationProperty(element, "fontSize", "primitive");
 
-        definition.points.clear();
+            definition.kind =
+                RepresentationElementKind::Primitive;
+            definition.primitive =
+                TextTools::toLower(element["primitive"].get<std::string>());
+            definition.primitiveMode =
+                TextTools::toLower(element.value("mode", "fill"));
+            definition.size =
+                parseRepresentationSize(element);
 
-        if (shape.contains("points") && shape["points"].is_array())
-        {
-            for (const auto& point : shape["points"])
+            if (
+                definition.primitive != "rectangle" &&
+                definition.primitive != "triangle" &&
+                definition.primitive != "ellipse"
+                )
             {
-                definition.points.push_back(
+                throw std::runtime_error(
+                    "Invalid primitive Representation: unknown primitive '" +
+                    definition.primitive + "'"
+                );
+            }
+
+            if (
+                definition.primitiveMode != "fill" &&
+                definition.primitiveMode != "outline"
+                )
+            {
+                throw std::runtime_error(
+                    "Invalid primitive Representation mode: expected fill or outline"
+                );
+            }
+
+            return definition;
+        }
+
+        if (element.contains("geometry"))
+        {
+            rejectRepresentationProperty(element, "primitive", "geometry");
+            rejectRepresentationProperty(element, "text", "geometry");
+            rejectRepresentationProperty(element, "fontSize", "geometry");
+            rejectRepresentationProperty(element, "size", "geometry");
+
+            if (!element["geometry"].is_array())
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation: expected point array"
+                );
+            }
+
+            definition.kind =
+                RepresentationElementKind::Geometry;
+            definition.geometryMode =
+                TextTools::toLower(element.value("mode", "open"));
+
+            if (element["geometry"].empty())
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation: expected at least one point"
+                );
+            }
+
+            if (
+                definition.geometryMode != "open" &&
+                definition.geometryMode != "close" &&
+                definition.geometryMode != "fill"
+                )
+            {
+                throw std::runtime_error(
+                    "Invalid Geometry Representation mode: expected open, close or fill"
+                );
+            }
+
+            for (const auto& point : element["geometry"])
+            {
+                if (!point.is_object())
+                {
+                    throw std::runtime_error(
+                        "Invalid Geometry point: expected object"
+                    );
+                }
+
+                definition.geometry.push_back(
                     Vector2{
                         point.value("x", 0.0f),
                         point.value("y", 0.0f)
                     }
                 );
             }
+
+            return definition;
+        }
+
+        rejectRepresentationProperty(element, "primitive", "text");
+        rejectRepresentationProperty(element, "geometry", "text");
+        rejectRepresentationProperty(element, "mode", "text");
+        rejectRepresentationProperty(element, "size", "text");
+
+        definition.kind =
+            RepresentationElementKind::Text;
+        definition.text =
+            element.value("text", "");
+
+        if (!element.contains("fontSize") || !element["fontSize"].is_number_integer())
+        {
+            throw std::runtime_error(
+                "Invalid Text Representation: fontSize is required"
+            );
+        }
+
+        definition.fontSize =
+            element["fontSize"].get<int>();
+
+        return definition;
+    }
+
+    void parseVisual(
+        JsonLoadSession& session,
+        const Json& object,
+        const std::filesystem::path& sourceFile,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("visual"))
+        {
+            definition.hasVisual = false;
+            definition.visual.depth = 0;
+            return;
+        }
+
+        if (!object["visual"].is_object())
+        {
+            throw std::runtime_error(
+                "Invalid visual declaration in '" + definition.id +
+                "': expected object"
+            );
+        }
+
+        definition.hasVisual =
+            true;
+
+        const Json& visual =
+            object["visual"];
+
+        if (visual.contains("color"))
+        {
+            if (!visual["color"].is_string())
+            {
+                throw std::runtime_error(
+                    "Invalid visual.color in '" + definition.id +
+                    "': expected string"
+                );
+            }
+
+            definition.visual.color =
+                ColorParser::parse(
+                    visual["color"].get<std::string>(),
+                    WHITE
+                );
+            definition.visual.hasColor =
+                true;
+        }
+
+        definition.visual.depth =
+            visual.value("depth", 0);
+
+        if (!visual.contains("representation"))
+        {
+            definition.visual.hasRepresentation =
+                false;
+            return;
+        }
+
+        if (!visual["representation"].is_array())
+        {
+            throw std::runtime_error(
+                "Invalid visual.representation in '" + definition.id +
+                "': expected array"
+            );
+        }
+
+        definition.visual.hasRepresentation =
+            true;
+
+        int index = 0;
+
+        for (const auto& element : visual["representation"])
+        {
+            definition.visual.representation.push_back(
+                parseRepresentationElement(
+                    session,
+                    element,
+                    sourceFile,
+                    "visual.representation." + std::to_string(index)
+                )
+            );
+
+            ++index;
         }
     }
 
-    void parseMotion(
+    MechanicsSpeedDefinition parseMechanicsSpeed(
+        const Json& owner,
+        const MechanicsSpeedDefinition& fallback
+    )
+    {
+        MechanicsSpeedDefinition speed =
+            fallback;
+
+        if (owner.is_number())
+        {
+            speed.start =
+                owner.get<float>();
+            speed.limit =
+                0.0f;
+            return speed;
+        }
+
+        if (!owner.is_object())
+        {
+            return speed;
+        }
+
+        speed.start =
+            owner.value("start", speed.start);
+
+        speed.limit =
+            owner.value("limit", speed.limit);
+
+        if (speed.limit > 0.0f && speed.limit < speed.start)
+        {
+            Logger::warning(
+                "json",
+                "mechanics speed.limit cannot be lower than speed.start; using start as limit"
+            );
+
+            speed.limit =
+                speed.start;
+        }
+
+        return speed;
+    }
+
+    MechanicsAxisDefinition parseMechanicsAxis(
+        const Json& axis,
+        const MechanicsMotionDefinition& motion
+    )
+    {
+        MechanicsAxisDefinition result;
+        result.speed =
+            motion.speed;
+        result.acceleration =
+            motion.acceleration;
+        result.inertia =
+            motion.inertia;
+        result.step =
+            motion.step;
+
+        if (!axis.is_object())
+        {
+            return result;
+        }
+
+        if (axis.contains("speed"))
+        {
+            result.speed =
+                parseMechanicsSpeed(axis["speed"], result.speed);
+            result.hasSpeed =
+                true;
+        }
+
+        if (axis.contains("acceleration"))
+        {
+            result.acceleration =
+                axis.value("acceleration", result.acceleration);
+            result.hasAcceleration =
+                true;
+        }
+
+        if (axis.contains("inertia"))
+        {
+            result.inertia =
+                std::clamp(axis.value("inertia", result.inertia), 0.0f, 1.0f);
+            result.hasInertia =
+                true;
+        }
+
+        if (axis.contains("step"))
+        {
+            result.step =
+                axis.value("step", result.step);
+            result.hasStep =
+                true;
+        }
+
+        return result;
+    }
+
+    void parseMechanics(
         const Json& object,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("motion") || !object["motion"].is_object())
+        if (!object.contains("mechanics") || !object["mechanics"].is_object())
         {
             return;
         }
 
-        const auto& motion = object["motion"];
+        const auto& mechanics =
+            object["mechanics"];
 
-        const std::string inherit =
+        const std::string type =
             TextTools::toLower(
-                motion.value("inherit", std::string("none"))
+                mechanics.value("type", std::string("direct"))
             );
 
-        definition.inheritParentAngle =
-            inherit == "creation" ||
-            inherit == "live";
+        definition.mechanics.type =
+            type == "polar"
+                ? MechanicsType::Polar
+                : MechanicsType::Direct;
 
-        definition.rotationSpeed =
-            motion.value("rotationSpeed", definition.rotationSpeed);
-
-        definition.hasSpeed =
-            motion.contains("speed") &&
-            motion["speed"].is_number();
-
-        if (definition.hasSpeed)
+        if (mechanics.contains("motion") && mechanics["motion"].is_object())
         {
-            definition.speed =
-                motion.value("speed", definition.speed);
+            const auto& motion =
+                mechanics["motion"];
+
+            if (motion.contains("speed"))
+            {
+                definition.mechanics.motion.speed =
+                    parseMechanicsSpeed(
+                        motion["speed"],
+                        definition.mechanics.motion.speed
+                    );
+            }
+
+            definition.mechanics.motion.acceleration =
+                motion.value(
+                    "acceleration",
+                    definition.mechanics.motion.acceleration
+                );
+
+            definition.mechanics.motion.inertia =
+                std::clamp(
+                    motion.value("inertia", definition.mechanics.motion.inertia),
+                    0.0f,
+                    1.0f
+                );
+
+            definition.mechanics.motion.step =
+                motion.value("step", definition.mechanics.motion.step);
+
+            const std::string diagonal =
+                TextTools::toLower(
+                    motion.value("diagonal", std::string("independent"))
+                );
+
+            definition.mechanics.motion.diagonal =
+                diagonal == "vector"
+                    ? MechanicsDiagonalMode::Vector
+                    : MechanicsDiagonalMode::Independent;
+
+            if (motion.contains("horizontal"))
+            {
+                definition.mechanics.motion.horizontal =
+                    parseMechanicsAxis(
+                        motion["horizontal"],
+                        definition.mechanics.motion
+                    );
+            }
+            else
+            {
+                definition.mechanics.motion.horizontal =
+                    parseMechanicsAxis(Json::object(), definition.mechanics.motion);
+            }
+
+            if (motion.contains("vertical"))
+            {
+                definition.mechanics.motion.vertical =
+                    parseMechanicsAxis(
+                        motion["vertical"],
+                        definition.mechanics.motion
+                    );
+            }
+            else
+            {
+                definition.mechanics.motion.vertical =
+                    parseMechanicsAxis(Json::object(), definition.mechanics.motion);
+            }
         }
 
-        definition.hasAngle =
-            motion.contains("angle") &&
-            motion["angle"].is_number();
-
-        if (definition.hasAngle)
+        if (mechanics.contains("rotation") && mechanics["rotation"].is_object())
         {
-            definition.angle =
-                motion.value("angle", definition.angle);
+            const auto& rotation =
+                mechanics["rotation"];
+
+            definition.mechanics.rotation.angle =
+                rotation.value("angle", definition.mechanics.rotation.angle);
+
+            if (rotation.contains("speed"))
+            {
+                definition.mechanics.rotation.speed =
+                    parseMechanicsSpeed(
+                        rotation["speed"],
+                        definition.mechanics.rotation.speed
+                    );
+            }
+
+            definition.mechanics.rotation.acceleration =
+                rotation.value(
+                    "acceleration",
+                    definition.mechanics.rotation.acceleration
+                );
+
+            definition.mechanics.rotation.inertia =
+                std::clamp(
+                    rotation.value("inertia", definition.mechanics.rotation.inertia),
+                    0.0f,
+                    1.0f
+                );
+
+            definition.mechanics.rotation.step =
+                rotation.value("step", definition.mechanics.rotation.step);
+        }
+    }
+
+    void parseInherit(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("inherit") || !object["inherit"].is_object())
+        {
+            return;
         }
 
-        definition.acceleration =
-            motion.value("acceleration", definition.acceleration);
+        const auto& inherit =
+            object["inherit"];
 
-        definition.inertia =
-            motion.value("inertia", definition.inertia);
+        if (inherit.contains("creation") && inherit["creation"].is_object())
+        {
+            const auto& creation =
+                inherit["creation"];
 
-        definition.maxSpeed =
-            motion.value("maxSpeed", definition.maxSpeed);
+            const std::string angle =
+                TextTools::toLower(creation.value("angle", std::string("none")));
+
+            definition.inherit.creationAngle =
+                angle == "copy"
+                    ? InheritCreationMode::Copy
+                    : InheritCreationMode::None;
+
+            const std::string velocity =
+                TextTools::toLower(creation.value("velocity", std::string("none")));
+
+            if (velocity == "copy")
+            {
+                definition.inherit.creationVelocity =
+                    InheritCreationMode::Copy;
+            }
+            else if (velocity == "compose")
+            {
+                definition.inherit.creationVelocity =
+                    InheritCreationMode::Compose;
+            }
+        }
+
+        if (inherit.contains("live") && inherit["live"].is_object())
+        {
+            const auto& live =
+                inherit["live"];
+
+            const std::string angle =
+                TextTools::toLower(live.value("angle", std::string("none")));
+
+            definition.inherit.liveAngle =
+                angle == "copy"
+                    ? InheritLiveMode::Copy
+                    : InheritLiveMode::None;
+        }
     }
 
     void parseAttach(
@@ -757,6 +1684,8 @@ namespace
         }
 
         const auto& behavior = object["behavior"];
+        const std::string behaviorSourceFile =
+            object.value("__behaviorSourceFile", definition.sourcePath);
 
         if (!behavior.contains("scripts") || !behavior["scripts"].is_array())
         {
@@ -768,10 +1697,13 @@ namespace
             definition.scripts.push_back(
                 script.get<std::string>()
             );
+            definition.scriptSourcePaths.push_back(
+                behaviorSourceFile
+            );
         }
     }
 
-    void parseCreationPattern(
+    void parseGridCreationPattern(
         const Json& pattern,
         ObjectDefinition& definition
     )
@@ -858,6 +1790,43 @@ namespace
         }
     }
 
+    void parseIteratorCreationPattern(
+        const Json& pattern,
+        ObjectDefinition& definition
+    )
+    {
+        definition.iteratorPattern.clear();
+
+        if (!pattern.is_array())
+        {
+            Logger::error(
+                "json",
+                "Invalid iterator creation pattern in '" + definition.id +
+                "': expected array"
+            );
+
+            return;
+        }
+
+        for (const auto& childId : pattern)
+        {
+            if (!childId.is_string())
+            {
+                Logger::warning(
+                    "json",
+                    "Ignoring invalid iterator pattern value in '" +
+                    definition.id + "'"
+                );
+
+                continue;
+            }
+
+            definition.iteratorPattern.push_back(
+                childId.get<std::string>()
+            );
+        }
+    }
+
     void parseCreation(
         const Json& object,
         ObjectDefinition& definition
@@ -877,13 +1846,39 @@ namespace
             );
 
         if (definition.creationMode != "individual" &&
-            definition.creationMode != "grid")
+            definition.creationMode != "grid" &&
+            definition.creationMode != "iterator")
         {
             Logger::warning(
                 "json",
                 "Unsupported creation mode '" + definition.creationMode +
                 "' in '" + definition.id + "'"
             );
+        }
+
+        if (definition.creationMode == "iterator")
+        {
+            if (creation.contains("rules") && creation["rules"].is_object())
+            {
+                const auto& rules =
+                    creation["rules"];
+
+                definition.iteratorRules.concurrent =
+                    rules.value("concurrent", definition.iteratorRules.concurrent);
+
+                definition.iteratorRules.repeat =
+                    rules.value("repeat", definition.iteratorRules.repeat);
+            }
+
+            if (creation.contains("pattern"))
+            {
+                parseIteratorCreationPattern(
+                    creation["pattern"],
+                    definition
+                );
+            }
+
+            return;
         }
 
         if (definition.creationMode != "grid")
@@ -911,64 +1906,158 @@ namespace
 
         if (creation.contains("pattern"))
         {
-            parseCreationPattern(
+            parseGridCreationPattern(
                 creation["pattern"],
                 definition
             );
         }
     }
 
-    void parseCollision(
+    void parseCollisions(
+        JsonLoadSession& session,
         const Json& object,
+        const std::filesystem::path& currentFile,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("collision") || !object["collision"].is_object())
+        if (!object.contains("collisions"))
         {
             return;
         }
 
-        const auto& collision = object["collision"];
-
-        definition.collisionType =
-            TextTools::toLower(
-                collision.value("type", definition.collisionType)
+        if (!object["collisions"].is_object())
+        {
+            Logger::warning(
+                "json",
+                "Invalid collisions declaration: expected object"
             );
 
-        definition.collisionRadius =
-            collision.value("radius", definition.collisionRadius);
-
-        definition.collisionActive =
-            collision.value("active", definition.collisionActive);
-
-        definition.collisionWith.clear();
-
-        if (collision.contains("with") && collision["with"].is_array())
-        {
-            for (const auto& group : collision["with"])
-            {
-                definition.collisionWith.push_back(
-                    group.get<std::string>()
-                );
-            }
+            return;
         }
 
-        if (
-            definition.collisionType == "circle" &&
-            definition.collisionRadius <= 0.0f
-            )
+        definition.collisions.clear();
+
+        const auto& collisions =
+            object["collisions"];
+
+        for (auto it = collisions.begin(); it != collisions.end(); ++it)
         {
-            definition.collisionRadius =
-                std::max(
-                    definition.size.x,
-                    definition.size.y
-                ) / 2.0f;
+            Json colliderData =
+                it.value();
+
+            if (colliderData.is_string())
+            {
+                ResolvedJsonReference reference =
+                    resolveJsonReference(
+                        session,
+                        colliderData.get<std::string>(),
+                        currentFile,
+                        "collisions." + it.key()
+                    );
+
+                if (!reference.ok)
+                {
+                    continue;
+                }
+
+                colliderData =
+                    reference.data;
+            }
+
+            if (!colliderData.is_object())
+            {
+                Logger::warning(
+                    "json",
+                    "Invalid collider '" + it.key() + "': expected object"
+                );
+
+                continue;
+            }
+
+            ColliderDefinition collider;
+
+            collider.type =
+                TextTools::toLower(
+                    colliderData.value("type", collider.type)
+                );
+
+            if (colliderData.contains("size") &&
+                colliderData["size"].is_object())
+            {
+                const auto& size =
+                    colliderData["size"];
+
+                if (size.contains("width"))
+                {
+                    collider.size.width =
+                        size.value("width", collider.size.width);
+                    collider.size.hasWidth = true;
+                }
+
+                if (size.contains("height"))
+                {
+                    collider.size.height =
+                        size.value("height", collider.size.height);
+                    collider.size.hasHeight = true;
+                }
+            }
+
+            if (colliderData.contains("offset") &&
+                colliderData["offset"].is_object())
+            {
+                const auto& offset =
+                    colliderData["offset"];
+
+                collider.offset = Vector2{
+                    offset.value("x", 0.0f),
+                    offset.value("y", 0.0f)
+                };
+            }
+
+            collider.angle =
+                colliderData.value("angle", collider.angle);
+
+            collider.enabled =
+                colliderData.value("enabled", collider.enabled);
+
+            if (colliderData.contains("with") &&
+                colliderData["with"].is_array())
+            {
+                for (const auto& group : colliderData["with"])
+                {
+                    if (group.is_string())
+                    {
+                        collider.with.push_back(
+                            group.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            if (colliderData.contains("states") &&
+                colliderData["states"].is_array())
+            {
+                for (const auto& state : colliderData["states"])
+                {
+                    if (state.is_string())
+                    {
+                        collider.states.push_back(
+                            state.get<std::string>()
+                        );
+                    }
+                }
+            }
+
+            definition.collisions[it.key()] =
+                collider;
         }
     }
 
     Json normalizeSoundValue(
+        JsonLoadSession& session,
         const Json& value,
-        const std::filesystem::path& currentFile
+        const std::filesystem::path& currentFile,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -979,7 +2068,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 if (!resolvedReference.ok)
                 {
@@ -1009,7 +2103,7 @@ namespace
 
             Json resolvedSound;
 
-            if (!resolveLike(soundPath, soundData, resolvedSound))
+            if (!resolveLike(session, soundPath, soundData, resolvedSound, field))
             {
                 return Json{};
             }
@@ -1026,7 +2120,7 @@ namespace
         {
             Json resolvedSound;
 
-            if (!resolveLike(currentFile, value, resolvedSound))
+            if (!resolveLike(session, currentFile, value, resolvedSound, field))
             {
                 return Json{};
             }
@@ -1043,7 +2137,10 @@ namespace
     }
 
     ResolvedJsonReference resolveJsonReference(
-        const std::string& reference
+        JsonLoadSession& session,
+        const std::string& reference,
+        const std::filesystem::path& declaringFile,
+        const std::string& field
     )
     {
         if (!isFlxReference(reference))
@@ -1084,20 +2181,37 @@ namespace
         }
 
         const std::filesystem::path referencePath =
-            resolveFlxReferencePath(path);
+            resolveFlxReferencePath(session, path);
 
         if (referencePath.empty())
         {
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "FLX reference could not be resolved.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
+            );
+
             return {};
         }
 
         Json data;
 
-        if (!loadJsonCached(referencePath, data))
+        if (!loadJsonCached(session, referencePath, data))
         {
-            Logger::error(
-                "json",
-                "FLX reference file not found or invalid: " + reference
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingReferencedResource,
+                "FLX reference file not found or invalid.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
             );
 
             return {};
@@ -1105,7 +2219,7 @@ namespace
 
         Json resolved;
 
-        if (!resolveLike(referencePath, data, resolved))
+        if (!resolveLike(session, referencePath, data, resolved, field))
         {
             return {};
         }
@@ -1115,15 +2229,23 @@ namespace
             return ResolvedJsonReference{
                 true,
                 resolved,
-                referencePath
+                referencePath,
+                referencePath,
+                ""
             };
         }
 
         if (!resolved.contains(key))
         {
-            Logger::error(
-                "json",
-                "FLX reference key not found: " + reference
+            addReferenceError(
+                session,
+                DiagnosticCode::MissingInternalResourceMember,
+                "FLX reference key not found.",
+                declaringFile,
+                field,
+                reference,
+                referencePath,
+                key
             );
 
             return {};
@@ -1132,13 +2254,17 @@ namespace
         return ResolvedJsonReference{
             true,
             resolved[key],
-            referencePath
+            referencePath,
+            referencePath,
+            key
         };
     }
 
     Json resolveJsonValue(
+        JsonLoadSession& session,
         const std::filesystem::path& currentFile,
-        const Json& value
+        const Json& value,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -1149,7 +2275,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 return resolvedReference.ok
                     ? resolvedReference.data
@@ -1161,7 +2292,7 @@ namespace
         {
             Json resolved;
 
-            if (!resolveLike(currentFile, value, resolved))
+            if (!resolveLike(session, currentFile, value, resolved, field))
             {
                 return Json{};
             }
@@ -1217,6 +2348,7 @@ namespace
     }
 
     AudioSourceDefinition parseAudioSource(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1224,7 +2356,7 @@ namespace
     {
         AudioSourceDefinition source;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1272,6 +2404,7 @@ namespace
     }
 
     AudioToneDefinition parseAudioTone(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1279,7 +2412,7 @@ namespace
     {
         AudioToneDefinition tone;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1386,13 +2519,14 @@ namespace
     }
 
     float parseAudioNote(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
     )
     {
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (data.is_number())
         {
@@ -1425,6 +2559,7 @@ namespace
     }
 
     AudioMovementDefinition parseAudioMovement(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1432,7 +2567,7 @@ namespace
     {
         AudioMovementDefinition movement;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1474,6 +2609,7 @@ namespace
     }
 
     InstrumentDefinition parseInstrument(
+        JsonLoadSession& session,
         const Json& value,
         const std::filesystem::path& currentFile,
         const std::string& label
@@ -1481,7 +2617,7 @@ namespace
     {
         InstrumentDefinition instrument;
         const Json data =
-            resolveJsonValue(currentFile, value);
+            resolveJsonValue(session, currentFile, value, label);
 
         if (!data.is_object())
         {
@@ -1492,6 +2628,7 @@ namespace
         {
             instrument.source =
                 parseAudioSource(
+                    session,
                     data["source"],
                     currentFile,
                     label + ".source"
@@ -1502,6 +2639,7 @@ namespace
         {
             instrument.tone =
                 parseAudioTone(
+                    session,
                     data["tone"],
                     currentFile,
                     label + ".tone"
@@ -1546,6 +2684,7 @@ namespace
     }
 
     void parseSounds(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -1563,8 +2702,10 @@ namespace
         {
             const Json data =
                 normalizeSoundValue(
+                    session,
                     it.value(),
-                    currentFile
+                    currentFile,
+                    "sounds." + it.key()
                 );
 
             if (!data.is_object())
@@ -1578,11 +2719,17 @@ namespace
             }
 
             SoundDefinition sound;
+            sound.priority = 0;
 
             if (data.contains("kind"))
             {
                 const Json kindData =
-                    resolveJsonValue(currentFile, data["kind"]);
+                    resolveJsonValue(
+                        session,
+                        currentFile,
+                        data["kind"],
+                        "sounds." + it.key() + ".kind"
+                    );
 
                 if (kindData.is_object())
                 {
@@ -1590,6 +2737,7 @@ namespace
                     {
                         sound.kind.source =
                             parseAudioSource(
+                                session,
                                 kindData["source"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind.source"
@@ -1600,6 +2748,7 @@ namespace
                     {
                         sound.kind.noteFrequency =
                             parseAudioNote(
+                                session,
                                 kindData["note"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind.note"
@@ -1613,6 +2762,7 @@ namespace
                     {
                         sound.kind.movement =
                             parseAudioMovement(
+                                session,
                                 kindData["movement"],
                                 currentFile,
                                 "sound '" + it.key() + "'.kind"
@@ -1632,6 +2782,7 @@ namespace
             {
                 sound.tone =
                     parseAudioTone(
+                        session,
                         data["tone"],
                         currentFile,
                         "sound '" + it.key() + "'.tone"
@@ -1656,6 +2807,22 @@ namespace
                     1.0f,
                     "sound '" + it.key() + "'.volume"
                 );
+            if (data.contains("priority"))
+            {
+                if (data["priority"].is_number_integer())
+                {
+                    sound.priority =
+                        data["priority"].get<int>();
+                }
+                else
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid priority in sound '" + it.key() +
+                        "': expected integer"
+                    );
+                }
+            }
 
             definition.sounds[it.key()] =
                 sound;
@@ -1663,8 +2830,10 @@ namespace
     }
 
     Json normalizeMusicValue(
+        JsonLoadSession& session,
         const Json& value,
-        const std::filesystem::path& currentFile
+        const std::filesystem::path& currentFile,
+        const std::string& field
     )
     {
         if (value.is_string())
@@ -1675,7 +2844,12 @@ namespace
             if (isFlxReference(reference))
             {
                 ResolvedJsonReference resolvedReference =
-                    resolveJsonReference(reference);
+                    resolveJsonReference(
+                        session,
+                        reference,
+                        currentFile,
+                        field
+                    );
 
                 if (!resolvedReference.ok)
                 {
@@ -1705,7 +2879,7 @@ namespace
 
             Json resolvedMusic;
 
-            if (!resolveLike(musicPath, musicData, resolvedMusic))
+            if (!resolveLike(session, musicPath, musicData, resolvedMusic, field))
             {
                 return Json{};
             }
@@ -1722,7 +2896,7 @@ namespace
         {
             Json resolvedMusic;
 
-            if (!resolveLike(currentFile, value, resolvedMusic))
+            if (!resolveLike(session, currentFile, value, resolvedMusic, field))
             {
                 return Json{};
             }
@@ -1739,6 +2913,7 @@ namespace
     }
 
     void parseMusic(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -1767,8 +2942,10 @@ namespace
         {
             const Json data =
                 normalizeMusicValue(
+                    session,
                     it.value(),
-                    currentFile
+                    currentFile,
+                    "music." + it.key()
                 );
 
             if (!data.is_object())
@@ -1829,6 +3006,7 @@ namespace
                 {
                     channel.instrument =
                         parseInstrument(
+                            session,
                             channelData["instrument"],
                             currentFile,
                             "music '" + it.key() +
@@ -1927,11 +3105,13 @@ namespace
     }
 
     void parseStates(
+        JsonLoadSession& session,
         const Json& object,
+        const std::filesystem::path& sourceFile,
         ObjectDefinition& definition
     )
     {
-        if (!object.contains("states") || !object["states"].is_object())
+        if (!object.contains("states"))
         {
             return;
         }
@@ -1939,8 +3119,58 @@ namespace
         const auto& states =
             object["states"];
 
-        definition.initialState =
-            states.value("initial", definition.initialState);
+        if (!states.is_object())
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::InvalidStateMachineDeclaration,
+                "Invalid states declaration in '" + definition.id +
+                "': expected object",
+                sourceFile,
+                "states"
+            );
+
+            return;
+        }
+
+        if (!states.contains("initial"))
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineInitialState,
+                "Missing initial state in '" + definition.id + "'",
+                sourceFile,
+                "states.initial"
+            );
+        }
+        else if (!states["initial"].is_string())
+        {
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineInitialState,
+                "Invalid initial state in '" + definition.id +
+                "': expected non-empty string",
+                sourceFile,
+                "states.initial"
+            );
+        }
+        else
+        {
+            definition.initialState =
+                states["initial"].get<std::string>();
+
+            if (definition.initialState.empty())
+            {
+                addStateMachineError(
+                    session,
+                    DiagnosticCode::MissingStateMachineInitialState,
+                    "Invalid initial state in '" + definition.id +
+                    "': expected non-empty string",
+                    sourceFile,
+                    "states.initial"
+                );
+            }
+        }
 
         for (auto it = states.begin(); it != states.end(); ++it)
         {
@@ -1951,10 +3181,13 @@ namespace
 
             if (!it.value().is_object())
             {
-                Logger::warning(
-                    "json",
+                addStateMachineError(
+                    session,
+                    DiagnosticCode::InvalidStateMachineDeclaration,
                     "Invalid state '" + it.key() + "' in '" +
-                    definition.id + "': expected object"
+                    definition.id + "': expected object",
+                    sourceFile,
+                    "states." + it.key()
                 );
 
                 continue;
@@ -1966,10 +3199,13 @@ namespace
             {
                 if (!it.value()["next"].is_array())
                 {
-                    Logger::warning(
-                        "json",
+                    addStateMachineError(
+                        session,
+                        DiagnosticCode::InvalidStateMachineDeclaration,
                         "Invalid next states in '" + it.key() +
-                        "': expected array"
+                        "': expected array",
+                        sourceFile,
+                        "states." + it.key() + ".next"
                     );
                 }
                 else
@@ -1978,18 +3214,54 @@ namespace
                     {
                         if (!nextState.is_string())
                         {
-                            Logger::warning(
-                                "json",
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
                                 "Ignoring invalid next state in '" +
-                                it.key() + "'"
+                                it.key() + "': expected string",
+                                sourceFile,
+                                "states." + it.key() + ".next"
                             );
 
                             continue;
                         }
 
-                        nextStates.push_back(
-                            nextState.get<std::string>()
-                        );
+                        const std::string target =
+                            nextState.get<std::string>();
+
+                        if (target.empty())
+                        {
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
+                                "Invalid next state in '" + it.key() +
+                                "': expected non-empty string",
+                                sourceFile,
+                                "states." + it.key() + ".next"
+                            );
+
+                            continue;
+                        }
+
+                        if (std::find(
+                            nextStates.begin(),
+                            nextStates.end(),
+                            target
+                        ) != nextStates.end())
+                        {
+                            addStateMachineError(
+                                session,
+                                DiagnosticCode::InvalidStateTransitionTarget,
+                                "Duplicate next state '" + target +
+                                "' in '" + it.key() + "'",
+                                sourceFile,
+                                "states." + it.key() + ".next"
+                            );
+
+                            continue;
+                        }
+
+                        nextStates.push_back(target);
                     }
                 }
             }
@@ -2003,15 +3275,122 @@ namespace
             !definition.stateTransitions.contains(definition.initialState)
             )
         {
+            addStateMachineError(
+                session,
+                DiagnosticCode::MissingStateMachineState,
+                "Initial state '" + definition.initialState +
+                "' is not declared in '" + definition.id + "'",
+                sourceFile,
+                "states.initial"
+            );
+        }
+
+        for (const auto& state : definition.stateTransitions)
+        {
+            for (const std::string& target : state.second)
+            {
+                if (!definition.stateTransitions.contains(target))
+                {
+                    addStateMachineError(
+                        session,
+                        DiagnosticCode::MissingStateMachineState,
+                        "State '" + state.first +
+                        "' references missing next state '" + target +
+                        "' in '" + definition.id + "'",
+                        sourceFile,
+                        "states." + state.first + ".next"
+                    );
+                }
+            }
+        }
+    }
+
+    void parseControl(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        if (!object.contains("control"))
+        {
+            return;
+        }
+
+        if (!object["control"].is_object())
+        {
             Logger::warning(
                 "json",
-                "Initial state '" + definition.initialState +
-                "' is not declared in '" + definition.id + "'"
+                "Invalid control block in '" + definition.id + "': expected object"
+            );
+
+            return;
+        }
+
+        const Json& control =
+            object["control"];
+
+        definition.controlPlayer =
+            control.value("player", definition.controlPlayer);
+    }
+
+    void parseLocal(
+        const Json& object,
+        ObjectDefinition& definition
+    )
+    {
+        definition.local.clear();
+
+        if (!object.contains("local"))
+        {
+            return;
+        }
+
+        if (!object["local"].is_object())
+        {
+            Logger::warning(
+                "loading",
+                "Invalid local declaration in '" + definition.id +
+                "': expected object"
+            );
+
+            return;
+        }
+
+        for (auto it = object["local"].begin();
+            it != object["local"].end();
+            ++it)
+        {
+            if (it.value().is_boolean())
+            {
+                definition.local[it.key()] =
+                    it.value().get<bool>();
+                continue;
+            }
+
+            if (it.value().is_number())
+            {
+                definition.local[it.key()] =
+                    it.value().get<double>();
+                continue;
+            }
+
+            if (it.value().is_string())
+            {
+                definition.local[it.key()] =
+                    it.value().get<std::string>();
+                continue;
+            }
+
+            Logger::warning(
+                "loading",
+                "Invalid local value '" + it.key() + "' in '" +
+                definition.id +
+                "': expected boolean, number or string"
             );
         }
     }
 
     ObjectDefinition parseDefinition(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
@@ -2030,6 +3409,7 @@ namespace
     }
 
     void parseChildren(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         ObjectDefinition& definition
@@ -2052,45 +3432,116 @@ namespace
         }
 
         const auto& children = object["children"];
+        Json childSourceFiles =
+            Json::object();
+
+        if (
+            object.contains("__childSourceFiles") &&
+            object["__childSourceFiles"].is_object()
+        )
+        {
+            childSourceFiles =
+                object["__childSourceFiles"];
+        }
+
+        std::vector<std::string> childNames;
 
         for (auto it = children.begin(); it != children.end(); ++it)
         {
-            Json childData =
-                normalizeChildValue(it.value());
+            childNames.push_back(it.key());
+        }
 
-            if (!childData.is_object())
+        for (const std::string& childName : childNames)
+        {
             {
-                Logger::warning(
-                    "json",
-                    "Invalid child '" + it.key() + "': expected object"
-                );
+                Json childData =
+                    normalizeChildValue(children.at(childName));
 
-                continue;
-            }
+                if (!childData.is_object())
+                {
+                    Logger::warning(
+                        "json",
+                        "Invalid child '" + childName + "': expected object"
+                    );
 
-            Json resolvedChild;
+                    continue;
+                }
 
-            if (!resolveLike(currentFile, childData, resolvedChild))
-            {
-                Logger::warning(
-                    "json",
-                    "Skipping child '" + it.key() +
-                    "' because it could not be resolved"
-                );
+                Json resolvedChild;
+                const std::filesystem::path childSourceFile =
+                    childSourceFiles.contains(childName)
+                    ? std::filesystem::path(childSourceFiles[childName].get<std::string>())
+                    : currentFile;
 
-                continue;
-            }
-
-            definition.children[it.key()] =
-                parseDefinition(
+                if (!resolveLike(
+                    session,
+                    childSourceFile,
+                    childData,
                     resolvedChild,
-                    currentFile,
-                    it.key()
+                    "children." + childName
+                ))
+                {
+                    throw std::runtime_error(
+                        "Child reference could not be resolved: " +
+                        childName
+                    );
+                }
+
+                const std::filesystem::path resolvedSourceFile =
+                    resolvedChild.value(
+                        "__sourceFile",
+                        genericPathString(childSourceFile)
+                    );
+
+                if (
+                    definitionIsActive(
+                        session,
+                        resolvedSourceFile,
+                        childName
+                        )
+                    )
+                {
+                    ObjectDefinition childDefinition;
+                    childDefinition.id =
+                        childName;
+                    childDefinition.sourcePath =
+                        genericPathString(resolvedSourceFile);
+                    childDefinition.spawnMode =
+                        TextTools::toLower(
+                            resolvedChild.value("spawn", childDefinition.spawnMode)
+                        );
+
+                    definition.children[childName] =
+                        std::make_shared<ObjectDefinition>(
+                            std::move(childDefinition)
+                        );
+                    definition.childSourcePaths[childName] =
+                        genericPathString(resolvedSourceFile);
+
+                    continue;
+                }
+
+                ObjectDefinition parsedChild =
+                    parseDefinition(
+                        session,
+                        resolvedChild,
+                        childSourceFile,
+                        childName
+                    );
+                definition.children.emplace(
+                    childName,
+                    std::make_shared<ObjectDefinition>(
+                        std::move(parsedChild)
+                    )
                 );
+                definition.childSourcePaths[childName] =
+                    genericPathString(childSourceFile);
+            }
         }
     }
 
     ObjectDefinition parseDefinition(
+        JsonLoadSession& session,
         const Json& object,
         const std::filesystem::path& currentFile,
         const std::string& id
@@ -2109,6 +3560,12 @@ namespace
 
         definition.sourcePath =
             genericPathString(sourceFile);
+
+        ScopedDefinitionStackEntry stackEntry(
+            session,
+            sourceFile,
+            id
+        );
 
         definition.spawnMode =
             TextTools::toLower(
@@ -2134,29 +3591,35 @@ namespace
         definition.origin =
             parseOrigin(object);
 
-        definition.size =
-            parseSize(object);
+        definition.hasSize =
+            parseSize(object, definition.size);
 
         definition.group =
             object.value("group", definition.group);
 
-        definition.role =
-            object.value("role", definition.role);
-
         definition.visible =
             object.value("visible", definition.visible);
 
-        parseShape(object, definition);
-        parseMotion(object, definition);
+        definition.component =
+            object.value("component", definition.component);
+
+        definition.delimit =
+            object.value("delimit", definition.delimit);
+
+        parseLocal(object, definition);
+        parseControl(object, definition);
+        parseVisual(session, object, sourceFile, definition);
+        parseMechanics(object, definition);
+        parseInherit(object, definition);
         parseAttach(object, definition);
         parseBounds(object, definition);
         parseBehavior(object, definition);
         parseCreation(object, definition);
-        parseCollision(object, definition);
-        parseSounds(object, sourceFile, definition);
-        parseMusic(object, sourceFile, definition);
-        parseStates(object, definition);
-        parseChildren(object, sourceFile, definition);
+        parseCollisions(session, object, sourceFile, definition);
+        parseSounds(session, object, sourceFile, definition);
+        parseMusic(session, object, sourceFile, definition);
+        parseStates(session, object, sourceFile, definition);
+        parseChildren(session, object, sourceFile, definition);
 
         return definition;
     }
@@ -2171,15 +3634,8 @@ std::string JsonLoader::resolveProjectPath(
     const std::filesystem::path normalizedRoot =
         std::filesystem::absolute(projectPath).lexically_normal();
 
-    if (projectJsonRoot != normalizedRoot)
-    {
-        projectJsonRoot =
-            normalizedRoot;
-        jsonCache.clear();
-    }
-
     const std::filesystem::path resolved =
-        projectJsonRoot /
+        normalizedRoot /
         normalizedRelativePath(path, extension);
 
     return genericPathString(resolved);
@@ -2202,14 +3658,27 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
     const std::string& path
 )
 {
+    Diagnostics diagnostics;
+    return loadObjectDefinition(
+        path,
+        std::filesystem::path(path).parent_path().generic_string(),
+        diagnostics
+    );
+}
+
+ObjectDefinition JsonLoader::loadObjectDefinition(
+    const std::string& path,
+    const std::string& projectRoot,
+    Diagnostics& diagnostics
+)
+{
     const std::filesystem::path objectPath(path);
 
-    if (projectJsonRoot.empty())
-    {
-        projectJsonRoot =
-            std::filesystem::absolute(objectPath.parent_path()).lexically_normal();
-        jsonCache.clear();
-    }
+    JsonLoadSession session;
+    session.projectJsonRoot =
+        std::filesystem::absolute(projectRoot).lexically_normal();
+    session.diagnostics =
+        &diagnostics;
 
     Json data;
 
@@ -2223,7 +3692,23 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 
     Json resolved;
 
-    if (!resolveLike(objectPath, data, resolved))
+    const std::string rootKey =
+        std::filesystem::absolute(objectPath).lexically_normal().generic_string();
+
+    session.likeStack.push_back(rootKey);
+
+    const bool resolvedOk =
+        resolveLike(
+            session,
+            objectPath,
+            data,
+            resolved,
+            ""
+        );
+
+    session.likeStack.pop_back();
+
+    if (!resolvedOk)
     {
         throw std::runtime_error(
             "JSON object could not be resolved: " +
@@ -2232,6 +3717,7 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
     }
 
     return parseDefinition(
+        session,
         resolved,
         objectPath,
         objectPath.stem().generic_string()

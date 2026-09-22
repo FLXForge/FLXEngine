@@ -1,0 +1,12 @@
+# Game data
+title=References Demo
+name=references-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=references-demo
+
+# Notes
+notes=Minimal FLX v0.3.0 Runtime references demo

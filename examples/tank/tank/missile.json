@@ -1,0 +1,44 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 150
+      }
+    }
+  },
+  "inherit": {
+    "creation": {
+      "angle": "copy"
+    }
+  },
+  "group": "missile",
+  "behavior": {
+    "scripts": [
+      "missile"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "wall",
+        "enemy"
+      ]
+    }
+  },
+  "size": {
+    "width": 4,
+    "height": 7
+  },
+  "visual": {
+    "color": "#D84A3A",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
+  }
+}

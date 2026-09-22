@@ -1,19 +1,14 @@
 # Game data
 title=FLX Engine - Pong Example
 name=Pong
-version=1.0
-engine=0.2.0
+version=2.0
+engine=0.3.0
 
 # Configuration
 path=pong
 root=game
 machine=machines/pongMachine.yml
-input.mapping=controllers.input
-
-# Debug
-debug.collisions=false
-debug.logs=false
-debug.console=true
+input.mapping=pong.input
 
 # Notes
 notes=First FLX example

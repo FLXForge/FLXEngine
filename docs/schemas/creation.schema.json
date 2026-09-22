@@ -8,7 +8,7 @@
   "properties": {
     "mode": {
       "type": "string",
-      "enum": [ "individual", "grid" ],
+      "enum": [ "individual", "grid", "iterator" ],
       "default": "individual"
     },
 
@@ -31,6 +31,15 @@
         "cellHeight": {
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "concurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "repeat": {
+          "type": "boolean",
+          "default": false
         }
       }
     },
@@ -70,7 +79,64 @@
         "required": [ "rules", "pattern" ],
         "properties": {
           "rules": {
-            "required": [ "rows", "columns", "cellWidth", "cellHeight" ]
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "rows", "columns", "cellWidth", "cellHeight" ],
+            "properties": {
+              "rows": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "columns": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "cellWidth": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "cellHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "iterator"
+          }
+        },
+        "required": [ "mode" ]
+      },
+      "then": {
+        "required": [ "pattern" ],
+        "properties": {
+          "pattern": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "rules": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "concurrent": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 1
+              },
+              "repeat": {
+                "type": "boolean",
+                "default": false
+              }
+            }
           }
         }
       }

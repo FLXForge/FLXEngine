@@ -1,39 +1,56 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 300,
     "y": 450
   },
-
-  "shape": {
-    "type": "triangle",
-    "mode": "fill",
-    "color": "white",
-    "size": {
-      "width": 24,
-      "height": 8
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 90
+      }
     }
   },
-
-  "motion": {
-    "speed": 90
+  "control": {
+    "player": 1
   },
-
   "group": "player",
-
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "enemy",
+        "invader"
+      ]
+    }
+  },
   "children": {
     "laser": {
       "like": "laser",
       "spawn": "manual",
       "offset": {
-        "x": 11,
+        "x": 0,
         "y": -10
       }
     }
   },
-
   "behavior": {
-    "scripts": [ "player" ]
+    "scripts": [
+      "player"
+    ]
+  },
+  "size": {
+    "width": 24,
+    "height": 8
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "triangle",
+        "mode": "fill"
+      }
+    ]
   }
 }

@@ -1,6 +1,7 @@
 #include "ScriptEngine.h"
 #include "../runtime/RuntimeConstants.h"
 #include "../debug/Logger.h"
+#include "../graphics/DrawingContext.h"
 #include "../audio/AudioSystem.h"
 #include "../graphics/FadeSystem.h"
 #include "../machine/VideoColorProcessor.h"
@@ -8,14 +9,20 @@
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <variant>
 #include <raylib.h>
 
 namespace
 {
+    constexpr const char* RuntimeViewInternalId =
+        "__flxRuntimeId";
+
+    constexpr const char* RuntimeViewInternalInvocation =
+        "__flxInvocationId";
+
     std::string toJsStringLiteral(const std::string& value)
     {
         std::string escaped = "'";
@@ -49,6 +56,316 @@ namespace
 
         return escaped;
     }
+
+    enum RuntimeViewProperty
+    {
+        RuntimeViewId,
+        RuntimeViewName,
+        RuntimeViewGroup,
+        RuntimeViewAlive,
+        RuntimeViewVisible,
+        RuntimeViewX,
+        RuntimeViewY,
+        RuntimeViewWidth,
+        RuntimeViewHeight,
+        RuntimeViewSpeed,
+        RuntimeViewAngle,
+        RuntimeViewVelocityX,
+        RuntimeViewVelocityY,
+        RuntimeViewRotationSpeed,
+        RuntimeViewDepth
+    };
+
+    JSValue runtimeViewGetter(
+        JSContext* context,
+        JSValueConst thisValue,
+        int magic
+    )
+    {
+        JSValue idValue =
+            JS_GetPropertyStr(context, thisValue, RuntimeViewInternalId);
+
+        JSValue invocationValue =
+            JS_GetPropertyStr(context, thisValue, RuntimeViewInternalInvocation);
+
+        const char* idText =
+            JS_ToCString(context, idValue);
+
+        const std::string runtimeId =
+            idText == nullptr ? "" : idText;
+
+        if (idText != nullptr)
+        {
+            JS_FreeCString(context, idText);
+        }
+
+        int64_t invocationId = 0;
+
+        JS_ToInt64(context, &invocationId, invocationValue);
+
+        JS_FreeValue(context, idValue);
+        JS_FreeValue(context, invocationValue);
+
+        ScriptEngine* scriptEngine =
+            static_cast<ScriptEngine*>(
+                JS_GetContextOpaque(context)
+            );
+
+        RuntimeObject* object =
+            scriptEngine == nullptr || runtimeId.empty()
+                ? nullptr
+                : scriptEngine->resolveRuntimeObjectReference(
+                    runtimeId,
+                    static_cast<uint64_t>(invocationId)
+                );
+
+        if (object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        switch (magic)
+        {
+        case RuntimeViewId:
+            return JS_NewString(context, object->runtimeId.c_str());
+        case RuntimeViewName:
+            return JS_NewString(context, object->name.c_str());
+        case RuntimeViewGroup:
+            return JS_NewString(context, object->group.c_str());
+        case RuntimeViewAlive:
+            return JS_NewBool(context, object->alive);
+        case RuntimeViewVisible:
+            return JS_NewBool(context, object->visible);
+        case RuntimeViewX:
+            return JS_NewFloat64(context, object->position.x);
+        case RuntimeViewY:
+            return JS_NewFloat64(context, object->position.y);
+        case RuntimeViewWidth:
+            return JS_NewFloat64(context, object->size.x);
+        case RuntimeViewHeight:
+            return JS_NewFloat64(context, object->size.y);
+        case RuntimeViewSpeed:
+            return JS_NewFloat64(context, object->speed);
+        case RuntimeViewAngle:
+            return JS_NewFloat64(context, object->angle);
+        case RuntimeViewVelocityX:
+            return JS_NewFloat64(context, object->velocity.x);
+        case RuntimeViewVelocityY:
+            return JS_NewFloat64(context, object->velocity.y);
+        case RuntimeViewRotationSpeed:
+            return JS_NewFloat64(context, object->rotationSpeed);
+        case RuntimeViewDepth:
+            return JS_NewFloat64(context, object->depth);
+        default:
+            return JS_UNDEFINED;
+        }
+    }
+
+    JSValue runtimeViewUndefinedGetter(
+        JSContext*,
+        JSValueConst,
+        int
+    )
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue runtimeViewIgnoredSetter(
+        JSContext*,
+        JSValueConst,
+        JSValueConst,
+        int
+    )
+    {
+        return JS_UNDEFINED;
+    }
+
+    JSValue newRuntimeViewGetterFunction(
+        JSContext* context,
+        const char* name,
+        RuntimeViewProperty property
+    )
+    {
+        JSCFunctionType functionType = {};
+        functionType.getter_magic =
+            runtimeViewGetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_getter_magic,
+            property
+        );
+    }
+
+    JSValue newRuntimeViewUndefinedGetterFunction(
+        JSContext* context,
+        const char* name
+    )
+    {
+        JSCFunctionType functionType = {};
+        functionType.getter_magic =
+            runtimeViewUndefinedGetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_getter_magic,
+            0
+        );
+    }
+
+    JSValue newRuntimeViewIgnoredSetterFunction(
+        JSContext* context,
+        const char* name
+    )
+    {
+        JSCFunctionType functionType = {};
+        functionType.setter_magic =
+            runtimeViewIgnoredSetter;
+
+        return JS_NewCFunction2(
+            context,
+            functionType.generic,
+            name,
+            0,
+            JS_CFUNC_setter_magic,
+            0
+        );
+    }
+
+    void defineRuntimeViewGetter(
+        JSContext* context,
+        JSValueConst object,
+        const char* name,
+        const std::string& runtimeId,
+        uint64_t invocationId,
+        RuntimeViewProperty property
+    )
+    {
+        JSValue getter =
+            newRuntimeViewGetterFunction(
+                context,
+                name,
+            property
+            );
+
+        JSValue setter =
+            newRuntimeViewIgnoredSetterFunction(
+                context,
+                name
+            );
+
+        JSAtom atom =
+            JS_NewAtom(context, name);
+
+        JS_DefinePropertyGetSet(
+            context,
+            object,
+            atom,
+            getter,
+            setter,
+            JS_PROP_CONFIGURABLE | JS_PROP_ENUMERABLE
+        );
+
+        JS_FreeAtom(context, atom);
+    }
+
+    void defineRuntimeViewIgnoredProperty(
+        JSContext* context,
+        JSValueConst object,
+        const char* name
+    )
+    {
+        JSValue getter =
+            newRuntimeViewUndefinedGetterFunction(
+                context,
+                name
+            );
+
+        JSValue setter =
+            newRuntimeViewIgnoredSetterFunction(
+                context,
+                name
+            );
+
+        JSAtom atom =
+            JS_NewAtom(context, name);
+
+        JS_DefinePropertyGetSet(
+            context,
+            object,
+            atom,
+            getter,
+            setter,
+            JS_PROP_CONFIGURABLE
+        );
+
+        JS_FreeAtom(context, atom);
+    }
+
+    void defineRuntimeViewInternalValue(
+        JSContext* context,
+        JSValueConst object,
+        const char* name,
+        JSValue value
+    )
+    {
+        JS_DefinePropertyValueStr(
+            context,
+            object,
+            name,
+            value,
+            JS_PROP_CONFIGURABLE
+        );
+    }
+
+    JSValue createCollisionContact(
+        JSContext* context,
+        const CollisionContact& contact
+    )
+    {
+        JSValue value =
+            JS_NewObject(context);
+
+        JS_SetPropertyStr(context, value, "collider", JS_NewString(context, contact.collider.c_str()));
+        JS_SetPropertyStr(context, value, "otherCollider", JS_NewString(context, contact.otherCollider.c_str()));
+        JS_SetPropertyStr(context, value, "normalX", JS_NewFloat64(context, contact.normal.x));
+        JS_SetPropertyStr(context, value, "normalY", JS_NewFloat64(context, contact.normal.y));
+        JS_SetPropertyStr(context, value, "pointX", JS_NewFloat64(context, contact.point.x));
+        JS_SetPropertyStr(context, value, "pointY", JS_NewFloat64(context, contact.point.y));
+        JS_SetPropertyStr(context, value, "penetration", JS_NewFloat64(context, contact.penetration));
+
+        JS_PreventExtensions(context, value);
+
+        return value;
+    }
+
+    JSValue createCollisionContacts(
+        JSContext* context,
+        const std::vector<CollisionContact>& contacts
+    )
+    {
+        JSValue array =
+            JS_NewArray(context);
+
+        for (uint32_t i = 0; i < contacts.size(); ++i)
+        {
+            JS_SetPropertyUint32(
+                context,
+                array,
+                i,
+                createCollisionContact(context, contacts[i])
+            );
+        }
+
+        return array;
+    }
+
 }
 
 ScriptEngine::ScriptEngine()
@@ -60,6 +377,7 @@ ScriptEngine::ScriptEngine()
         context,
         this
     );
+
 }
 
 ScriptEngine::~ScriptEngine()
@@ -77,6 +395,8 @@ ScriptEngine::~ScriptEngine()
     }
 
     scriptModules.clear();
+
+    JS_SetContextOpaque(context, nullptr);
 
     JS_FreeContext(context);
     JS_FreeRuntime(runtime);
@@ -122,11 +442,6 @@ void ScriptEngine::callScriptFunction(
     JSValue global =
         JS_GetGlobalObject(context);
 
-    JSValue globalObject =
-        createGlobalObject();
-
-    exposeGlobalObject(globalObject);
-
     JSValue result =
         JS_Call(
             context,
@@ -157,23 +472,20 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
-    applyGlobalObject(globalObject);
-
     JS_FreeValue(context, result);
-    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
 void ScriptEngine::callScriptFunction(
     const std::string& script,
     const std::string& function,
-    RuntimeObject& object
+        RuntimeObject& object
 )
 {
     JSValue func =
@@ -187,15 +499,19 @@ void ScriptEngine::callScriptFunction(
     JSValue global =
         JS_GetGlobalObject(context);
 
+    const uint64_t invocationId =
+        beginScriptInvocation();
+
     JSValue self =
         createJsObject(object);
 
-    JSValue globalObject =
-        createGlobalObject();
-
-    exposeGlobalObject(globalObject);
+    const std::string objectRuntimeId =
+        object.runtimeId;
 
     JSValue args[1] = { self };
+
+    activeScriptObjects[objectRuntimeId] =
+        &object;
 
     JSValue result =
         JS_Call(
@@ -227,18 +543,17 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
-    applyJsObject(object, self);
-    applyGlobalObject(globalObject);
+    activeScriptObjects.erase(objectRuntimeId);
+    endScriptInvocation(invocationId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
-    JS_FreeValue(context, globalObject);
     JS_FreeValue(context, global);
 }
 
@@ -247,6 +562,25 @@ void ScriptEngine::callScriptFunction(
     const std::string& function,
     RuntimeObject& object,
     RuntimeObject& other
+)
+{
+    const std::vector<CollisionContact> contacts;
+
+    callScriptFunction(
+        script,
+        function,
+        object,
+        other,
+        contacts
+    );
+}
+
+void ScriptEngine::callScriptFunction(
+    const std::string& script,
+    const std::string& function,
+    RuntimeObject& object,
+    RuntimeObject& other,
+    const std::vector<CollisionContact>& contacts
 )
 {
     JSValue func =
@@ -260,28 +594,41 @@ void ScriptEngine::callScriptFunction(
     JSValue global =
         JS_GetGlobalObject(context);
 
+    const uint64_t invocationId =
+        beginScriptInvocation();
+
     JSValue self =
         createJsObject(object);
 
     JSValue otherObject =
         createJsObject(other);
 
-    JSValue globalObject =
-        createGlobalObject();
+    const std::string objectRuntimeId =
+        object.runtimeId;
 
-    exposeGlobalObject(globalObject);
+    const std::string otherRuntimeId =
+        other.runtimeId;
 
-    JSValue args[2] = {
+    JSValue contactArray =
+        createCollisionContacts(context, contacts);
+
+    JSValue args[3] = {
         self,
-        otherObject
+        otherObject,
+        contactArray
     };
+
+    activeScriptObjects[objectRuntimeId] =
+        &object;
+    activeScriptObjects[otherRuntimeId] =
+        &other;
 
     JSValue result =
         JS_Call(
             context,
             func,
             global,
-            2,
+            3,
             args
         );
 
@@ -306,20 +653,20 @@ void ScriptEngine::callScriptFunction(
             std::string(stackMessage != nullptr ? stackMessage : " undefined")
         );
 
-        JS_FreeCString(context, message);
-        JS_FreeValue(context, exception);
         JS_FreeCString(context, stackMessage);
         JS_FreeValue(context, stack);
+        JS_FreeCString(context, message);
+        JS_FreeValue(context, exception);
     }
 
-    applyJsObject(object, self);
-    applyJsObject(other, otherObject);
-    applyGlobalObject(globalObject);
+    activeScriptObjects.erase(objectRuntimeId);
+    activeScriptObjects.erase(otherRuntimeId);
+    endScriptInvocation(invocationId);
 
     JS_FreeValue(context, result);
     JS_FreeValue(context, self);
     JS_FreeValue(context, otherObject);
-    JS_FreeValue(context, globalObject);
+    JS_FreeValue(context, contactArray);
     JS_FreeValue(context, global);
 }
 
@@ -527,6 +874,27 @@ void ScriptEngine::setFindObjectFunction(
     findObject = function;
 }
 
+void ScriptEngine::setFindObjectsByNameFunction(
+    FindObjectsByNameFunction function
+)
+{
+    findObjectsByNameFunction = function;
+}
+
+void ScriptEngine::setFindParentFunction(
+    FindParentFunction function
+)
+{
+    findParentFunction = function;
+}
+
+void ScriptEngine::setFindChildrenFunction(
+    FindChildrenFunction function
+)
+{
+    findChildrenFunction = function;
+}
+
 void ScriptEngine::setFindObjectByIdFunction(
     FindObjectByIdFunction function
 )
@@ -534,16 +902,161 @@ void ScriptEngine::setFindObjectByIdFunction(
     findObjectById = function;
 }
 
+void ScriptEngine::setFindObjectDefinitionFunction(
+    FindObjectDefinitionFunction function
+)
+{
+    findObjectDefinitionById = function;
+}
+
+const ObjectDefinition* ScriptEngine::findObjectDefinition(
+    const std::string& id
+) const
+{
+    if (!findObjectDefinitionById)
+    {
+        return nullptr;
+    }
+
+    return findObjectDefinitionById(id);
+}
+
 RuntimeObject* ScriptEngine::findObjectByRuntimeId(
     const std::string& id
 )
 {
+    const auto active =
+        activeScriptObjects.find(id);
+
+    if (active != activeScriptObjects.end())
+    {
+        return active->second;
+    }
+
     if (!findObjectById)
     {
         return nullptr;
     }
 
     return findObjectById(id);
+}
+
+RuntimeObject* ScriptEngine::resolveRuntimeObjectReference(
+    const std::string& id,
+    uint64_t invocationId
+)
+{
+    if (!isCurrentScriptInvocation(invocationId))
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject reference is no longer valid. Store its `id` and resolve it with `find_id()` in the current hook."
+        );
+
+        return nullptr;
+    }
+
+    if (invalidScriptObjectReferences.contains(id))
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    RuntimeObject* object =
+        findObjectByRuntimeId(id);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    if (!object->alive &&
+        activeScriptObjects.find(id) == activeScriptObjects.end())
+    {
+        Logger::warning(
+            "script",
+            "RuntimeObject is no longer alive. Resolve a live instance before using it."
+        );
+
+        return nullptr;
+    }
+
+    return object;
+}
+
+bool ScriptEngine::hasStateMachine(const RuntimeObject& object) const
+{
+    const ObjectDefinition* definition =
+        findObjectDefinition(object.definitionId);
+
+    return definition != nullptr &&
+        !definition->initialState.empty() &&
+        !definition->stateTransitions.empty();
+}
+
+RuntimeObject* ScriptEngine::effectiveStateObject(RuntimeObject& object)
+{
+    RuntimeObject* current =
+        &object;
+
+    while (current != nullptr)
+    {
+        if (hasStateMachine(*current))
+        {
+            return current;
+        }
+
+        if (!current->component)
+        {
+            return nullptr;
+        }
+
+        current =
+            findParent(current->runtimeId);
+    }
+
+    return nullptr;
+}
+
+const RuntimeObject* ScriptEngine::effectiveStateObject(
+    const RuntimeObject& object
+) const
+{
+    RuntimeObject* mutableObject =
+        const_cast<RuntimeObject*>(&object);
+
+    ScriptEngine* mutableEngine =
+        const_cast<ScriptEngine*>(this);
+
+    return mutableEngine->effectiveStateObject(*mutableObject);
+}
+
+bool ScriptEngine::isCurrentScriptInvocation(
+    uint64_t invocationId
+) const
+{
+    return
+        activeScriptInvocationId != 0 &&
+        invocationId == activeScriptInvocationId;
+}
+
+uint64_t ScriptEngine::currentScriptInvocationId() const
+{
+    return activeScriptInvocationId;
+}
+
+bool ScriptEngine::hasActiveScriptInvocation() const
+{
+    return activeScriptInvocationId != 0;
 }
 
 RuntimeObject* ScriptEngine::findObjectByName(
@@ -556,6 +1069,42 @@ RuntimeObject* ScriptEngine::findObjectByName(
     }
 
     return findObject(name);
+}
+
+std::vector<RuntimeObject*> ScriptEngine::findObjectsByName(
+    const std::string& name
+)
+{
+    if (!findObjectsByNameFunction)
+    {
+        return {};
+    }
+
+    return findObjectsByNameFunction(name);
+}
+
+RuntimeObject* ScriptEngine::findParent(
+    const std::string& runtimeId
+)
+{
+    if (!findParentFunction)
+    {
+        return nullptr;
+    }
+
+    return findParentFunction(runtimeId);
+}
+
+std::vector<RuntimeObject*> ScriptEngine::findChildren(
+    const std::string& runtimeId
+)
+{
+    if (!findChildrenFunction)
+    {
+        return {};
+    }
+
+    return findChildrenFunction(runtimeId);
 }
 
 void ScriptEngine::setSpawnObjectFunction(
@@ -581,6 +1130,26 @@ void ScriptEngine::spawnObject(
     );
 }
 
+void ScriptEngine::setCreationActiveFunction(
+    CreationActiveFunction function
+)
+{
+    creationActiveFunction =
+        function;
+}
+
+bool ScriptEngine::creationActive(
+    const RuntimeObject& object
+) const
+{
+    if (!creationActiveFunction)
+    {
+        return false;
+    }
+
+    return creationActiveFunction(object);
+}
+
 void ScriptEngine::setRayCastFunction(
     RayCastFunction function
 )
@@ -602,6 +1171,7 @@ RayCastResult ScriptEngine::rayCast(
 
     return rayCastFunction(
         source,
+        *this,
         angle,
         distance
     );
@@ -622,257 +1192,90 @@ void ScriptEngine::keepOnly(const std::string& runtimeId)
         return;
     }
 
-    keepOnlyRuntimeId =
-        runtimeId;
-
     keepOnlyFunction(runtimeId);
 }
 
-void ScriptEngine::applyJsObject(
-    RuntimeObject& source,
-    JSValue jsObject
+void ScriptEngine::setKillObjectFunction(
+    ObjectRuntimeFunction function
 )
 {
-    JSValue aliveValue =
-        JS_GetPropertyStr(context, jsObject, "alive");
-
-    JSValue attachedValue =
-        JS_GetPropertyStr(context, jsObject, "attached");
-
-    JSValue xValue =
-        JS_GetPropertyStr(context, jsObject, "x");
-
-    JSValue yValue =
-        JS_GetPropertyStr(context, jsObject, "y");
-
-    JSValue speedValue =
-        JS_GetPropertyStr(context, jsObject, "speed");
-
-    JSValue angleValue =
-        JS_GetPropertyStr(context, jsObject, "angle");
-
-    JSValue velocityXValue =
-        JS_GetPropertyStr(context, jsObject, "velocityX");
-
-    JSValue velocityYValue =
-        JS_GetPropertyStr(context, jsObject, "velocityY");
-
-    JSValue localValue =
-        JS_GetPropertyStr(context, jsObject, "local");
-
-    JSValue widthValue =
-        JS_GetPropertyStr(context, jsObject, "width");
-
-    JSValue heightValue =
-        JS_GetPropertyStr(context, jsObject, "height");
-
-    JSValue layerValue =
-        JS_GetPropertyStr(context, jsObject, "layer");
-
-    if (JS_IsObject(localValue))
-    {
-        source.local.clear();
-
-        JSPropertyEnum* properties = nullptr;
-        uint32_t propertyCount = 0;
-
-        if (JS_GetOwnPropertyNames(
-            context,
-            &properties,
-            &propertyCount,
-            localValue,
-            JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
-        ) >= 0)
-        {
-            for (uint32_t i = 0; i < propertyCount; ++i)
-            {
-                JSAtom atom =
-                    properties[i].atom;
-
-                const char* key =
-                    JS_AtomToCString(context, atom);
-
-                JSValue value =
-                    JS_GetProperty(context, localValue, atom);
-
-                double number = 0.0;
-
-                if (key != nullptr && JS_ToFloat64(context, &number, value) == 0)
-                {
-                    source.local[key] = number;
-                }
-
-                JS_FreeValue(context, value);
-                if (key != nullptr)
-                {
-                    JS_FreeCString(context, key);
-                }
-                JS_FreeAtom(context, atom);
-            }
-
-            js_free(context, properties);
-        }
-    }
-
-    bool alive = JS_ToBool(context, aliveValue);
-    bool attached = JS_ToBool(context, attachedValue);
-    double x = source.position.x;
-    double y = source.position.y;
-    double speed = source.speed;
-    double angle = source.angle;
-    double velocityX = source.velocity.x;
-    double velocityY = source.velocity.y;
-    double width = source.size.x;
-    double height = source.size.y;
-    int32_t layer = source.layer;
-
-    JS_ToFloat64(context, &x, xValue);
-    JS_ToFloat64(context, &y, yValue);
-    JS_ToFloat64(context, &speed, speedValue);
-    JS_ToFloat64(context, &angle, angleValue);
-    JS_ToFloat64(context, &velocityX, velocityXValue);
-    JS_ToFloat64(context, &velocityY, velocityYValue);
-    JS_ToInt32(context, &layer, layerValue);
-
-    if (JS_ToFloat64(context, &width, widthValue) == 0)
-    {
-        source.size.x =
-            static_cast<float>(width);
-    }
-
-    if (JS_ToFloat64(context, &height, heightValue) == 0)
-    {
-        source.size.y =
-            static_cast<float>(height);
-    }
-
-    const bool runtimeAliveBeforeApply =
-        source.alive;
-
-    if (
-        !keepOnlyRuntimeId.empty() &&
-        source.runtimeId != keepOnlyRuntimeId &&
-        !runtimeAliveBeforeApply
-        )
-    {
-        alive = false;
-    }
-
-    source.alive = alive;
-    source.attached = attached;
-    source.position.x = static_cast<float>(x);
-    source.position.y = static_cast<float>(y);
-    source.speed = static_cast<float>(speed);
-    source.angle = static_cast<float>(angle);
-    source.velocity.x = static_cast<float>(velocityX);
-    source.velocity.y = static_cast<float>(velocityY);
-    source.layer = layer;
-
-    JS_FreeValue(context, localValue);
-    JS_FreeValue(context, aliveValue);
-    JS_FreeValue(context, attachedValue);
-    JS_FreeValue(context, xValue);
-    JS_FreeValue(context, yValue);
-    JS_FreeValue(context, speedValue);
-    JS_FreeValue(context, angleValue);
-    JS_FreeValue(context, velocityXValue);
-    JS_FreeValue(context, velocityYValue);
-    JS_FreeValue(context, widthValue);
-    JS_FreeValue(context, heightValue);
-    JS_FreeValue(context, layerValue);
+    killObjectFunction =
+        function;
 }
 
-void ScriptEngine::applyGlobalObject(JSValue globalObject)
+void ScriptEngine::killObject(const std::string& runtimeId)
 {
-    if (!JS_IsObject(globalObject))
+    if (!killObjectFunction)
     {
         return;
     }
 
-    globalState.clear();
+    killObjectFunction(runtimeId);
 
-    JSPropertyEnum* properties = nullptr;
-    uint32_t propertyCount = 0;
+    if (hasActiveScriptInvocation())
+    {
+        invalidScriptObjectReferences.insert(runtimeId);
+    }
+}
 
-    if (JS_GetOwnPropertyNames(
-        context,
-        &properties,
-        &propertyCount,
-        globalObject,
-        JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY
-    ) < 0)
+void ScriptEngine::setShowObjectFunction(
+    ObjectRuntimeFunction function
+)
+{
+    showObjectFunction =
+        function;
+}
+
+void ScriptEngine::showObject(const std::string& runtimeId)
+{
+    if (!showObjectFunction)
     {
         return;
     }
 
-    for (uint32_t i = 0; i < propertyCount; ++i)
-    {
-        JSAtom atom =
-            properties[i].atom;
-
-        const char* key =
-            JS_AtomToCString(context, atom);
-
-        JSValue value =
-            JS_GetProperty(context, globalObject, atom);
-
-        double number = 0.0;
-
-        if (
-            key != nullptr &&
-            JS_ToFloat64(context, &number, value) == 0
-            )
-        {
-            globalState[key] = number;
-        }
-
-        JS_FreeValue(context, value);
-
-        if (key != nullptr)
-        {
-            JS_FreeCString(context, key);
-        }
-
-        JS_FreeAtom(context, atom);
-    }
-
-    js_free(context, properties);
+    showObjectFunction(runtimeId);
 }
 
-void ScriptEngine::exposeGlobalObject(JSValue globalObject)
+void ScriptEngine::setHideObjectFunction(
+    ObjectRuntimeFunction function
+)
 {
-    JSValue jsGlobal =
-        JS_GetGlobalObject(context);
-
-    JS_SetPropertyStr(
-        context,
-        jsGlobal,
-        "global",
-        JS_DupValue(context, globalObject)
-    );
-
-    JS_FreeValue(context, jsGlobal);
+    hideObjectFunction =
+        function;
 }
 
-JSValue ScriptEngine::createGlobalObject()
+void ScriptEngine::hideObject(const std::string& runtimeId)
 {
-    JSValue globalObject =
-        JS_NewObject(context);
-
-    for (const auto& entry : globalState)
+    if (!hideObjectFunction)
     {
-        JS_SetPropertyStr(
-            context,
-            globalObject,
-            entry.first.c_str(),
-            JS_NewFloat64(
-                context,
-                entry.second
-            )
-        );
+        return;
     }
 
-    return globalObject;
+    hideObjectFunction(runtimeId);
+}
+
+uint64_t ScriptEngine::beginScriptInvocation()
+{
+    const uint64_t invocationId =
+        nextScriptInvocationId++;
+
+    activeScriptInvocationId =
+        invocationId;
+
+    return invocationId;
+}
+
+void ScriptEngine::endScriptInvocation(
+    uint64_t invocationId
+)
+{
+    if (activeScriptInvocationId == invocationId)
+    {
+        activeScriptInvocationId = 0;
+    }
+
+    activeScriptObjects.clear();
+    invalidScriptObjectReferences.clear();
 }
 
 JSValue ScriptEngine::createJsObject(RuntimeObject& object)
@@ -880,219 +1283,73 @@ JSValue ScriptEngine::createJsObject(RuntimeObject& object)
     JSValue self =
         JS_NewObject(context);
 
-    JSValue local =
-        JS_NewObject(context);
+    const uint64_t invocationId =
+        currentScriptInvocationId();
 
-    for (const auto& pair : object.local)
-    {
-        JS_SetPropertyStr(
-            context,
-            local,
-            pair.first.c_str(),
-            JS_NewFloat64(context, pair.second)
-        );
-    }
-
-    JS_SetPropertyStr(
+    defineRuntimeViewInternalValue(
         context,
         self,
-        "local",
-        local
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "name",
-        JS_NewString(context, object.name.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "id",
+        RuntimeViewInternalId,
         JS_NewString(context, object.runtimeId.c_str())
     );
 
-    JS_SetPropertyStr(
+    defineRuntimeViewInternalValue(
         context,
         self,
-        "alive",
-        JS_NewBool(context, object.alive)
+        RuntimeViewInternalInvocation,
+        JS_NewInt64(context, static_cast<int64_t>(invocationId))
     );
 
-    JS_SetPropertyStr(
-        context,
-        self,
-        "attached",
-        JS_NewBool(context, object.attached)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "group",
-        JS_NewString(context, object.group.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "role",
-        JS_NewString(context, object.role.c_str())
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "layer",
-        JS_NewInt32(context, object.layer)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "x",
-        JS_NewFloat64(context, object.position.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "previousX",
-        JS_NewFloat64(context, object.previousPosition.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "y",
-        JS_NewFloat64(context, object.position.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "previousY",
-        JS_NewFloat64(context, object.previousPosition.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "width",
-        JS_NewFloat64(context, object.size.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "height",
-        JS_NewFloat64(context, object.size.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "speed",
-        JS_NewFloat64(context, object.speed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "angle",
-        JS_NewFloat64(context, object.angle)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originX",
-        JS_NewFloat64(context, object.origin.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originY",
-        JS_NewFloat64(context, object.origin.y)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "originSpeed",
-        JS_NewFloat64(context, object.originSpeed)
-    );
-
-    JSValue motion =
-        JS_NewObject(context);
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "speed",
-        JS_NewFloat64(context, object.speed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "angle",
-        JS_NewFloat64(context, object.angle)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "rotationSpeed",
-        JS_NewFloat64(context, object.rotationSpeed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "acceleration",
-        JS_NewFloat64(context, object.acceleration)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "inertia",
-        JS_NewFloat64(context, object.inertia)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        motion,
-        "maxSpeed",
-        JS_NewFloat64(context, object.maxSpeed)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "motion",
-        motion
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "velocityX",
-        JS_NewFloat64(context, object.velocity.x)
-    );
-
-    JS_SetPropertyStr(
-        context,
-        self,
-        "velocityY",
-        JS_NewFloat64(context, object.velocity.y)
-    );
+    defineRuntimeViewGetter(context, self, "id", object.runtimeId, invocationId, RuntimeViewId);
+    defineRuntimeViewGetter(context, self, "name", object.runtimeId, invocationId, RuntimeViewName);
+    defineRuntimeViewGetter(context, self, "group", object.runtimeId, invocationId, RuntimeViewGroup);
+    defineRuntimeViewGetter(context, self, "alive", object.runtimeId, invocationId, RuntimeViewAlive);
+    defineRuntimeViewGetter(context, self, "visible", object.runtimeId, invocationId, RuntimeViewVisible);
+    defineRuntimeViewGetter(context, self, "x", object.runtimeId, invocationId, RuntimeViewX);
+    defineRuntimeViewGetter(context, self, "y", object.runtimeId, invocationId, RuntimeViewY);
+    defineRuntimeViewGetter(context, self, "width", object.runtimeId, invocationId, RuntimeViewWidth);
+    defineRuntimeViewGetter(context, self, "height", object.runtimeId, invocationId, RuntimeViewHeight);
+    defineRuntimeViewGetter(context, self, "speed", object.runtimeId, invocationId, RuntimeViewSpeed);
+    defineRuntimeViewGetter(context, self, "angle", object.runtimeId, invocationId, RuntimeViewAngle);
+    defineRuntimeViewGetter(context, self, "velocityX", object.runtimeId, invocationId, RuntimeViewVelocityX);
+    defineRuntimeViewGetter(context, self, "velocityY", object.runtimeId, invocationId, RuntimeViewVelocityY);
+    defineRuntimeViewGetter(context, self, "rotationSpeed", object.runtimeId, invocationId, RuntimeViewRotationSpeed);
+    defineRuntimeViewGetter(context, self, "depth", object.runtimeId, invocationId, RuntimeViewDepth);
+    defineRuntimeViewIgnoredProperty(context, self, "attached");
+    defineRuntimeViewIgnoredProperty(context, self, "layer");
+    defineRuntimeViewIgnoredProperty(context, self, "local");
+    JS_PreventExtensions(context, self);
 
     return self;
+}
+
+JSValue ScriptEngine::createRuntimeObjectView(RuntimeObject& object)
+{
+    return createJsObject(object);
+}
+
+void ScriptEngine::writeGlobalValue(
+    const std::string& key,
+    const ScriptValue& value
+)
+{
+    globalState[key] =
+        value;
+}
+
+std::optional<ScriptValue> ScriptEngine::readGlobalValue(
+    const std::string& key
+) const
+{
+    const auto it =
+        globalState.find(key);
+
+    if (it == globalState.end())
+    {
+        return std::nullopt;
+    }
+
+    return it->second;
 }
 
 void ScriptEngine::setScreenScale(int scale)
@@ -1109,6 +1366,12 @@ void ScriptEngine::setVideoChip(const VideoChipDefinition* nextVideoChip)
 {
     videoChip =
         nextVideoChip;
+}
+
+void ScriptEngine::setDrawingContext(DrawingContext* nextDrawingContext)
+{
+    drawingContext =
+        nextDrawingContext;
 }
 
 Color ScriptEngine::parseColor(
@@ -1135,6 +1398,127 @@ Color ScriptEngine::projectColor(Color color) const
         color,
         *videoChip
     );
+}
+
+bool ScriptEngine::drawWorldPixel(Vector2 point, Color color)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldPixel(point, color);
+}
+
+bool ScriptEngine::drawLocalPixel(
+    const RuntimeObject& reference,
+    Vector2 point,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalPixel(reference, point, color);
+}
+
+bool ScriptEngine::drawWorldLine(
+    Vector2 start,
+    Vector2 end,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldLine(start, end, color);
+}
+
+bool ScriptEngine::drawLocalLine(
+    const RuntimeObject& reference,
+    Vector2 start,
+    Vector2 end,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalLine(reference, start, end, color);
+}
+
+bool ScriptEngine::drawWorldRectangle(
+    Vector2 center,
+    Vector2 size,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldRectangle(center, size, color);
+}
+
+bool ScriptEngine::drawLocalRectangle(
+    const RuntimeObject& reference,
+    Vector2 center,
+    Vector2 size,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalRectangle(reference, center, size, color);
+}
+
+bool ScriptEngine::drawWorldText(
+    Vector2 center,
+    const std::string& text,
+    int fontSize,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitWorldText(center, text, fontSize, color);
+}
+
+bool ScriptEngine::drawLocalText(
+    const RuntimeObject& reference,
+    Vector2 center,
+    const std::string& text,
+    int fontSize,
+    Color color
+)
+{
+    if (drawingContext == nullptr)
+    {
+        Logger::warning("graphics", "Immediate drawing requires an active draw() context");
+        return false;
+    }
+
+    return drawingContext->emitLocalText(reference, center, text, fontSize, color);
 }
 
 void ScriptEngine::setFrameDelta(float delta)

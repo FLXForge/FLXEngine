@@ -1,0 +1,89 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 70,
+    "y": 65
+  },
+  "children": {
+    "purplebrick": {
+      "like": "brick.json",
+      "visual": {
+        "color": "purple",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "redbrick": {
+      "like": "brick.json",
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "bluebrick": {
+      "like": "brick.json",
+      "visual": {
+        "color": "blue",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "yellowbrick": {
+      "like": "brick.json",
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  },
+  "creation": {
+    "mode": "grid",
+    "rules": {
+      "rows": 8,
+      "columns": 13,
+      "cellWidth": 40,
+      "cellHeight": 15
+    },
+    "pattern": [
+      [
+        "purplebrick"
+      ],
+      [
+        "redbrick",
+        "bluebrick"
+      ],
+      [
+        "redbrick",
+        "bluebrick"
+      ],
+      [
+        "yellowbrick"
+      ],
+      [
+        "bluebrick",
+        "redbrick"
+      ],
+      [
+        "redbrick",
+        "bluebrick"
+      ],
+      [
+        "yellowbrick"
+      ]
+    ]
+  }
+}

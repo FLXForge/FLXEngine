@@ -6,6 +6,7 @@
 #include <raylib.h>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 Engine::Engine()
     : world(std::make_unique<RuntimeWorld>())
@@ -17,17 +18,45 @@ namespace
     constexpr float MaxFrameDelta =
         1.0f / 30.0f;
 
-    Rectangle renderDestination(
-        const FlxContext& context
+    constexpr int HostTargetFps =
+        60;
+
+    int effectiveOutputScale(
+        const FlxContext& context,
+        const RunOptions& options
     )
     {
-        if (context.windowMode != "fullscreen")
+        return options.scaleOverride.value_or(
+            context.machine.video.outputScale
+        );
+    }
+
+    bool fullscreenRequested(const RunOptions& options)
+    {
+        return options.windowMode == WindowMode::Fullscreen;
+    }
+
+    Rectangle renderDestination(
+        const FlxContext& context,
+        const RunOptions& options
+    )
+    {
+        const int screenWidth =
+            context.machine.video.screenWidth;
+
+        const int screenHeight =
+            context.machine.video.screenHeight;
+
+        const int screenScale =
+            effectiveOutputScale(context, options);
+
+        if (!fullscreenRequested(options))
         {
             return Rectangle{
                 0.0f,
                 0.0f,
-                static_cast<float>(context.screenWidth * context.screenScale),
-                static_cast<float>(context.screenHeight * context.screenScale)
+                static_cast<float>(screenWidth * screenScale),
+                static_cast<float>(screenHeight * screenScale)
             };
         }
 
@@ -38,10 +67,10 @@ namespace
             static_cast<float>(GetScreenHeight());
 
         const float horizontalScale =
-            windowWidth / static_cast<float>(context.screenWidth);
+            windowWidth / static_cast<float>(screenWidth);
 
         const float verticalScale =
-            windowHeight / static_cast<float>(context.screenHeight);
+            windowHeight / static_cast<float>(screenHeight);
 
         float scale =
             std::min(horizontalScale, verticalScale);
@@ -58,10 +87,10 @@ namespace
         }
 
         const float width =
-            static_cast<float>(context.screenWidth) * scale;
+            static_cast<float>(screenWidth) * scale;
 
         const float height =
-            static_cast<float>(context.screenHeight) * scale;
+            static_cast<float>(screenHeight) * scale;
 
         return Rectangle{
             (windowWidth - width) * 0.5f,
@@ -72,13 +101,38 @@ namespace
     }
 }
 
-void Engine::run(const CompiledProject& project, int maxFrames)
+EngineResult Engine::run(
+    const CompiledProject& project,
+    const RunOptions& options
+)
 {
+    EngineResult result;
+
+    if (hasRun)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::EngineAlreadyRun,
+            "Engine instance can only run one project",
+            "engine"
+        );
+
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return result;
+    }
+
+    hasRun = true;
     SetTraceLogCallback(Logger::rayLibLog);
 
-    init(project);
+    if (!init(project, options, result))
+    {
+        shutdown();
+        return result;
+    }
 
-    int frameCount = 0;
+    const int maxFrames =
+        options.maxFrames.value_or(-1);
 
     while (!WindowShouldClose() && !scriptEngine.exitRequested())
     {
@@ -91,33 +145,74 @@ void Engine::run(const CompiledProject& project, int maxFrames)
 
         draw();
 
-        ++frameCount;
+        ++result.framesExecuted;
 
-        if (maxFrames >= 0 && frameCount >= maxFrames)
+        if (maxFrames >= 0 && result.framesExecuted >= maxFrames)
         {
+            result.exitReason =
+                EngineExitReason::FrameLimitReached;
+
             break;
         }
     }
 
+    if (scriptEngine.exitRequested())
+    {
+        result.exitReason =
+            EngineExitReason::ScriptRequestedExit;
+    }
+    else if (result.exitReason != EngineExitReason::FrameLimitReached)
+    {
+        result.exitReason =
+            EngineExitReason::WindowClosed;
+    }
+
+    result.success =
+        !result.diagnostics.hasErrors();
+
     shutdown();
+
+    return result;
 }
 
-void Engine::init(const CompiledProject& project)
+bool Engine::init(
+    const CompiledProject& project,
+    const RunOptions& options,
+    EngineResult& result
+)
 {
-    loadProject(project);
+    if (!loadProject(
+        project,
+        options,
+        result
+    ))
+    {
+        return false;
+    }
 
-    SetTargetFPS(60);
+    SetTargetFPS(HostTargetFps);
+
+    return true;
 }
 
-void Engine::loadProject(const CompiledProject& project)
+bool Engine::loadProject(
+    const CompiledProject& project,
+    const RunOptions& options,
+    EngineResult& result
+)
 {
     context =
         project.context;
 
-    Logger::setConsoleEnabled(context.debugConsole);
-    Logger::setDebugEnabled(context.debugLogs);
+    runOptions =
+        options;
+
+    world->setCollisionDebugEnabled(runOptions.debugCollisions);
+
+    Logger::setConsoleEnabled(runOptions.debugConsole);
+    Logger::setDebugEnabled(runOptions.debugLogs);
     SetTraceLogLevel(
-        context.debugConsole
+        runOptions.debugConsole
         ? LOG_ALL
         : LOG_NONE
     );
@@ -127,64 +222,171 @@ void Engine::loadProject(const CompiledProject& project)
         "Loaded project: " + context.name
     );
 
-    Logger::info(
-        "project",
-        "Loaded root: " + project.rootPath
-    );
+    if (!validateVideoOutput(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
 
-    initWindow();
-    initVideoOutput();
+        return false;
+    }
+
+    if (!initWindow(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return false;
+    }
+
+    if (!initVideoOutput(result))
+    {
+        result.exitReason =
+            EngineExitReason::InitializationFailed;
+
+        return false;
+    }
+
     audioSystem.configure(context.machine.audio);
     audioSystem.init();
+    audioInitialized = true;
     inputSystem.configure(context.machine.input);
-
-    if (!context.inputMappingContent.empty())
-    {
-        inputSystem.loadMappingContent(
-            context.inputMappingSourceName,
-            context.inputMappingContent
-        );
-    }
-    else
-    {
-        inputSystem.loadMapping(context.inputMappingPath);
-    }
+    inputSystem.setMapping(context.inputMapping);
 
     scriptEngine.setScreenScale(1);
     configureScriptEngine();
-    world->load(project, scriptEngine);
+
+    RuntimeLoadResult loadResult =
+        world->load(project, scriptEngine);
+
+    result.diagnostics.append(loadResult.diagnostics);
+
+    if (!loadResult.success)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Runtime world could not be loaded",
+            "engine",
+            "runtime"
+        );
+
+        result.exitReason =
+            EngineExitReason::RuntimeLoadFailed;
+
+        return false;
+    }
+
+    return true;
 }
 
-void Engine::initWindow()
+bool Engine::validateVideoOutput(EngineResult& result) const
+{
+    const int screenWidth =
+        context.machine.video.screenWidth;
+
+    const int screenHeight =
+        context.machine.video.screenHeight;
+
+    const int screenScale =
+        effectiveOutputScale(context, runOptions);
+
+    if (screenWidth <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video screen width must be greater than zero",
+            "engine",
+            "video.screen.width"
+        );
+    }
+
+    if (screenHeight <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video screen height must be greater than zero",
+            "engine",
+            "video.screen.height"
+        );
+    }
+
+    if (screenScale <= 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::InvalidVideoOutputConfiguration,
+            "Video output scale must be greater than zero",
+            "engine",
+            "video.output.scale"
+        );
+    }
+
+    if (!result.diagnostics.hasErrors())
+    {
+        const int maxInt =
+            std::numeric_limits<int>::max();
+
+        if (screenWidth > maxInt / screenScale)
+        {
+            result.diagnostics.error(
+                DiagnosticCode::InvalidVideoOutputConfiguration,
+                "Window width overflows integer range",
+                "engine",
+                "video.screen.width"
+            );
+        }
+
+        if (screenHeight > maxInt / screenScale)
+        {
+            result.diagnostics.error(
+                DiagnosticCode::InvalidVideoOutputConfiguration,
+                "Window height overflows integer range",
+                "engine",
+                "video.screen.height"
+            );
+        }
+    }
+
+    return !result.diagnostics.hasErrors();
+}
+
+bool Engine::initWindow(EngineResult& result)
 {
     const std::string title =
-        context.screenTitle.empty()
+        context.title.empty()
         ? "Flx"
-        : context.screenTitle;
+        : context.title;
+
+    const int screenWidth =
+        context.machine.video.screenWidth;
+
+    const int screenHeight =
+        context.machine.video.screenHeight;
+
+    const int screenScale =
+        effectiveOutputScale(context, runOptions);
 
     Logger::info(
         "graphics",
         "Window size: " +
         std::to_string(
-            context.windowMode == "fullscreen"
+            fullscreenRequested(runOptions)
             ? GetMonitorWidth(0)
-            : context.screenWidth * context.screenScale
+            : screenWidth * screenScale
         ) +
         "x" +
         std::to_string(
-            context.windowMode == "fullscreen"
+            fullscreenRequested(runOptions)
             ? GetMonitorHeight(0)
-            : context.screenHeight * context.screenScale
+            : screenHeight * screenScale
         )
     );
 
     int windowWidth =
-        context.screenWidth * context.screenScale;
+        screenWidth * screenScale;
 
     int windowHeight =
-        context.screenHeight * context.screenScale;
+        screenHeight * screenScale;
 
-    if (context.windowMode == "fullscreen")
+    if (fullscreenRequested(runOptions))
     {
         SetConfigFlags(FLAG_FULLSCREEN_MODE);
 
@@ -200,9 +402,25 @@ void Engine::initWindow()
         windowHeight,
         title.c_str()
     );
+
+    if (!IsWindowReady())
+    {
+        result.diagnostics.error(
+            DiagnosticCode::WindowInitializationFailed,
+            "Window could not be initialized",
+            "engine",
+            "window"
+        );
+
+        return false;
+    }
+
+    windowInitialized = true;
+
+    return true;
 }
 
-void Engine::initVideoOutput()
+bool Engine::initVideoOutput(EngineResult& result)
 {
     backgroundColor =
         ColorParser::parse(
@@ -219,18 +437,30 @@ void Engine::initVideoOutput()
     Logger::info(
         "graphics",
         "Logical screen: " +
-        std::to_string(context.screenWidth) +
+        std::to_string(context.machine.video.screenWidth) +
         "x" +
-        std::to_string(context.screenHeight) +
+        std::to_string(context.machine.video.screenHeight) +
         " scale " +
-        std::to_string(context.screenScale)
+        std::to_string(effectiveOutputScale(context, runOptions))
     );
 
     renderTarget =
         LoadRenderTexture(
-            context.screenWidth,
-            context.screenHeight
+            context.machine.video.screenWidth,
+            context.machine.video.screenHeight
         );
+
+    if (renderTarget.id == 0 || renderTarget.texture.id == 0)
+    {
+        result.diagnostics.error(
+            DiagnosticCode::RenderTargetInitializationFailed,
+            "Render target could not be initialized",
+            "engine",
+            "renderTarget"
+        );
+
+        return false;
+    }
 
     renderTargetLoaded = true;
 
@@ -240,6 +470,8 @@ void Engine::initVideoOutput()
         ? TEXTURE_FILTER_BILINEAR
         : TEXTURE_FILTER_POINT
     );
+
+    return true;
 }
 
 void Engine::configureScriptEngine()
@@ -256,10 +488,31 @@ void Engine::configureScriptEngine()
         }
     );
 
+    scriptEngine.setFindObjectsByNameFunction(
+        [this](const std::string& name)
+        {
+            return world->findAllLiveByName(name);
+        }
+    );
+
     scriptEngine.setFindObjectByIdFunction(
         [this](const std::string& id)
         {
             return world->findByRuntimeId(id);
+        }
+    );
+
+    scriptEngine.setFindParentFunction(
+        [this](const std::string& runtimeId)
+        {
+            return world->findLiveParent(runtimeId);
+        }
+    );
+
+    scriptEngine.setFindChildrenFunction(
+        [this](const std::string& runtimeId)
+        {
+            return world->findLiveChildren(runtimeId);
         }
     );
 
@@ -277,15 +530,24 @@ void Engine::configureScriptEngine()
         }
     );
 
+    scriptEngine.setCreationActiveFunction(
+        [this](const RuntimeObject& object)
+        {
+            return world->creationActive(object);
+        }
+    );
+
     scriptEngine.setRayCastFunction(
         [this](
             RuntimeObject& source,
+            ScriptEngine& activeScriptEngine,
             float angle,
             float distance
             )
         {
             return world->rayCast(
                 source,
+                activeScriptEngine,
                 angle,
                 distance
             );
@@ -298,6 +560,27 @@ void Engine::configureScriptEngine()
             world->keepOnly(runtimeId);
         }
     );
+
+    scriptEngine.setKillObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->kill(runtimeId);
+        }
+    );
+
+    scriptEngine.setShowObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->show(runtimeId);
+        }
+    );
+
+    scriptEngine.setHideObjectFunction(
+        [this](const std::string& runtimeId)
+        {
+            world->hide(runtimeId);
+        }
+    );
 }
 
 void Engine::update()
@@ -307,17 +590,10 @@ void Engine::update()
 
     scriptEngine.setFrameDelta(delta);
 
-    inputSystem.update(
-        delta,
-        context.screenWidth,
-        context.screenHeight,
-        renderDestination(context)
-    );
+    inputSystem.update(delta);
 
     world->update(
         scriptEngine,
-        static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight),
         delta
     );
 
@@ -334,14 +610,14 @@ void Engine::draw()
     world->draw(
         scriptEngine,
         1,
-        static_cast<float>(context.screenWidth),
-        static_cast<float>(context.screenHeight),
-        context.debugCollisions
+        static_cast<float>(context.machine.video.screenWidth),
+        static_cast<float>(context.machine.video.screenHeight),
+        runOptions.debugCollisions
     );
 
     fadeSystem.draw(
-        context.screenWidth,
-        context.screenHeight,
+        context.machine.video.screenWidth,
+        context.machine.video.screenHeight,
         1
     );
 
@@ -359,7 +635,7 @@ void Engine::draw()
             static_cast<float>(renderTarget.texture.width),
             static_cast<float>(-renderTarget.texture.height)
         },
-        renderDestination(context),
+        renderDestination(context, runOptions),
         Vector2{ 0.0f, 0.0f },
         0.0f,
         WHITE
@@ -371,8 +647,22 @@ void Engine::draw()
 void Engine::shutdown()
 {
     shutdownVideoOutput();
-    audioSystem.shutdown();
-    CloseWindow();
+
+    if (audioInitialized)
+    {
+        audioSystem.shutdown();
+        audioInitialized = false;
+    }
+
+    if (windowInitialized)
+    {
+        CloseWindow();
+        windowInitialized = false;
+    }
+
+    Logger::setDebugEnabled(false);
+    Logger::setConsoleEnabled(false);
+    SetTraceLogLevel(LOG_INFO);
 }
 
 void Engine::shutdownVideoOutput()
@@ -384,11 +674,6 @@ void Engine::shutdownVideoOutput()
 
     UnloadRenderTexture(renderTarget);
     renderTargetLoaded = false;
-}
-
-RuntimeObject* Engine::find(const std::string& name)
-{
-    return world->findByName(name);
 }
 
 float Engine::safeFrameDelta() const

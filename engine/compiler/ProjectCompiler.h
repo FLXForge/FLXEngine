@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <string>
 
+struct ProjectManifest;
+
 class ProjectCompiler
 {
 public:
@@ -23,13 +25,14 @@ private:
         const std::filesystem::path& projectRoot
     );
 
-    static ObjectDefinition compileDefinition(
+    static void compileDefinition(
         const ObjectDefinition& definition,
         const VideoChipDefinition& video,
         ResourceRegistry& registry,
         Diagnostics& diagnostics,
         std::unordered_set<ResourceId>& compiling,
-        const std::filesystem::path& projectRoot
+        const std::filesystem::path& projectRoot,
+        const std::filesystem::path& worldRoot
     );
 
     static void resolveScripts(
@@ -37,7 +40,8 @@ private:
         ResourceRegistry& registry,
         Diagnostics& diagnostics,
         const std::string& sourcePath,
-        const std::filesystem::path& projectRoot
+        const std::filesystem::path& projectRoot,
+        const std::filesystem::path& worldRoot
     );
 
     static std::string relativeSourceName(
@@ -47,8 +51,22 @@ private:
 
     static std::string readTextFile(const std::string& path);
 
-    static void compileInputMapping(
-        FlxContext& context,
+    static std::filesystem::path resolveFrom(
+        const std::filesystem::path& basePath,
+        const std::string& value
+    );
+
+    static FlxContext makeCompiledContext(
+        const ProjectManifest& manifest,
+        const std::filesystem::path& manifestDirectory,
         Diagnostics& diagnostics
     );
+
+    static void compileInputMapping(
+        FlxContext& context,
+        const std::string& inputMappingPath,
+        const std::filesystem::path& manifestDirectory,
+        Diagnostics& diagnostics
+    );
+
 };

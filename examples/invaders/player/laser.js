@@ -12,3 +12,10 @@ function motion(laser){
         kill(laser);
     }
 }
+
+function collision(laser, invader){
+    kill(laser);
+    kill(invader);
+
+    write_global("score", read_global("score") + 100);
+}

@@ -1,13 +1,35 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(FLXEngine VERSION 0.0.1 LANGUAGES C CXX)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" FLX_VERSION)
+string(STRIP "${FLX_VERSION}" FLX_VERSION)
+
+if(NOT FLX_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "VERSION must contain only a semantic version in X.Y.Z format")
+endif()
+
+string(REPLACE "." ";" FLX_VERSION_PARTS "${FLX_VERSION}")
+list(GET FLX_VERSION_PARTS 0 FLX_VERSION_MAJOR)
+list(GET FLX_VERSION_PARTS 1 FLX_VERSION_MINOR)
+list(GET FLX_VERSION_PARTS 2 FLX_VERSION_PATCH)
+
+project(FLX VERSION ${FLX_VERSION} LANGUAGES C CXX)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FlxVersion.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/FlxVersion.h"
+    @ONLY
+)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+endif()
+
 option(
     FLX_WINDOWS_SUBSYSTEM
-    "Build FlxEngine as a Windows subsystem executable without a console window"
+    "Build flx as a Windows subsystem executable without a console window"
     OFF
 )
 
@@ -116,25 +138,63 @@ if(M_LIBRARIES)
     target_link_libraries(qjs PUBLIC ${M_LIBRARIES})
 endif()
 
-add_executable(FlxEngine
+add_executable(flx
     FLXEngine.cpp
-    FLXEngine.h
+
+    engine/cli/CliApplication.h
+    engine/cli/CliApplication.cpp
+    engine/cli/CliArguments.h
+    engine/cli/CliExitCode.h
+    engine/cli/CliParser.h
+    engine/cli/CliParser.cpp
+    engine/cli/DiagnosticPrinter.h
+    engine/cli/DiagnosticPrinter.cpp
+    engine/cli/ProjectResolver.h
+    engine/cli/ProjectResolver.cpp
+    engine/cli/commands/CompileCommand.h
+    engine/cli/commands/CompileCommand.cpp
+    engine/cli/commands/HelpCommand.h
+    engine/cli/commands/HelpCommand.cpp
+    engine/cli/commands/RunCommand.h
+    engine/cli/commands/RunCommand.cpp
+    engine/cli/commands/RunCompiledCommand.h
+    engine/cli/commands/RunCompiledCommand.cpp
+    engine/cli/commands/ValidateCommand.h
+    engine/cli/commands/ValidateCommand.cpp
+    engine/cli/commands/VersionCommand.h
+    engine/cli/commands/VersionCommand.cpp
 
     engine/core/Engine.h
     engine/core/Engine.cpp
+    engine/core/EngineResult.h
+    engine/core/RunOptions.h
     engine/compiler/CompiledProject.h
     engine/compiler/CompiledProjectBinary.h
     engine/compiler/CompiledProjectBinary.cpp
-    engine/compiler/Diagnostics.h
-    engine/compiler/Diagnostics.cpp
+    engine/compiler/CompiledProjectValidator.h
+    engine/compiler/CompiledProjectValidator.cpp
+    engine/compiler/binary/BinaryException.h
+    engine/compiler/binary/BinaryLimits.h
+    engine/compiler/binary/BinaryReader.h
+    engine/compiler/binary/BinaryReader.cpp
+    engine/compiler/binary/BinaryWriter.h
+    engine/compiler/binary/BinaryWriter.cpp
+    engine/compiler/binary/CompiledProjectCodec.h
+    engine/compiler/binary/CompiledProjectCodec.cpp
+    engine/diagnostics/Diagnostics.h
+    engine/diagnostics/Diagnostics.cpp
     engine/compiler/ResourceRegistry.h
     engine/compiler/ResourceRegistry.cpp
     engine/compiler/ProjectCompiler.h
     engine/compiler/ProjectCompiler.cpp
 
     engine/runtime/RuntimeObject.h
+    engine/runtime/ScriptValue.h
     engine/runtime/RuntimeObject.cpp 
     engine/runtime/ObjectDefinition.h
+    engine/runtime/WorldExtent.h
+    engine/runtime/AttachmentRuntimeState.h
+    engine/runtime/AttachmentRuntimeState.cpp
     engine/runtime/RuntimeObjectBuilder.h
     engine/runtime/RuntimeObjectBuilder.cpp
     engine/runtime/RuntimeWorld.h
@@ -151,12 +211,29 @@ add_executable(FlxEngine
     engine/audio/AudioSystem.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
+    engine/collision/CollisionContact.h
+    engine/collision/CollisionDebugFrame.h
+    engine/collision/CollisionGeometry.h
+    engine/collision/CollisionGeometry.cpp
+    engine/collision/EffectiveCollider.h
+    engine/collision/EffectiveColliderBuilder.h
+    engine/collision/EffectiveColliderBuilder.cpp
+    engine/input/InputMapping.h
+    engine/input/InputMappingLoader.h
+    engine/input/InputMappingLoader.cpp
     engine/input/InputSystem.h
     engine/input/InputSystem.cpp
     engine/tools/ColorParser.h
     engine/tools/ColorParser.cpp
     engine/tools/TextTools.h
     engine/tools/TextTools.cpp
+    engine/graphics/VisualPrimitive.h
+    engine/graphics/DrawingContext.h
+    engine/graphics/DrawingContext.cpp
+    engine/graphics/RepresentationPrimitiveBuilder.h
+    engine/graphics/RepresentationPrimitiveBuilder.cpp
+    engine/graphics/DrawingRenderer.h
+    engine/graphics/DrawingRenderer.cpp
     engine/graphics/FadeSystem.h
     engine/graphics/FadeSystem.cpp
     engine/machine/MachineDefinition.h
@@ -169,8 +246,9 @@ add_executable(FlxEngine
     engine/loading/JsonLoader.h
     engine/loading/JsonLoader.cpp
     engine/project/FlxContext.h
-    engine/project/FlxContextBuilder.h
-    engine/project/FlxContextBuilder.cpp
+    engine/project/ProjectManifest.h
+    engine/project/ProjectManifestLoader.h
+    engine/project/ProjectManifestLoader.cpp
     engine/scripting/ScriptEngine.h
     engine/scripting/ScriptEngine.cpp 
     engine/scripting/ScriptBindings.h
@@ -198,20 +276,21 @@ add_executable(FlxEngine
 
 if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
     set_target_properties(
-        FlxEngine
+        flx
         PROPERTIES
         WIN32_EXECUTABLE ON
     )
 endif()
 
 target_include_directories(
-    FlxEngine
+    flx
     PRIVATE
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
     ${quickjs_SOURCE_DIR}
 )
 
 target_link_libraries(
-    FlxEngine
+    flx
     PRIVATE
     raylib
     nlohmann_json::nlohmann_json
@@ -221,37 +300,127 @@ target_link_libraries(
 
 enable_testing()
 
-get_target_property(FLX_TEST_SOURCES FlxEngine SOURCES)
-list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp FLXEngine.h)
+get_target_property(FLX_TEST_SOURCES flx SOURCES)
+list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp)
 
-add_executable(
-    flx-tests
-    tests/ProjectCompilerTests.cpp
+add_library(
+    flx-test-engine
+    STATIC
     ${FLX_TEST_SOURCES}
 )
 
 target_compile_definitions(
-    flx-tests
-    PRIVATE
-    FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    flx-test-engine
+    PUBLIC
+    FLX_TESTING
 )
 
 target_include_directories(
-    flx-tests
-    PRIVATE
+    flx-test-engine
+    PUBLIC
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
     ${quickjs_SOURCE_DIR}
 )
 
 target_link_libraries(
-    flx-tests
-    PRIVATE
+    flx-test-engine
+    PUBLIC
     raylib
     nlohmann_json::nlohmann_json
     yaml-cpp::yaml-cpp
     qjs
 )
 
+add_library(
+    flx-test-support
+    STATIC
+    tests/support/TestSupport.h
+    tests/support/TestSupport.cpp
+)
+
+target_compile_definitions(
+    flx-test-support
+    PUBLIC
+    FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    FLX_VERSION_TEXT="${FLX_VERSION}"
+)
+
+target_link_libraries(
+    flx-test-support
+    PUBLIC
+    flx-test-engine
+)
+
+function(add_flx_test_suite target_name)
+    add_executable(
+        ${target_name}
+        ${ARGN}
+    )
+
+    target_link_libraries(
+        ${target_name}
+        PRIVATE
+        flx-test-support
+    )
+
+    add_test(
+        NAME ${target_name}
+        COMMAND ${target_name}
+    )
+endfunction()
+
+add_flx_test_suite(flx-cli-parser-tests tests/cli/CliParserTests.cpp)
+add_flx_test_suite(flx-cli-command-tests tests/cli/CliCommandTests.cpp)
+add_flx_test_suite(flx-cli-project-resolver-tests tests/cli/ProjectResolverTests.cpp)
+add_flx_test_suite(flx-cli-diagnostic-printer-tests tests/cli/DiagnosticPrinterTests.cpp)
+add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests.cpp)
+add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
+add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
+add_flx_test_suite(flx-audio-system-tests tests/audio/AudioSystemTests.cpp)
+add_flx_test_suite(flx-input-characterization-tests tests/input/InputCharacterizationTests.cpp)
+add_flx_test_suite(flx-collision-geometry-tests tests/collision/CollisionGeometryTests.cpp)
+add_flx_test_suite(flx-compiler-project-tests tests/compiler/ProjectCompilerTests.cpp)
+add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGraphTests.cpp)
+add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)
+add_flx_test_suite(flx-runtime-compiled-tests tests/runtime/CompiledRuntimeTests.cpp)
+add_flx_test_suite(flx-runtime-lifecycle-tests tests/runtime/RuntimeLifecycleTests.cpp)
+add_flx_test_suite(flx-runtime-drawing-tests tests/runtime/RuntimeDrawingTests.cpp)
+add_flx_test_suite(flx-runtime-mechanics-tests tests/runtime/RuntimeMechanicsTests.cpp)
+add_flx_test_suite(flx-runtime-timer-tests tests/runtime/RuntimeTimerTests.cpp)
+add_flx_test_suite(flx-engine-host-tests tests/runtime/EngineHostTests.cpp)
+add_flx_test_suite(flx-example-smoke-tests tests/examples/ExampleSmokeTests.cpp)
+
 add_test(
-    NAME flx-tests
-    COMMAND flx-tests
+    NAME cli-version
+    COMMAND $<TARGET_FILE:flx> --version
+)
+
+set_tests_properties(
+    cli-version
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "^${FLX_VERSION}"
+)
+
+add_test(
+    NAME cli-help
+    COMMAND $<TARGET_FILE:flx> --help
+)
+
+set_tests_properties(
+    cli-help
+    PROPERTIES
+    PASS_REGULAR_EXPRESSION "Usage:"
+)
+
+add_test(
+    NAME cli-validate-pong
+    COMMAND $<TARGET_FILE:flx> validate "${CMAKE_CURRENT_SOURCE_DIR}/examples/pong.flx"
+)
+
+add_test(
+    NAME cli-invalid-command
+    COMMAND
+        ${CMAKE_COMMAND}
+        -DFLX_CLI=$<TARGET_FILE:flx>
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunCliInvalidCommandTest.cmake"
 )

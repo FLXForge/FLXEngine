@@ -1,7 +1,15 @@
 #include "RuntimeWorld.h"
+#include "AttachmentRuntimeState.h"
+#include "RuntimeHelpers.h"
 #include "RuntimeObjectBuilder.h"
+#include "../collision/CollisionGeometry.h"
+#include "../compiler/CompiledProjectValidator.h"
+#include "../collision/EffectiveColliderBuilder.h"
 #include "../collision/CollisionSystem.h"
 #include "../debug/Logger.h"
+#include "../graphics/DrawingContext.h"
+#include "../graphics/DrawingRenderer.h"
+#include "../graphics/RepresentationPrimitiveBuilder.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
@@ -12,6 +20,86 @@
 
 namespace
 {
+    constexpr size_t MaxLoadSpawnFlushPasses = 128;
+    constexpr size_t MaxLoadSpawnedObjects = 4096;
+    constexpr size_t MaxAutomaticInstantiationObjects = 4096;
+    constexpr WorldExtent DefaultWorldExtent = WorldExtent{
+        0.0f,
+        0.0f,
+        640.0f,
+        480.0f
+    };
+
+    struct WorldExtentAccumulator
+    {
+        bool hasAny = false;
+        size_t delimiters = 0;
+        size_t pointDelimiters = 0;
+        float minX = 0.0f;
+        float minY = 0.0f;
+        float maxX = 0.0f;
+        float maxY = 0.0f;
+
+        void includePoint(Vector2 point)
+        {
+            if (!hasAny)
+            {
+                minX = point.x;
+                maxX = point.x;
+                minY = point.y;
+                maxY = point.y;
+                hasAny = true;
+                return;
+            }
+
+            minX = std::min(minX, point.x);
+            maxX = std::max(maxX, point.x);
+            minY = std::min(minY, point.y);
+            maxY = std::max(maxY, point.y);
+        }
+
+        void includeContribution(const WorldExtentContribution& contribution)
+        {
+            ++delimiters;
+
+            if (!contribution.hasSize)
+            {
+                ++pointDelimiters;
+                includePoint(contribution.position);
+                return;
+            }
+
+            const Vector2 halfSize = Vector2{
+                contribution.size.x / 2.0f,
+                contribution.size.y / 2.0f
+            };
+
+            includePoint(
+                Vector2{
+                    contribution.position.x - halfSize.x,
+                    contribution.position.y - halfSize.y
+                }
+            );
+
+            includePoint(
+                Vector2{
+                    contribution.position.x + halfSize.x,
+                    contribution.position.y + halfSize.y
+                }
+            );
+        }
+
+        WorldExtent toWorldExtent() const
+        {
+            return WorldExtent{
+                minX,
+                minY,
+                maxX - minX,
+                maxY - minY
+            };
+        }
+    };
+
     Vector2 rayDirection(float angle)
     {
         const float radians =
@@ -23,205 +111,266 @@ namespace
         };
     }
 
-    Vector2 collisionCenter(const RuntimeObject& object)
-    {
-        if (object.shapeType == "block")
-        {
-            return Vector2{
-                object.position.x + object.size.x / 2.0f,
-                object.position.y + object.size.y / 2.0f
-            };
-        }
-
-        return object.position;
-    }
-
-    float collisionRadius(const RuntimeObject& object)
-    {
-        if (object.collisionRadius > 0.0f)
-        {
-            return object.collisionRadius;
-        }
-
-        return std::max(
-            object.size.x,
-            object.size.y
-        ) / 2.0f;
-    }
-
-    bool rayHitsCircle(
-        Vector2 origin,
-        Vector2 direction,
-        float maxDistance,
+    std::string logicalEntityRoot(
         const RuntimeObject& object,
-        RayCastResult& result
+        const std::vector<RuntimeObject>& objects
     )
     {
-        const Vector2 center =
-            collisionCenter(object);
+        const RuntimeObject* current =
+            &object;
 
-        const float radius =
-            collisionRadius(object);
-
-        const float ox =
-            origin.x - center.x;
-
-        const float oy =
-            origin.y - center.y;
-
-        const float b =
-            2.0f * (ox * direction.x + oy * direction.y);
-
-        const float c =
-            ox * ox + oy * oy - radius * radius;
-
-        const float discriminant =
-            b * b - 4.0f * c;
-
-        if (discriminant < 0.0f)
+        while (current != nullptr && current->component && !current->parentId.empty())
         {
-            return false;
-        }
-
-        const float root =
-            std::sqrt(discriminant);
-
-        float distance =
-            (-b - root) / 2.0f;
-
-        if (distance < 0.0f)
-        {
-            distance =
-                (-b + root) / 2.0f;
-        }
-
-        if (distance < 0.0f || distance > maxDistance)
-        {
-            return false;
-        }
-
-        result.hit = true;
-        result.group = object.group;
-        result.distance = distance;
-        result.point = Vector2{
-            origin.x + direction.x * distance,
-            origin.y + direction.y * distance
-        };
-
-        return true;
-    }
-
-    bool rayHitsBox(
-        Vector2 origin,
-        Vector2 direction,
-        float maxDistance,
-        const RuntimeObject& object,
-        RayCastResult& result
-    )
-    {
-        const Rectangle box = Rectangle{
-            object.position.x,
-            object.position.y,
-            object.size.x,
-            object.size.y
-        };
-
-        float tMin = 0.0f;
-        float tMax = maxDistance;
-
-        const auto updateAxis = [](
-            float originValue,
-            float directionValue,
-            float minValue,
-            float maxValue,
-            float& tMin,
-            float& tMax
-        )
-        {
-            if (std::abs(directionValue) < 0.00001f)
-            {
-                return originValue >= minValue && originValue <= maxValue;
-            }
-
-            float nearDistance =
-                (minValue - originValue) / directionValue;
-
-            float farDistance =
-                (maxValue - originValue) / directionValue;
-
-            if (nearDistance > farDistance)
-            {
-                std::swap(
-                    nearDistance,
-                    farDistance
+            const auto it =
+                std::find_if(
+                    objects.begin(),
+                    objects.end(),
+                    [current](const RuntimeObject& candidate)
+                    {
+                        return candidate.runtimeId == current->parentId;
+                    }
                 );
+
+            if (it == objects.end())
+            {
+                break;
             }
 
-            tMin =
-                std::max(tMin, nearDistance);
-
-            tMax =
-                std::min(tMax, farDistance);
-
-            return tMin <= tMax;
-        };
-
-        if (!updateAxis(
-            origin.x,
-            direction.x,
-            box.x,
-            box.x + box.width,
-            tMin,
-            tMax
-        ))
-        {
-            return false;
+            current =
+                &*it;
         }
 
-        if (!updateAxis(
-            origin.y,
-            direction.y,
-            box.y,
-            box.y + box.height,
-            tMin,
-            tMax
-        ))
-        {
-            return false;
-        }
-
-        if (tMin < 0.0f || tMin > maxDistance)
-        {
-            return false;
-        }
-
-        result.hit = true;
-        result.group = object.group;
-        result.distance = tMin;
-        result.point = Vector2{
-            origin.x + direction.x * tMin,
-            origin.y + direction.y * tMin
-        };
-
-        return true;
+        return current == nullptr
+            ? object.runtimeId
+            : current->runtimeId;
     }
 
-    bool groupMatches(
-        const RuntimeObject& source,
-        const RuntimeObject& target
+    bool sameLogicalEntity(
+        const RuntimeObject& left,
+        const RuntimeObject& right,
+        const std::vector<RuntimeObject>& objects
     )
     {
-        return std::find(
-            source.collisionWith.begin(),
-            source.collisionWith.end(),
-            target.group
-        ) != source.collisionWith.end();
+        return logicalEntityRoot(left, objects) ==
+            logicalEntityRoot(right, objects);
     }
 
-    bool collisionTypeSupported(const RuntimeObject& object)
+    bool isComponentDescendantOf(
+        const RuntimeObject& candidate,
+        const std::string& ancestorId,
+        const std::vector<RuntimeObject>& objects
+    )
     {
-        return object.collisionType == "circle" ||
-            object.collisionType == "box";
+        if (!candidate.component || candidate.parentId.empty())
+        {
+            return false;
+        }
+
+        if (candidate.parentId == ancestorId)
+        {
+            return true;
+        }
+
+        const auto parentIt =
+            std::find_if(
+                objects.begin(),
+                objects.end(),
+                [&candidate](const RuntimeObject& object)
+                {
+                    return object.runtimeId == candidate.parentId;
+                }
+            );
+
+        if (parentIt == objects.end() || !parentIt->component)
+        {
+            return false;
+        }
+
+        return isComponentDescendantOf(
+            *parentIt,
+            ancestorId,
+            objects
+        );
+    }
+
+    Vector2 rotatedPoint(
+        Vector2 center,
+        Vector2 local,
+        float angle
+    )
+    {
+        const float radians =
+            angle * DEG2RAD;
+
+        const float cosine =
+            std::cos(radians);
+
+        const float sine =
+            std::sin(radians);
+
+        return Vector2{
+            center.x + local.x * cosine - local.y * sine,
+            center.y + local.x * sine + local.y * cosine
+        };
+    }
+
+    Color colliderDebugColor(const EffectiveCollider& collider)
+    {
+        if (!collider.declaredEnabled)
+        {
+            return Color{ 180, 70, 70, 255 };
+        }
+
+        if (!collider.stateAvailable)
+        {
+            return Color{ 230, 170, 40, 255 };
+        }
+
+        if (!collider.effective)
+        {
+            return Color{ 120, 120, 120, 255 };
+        }
+
+        return GREEN;
+    }
+
+    void drawDebugLine(
+        Vector2 start,
+        Vector2 end,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
+        Color color
+    )
+    {
+        const Vector2 scaledStart =
+            DrawingRenderer::logicalToPhysical(
+                start,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
+        const Vector2 scaledEnd =
+            DrawingRenderer::logicalToPhysical(
+                end,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
+        DrawLine(
+            static_cast<int>(std::round(scaledStart.x)),
+            static_cast<int>(std::round(scaledStart.y)),
+            static_cast<int>(std::round(scaledEnd.x)),
+            static_cast<int>(std::round(scaledEnd.y)),
+            color
+        );
+    }
+
+    void drawDebugBox(
+        const EffectiveCollider& collider,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
+        Color color
+    )
+    {
+        const Vector2 corners[4] = {
+            rotatedPoint(collider.center, Vector2{ -collider.halfSize.x, -collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ collider.halfSize.x, -collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ collider.halfSize.x, collider.halfSize.y }, collider.angle),
+            rotatedPoint(collider.center, Vector2{ -collider.halfSize.x, collider.halfSize.y }, collider.angle)
+        };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            drawDebugLine(
+                corners[i],
+                corners[(i + 1) % 4],
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
+                color
+            );
+        }
+    }
+
+    void drawDebugEllipse(
+        const EffectiveCollider& collider,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
+        Color color
+    )
+    {
+        constexpr int Segments = 40;
+
+        Vector2 previous =
+            rotatedPoint(
+                collider.center,
+                Vector2{ collider.halfSize.x, 0.0f },
+                collider.angle
+            );
+
+        for (int i = 1; i <= Segments; ++i)
+        {
+            const float radians =
+                static_cast<float>(i) / static_cast<float>(Segments) *
+                2.0f * PI;
+
+            const Vector2 current =
+                rotatedPoint(
+                    collider.center,
+                    Vector2{
+                        std::cos(radians) * collider.halfSize.x,
+                        std::sin(radians) * collider.halfSize.y
+                    },
+                    collider.angle
+                );
+
+            drawDebugLine(
+                previous,
+                current,
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
+                color
+            );
+            previous =
+                current;
+        }
+    }
+
+    void drawDebugCollider(
+        const EffectiveCollider& collider,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight
+    )
+    {
+        const Color color =
+            colliderDebugColor(collider);
+
+        if (collider.type == "ellipse")
+        {
+            drawDebugEllipse(
+                collider,
+                worldExtent,
+                rasterWidth,
+                rasterHeight,
+                color
+            );
+            return;
+        }
+
+        drawDebugBox(
+            collider,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
+            color
+        );
     }
 
     void applyInheritedCreationMotion(
@@ -230,88 +379,187 @@ namespace
         const ObjectDefinition& definition
     )
     {
-        if (!definition.inheritParentAngle)
-        {
-            return;
-        }
-
-        if (!definition.hasAngle)
+        if (definition.inherit.creationAngle == InheritCreationMode::Copy)
         {
             child.angle =
                 parent.angle;
         }
 
-        if (!definition.hasSpeed && definition.maxSpeed > 0.0f)
+        if (definition.inherit.creationVelocity == InheritCreationMode::Copy)
         {
-            child.speed =
-                definition.maxSpeed;
-            child.originSpeed =
-                definition.maxSpeed;
+            child.velocity =
+                parent.velocity;
         }
 
-        child.velocity.x +=
-            parent.velocity.x;
+        if (definition.inherit.creationVelocity == InheritCreationMode::Compose)
+        {
+            child.velocity.x +=
+                parent.velocity.x;
 
-        child.velocity.y +=
-            parent.velocity.y;
+            child.velocity.y +=
+                parent.velocity.y;
+        }
     }
 }
 
 RuntimeWorld::RuntimeWorld()
 {
     nextRuntimeId = 1;
+    worldExtent =
+        DefaultWorldExtent;
 }
 
-void RuntimeWorld::load(
+RuntimeLoadResult RuntimeWorld::load(
     const CompiledProject& project,
     ScriptEngine& scriptEngine
 )
 {
+    RuntimeLoadResult result;
+
     objects.clear();
     pendingObjects.clear();
+    collisionDebugFrame.clear();
     nextRuntimeId = 1;
     frameIndex = 0;
     resources = &project.resources;
+    worldExtent =
+        DefaultWorldExtent;
+    worldExtentContributions.clear();
+    collectingWorldExtentContributions =
+        false;
+    AttachmentRuntimeState::clear();
+    automaticInstantiationFailed = false;
+    automaticInstantiationFailure.clear();
+
+    scriptEngine.setFindObjectDefinitionFunction(
+        [this](const std::string& id) -> const ObjectDefinition*
+        {
+            return resources == nullptr
+                ? nullptr
+                : resources->findObject(id);
+        }
+    );
+
+    if (!CompiledProjectValidator::validate(
+        project,
+        result.diagnostics,
+        "runtime"
+    ))
+    {
+        for (const Diagnostic& diagnostic : result.diagnostics.all())
+        {
+            Logger::error(
+                "runtime",
+                diagnostic.message + ": " + diagnostic.field
+            );
+        }
+
+        return result;
+    }
 
     const ObjectDefinition* rootDefinition =
-        &project.rootDefinition;
+        resources == nullptr
+        ? nullptr
+        : resources->findObject(project.rootId);
 
     if (rootDefinition == nullptr)
     {
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Compiled root resource not found",
+            "runtime",
+            project.rootId
+        );
+
         Logger::error(
             "runtime",
             "Compiled root resource not found: " + project.rootId
         );
 
-        return;
+        return result;
     }
 
+    collectingWorldExtentContributions =
+        true;
+
     RuntimeObject root =
-        createRuntimeObject(*rootDefinition, "");
+        createRuntimeObject(
+            *rootDefinition,
+            project.rootId,
+            ""
+        );
+
+    collectWorldExtentContribution(
+        root,
+        *rootDefinition
+    );
 
     objects.push_back(
         std::move(root)
     );
+    AttachmentRuntimeState::registerObject(objects.back());
 
-    RuntimeObject rootSnapshot =
-        objects.front();
+    std::vector<RuntimeObject> initialObjects;
 
     instantiateAutoChildren(
-        rootSnapshot,
-        objects
+        objects.front(),
+        initialObjects
     );
+    objects.insert(
+        objects.end(),
+        std::make_move_iterator(initialObjects.begin()),
+        std::make_move_iterator(initialObjects.end())
+    );
+    for (const auto& object : objects)
+    {
+        AttachmentRuntimeState::registerObject(object);
+    }
+
+    if (automaticInstantiationFailed)
+    {
+        collectingWorldExtentContributions =
+            false;
+
+        result.diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            automaticInstantiationFailure,
+            "runtime",
+            project.rootId
+        );
+
+        return result;
+    }
+
+    if (!computeWorldExtent(result.diagnostics))
+    {
+        collectingWorldExtentContributions =
+            false;
+
+        return result;
+    }
+
+    collectingWorldExtentContributions =
+        false;
 
     for (auto& object : objects)
     {
         loadScriptsForObject(object, scriptEngine);
         bornObject(object, scriptEngine);
     }
+
+    if (!flushSpawnQueueForLoad(scriptEngine, result.diagnostics))
+    {
+        return result;
+    }
+
+    result.success =
+        !result.diagnostics.hasErrors();
+
+    return result;
 }
 
 void RuntimeWorld::update(
     ScriptEngine& scriptEngine,
-    float screenWidth,
-    float screenHeight,
     float delta
 )
 {
@@ -323,18 +571,42 @@ void RuntimeWorld::update(
     actionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
 
-    motionPhase(scriptEngine, screenWidth, screenHeight);
+    motionPhase(scriptEngine);
     flushSpawnQueue(scriptEngine);
 
     applyAttachments();
 
-    CollisionSystem::run(objects, scriptEngine);
+    CollisionSystem::run(
+        objects,
+        scriptEngine,
+        collisionDebugEnabled
+            ? &collisionDebugFrame
+            : nullptr
+    );
     flushSpawnQueue(scriptEngine);
 
     updateObjectTime(delta);
 
     deadPhase(scriptEngine);
     cleanupDeadObjects();
+    maintainIteratorCreation(scriptEngine);
+    flushSpawnQueue(scriptEngine);
+}
+
+void RuntimeWorld::setCollisionDebugEnabled(bool enabled)
+{
+    collisionDebugEnabled =
+        enabled;
+
+    if (!collisionDebugEnabled)
+    {
+        collisionDebugFrame.clear();
+    }
+}
+
+const WorldExtent& RuntimeWorld::getWorldExtent() const
+{
+    return worldExtent;
 }
 
 void RuntimeWorld::draw(
@@ -345,12 +617,17 @@ void RuntimeWorld::draw(
     bool debugCollisions
 )
 {
-    std::vector<const RuntimeObject*> drawObjects;
+    std::vector<RuntimeObject*> drawObjects;
 
     drawObjects.reserve(objects.size());
 
-    for (const auto& object : objects)
+    for (auto& object : objects)
     {
+        if (!object.alive || !object.visible)
+        {
+            continue;
+        }
+
         drawObjects.push_back(&object);
     }
 
@@ -359,25 +636,67 @@ void RuntimeWorld::draw(
         drawObjects.end(),
         [](const RuntimeObject* left, const RuntimeObject* right)
         {
-            return left->layer < right->layer;
+            return left->depth < right->depth;
         }
     );
 
-    for (const RuntimeObject* object : drawObjects)
+    DrawingContext drawingContext;
+    scriptEngine.setDrawingContext(&drawingContext);
+
+    for (RuntimeObject* object : drawObjects)
     {
-        object->draw(
-            screenScale,
+        if (!object->alive || !object->visible)
+        {
+            continue;
+        }
+
+        std::vector<VisualPrimitive> primitives;
+
+        drawingContext.begin(*object, primitives);
+
+        std::vector<VisualPrimitive> representationPrimitives =
+            RepresentationPrimitiveBuilder::build(
+                *object,
+                WHITE
+            );
+
+        primitives.insert(
+            primitives.end(),
+            std::make_move_iterator(representationPrimitives.begin()),
+            std::make_move_iterator(representationPrimitives.end())
+        );
+
+        for (const auto& scriptPath : object->resolvedScriptPaths)
+        {
+            scriptEngine.callScriptFunction(
+                scriptPath,
+                "draw",
+                *object
+            );
+        }
+
+        drawingContext.end();
+
+        DrawingRenderer::render(
+            primitives,
+            objects,
+            worldExtent,
             screenWidth,
             screenHeight
         );
-
-        if (debugCollisions)
-        {
-            object->drawCollision(screenScale);
-        }
     }
 
-    drawPhase(scriptEngine);
+    scriptEngine.setDrawingContext(nullptr);
+
+    if (debugCollisions)
+    {
+        (void)screenScale;
+
+        drawCollisionDebug(
+            screenWidth,
+            screenHeight
+        );
+    }
 }
 
 void RuntimeWorld::spawn(
@@ -423,21 +742,51 @@ void RuntimeWorld::spawn(
     }
     else if (source.creationMode == "individual")
     {
+        std::string childId;
+
+        for (const auto& pair : source.childResources)
+        {
+            if (pair.second == resourceId)
+            {
+                childId = pair.first;
+                break;
+            }
+        }
+
         RuntimeObject instance =
             createIndividualChild(
                 source,
-                *definition
+                *definition,
+                resourceId,
+                childId
             );
 
-        pendingObjects.push_back(instance);
-
-        RuntimeObject parentSnapshot =
-            pendingObjects.back();
+        std::vector<RuntimeObject> descendants;
 
         instantiateAutoChildren(
-            parentSnapshot,
-            pendingObjects
+            instance,
+            descendants
         );
+
+        pendingObjects.push_back(
+            std::move(instance)
+        );
+
+        pendingObjects.insert(
+            pendingObjects.end(),
+            std::make_move_iterator(descendants.begin()),
+            std::make_move_iterator(descendants.end())
+        );
+    }
+    else if (source.creationMode == "iterator")
+    {
+        Logger::warning(
+            "creation",
+            "spawn() is not supported for iterator creation in " +
+            source.runtimeId
+        );
+
+        return;
     }
     else
     {
@@ -475,16 +824,117 @@ void RuntimeWorld::spawn(
     );
 }
 
+bool RuntimeWorld::creationActive(const RuntimeObject& object) const
+{
+    if (object.creationMode != "iterator")
+    {
+        return false;
+    }
+
+    if (!object.alive)
+    {
+        return false;
+    }
+
+    if (object.iteratorRules.repeat)
+    {
+        return true;
+    }
+
+    if (object.iteratorCursor < object.iteratorPattern.size())
+    {
+        return true;
+    }
+
+    return iteratorInstanceCount(
+        object,
+        nullptr
+    ) > 0;
+}
+
+void RuntimeWorld::kill(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "kill target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->alive = false;
+
+    for (RuntimeObject& candidate : objects)
+    {
+        if (!candidate.alive || candidate.runtimeId == runtimeId)
+        {
+            continue;
+        }
+
+        if (isComponentDescendantOf(candidate, runtimeId, objects))
+        {
+            candidate.alive = false;
+        }
+    }
+}
+
+void RuntimeWorld::show(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "show target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->visible = true;
+}
+
+void RuntimeWorld::hide(const std::string& runtimeId)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr)
+    {
+        Logger::warning(
+            "runtime",
+            "hide target not found: " + runtimeId
+        );
+
+        return;
+    }
+
+    object->visible = false;
+}
+
 RuntimeObject RuntimeWorld::createIndividualChild(
     const RuntimeObject& parent,
-    const ObjectDefinition& definition
+    const ObjectDefinition& definition,
+    const std::string& resourceId,
+    const std::string& childId
 )
 {
     RuntimeObject child =
         createRuntimeObject(
             definition,
+            resourceId,
             parent.runtimeId
         );
+
+    child.creationChildId =
+        childId;
 
     const float radians =
         parent.angle * DEG2RAD;
@@ -526,12 +976,19 @@ RuntimeObject RuntimeWorld::createIndividualChild(
         child.position.y - parent.position.y
     };
 
+    collectWorldExtentContribution(
+        child,
+        definition
+    );
+
     return child;
 }
 
 RuntimeObject RuntimeWorld::createGridChild(
     const RuntimeObject& parent,
     const ObjectDefinition& definition,
+    const std::string& resourceId,
+    const std::string& childId,
     int row,
     int column
 )
@@ -539,8 +996,12 @@ RuntimeObject RuntimeWorld::createGridChild(
     RuntimeObject child =
         createRuntimeObject(
             definition,
+            resourceId,
             parent.runtimeId
         );
+
+    child.creationChildId =
+        childId;
 
     const float cellX =
         static_cast<float>(column) *
@@ -572,14 +1033,59 @@ RuntimeObject RuntimeWorld::createGridChild(
         child.position.y - parent.position.y
     };
 
+    collectWorldExtentContribution(
+        child,
+        definition
+    );
+
     return child;
 }
 
 void RuntimeWorld::instantiateAutoChildren(
-    const RuntimeObject& parent,
+    RuntimeObject& parent,
     std::vector<RuntimeObject>& target
 )
 {
+    if (automaticInstantiationFailed)
+    {
+        return;
+    }
+
+    const bool rootCall =
+        automaticInstantiationStack.empty();
+
+    if (rootCall)
+    {
+        automaticInstantiationCreated = 0;
+    }
+
+    const std::string ancestryKey =
+        parent.definitionId.empty()
+            ? parent.sourcePath
+            : parent.definitionId;
+
+    if (
+        !ancestryKey.empty()
+        && std::find(
+            automaticInstantiationStack.begin(),
+            automaticInstantiationStack.end(),
+            ancestryKey
+        ) != automaticInstantiationStack.end()
+        )
+    {
+        automaticInstantiationFailed = true;
+        automaticInstantiationFailure =
+            "Automatic instantiation cycle detected at object resource: " +
+            ancestryKey;
+        Logger::error(
+            "creation",
+            automaticInstantiationFailure
+        );
+        return;
+    }
+
+    automaticInstantiationStack.push_back(ancestryKey);
+
     if (parent.creationMode == "grid")
     {
         instantiateGridChildren(
@@ -589,6 +1095,18 @@ void RuntimeWorld::instantiateAutoChildren(
             target
         );
 
+        automaticInstantiationStack.pop_back();
+        return;
+    }
+
+    if (parent.creationMode == "iterator")
+    {
+        instantiateIteratorChildren(
+            parent,
+            target
+        );
+
+        automaticInstantiationStack.pop_back();
         return;
     }
 
@@ -600,6 +1118,7 @@ void RuntimeWorld::instantiateAutoChildren(
             "' in " + parent.runtimeId
         );
 
+        automaticInstantiationStack.pop_back();
         return;
     }
 
@@ -607,6 +1126,8 @@ void RuntimeWorld::instantiateAutoChildren(
         parent,
         target
     );
+
+    automaticInstantiationStack.pop_back();
 }
 
 RuntimeObject* RuntimeWorld::findByName(const std::string& name)
@@ -635,6 +1156,73 @@ RuntimeObject* RuntimeWorld::findByRuntimeId(const std::string& id)
     return nullptr;
 }
 
+RuntimeObject* RuntimeWorld::findLiveByRuntimeId(const std::string& id)
+{
+    RuntimeObject* object =
+        findByRuntimeId(id);
+
+    return object != nullptr && object->alive
+        ? object
+        : nullptr;
+}
+
+std::vector<RuntimeObject*> RuntimeWorld::findAllLiveByName(
+    const std::string& name
+)
+{
+    std::vector<RuntimeObject*> matches;
+
+    for (auto& object : objects)
+    {
+        if (object.alive && object.name == name)
+        {
+            matches.push_back(&object);
+        }
+    }
+
+    return matches;
+}
+
+RuntimeObject* RuntimeWorld::findLiveParent(
+    const std::string& runtimeId
+)
+{
+    RuntimeObject* object =
+        findByRuntimeId(runtimeId);
+
+    if (object == nullptr || object->parentId.empty())
+    {
+        return nullptr;
+    }
+
+    return findLiveByRuntimeId(object->parentId);
+}
+
+std::vector<RuntimeObject*> RuntimeWorld::findLiveChildren(
+    const std::string& runtimeId
+)
+{
+    std::vector<RuntimeObject*> children;
+
+    RuntimeObject* parent =
+        findByRuntimeId(runtimeId);
+
+    if (parent == nullptr)
+    {
+        return children;
+    }
+
+    for (auto& object : objects)
+    {
+        if (object.alive && object.parentId == runtimeId)
+        {
+            children.push_back(&object);
+        }
+    }
+
+    return children;
+}
+
 void RuntimeWorld::keepOnly(const std::string& runtimeId)
 {
     bool found =
@@ -653,7 +1241,7 @@ void RuntimeWorld::keepOnly(const std::string& runtimeId)
             continue;
         }
 
-        object.alive = false;
+        kill(object.runtimeId);
     }
 
     if (!found)
@@ -666,25 +1254,36 @@ void RuntimeWorld::keepOnly(const std::string& runtimeId)
 }
 
 RayCastResult RuntimeWorld::rayCast(
-    const RuntimeObject& source,
+    RuntimeObject& source,
+    ScriptEngine& scriptEngine,
     float angle,
     float distance
-) const
+)
 {
     RayCastResult closest;
 
-    if (distance <= 0.0f)
-    {
-        return closest;
-    }
-
-    if (source.collisionWith.empty())
+    if (!std::isfinite(angle) || !std::isfinite(distance))
     {
         Logger::warning(
             "ray",
-            "ray source has no collision.with groups"
+            "ray requires finite angle and distance"
         );
 
+        return closest;
+    }
+
+    if (distance < 0.0f)
+    {
+        Logger::warning(
+            "ray",
+            "ray distance cannot be negative"
+        );
+
+        return closest;
+    }
+
+    if (distance <= 0.0f)
+    {
         return closest;
     }
 
@@ -694,6 +1293,15 @@ RayCastResult RuntimeWorld::rayCast(
     const Vector2 direction =
         rayDirection(angle);
 
+    CollisionDebugRay debugRay;
+    debugRay.origin =
+        origin;
+    debugRay.end =
+        Vector2{
+            origin.x + direction.x * distance,
+            origin.y + direction.y * distance
+        };
+
     for (const RuntimeObject& target : objects)
     {
         if (!target.alive)
@@ -701,54 +1309,51 @@ RayCastResult RuntimeWorld::rayCast(
             continue;
         }
 
-        if (target.runtimeId == source.runtimeId)
+        if (sameLogicalEntity(source, target, objects))
         {
             continue;
         }
 
-        if (!groupMatches(source, target))
-        {
-            continue;
-        }
+        const std::vector<EffectiveCollider> colliders =
+            EffectiveColliderBuilder::build(target, scriptEngine);
 
-        if (!collisionTypeSupported(target))
+        for (const EffectiveCollider& collider : colliders)
         {
-            continue;
-        }
+            const RayCollisionHit hit =
+                CollisionGeometry::ray(
+                    collider,
+                    origin,
+                    direction,
+                    distance
+                );
 
-        RayCastResult candidate;
+            if (!hit.hit)
+            {
+                continue;
+            }
 
-        if (target.collisionType == "circle")
-        {
-            rayHitsCircle(
-                origin,
-                direction,
-                distance,
-                target,
-                candidate
-            );
-        }
-        else if (target.collisionType == "box")
-        {
-            rayHitsBox(
-                origin,
-                direction,
-                distance,
-                target,
-                candidate
-            );
-        }
+            if (!closest.hit || hit.distance < closest.distance)
+            {
+                closest.hit = true;
+                closest.objectId = target.runtimeId;
+                closest.group = target.group;
+                closest.collider = collider.name;
+                closest.distance = hit.distance;
+                closest.point = hit.point;
+                closest.normal = hit.normal;
 
-        if (!candidate.hit)
-        {
-            continue;
+                debugRay.hit = true;
+                debugRay.hitPoint = hit.point;
+                debugRay.hitNormal = hit.normal;
+                debugRay.targetId = target.runtimeId;
+                debugRay.collider = collider.name;
+            }
         }
+    }
 
-        if (!closest.hit || candidate.distance < closest.distance)
-        {
-            closest =
-                candidate;
-        }
+    if (collisionDebugEnabled)
+    {
+        collisionDebugFrame.rays.push_back(debugRay);
     }
 
     return closest;
@@ -756,6 +1361,7 @@ RayCastResult RuntimeWorld::rayCast(
 
 RuntimeObject RuntimeWorld::createRuntimeObject(
     const ObjectDefinition& definition,
+    const std::string& resourceId,
     const std::string& parentId
 )
 {
@@ -772,8 +1378,13 @@ RuntimeObject RuntimeWorld::createRuntimeObject(
     if (!object.state.empty())
     {
         object.stateEnteredFrame =
-            frameIndex;
+            frameIndex == 0 ? 0 : frameIndex + 1;
     }
+
+    object.definitionId =
+        resourceId.empty()
+            ? definition.id
+            : resourceId;
 
     return object;
 }
@@ -816,8 +1427,25 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
         RuntimeObject child =
             createIndividualChild(
                 parent,
-                *definition
+                *definition,
+                pair.second,
+                pair.first
             );
+
+        ++automaticInstantiationCreated;
+
+        if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+        {
+            automaticInstantiationFailed = true;
+            automaticInstantiationFailure =
+                "Automatic instantiation limit exceeded under object: " +
+                parent.name;
+            Logger::error(
+                "creation",
+                automaticInstantiationFailure
+            );
+            return;
+        }
 
         std::vector<RuntimeObject> descendants;
 
@@ -921,9 +1549,26 @@ void RuntimeWorld::instantiateGridChildren(
                 createGridChild(
                     parent,
                     *definition,
+                    it->second,
+                    childId,
                     row,
                     column
                 );
+
+            ++automaticInstantiationCreated;
+
+            if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+            {
+                automaticInstantiationFailed = true;
+                automaticInstantiationFailure =
+                    "Automatic grid instantiation limit exceeded under object: " +
+                    parent.name;
+                Logger::error(
+                    "creation",
+                    automaticInstantiationFailure
+                );
+                return;
+            }
 
             std::vector<RuntimeObject> descendants;
 
@@ -942,6 +1587,198 @@ void RuntimeWorld::instantiateGridChildren(
                 std::make_move_iterator(descendants.end())
             );
         }
+    }
+}
+
+size_t RuntimeWorld::iteratorInstanceCount(
+    const RuntimeObject& parent,
+    const std::vector<RuntimeObject>* target
+) const
+{
+    const auto countIn =
+        [&parent](const std::vector<RuntimeObject>& candidates)
+        {
+            return static_cast<size_t>(
+                std::count_if(
+                    candidates.begin(),
+                    candidates.end(),
+                    [&parent](const RuntimeObject& candidate)
+                    {
+                        return
+                            candidate.creationOwnerId == parent.runtimeId &&
+                            candidate.alive;
+                    }
+                )
+            );
+        };
+
+    size_t count =
+        countIn(objects);
+
+    count +=
+        countIn(pendingObjects);
+
+    if (target != nullptr && target != &pendingObjects)
+    {
+        count +=
+            countIn(*target);
+    }
+
+    return count;
+}
+
+void RuntimeWorld::instantiateIteratorChildren(
+    RuntimeObject& parent,
+    std::vector<RuntimeObject>& target
+)
+{
+    if (resources == nullptr)
+    {
+        Logger::error(
+            "creation",
+            "Resource registry is not available"
+        );
+
+        return;
+    }
+
+    if (parent.iteratorRules.concurrent < 1)
+    {
+        Logger::error(
+            "creation",
+            "Invalid iterator creation concurrent in " + parent.runtimeId
+        );
+
+        return;
+    }
+
+    if (parent.iteratorPattern.empty())
+    {
+        Logger::error(
+            "creation",
+            "Iterator creation pattern is empty in " + parent.runtimeId
+        );
+
+        return;
+    }
+
+    size_t active =
+        iteratorInstanceCount(
+            parent,
+            &target
+        );
+
+    while (active < static_cast<size_t>(parent.iteratorRules.concurrent))
+    {
+        if (
+            !parent.iteratorRules.repeat &&
+            parent.iteratorCursor >= parent.iteratorPattern.size()
+            )
+        {
+            return;
+        }
+
+        if (parent.iteratorCursor >= parent.iteratorPattern.size())
+        {
+            parent.iteratorCursor = 0;
+        }
+
+        const std::string childId =
+            parent.iteratorPattern[parent.iteratorCursor];
+
+        ++parent.iteratorCursor;
+
+        if (
+            parent.iteratorRules.repeat &&
+            parent.iteratorCursor >= parent.iteratorPattern.size()
+            )
+        {
+            parent.iteratorCursor = 0;
+        }
+
+        const auto childResourceIt =
+            parent.childResources.find(childId);
+
+        if (childResourceIt == parent.childResources.end())
+        {
+            Logger::error(
+                "creation",
+                "Iterator pattern references missing child '" +
+                childId + "' in " + parent.runtimeId
+            );
+
+            continue;
+        }
+
+        const ObjectDefinition* definition =
+            resources->findObject(childResourceIt->second);
+
+        if (definition == nullptr)
+        {
+            Logger::error(
+                "creation",
+                "Compiled iterator child resource not found: " +
+                childResourceIt->second
+            );
+
+            continue;
+        }
+
+        if (definition->spawnMode != "auto")
+        {
+            Logger::error(
+                "creation",
+                "Iterator pattern child must use spawn auto: " +
+                childId
+            );
+
+            continue;
+        }
+
+        RuntimeObject child =
+            createIndividualChild(
+                parent,
+                *definition,
+                childResourceIt->second,
+                childId
+            );
+
+        child.creationOwnerId =
+            parent.runtimeId;
+
+        ++automaticInstantiationCreated;
+
+        if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+        {
+            automaticInstantiationFailed = true;
+            automaticInstantiationFailure =
+                "Automatic iterator instantiation limit exceeded under object: " +
+                parent.name;
+            Logger::error(
+                "creation",
+                automaticInstantiationFailure
+            );
+            return;
+        }
+
+        std::vector<RuntimeObject> descendants;
+
+        instantiateAutoChildren(
+            child,
+            descendants
+        );
+
+        target.push_back(
+            std::move(child)
+        );
+
+        target.insert(
+            target.end(),
+            std::make_move_iterator(descendants.begin()),
+            std::make_move_iterator(descendants.end())
+        );
+
+        ++active;
     }
 }
 
@@ -1092,6 +1929,7 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
         objects.push_back(
             std::move(object)
         );
+        AttachmentRuntimeState::registerObject(objects.back());
 
         bornObject(
             objects.back(),
@@ -1105,12 +1943,81 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
     }
 }
 
+bool RuntimeWorld::flushSpawnQueueForLoad(
+    ScriptEngine& scriptEngine,
+    Diagnostics& diagnostics
+)
+{
+    size_t passCount = 0;
+    size_t spawnedCount = 0;
+
+    while (!pendingObjects.empty())
+    {
+        if (passCount >= MaxLoadSpawnFlushPasses)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeLoadSpawnLimitExceeded,
+                "Runtime load did not stabilize while flushing spawn requests from born",
+                "runtime",
+                "born.spawn"
+            );
+
+            Logger::error(
+                "runtime",
+                "Runtime load spawn flush pass limit exceeded"
+            );
+
+            return false;
+        }
+
+        spawnedCount +=
+            pendingObjects.size();
+
+        if (spawnedCount > MaxLoadSpawnedObjects)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeLoadSpawnLimitExceeded,
+                "Runtime load created too many objects while flushing spawn requests from born",
+                "runtime",
+                "born.spawn"
+            );
+
+            Logger::error(
+                "runtime",
+                "Runtime load spawn object limit exceeded"
+            );
+
+            return false;
+        }
+
+        ++passCount;
+        flushSpawnQueue(scriptEngine);
+
+        if (automaticInstantiationFailed)
+        {
+            diagnostics.error(
+                DiagnosticCode::RuntimeWorldLoadFailed,
+                automaticInstantiationFailure,
+                "runtime",
+                "born.spawn"
+            );
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void RuntimeWorld::beginFrame()
 {
+    collisionDebugFrame.clear();
+
     for (auto& object : objects)
     {
         object.previousPosition =
             object.position;
+        RuntimeHelpers::beginMechanicsFrame(object);
 
         if (
             !object.state.empty() &&
@@ -1144,9 +2051,7 @@ void RuntimeWorld::actionPhase(ScriptEngine& scriptEngine)
 }
 
 void RuntimeWorld::motionPhase(
-    ScriptEngine& scriptEngine,
-    float screenWidth,
-    float screenHeight
+    ScriptEngine& scriptEngine
 )
 {
     for (auto& object : objects)
@@ -1165,7 +2070,12 @@ void RuntimeWorld::motionPhase(
             );
         }
 
-        object.applyBounds(screenWidth, screenHeight);
+        RuntimeHelpers::applyFreeMechanics(
+            object,
+            scriptEngine.getFrameDelta()
+        );
+
+        object.applyBounds(worldExtent);
     }
 }
 
@@ -1193,37 +2103,46 @@ void RuntimeWorld::applyAttachments()
 {
     for (auto& object : objects)
     {
-        if (!object.alive || !object.attached)
+        if (!object.alive)
         {
             continue;
         }
 
-        if (object.originalParentId.empty())
+        if (object.parentId.empty())
         {
             continue;
         }
 
         RuntimeObject* parent =
-            findByRuntimeId(object.originalParentId);
+            findByRuntimeId(object.parentId);
 
         if (parent == nullptr || !parent->alive)
         {
             continue;
         }
 
-        if (object.attachFollowX)
+        const Vector2 offset =
+            AttachmentRuntimeState::offsetFor(object);
+
+        if (object.attached && object.attachFollowX)
         {
             object.position.x =
-                parent->position.x + object.originalOffset.x;
+                parent->position.x + offset.x;
         }
 
-        if (object.attachFollowY)
+        if (object.attached && object.attachFollowY)
         {
             object.position.y =
-                parent->position.y + object.originalOffset.y;
+                parent->position.y + offset.y;
         }
 
-        if (object.attachFollowAngle)
+        if (object.attached && object.attachFollowAngle)
+        {
+            object.angle =
+                parent->angle;
+        }
+
+        if (object.inherit.liveAngle == InheritLiveMode::Copy)
         {
             object.angle =
                 parent->angle;
@@ -1266,6 +2185,43 @@ void RuntimeWorld::cleanupDeadObjects()
         ),
         objects.end()
     );
+
+    AttachmentRuntimeState::pruneMissing(objects);
+}
+
+void RuntimeWorld::maintainIteratorCreation(ScriptEngine& scriptEngine)
+{
+    const size_t firstQueuedIndex =
+        pendingObjects.size();
+
+    automaticInstantiationCreated = 0;
+
+    for (RuntimeObject& object : objects)
+    {
+        if (!object.alive || object.creationMode != "iterator")
+        {
+            continue;
+        }
+
+        instantiateIteratorChildren(
+            object,
+            pendingObjects
+        );
+
+        if (automaticInstantiationFailed)
+        {
+            break;
+        }
+    }
+
+    for (
+        size_t i = firstQueuedIndex;
+        i < pendingObjects.size();
+        ++i
+        )
+    {
+        loadScriptsForObject(pendingObjects[i], scriptEngine);
+    }
 }
 
 void RuntimeWorld::updateObjectTime(float delta)
@@ -1279,19 +2235,194 @@ void RuntimeWorld::updateObjectTime(float delta)
 
         if (!object.state.empty())
         {
-            object.stateTime +=
-                delta;
+            if (object.stateEnteredFrame <= frameIndex)
+            {
+                object.stateTime +=
+                    delta;
+            }
         }
 
         for (auto& timer : object.timers)
         {
+            if (timer.second.status != RuntimeTimerStatus::Running)
+            {
+                continue;
+            }
+
             timer.second.left =
                 std::max(
                     0.0f,
                     timer.second.left - delta
                 );
+
+            if (timer.second.left <= 0.0f)
+            {
+                timer.second.left = 0.0f;
+                timer.second.status = RuntimeTimerStatus::Done;
+            }
         }
     }
+}
+
+void RuntimeWorld::drawCollisionDebug(
+    float rasterWidth,
+    float rasterHeight
+) const
+{
+    for (const EffectiveCollider& collider : collisionDebugFrame.colliders)
+    {
+        drawDebugCollider(
+            collider,
+            worldExtent,
+            rasterWidth,
+            rasterHeight
+        );
+    }
+
+    for (const CollisionDebugContact& contact : collisionDebugFrame.contacts)
+    {
+        const Vector2 point =
+            contact.contact.point;
+
+        const Vector2 physicalPoint =
+            DrawingRenderer::logicalToPhysical(
+                point,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
+        DrawCircle(
+            static_cast<int>(std::round(physicalPoint.x)),
+            static_cast<int>(std::round(physicalPoint.y)),
+            2.0f,
+            YELLOW
+        );
+
+        drawDebugLine(
+            point,
+            Vector2{
+                point.x + contact.contact.normal.x * 10.0f,
+                point.y + contact.contact.normal.y * 10.0f
+            },
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
+            YELLOW
+        );
+    }
+
+    for (const CollisionDebugRay& ray : collisionDebugFrame.rays)
+    {
+        drawDebugLine(
+            ray.origin,
+            ray.end,
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
+            Color{ 80, 180, 255, 255 }
+        );
+
+        if (!ray.hit)
+        {
+            continue;
+        }
+
+        const Vector2 physicalHitPoint =
+            DrawingRenderer::logicalToPhysical(
+                ray.hitPoint,
+                worldExtent,
+                rasterWidth,
+                rasterHeight
+            );
+
+        DrawCircle(
+            static_cast<int>(std::round(physicalHitPoint.x)),
+            static_cast<int>(std::round(physicalHitPoint.y)),
+            2.0f,
+            SKYBLUE
+        );
+
+        drawDebugLine(
+            ray.hitPoint,
+            Vector2{
+                ray.hitPoint.x + ray.hitNormal.x * 10.0f,
+                ray.hitPoint.y + ray.hitNormal.y * 10.0f
+            },
+            worldExtent,
+            rasterWidth,
+            rasterHeight,
+            BLUE
+        );
+    }
+}
+
+bool RuntimeWorld::computeWorldExtent(Diagnostics& diagnostics)
+{
+    WorldExtentAccumulator accumulator;
+
+    for (const WorldExtentContribution& contribution : worldExtentContributions)
+    {
+        accumulator.includeContribution(contribution);
+    }
+
+    if (accumulator.delimiters == 0)
+    {
+        worldExtent =
+            DefaultWorldExtent;
+        return true;
+    }
+
+    worldExtent =
+        accumulator.toWorldExtent();
+
+    if (accumulator.delimiters == 1 &&
+        accumulator.pointDelimiters == 1)
+    {
+        diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "A single delimit object without size cannot define a bidimensional world extent",
+            "runtime",
+            "delimit"
+        );
+
+        return false;
+    }
+
+    if (worldExtent.width <= 0.0f ||
+        worldExtent.height <= 0.0f)
+    {
+        diagnostics.error(
+            DiagnosticCode::RuntimeWorldLoadFailed,
+            "Delimit objects do not define a valid bidimensional world extent",
+            "runtime",
+            "delimit"
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+void RuntimeWorld::collectWorldExtentContribution(
+    const RuntimeObject& object,
+    const ObjectDefinition& definition
+)
+{
+    if (!collectingWorldExtentContributions ||
+        !definition.delimit)
+    {
+        return;
+    }
+
+    worldExtentContributions.push_back(
+        WorldExtentContribution{
+            object.position,
+            object.size,
+            object.hasSize
+        }
+    );
 }
 
 std::string RuntimeWorld::createRuntimeId(const std::string& name)

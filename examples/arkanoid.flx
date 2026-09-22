@@ -1,19 +1,14 @@
 #Game data
 title=Arkanoid
 name=Arkanoid
-version=1.0
-engine=0.2.0
+version=2.0
+engine=0.3.0
 
 # Configuration
 path=arkanoid
 root=game
 machine=machines/arkanoidMachine.yml
 input.mapping=controllers.input
-
-#Debug
-debug.collisions=false
-debug.logs=false
-debug.console=true
 
 #Notes
 notes=FLX example with grid spawn, levels and power ups

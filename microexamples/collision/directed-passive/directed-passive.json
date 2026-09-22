@@ -1,0 +1,69 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "ball": {
+      "origin": {
+        "x": 70,
+        "y": 100
+      },
+      "group": "ball",
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": {
+            "start": 55
+          }
+        },
+        "rotation": {
+          "angle": 90
+        }
+      },
+      "collisions": {
+        "body": {
+          "with": [
+            "wall"
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "directed-ball"
+        ]
+      },
+      "size": {
+        "width": 10,
+        "height": 10
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "wall": {
+      "origin": {
+        "x": 210,
+        "y": 100
+      },
+      "group": "wall",
+      "collisions": {
+        "body": {}
+      },
+      "size": {
+        "width": 12,
+        "height": 100
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

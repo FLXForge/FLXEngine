@@ -1,15 +1,25 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "origin": {
     "x": 70,
     "y": 40
   },
-
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 30
+      }
+    }
+  },
+  "behavior": {
+    "scripts": [
+      "fleet"
+    ]
+  },
   "children": {
     "invader": "invader"
   },
-
   "creation": {
     "mode": "grid",
     "rules": {

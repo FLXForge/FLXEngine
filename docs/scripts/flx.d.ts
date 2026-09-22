@@ -6,49 +6,39 @@
 // Usage:
 // /// <reference path="../flx.d.ts" />
 
-/** Semantic direction constant. */
+/** Logical UP component. Do not depend on its numeric value. */
 declare const UP: number;
 
-/** Semantic direction constant. */
+/** Logical DOWN component. Do not depend on its numeric value. */
 declare const DOWN: number;
 
-/** Semantic direction constant. */
+/** Logical LEFT component. Do not depend on its numeric value. */
 declare const LEFT: number;
 
-/** Semantic direction constant. */
+/** Logical RIGHT component. Do not depend on its numeric value. */
 declare const RIGHT: number;
 
 /** Neutral movement constant. */
 declare const STOP: number;
 
-/**
- * Motion configuration exposed from JSON.
- */
-interface MotionConfig {
-    /** Initial movement speed. */
-    speed: number;
+/** Logical NEGATIVE component. Do not depend on its numeric value. */
+declare const NEGATIVE: number;
 
-    /** Initial movement angle in degrees. */
-    angle: number;
+/** Logical POSITIVE component. Do not depend on its numeric value. */
+declare const POSITIVE: number;
 
-    /** Rotation speed in degrees per second. */
-    rotationSpeed: number;
+/** Horizontal axis selector for input_direction(). */
+declare const HORIZONTAL: number;
 
-    /** Acceleration applied when accelerate(object) is called. */
-    acceleration: number;
-
-    /** Velocity multiplier applied by advance(object). */
-    inertia: number;
-
-    /** Maximum vector speed. A value of 0 means no limit. */
-    maxSpeed: number;
-}
+/** Vertical axis selector for input_direction(). */
+declare const VERTICAL: number;
 
 type AudioSourceType = "oscillator" | "noise" | "impact" | "pulse";
 type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
 type AudioMovementType = "none" | "rise" | "fall" | "pulse" | "wobble" | "scatter" | "random";
 type AudioSpaceMode = "mono" | "stereo";
 type MusicLength = "1/1" | "1/2" | "1/4" | "1/8" | "1/16";
+type ScriptValue = number | boolean | string;
 
 interface AudioSourceConfig {
     type?: AudioSourceType;
@@ -126,55 +116,44 @@ interface MusicChannelConfig {
 
 /**
  * Runtime representation of an object created by FLX.
+ *
+ * RuntimeObject is a temporary live view for the current script hook.
+ * Do not store it in local/global state. Store its id string and resolve it
+ * again with find_id() when needed.
+ * A normal reference expires when the current hook ends or when its instance
+ * dies. dead(object) deliberately receives the final context of the dead
+ * instance for that hook.
  */
 interface RuntimeObject {
     /** Unique runtime instance identifier. */
-    id: string;
+    readonly id: string;
     
     /** Logical instance name assigned by the parent children map. */
-    name: string;
-
-    /**
-     * Runtime local state for this object.
-     * Values persist while the object exists.
-     */
-    local: Record<string, number>;
+    readonly name: string;
 
     /** Collision group identifier. */
-    group: string;
+    readonly group: string;
 
-    /** Optional role inside the collision group. */
-    role: string;
+    /** True while the object is alive. Read-only from JavaScript. Use kill(object). */
+    readonly alive: boolean;
 
-    /** Draw layer. Lower values are drawn first. */
-    layer: number;
-
-    /** True while the object is attached to its original parent. */
-    attached: boolean;
+    /** True while the object can produce visual output. Read-only from JavaScript. Use show(object) and hide(object). */
+    readonly visible: boolean;
 
     /** Current X position. */
-    x: number;
-
-    /** X position at the beginning of the current frame. */
-    previousX: number;
+    readonly x: number;
 
     /** Current Y position. */
-    y: number;
-
-    /** Y position at the beginning of the current frame. */
-    previousY: number;
+    readonly y: number;
 
     /** Runtime object width. */
-    width: number;
+    readonly width: number;
 
     /** Runtime object height. */
-    height: number;
+    readonly height: number;
 
     /** Current movement speed. Used by classic speed + angle movement. */
-    speed: number;
-
-    /** Initial movement speed. */
-    originSpeed: number;
+    readonly speed: number;
 
     /**
      * Current object rotation in degrees.
@@ -185,150 +164,182 @@ interface RuntimeObject {
      * 180 = down
      * 270 = left
      */
-    angle: number;
+    readonly angle: number;
 
     /** Current horizontal velocity. Used by motion-based movement. */
-    velocityX: number;
+    readonly velocityX: number;
 
     /** Current vertical velocity. Used by motion-based movement. */
-    velocityY: number;
+    readonly velocityY: number;
 
-    /** Initial X position. */
-    originX: number;
+    /** Runtime rotation speed in degrees per second. */
+    readonly rotationSpeed: number;
 
-    /** Initial Y position. */
-    originY: number;
-
-    /** Motion configuration defined in JSON. */
-    motion: MotionConfig;
+    /**
+     * Visual draw depth.
+     * Lower values are drawn first. Mutate it with depth(object, value).
+     * Changes affect the next draw pass order.
+     */
+    readonly depth: number;
 }
 
 /**
  * Result returned by ray().
  */
-interface RayResult {
-    /** True when the ray hit a compatible collision object. */
-    hit: boolean;
-
-    /** Collision group hit by the ray, or empty string when hit is false. */
-    group: string;
-
-    /** Distance from the ray origin to the impact point. */
-    distance?: number;
-
-    /** Impact X coordinate in logical FLX space. */
-    x?: number;
-
-    /** Impact Y coordinate in logical FLX space. */
-    y?: number;
+interface CollisionContact {
+    readonly collider: string;
+    readonly otherCollider: string;
+    readonly normalX: number;
+    readonly normalY: number;
+    readonly pointX: number;
+    readonly pointY: number;
+    readonly penetration: number;
 }
 
-/**
- * Shared numeric game state available to all scripts.
- *
- * Unlike object.local, global is shared across the whole game.
- *
- * @example
- * global["score"] = 0;
- * global["lives"] = 3;
- */
-declare const global: Record<string, number>;
-
-interface InputPlayerApi {
-    /** Returns true while the mapped up direction is active. */
-    up(): boolean;
-
-    /** Returns true while the mapped down direction is active. */
-    down(): boolean;
-
-    /** Returns true while the mapped left direction is active. */
-    left(): boolean;
-
-    /** Returns true while the mapped right direction is active. */
-    right(): boolean;
-
-    /** Returns true while the mapped player button is held. */
-    button(buttonIndex: number): boolean;
-
-    /** Returns true on the frame the mapped player button is pressed. */
-    pressed(buttonIndex: number): boolean;
+interface RayHit {
+    readonly object: RuntimeObject;
+    readonly collider: string;
+    readonly pointX: number;
+    readonly pointY: number;
+    readonly normalX: number;
+    readonly normalY: number;
+    readonly distance: number;
 }
 
+interface InputButton {
+    readonly __flxInputControl?: "button";
+    readonly index: number;
+}
+
+interface InputDirection {
+    readonly __flxInputControl?: "direction";
+    readonly index: number;
+}
+
+interface InputSubject {
+    readonly __flxInputSubject?: "player" | "system";
+    readonly index: number;
+}
+
+type InputControl = InputButton | InputDirection;
+type InputReadableSubject = RuntimeObject | InputSubject;
+
+/** Returns a logical button descriptor. */
+declare function button(index: number): InputButton;
+
+/** Returns a logical direction descriptor. */
+declare function direction(index: number): InputDirection;
+
+/** Returns an explicit player input subject. Player indexes start at 1. */
+declare function player(playerIndex: number): InputSubject;
+
+/** Returns the system input subject. */
+declare function system(): InputSubject;
+
+/** True on the frame a mapped button or direction component becomes active. */
+declare function input_pressed(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_pressed(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+
+/** True while a mapped button or direction component is active. */
+declare function input_down(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_down(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+
+/** True on the frame a mapped button or direction component stops being active. */
+declare function input_released(subject: InputReadableSubject, control: InputButton): boolean;
+declare function input_released(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+
 /**
- * Normalized input API backed by the project's input.mapping file and the
- * active Input Chip capabilities.
+ * Returns -1, 0 or 1 for a logical direction on a concrete axis.
+ * RIGHT and UP are positive; LEFT and DOWN are negative.
+ * In 4way, HORIZONTAL reads LEFT/RIGHT and VERTICAL reads UP/DOWN.
+ * In 2way, POSITIVE/NEGATIVE project onto either axis.
  */
-declare const Input: {
-    system: {
-        /** Returns true while the mapped system button is held. */
-        down(buttonIndex: number): boolean;
+declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
 
-        /** Returns true on the frame the mapped system button is pressed. */
-        pressed(buttonIndex: number): boolean;
-    };
+/** Reads a value from the local state owned by one runtime object. */
+declare function read_local(object: RuntimeObject, key: string): ScriptValue | undefined;
 
-    /** Returns the normalized API for a player. Player indexes start at 1. */
-    player(playerIndex: number): InputPlayerApi;
+/** Writes a number, boolean or string into the local state owned by one runtime object. */
+declare function write_local(object: RuntimeObject, key: string, value: ScriptValue): void;
 
-    pointer: {
-        /** Pointer X coordinate in logical FLX space. */
-        x(): number;
+/** Reads a value from the shared runtime state. */
+declare function read_global(key: string): ScriptValue | undefined;
 
-        /** Pointer Y coordinate in logical FLX space. */
-        y(): number;
-
-        /** Returns true while the mapped pointer button is held. */
-        down(buttonIndex: number): boolean;
-
-        /** Returns true on the frame the mapped pointer button is pressed. */
-        pressed(buttonIndex: number): boolean;
-    };
-};
+/** Writes a number, boolean or string into the shared runtime state. */
+declare function write_global(key: string, value: ScriptValue): void;
 
 /**
- * Moves an object on the X axis.
+ * Resolves a live runtime object by runtime id during the current hook.
+ * Returns undefined when the object does not exist or is not alive.
  */
-declare function move_x(object: RuntimeObject, direction: number): void;
+declare function find_id(id: string): RuntimeObject | undefined;
 
 /**
- * Moves an object on the Y axis.
+ * Returns all live runtime objects with the given logical instance name, in world order.
+ * The returned array is a normal JavaScript snapshot, not a reactive collection.
  */
-declare function move_y(object: RuntimeObject, direction: number): void;
+declare function find_name(name: string): RuntimeObject[];
 
 /**
- * Moves an object.
- *
- * If motion.acceleration is defined, advance uses velocityX and velocityY.
- * Otherwise, it uses classic speed + angle movement.
+ * Returns the live parent of an object, when it still exists.
+ * In dead(object), the dead object may be used as final structural context,
+ * but the returned parent must still be alive.
+ */
+declare function find_parent(object: RuntimeObject): RuntimeObject | undefined;
+
+/**
+ * Returns the live direct children of an object, in world order.
+ * It does not return declarations, pending objects, grandchildren or dead
+ * children. The returned array is a normal JavaScript snapshot.
+ */
+declare function find_children(object: RuntimeObject): RuntimeObject[];
+
+/**
+ * Moves an object on the horizontal axis using an intent from -1 to 1.
+ */
+declare function move_horizontal(object: RuntimeObject, intent: number): void;
+
+/**
+ * Moves an object on the vertical axis using an intent from -1 to 1.
+ */
+declare function move_vertical(object: RuntimeObject, intent: number): void;
+
+/**
+ * Moves an object using its current mechanics state.
  */
 declare function advance(object: RuntimeObject): void;
 
 /**
- * Rotates an object using motion.rotationSpeed.
+ * Rotates an object using the declared rotation mechanics or runtime rotationSpeed.
  *
  * @example
- * rotate(object, LEFT);
- * rotate(object, RIGHT);
+ * rotate(object, -1);
+ * rotate(object, 1);
  */
-declare function rotate(object: RuntimeObject, direction: number): void;
+declare function rotate(object: RuntimeObject, intent?: number): void;
 
 /**
  * Makes an object follow another object on the X axis.
+ * The target must be a live RuntimeObject, not a name.
  */
-declare function follow_x(object: RuntimeObject, targetName: string): void;
+declare function follow_x(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Makes an object follow another object on the Y axis.
+ * The target must be a live RuntimeObject, not a name.
  */
-declare function follow_y(object: RuntimeObject, targetName: string): void;
+declare function follow_y(object: RuntimeObject, target: RuntimeObject): void;
 
 /**
  * Enables declared attach rules for an object and its original parent.
+ * Captures the object's current relative position as the new live attach offset
+ * for the followed axes.
  */
 declare function attach(object: RuntimeObject): void;
 
 /**
- * Disables attach rules. The object keeps its current position and angle.
+ * Disables attach rules. The object keeps its current position and angle, and
+ * the original creation offset remains unchanged.
  */
 declare function detach(object: RuntimeObject): void;
 
@@ -339,38 +350,99 @@ declare function attach_active(object: RuntimeObject): boolean;
 
 /**
  * Applies the carrier movement delta to an object for the current frame.
+ * Does not create a persistent relationship.
  */
 declare function carry(object: RuntimeObject, carrier: RuntimeObject): void;
 
 /**
- * Applies a horizontal bounce by modifying the object's angle.
+ * Reflects an object across the X axis of its movement.
  */
-declare function bounce_x(object: RuntimeObject): void;
+declare function reflect_x(object: RuntimeObject): void;
 
 /**
- * Applies a vertical bounce by modifying the object's angle.
+ * Reflects an object across the Y axis of its movement.
  */
-declare function bounce_y(object: RuntimeObject): void;
+declare function reflect_y(object: RuntimeObject): void;
 
 /**
- * Increases the object's speed by the given amount.
+ * Accelerates the object using declared mechanics and moves it this frame.
+ */
+declare function accelerate(object: RuntimeObject, intent?: number): void;
+
+/**
+ * Applies a runtime movement speed immediately.
+ */
+declare function apply_speed(object: RuntimeObject, value: number): void;
+
+/** Applies a runtime angle immediately. */
+declare function apply_angle(object: RuntimeObject, angle: number): void;
+
+/** Applies a runtime rotation speed immediately. */
+declare function apply_rotation_speed(object: RuntimeObject, speed: number): void;
+
+/**
+ * Replaces the live linear velocity vector using a direction and magnitude.
+ * Does not change angle, rotation, declared speed, acceleration or inertia.
+ */
+declare function apply_velocity(
+    object: RuntimeObject,
+    direction: number,
+    speed: number
+): void;
+
+/**
+ * Restores the runtime movement speed declared at creation.
+ */
+declare function restore_speed(object: RuntimeObject): void;
+
+/**
+ * Places an object at the given logical coordinates.
+ */
+declare function position(object: RuntimeObject, x: number, y: number): void;
+
+/**
+ * Applies a directed collision contact correction to the object's current
+ * position: position += contact.normal * contact.penetration.
  *
- * Classic mode.
+ * This does not reflect velocity, change angle, change speed, or perform
+ * automatic physics resolution.
  */
-declare function accelerate(object: RuntimeObject, amount: number): void;
+declare function position(object: RuntimeObject, contact: CollisionContact): void;
+
+/** Places an object on the X axis. */
+declare function position_x(object: RuntimeObject, x: number): void;
+
+/** Places an object on the Y axis. */
+declare function position_y(object: RuntimeObject, y: number): void;
+
+/** Resizes an object. */
+declare function resize(object: RuntimeObject, width: number, height: number): void;
+
+/** Changes only the runtime object width. */
+declare function resize_width(object: RuntimeObject, width: number): void;
+
+/** Changes only the runtime object height. */
+declare function resize_height(object: RuntimeObject, height: number): void;
+
+/** Places an object at its original logical coordinates. */
+declare function position_origin(object: RuntimeObject): void;
 
 /**
- * Accelerates the object using motion.acceleration, motion.maxSpeed
- * and the current angle.
- *
- * Motion-based mode.
+ * Changes the object's draw depth.
+ * The current JavaScript view observes the new value immediately, while the
+ * current draw pass keeps the order snapshot taken at its start.
  */
-declare function accelerate(object: RuntimeObject): void;
+declare function depth(object: RuntimeObject, value: number): void;
 
 /**
- * Sends the object back to its origin and restores its initial speed.
+ * Overrides the object's runtime visual color.
  */
-declare function to_origin(object: RuntimeObject): void;
+declare function apply_color(object: RuntimeObject, color: string): void;
+
+/**
+ * Restores the visual color declared when the object was created.
+ */
+declare function restore_color(object: RuntimeObject): void;
 
 /**
  * Returns true according to a probability chance.
@@ -393,24 +465,42 @@ declare function probability(chance: number, base?: number): boolean;
  * Returns a random number between min and max.
  *
  * @example
- * asteroid.angle = random(0, 360);
+ * apply_angle(asteroid, random(0, 360));
  */
 declare function random(min: number, max: number): number;
 
 /**
- * Casts an invisible ray from an object using collision.with as group filter.
+ * Casts an invisible ray from an object and returns the nearest effective collider.
  */
 declare function ray(
     source: RuntimeObject,
     angle: number,
     distance: number
-): RayResult;
+): RayHit | undefined;
+
+/** Enables a declared collider. */
+declare function collider_on(object: RuntimeObject, colliderName: string): void;
+
+/** Disables a declared collider. */
+declare function collider_off(object: RuntimeObject, colliderName: string): void;
 
 /**
  * Marks an object for destruction.
  * The object will be removed at the end of the frame.
  */
 declare function kill(object: RuntimeObject): void;
+
+/**
+ * Enables visual output for an object.
+ */
+declare function show(object: RuntimeObject): void;
+
+/**
+ * Disables visual output for an object.
+ *
+ * Hidden objects still run action, motion, collision, state time and timers.
+ */
+declare function hide(object: RuntimeObject): void;
 
 /**
  * Marks every living runtime object for destruction except the exact object passed.
@@ -439,9 +529,19 @@ declare function spawn(
 ): void;
 
 /**
- * Changes the current state of an object using its JSON states declaration.
+ * Returns true when the object's iterator creation is still active.
+ *
+ * Individual and grid creation return false. A finite iterator remains active
+ * while its pattern still has pending entries or while its produced instances
+ * are alive. A repeating iterator remains active while the owner exists.
  */
-declare function state(object: RuntimeObject, stateName: string): void;
+declare function creation_active(object: RuntimeObject): boolean;
+
+/**
+ * Requests a transition to another state using the object's JSON states
+ * declaration.
+ */
+declare function state_to(object: RuntimeObject, stateName: string): void;
 
 /**
  * Returns the current state name, or an empty string if the object has none.
@@ -449,7 +549,8 @@ declare function state(object: RuntimeObject, stateName: string): void;
 declare function state_current(object: RuntimeObject): string;
 
 /**
- * Returns true when the object is currently in the given state.
+ * Returns true when the object has a state machine and is currently in the
+ * given state.
  */
 declare function state_active(
     object: RuntimeObject,
@@ -457,30 +558,48 @@ declare function state_active(
 ): boolean;
 
 /**
- * Returns true only during the first runtime frame after the object enters
- * its current state.
+ * Returns true only during the first full runtime frame after the object
+ * enters its current state.
  */
 declare function state_entered(object: RuntimeObject): boolean;
 
 /**
  * Returns seconds elapsed since the object entered its current state.
+ * The first full frame of a state reports 0.
  */
 declare function state_time(object: RuntimeObject): number;
 
 /**
- * Creates or restarts a named timer owned by the object.
+ * Starts, resumes, or redefines a named timer owned by the object.
  *
- * Finished timers stay stored with 0 seconds left until they are restarted,
- * cleared with timer_clear(), or their owner is destroyed.
+ * Without duration, play_timer resumes a paused timer or replays a done timer
+ * from its known duration. With duration, the value represents total duration,
+ * not remaining time.
  */
-declare function timer(
+declare function play_timer(
     object: RuntimeObject,
     timerName: string,
-    duration: number
+    duration?: number
 ): void;
 
 /**
- * Returns true while the named object timer exists and has time left.
+ * Pauses a running timer without clearing its remaining time.
+ */
+declare function pause_timer(
+    object: RuntimeObject,
+    timerName: string
+): void;
+
+/**
+ * Stops and removes a timer. Stop does not mark the timer as done.
+ */
+declare function stop_timer(
+    object: RuntimeObject,
+    timerName: string
+): void;
+
+/**
+ * Returns true while the named timer is running or paused.
  */
 declare function timer_active(
     object: RuntimeObject,
@@ -488,8 +607,24 @@ declare function timer_active(
 ): boolean;
 
 /**
- * Returns remaining seconds for the named object timer, or 0 if it does not
- * exist or has already finished.
+ * Returns true while the named timer is paused.
+ */
+declare function timer_paused(
+    object: RuntimeObject,
+    timerName: string
+): boolean;
+
+/**
+ * Returns true when the named timer reached the end naturally.
+ */
+declare function timer_done(
+    object: RuntimeObject,
+    timerName: string
+): boolean;
+
+/**
+ * Returns remaining seconds for the named object timer, or 0 when absent,
+ * stopped, or done.
  */
 declare function timer_left(
     object: RuntimeObject,
@@ -497,25 +632,18 @@ declare function timer_left(
 ): number;
 
 /**
- * Removes a named object timer immediately.
- */
-declare function timer_clear(
-    object: RuntimeObject,
-    timerName: string
-): void;
-
-/**
- * Draws text on screen using logical screen coordinates.
+ * Draws immediate text during the current draw(object) hook.
  *
- * Coordinates are expressed in FLX logical resolution.
- * The engine applies the configured screen scale internally.
- * This is a screen-space helper; use shape.type = "text" for world text.
+ * Coordinates are expressed in FLX logical world space and represent the text
+ * center/pivot. When a RuntimeObject is passed first, coordinates are local to
+ * that reference object and rotate with it. The primitive belongs to the
+ * current draw owner, not necessarily to the coordinate reference.
  *
  * @example
- * draw_text(10, 10, "SCORE: " + global["score"]);
+ * draw_text(10, 10, "SCORE: " + read_global("score"));
  *
  * @example
- * draw_text(10, 25, "LIVES: " + global["lives"], 8);
+ * draw_text(10, 25, "LIVES: " + read_global("lives"), 8);
  *
  * @example
  * draw_text(10, 40, "READY", 10, "#ffffff");
@@ -527,18 +655,34 @@ declare function draw_text(
     size?: number,
     color?: string
 ): void;
+declare function draw_text(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    text: string,
+    size?: number,
+    color?: string
+): void;
 
 /**
- * Draws one screen-space pixel using logical screen coordinates.
+ * Draws one immediate logical pixel during the current draw(object) hook.
+ * With a RuntimeObject first argument, coordinates are local to that reference.
  */
 declare function draw_pixel(
     x: number,
     y: number,
     color?: string
 ): void;
+declare function draw_pixel(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    color?: string
+): void;
 
 /**
- * Draws a screen-space line using logical screen coordinates.
+ * Draws an immediate line during the current draw(object) hook.
+ * With a RuntimeObject first argument, endpoints are local to that reference.
  */
 declare function draw_line(
     x: number,
@@ -547,11 +691,29 @@ declare function draw_line(
     y1: number,
     color?: string
 ): void;
+declare function draw_line(
+    reference: RuntimeObject,
+    x: number,
+    y: number,
+    x1: number,
+    y1: number,
+    color?: string
+): void;
 
 /**
- * Draws a screen-space rectangle outline using logical screen coordinates.
+ * Draws an immediate rectangle outline during the current draw(object) hook.
+ * x/y are the rectangle center/pivot. With a RuntimeObject first argument, the
+ * center is local to that reference and the rectangle rotates with it.
  */
 declare function draw_rectangle(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color?: string
+): void;
+declare function draw_rectangle(
+    reference: RuntimeObject,
     x: number,
     y: number,
     width: number,
@@ -702,12 +864,13 @@ declare function action(object: RuntimeObject): void;
 declare function motion(object: RuntimeObject): void;
 
 /**
- * Called only when this object has collision.active = true
- * and the other object's group is listed in collision.with.
+ * Called when one or more source colliders declared in this object contact
+ * another object whose group is listed in those colliders' with arrays.
  */
 declare function collision(
     object: RuntimeObject,
-    other: RuntimeObject
+    other: RuntimeObject,
+    contacts: CollisionContact[]
 ): void;
 
 /**
@@ -718,5 +881,7 @@ declare function draw(object: RuntimeObject): void;
 /**
  * Called once before an object is removed.
  * Executed after kill() and before cleanup.
+ * The object is dead, but may still be used as final context for operations
+ * such as spawn(), read_local(), play_sound(), find_parent() and find_children().
  */
 declare function dead(object: RuntimeObject): void;

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 335,
+    "y": 285
+  },
+  "states": {
+    "initial": "playing",
+    "playing": {
+      "next": [
+        "respawn"
+      ]
+    },
+    "respawn": {
+      "next": [
+        "playing"
+      ]
+    }
+  },
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": {
+        "start": 200
+      }
+    }
+  },
+  "control": {
+    "player": 1
+  },
+  "group": "paddle",
+  "children": {
+    "ball": "ball"
+  },
+  "behavior": {
+    "scripts": [
+      "paddle"
+    ]
+  },
+  "sounds": {
+    "pop": {
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": 900,
+        "slide": 300,
+        "movement": {
+          "type": "rise",
+          "amount": 0.35
+        }
+      },
+      "duration": 0.06,
+      "volume": 0.35
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "wall",
+        "powerup"
+      ]
+    }
+  },
+  "size": {
+    "width": 70,
+    "height": 10
+  },
+  "visual": {
+    "color": "grey",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
+  }
+}

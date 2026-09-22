@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Referencia JSON</h1>
+
+            <p>
+                Esta secciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n documenta el manifiesto de proyecto y las estructuras JSON
+                utilizadas por FLX para definir objetos y sus propiedades.
+            </p>
+
+            <p class="placeholder">
+                FLX estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
+            </p>
+
+            <h2>Archivos del proyecto</h2>
+
+            <p>
+                FLX separa los metadatos del proyecto de los datos del mundo.
+            </p>
+
+            <ul>
+                <li><code>.flx</code>: define metadatos del proyecto y puntos de entrada de compilacion.</li>
+                <li><code>object</code>: define un objeto que puede contener otros elementos.</li>
+                <li><code>object</code>: define objetos que pueden representarse visualmente.</li>
+            </ul>
+
+            <hr />
+
+            <h2 class="placeholder">Manifiesto FLX</h2>
+
+            <p>
+                El archivo <code>.flx</code> es un manifiesto de estilo properties.
+                Apunta al objeto raiz, a la Machine y al mapping de input.
+                Las opciones de runtime, como debug o pantalla completa,
+                pertenecen al CLI o al entorno de ejecucion, no al manifiesto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">game.flx</div>
+<pre><code>name=Asteroids
+version=1.0.0
+engine=0.2.0
+path=asteroids
+root=space
+title=Asteroids
+machine=machines/standard.yml
+input.mapping=input/default.input
+notes=FLX example with spawn and basic UI
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>name</code>: nombre del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>version</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>engine</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n objetivo de FLX. <i>[ Opcional ]</i></li>
+                <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
+                <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
+                <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
+                <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, FLX usa el mapping por defecto. <i>[ Opcional ]</i></li>
+                <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                El parser del manifiesto rechaza campos de runtime eliminados
+                como <code>screen.width</code>, <code>screen.height</code>,
+                <code>screen.scale</code>, <code>window.mode</code> y
+                <code>debug.*</code>. Tamano de pantalla y escala vienen del
+                chip de video. Las opciones de debug/ventana pertenecen a la
+                capa de ejecucion, por ejemplo
+                <code>flx run --window-mode=fullscreen --scale=3 project.flx</code>.
+            </p>
+
+            <p>
+                Una Machine describe capacidades disponibles mediante chips como
+                video, audio e input. El tamano de pantalla, el color de fondo
+                y la escala de salida vienen ahora del chip de video, no del
+                manifiesto <code>.flx</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input/default.input</div>
+<pre><code>players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
+
+players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+players.1.buttons.3=KEY_Z,JOY1_Y
+
+system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
+            </div>
+
+            <p>
+                En archivos <code>.input</code>, la coma separa alternativas y
+                <code>+</code> une entradas simultaneas. Las direcciones usan
+                solo <code>up</code>, <code>right</code>, <code>down</code> y
+                <code>left</code>. En un Input Chip <code>2way</code>,
+                <code>up</code>/<code>right</code> se normalizan a intento
+                positivo y <code>down</code>/<code>left</code> a intento
+                negativo. Un mapping explicito ausente, vacio o invalido es un
+                error de compilacion; no hay fallback silencioso. Las diferencias
+                de cobertura entre Machine e Input generan warnings y no recortan
+                el mapping.
+            </p>
+
+            <h2 id="flx-references">Referencias JSON FLX</h2>
+
+            <p>
+                Los recursos JSON pueden usar referencias desde la raiz del
+                proyecto empezando un string con <code>/</code>. Esa barra
+                inicial es la raiz de contenido FLX declarada por
+                <code>path</code> en el manifiesto, no la raiz del sistema
+                operativo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">JSON completo</div>
+<pre><code>"shape": "/ui/title_shape"</code></pre>
+
+                <div class="code-header">clave de primer nivel dentro del JSON</div>
+<pre><code>"note": "/music/notes:a"</code></pre>
+            </div>
+
+            <p>
+                <code>/music/notes</code> carga
+                <code>path/music/notes.json</code>. <code>/music/notes:a</code>
+                carga el mismo archivo y devuelve su entrada de primer nivel
+                <code>a</code>. La extension <code>.json</code> es opcional.
+                Strings normales como <code>red</code>, <code>C4</code>,
+                <code>square</code> o <code>player</code> no son referencias.
+                Archivos inexistentes, JSON invalido, claves no encontradas e
+                intentos de salir de la raiz del proyecto se registran como
+                errores.
+            </p>
+
+            <p>
+                En <code>color.levels</code>, cada canal RGB acepta valores desde
+                <code>0</code>. El valor <code>0</code> desactiva ese canal.
+                En <code>color.tone.base</code>, los colores hexadecimales pueden
+                escribirse con comillas o sin comillas, por ejemplo
+                <code>base: "#9BBC0F"</code> y <code>base: #9BBC0F</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">input chip</div>
+<pre><code>input:
+  system:
+    buttons: 2
+  players:
+    count: 1
+    controls:
+      directions:
+        - type: 4way
+          simultaneous: last
+          buffer: 0
+      buttons: 1</code></pre>
+            </div>
+
+            <p>
+                El Input Chip declara solo capacidades de entrada. No nombra
+                acciones semanticas como start, pause o fire. Los botones de
+                jugador, direcciones de jugador y botones de sistema son
+                presupuestos separados.
+                Si no se declara Input Chip, FLX usa un chip interno permisivo.
+                Esta iteracion soporta direcciones digitales 2way y 4way.
+            </p>
+
+            <p>
+                El chip de audio define las capacidades sonoras de la Machine.
+                No declara sonidos concretos, canciones, instrumentos ni assets.
+                <code>voices.music</code> limita los canales de musica generada y
+                <code>voices.sound</code> limita los efectos generados. En modo
+                <code>reserved</code> esos presupuestos son independientes. En
+                modo <code>shared</code> forman un unico pool con
+                <code>voices.music + voices.sound</code> voces.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">audio chip</div>
+<pre><code>audio:
+  voices:
+    music: 3
+    sound: 1
+    mode: reserved
+    overflow: replace_oldest
+
+  synthesis:
+    model: pulse
+    texture: clean
+    movement: simple
+    noise: simple
+
+  fidelity:
+    resolution: low
+    dynamics: limited
+    space: mono
+
+  resources:
+    generated: true
+    samples: false
+    streams: false
+
+  fileAudio:
+    mode: off</code></pre>
+            </div>
+
+            <p>
+                <code>voices.mode</code> acepta <code>shared</code>,
+                <code>preferred</code> y <code>reserved</code>.
+                <code>voices.overflow</code> acepta <code>ignore</code>,
+                <code>replace_oldest</code>, <code>replace_newest</code>,
+                <code>replace_lowest_priority</code> y
+                <code>steal_from_music</code>. Los efectos generados pueden
+                declarar <code>priority</code>, usado por
+                <code>replace_lowest_priority</code>. En modo
+                <code>shared</code>,
+                <code>steal_from_music</code> puede pausar una voz de musica para
+                reproducir un efecto y reanudar la musica cuando las voces de
+                sonido vuelven a quedar libres.
+            </p>
+
+            <p>
+                <code>synthesis</code>, <code>fidelity</code>,
+                <code>resources</code> y <code>fileAudio</code> se validan y se
+                guardan en la definicion de Machine. El audio generado usa
+                <code>synthesis.model</code>, <code>synthesis.texture</code>,
+                <code>synthesis.movement</code>, <code>synthesis.noise</code>,
+                <code>fidelity.resolution</code> y
+                <code>fidelity.dynamics</code> para moldear los osciladores.
+                Los campos de audio por archivo siguen siendo solo validacion y
+                todavia no activan reproduccion de WAV, OGG o MP3.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">machines/standard.yml</div>
+<pre><code>machine:
+  name: standard
+  video:
+    screen:
+      width: 640
+      height: 480
+</code></pre>
+            </div>
+
+            <h2 id="root">Objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z</h2>
+
+            <p>
+                El objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z es especial ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente porque el manifiesto apunta a ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©l.
+                Su JSON utiliza el mismo schema que cualquier otro nodo.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">space.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",    "behavior": {
+        "scripts": [ "scripts/game" ]
+    },
+
+    "children": {
+        "level": "space/level"
+    }
+}
+</code></pre>
+                <div class="code-header">shape text</div>
+<pre><code>"shape": {
+    "type": "text",
+    "content": "ARKANOID",
+    "color": "white",
+    "mode": "fill",
+    "size": {
+        "width": 260,
+        "height": 60
+    }
+}</code></pre>
+            </div>
+
+            <h2 id="children">Children</h2>
+
+            <p>
+                El campo <code>children</code> permite declarar objetos contenidos por otro objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">children (referencia)</div>
+<pre><code>"children": {
+    "ball": "objects/ball"
+}</code></pre>
+
+                <div class="code-header">children (inline)</div>
+<pre><code>"children": {
+    "ship": {
+        "like": "ship/ship",
+        "origin": { "x": 160, "y": 90 }
+    }
+}</code></pre>
+
+                <div class="code-header">children (manual)</div>
+<pre><code>"children": {
+    "laser": {
+        "like": "ship/laser",
+        "spawn": "manual",
+        "offset": { "x": 0, "y": -14 }
+    }
+}</code></pre>
+            </div>
+
+            <p>
+                Cada clave de <code>children</code> es el nombre lÃƒÂ³gico de la instancia.
+                Un valor string es azÃƒÂºcar sintÃƒÂ¡ctico para un objeto con <code>like</code>.
+            </p>
+
+            <p>
+                Los hijos usan <code>spawn: "auto"</code> por defecto. Esa primera
+                instancia entra en runtime con su padre. Los hijos con
+                <code>spawn: "manual"</code> esperan hasta que un script llama a
+                <code>spawn(parent, "child")</code>. La misma funcion tambien puede
+                crear otra instancia de un hijo <code>auto</code> mas tarde.
+            </p>
+
+            <p>
+                <code>children</code> define que puede existir, <code>spawn</code>
+                define cuando entra cada hijo en runtime y <code>creation</code>
+                define como el parent materializa esos children.
+            </p>
+
+            <h2 id="creation">Creation</h2>
+
+            <p>
+                El bloque opcional <code>creation</code> controla como un parent crea
+                sus children declarados. Si no aparece, FLX usa
+                <code>creation.mode = "individual"</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">creation individual</div>
+<pre><code>"creation": {
+    "mode": "individual"
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern lineal</div>
+<pre><code>"children": {
+    "a": { "like": "brick_red" },
+    "b": { "like": "brick_blue", "spawn": "manual" }
+},
+"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": ["a", "b"]
+}</code></pre>
+
+                <div class="code-header">creation grid con pattern por filas</div>
+<pre><code>"creation": {
+    "mode": "grid",
+    "rules": {
+        "rows": 2,
+        "columns": 3,
+        "cellWidth": 32,
+        "cellHeight": 16
+    },
+    "pattern": [
+        ["a"],
+        ["b"]
+    ]
+}</code></pre>
+
+                <div class="code-header">creation iterator</div>
+<pre><code>"children": {
+    "tank": { "like": "tank" }
+},
+"creation": {
+    "mode": "iterator",
+    "rules": {
+        "concurrent": 1,
+        "repeat": false
+    },
+    "pattern": ["tank"]
+}</code></pre>
+            </div>
+
+            <p>
+                En modo grid, la posicion del parent es el origen de la rejilla.
+                Cada celda usa <code>column * cellWidth</code> y
+                <code>row * cellHeight</code>. El <code>offset</code> del child se
+                aplica dentro de la celda y el <code>origin</code> del child se ignora.
+            </p>
+
+            <p>
+                Un pattern lineal se consume en orden row-major y se repite al terminar.
+                Un pattern por filas repite sus filas exteriores y cada fila interior
+                repite sus columnas. Los children manuales dentro de un grid no aparecen
+                automaticamente; al llamar <code>spawn(parent, "child")</code> se crean
+                todas las celdas del grid donde el pattern referencia ese child.
+            </p>
+
+            <p>
+                El modo iterator consume con el tiempo un pattern plano de nombres
+                de child. <code>rules.concurrent</code> limita cuantas instancias
+                producidas por ese iterator pueden estar vivas o pendientes al mismo
+                tiempo. <code>rules.repeat</code> vuelve al inicio del pattern cuando
+                llega al final. Si <code>rules</code> se omite, FLX usa
+                <code>concurrent: 1</code> y <code>repeat: false</code>. En esta
+                version, las entradas del pattern iterator deben referenciar children
+                con <code>spawn: "auto"</code>.
+            </p>
+
+            <p>
+                Los scripts pueden consultar el progreso del iterator con
+                <code>creation_active(object)</code>. Los modos individual y grid
+                devuelven <code>false</code>.
+            </p>
+
+            <h2 id="sounds">Sounds</h2>
+
+            <p>
+                El campo <code>sounds</code> declara sonidos que pertenecen a un objeto.
+                Los scripts pueden reproducirlos con <code>play_sound(object, "id")</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">sounds</div>
+<pre><code>"sounds": {
+    "beep": {
+        "kind": {
+            "source": {
+                "type": "oscillator",
+                "wave": "square"
+            },
+            "note": 880
+        },
+        "tone": {
+            "material": {
+                "brightness": 0.8,
+                "roughness": 0.1,
+                "noise": 0.0,
+                "resonance": 0.0,
+                "metal": 0.0
+            },
+            "envelope": {
+                "attack": 0.0,
+                "decay": 0.05,
+                "sustain": 0.0,
+                "release": 0.0
+            },
+            "space": {
+                "mode": "mono",
+                "width": 0.0,
+                "echo": 0.0
+            }
+        },
+        "duration": 0.08,
+        "volume": 0.7,
+        "priority": 0
+    }
+}</code></pre>
+
+                <div class="code-header">sounds (referencia)</div>
+<pre><code>"sounds": {
+    "beep": "audio/beep"
+}</code></pre>
+            </div>
+
+            <p>
+                <code>kind</code> define el evento sonoro.
+                <code>kind.source</code> puede usar <code>oscillator</code> o
+                <code>noise</code> en esta implementacion.
+                <code>kind.note</code> acepta una nota musical como
+                <code>C4</code>, una frecuencia numerica como <code>1200</code>,
+                un objeto como <code>{ "frequency": 1200 }</code>, o una
+                referencia FLX explicita como <code>/music/notes:a</code>. Si
+                falta, FLX usa A4.
+            </p>
+
+            <p>
+                <code>kind.slide</code> es el cambio total de frecuencia durante
+                el sonido. <code>kind.movement.type = "fall"</code> o
+                <code>"rise"</code> puede mapear el movimiento a slide cuando
+                <code>slide</code> no esta especificado. <code>"wobble"</code>
+                aplica vibrato y <code>"pulse"</code> aplica tremolo.
+            </p>
+
+            <p>
+                <code>tone</code> define el caracter del sonido mediante
+                <code>material</code>, <code>envelope</code> y
+                <code>space</code>. El envelope se aplica a cada muestra
+                generada. Material brightness, roughness, noise, resonance y
+                metal aportan caracter audible. <code>space.echo</code> anade
+                un pequeno delay; el ancho stereo esta preparado en el modelo de
+                datos, pero el generador actual sigue renderizando en mono.
+            </p>
+
+            <p>
+                <code>priority</code> es opcional y su valor por defecto es
+                <code>0</code>. Se usa cuando la politica de overflow del Audio
+                Chip es <code>replace_lowest_priority</code>.
+            </p>
+
+            <p>
+                Las ondas soportadas son
+                <code>square</code>,
+                <code>sine</code>,
+                <code>triangle</code>,
+                <code>saw</code>
+                ,
+                <code>pulse</code>
+                y
+                <code>noise</code>. <code>source.duty</code> controla el ciclo
+                de trabajo de pulse entre <code>0.05</code> y
+                <code>0.95</code>. <code>square</code> siempre usa duty
+                <code>0.5</code>.
+            </p>
+
+            <p>
+                Las declaraciones de sonido son datos. Pueden estar en linea,
+                referenciadas como JSON o compuestas con <code>like</code>.
+            </p>
+
+            <h2 id="music">Music</h2>
+
+            <p>
+                El campo <code>music</code> declara canciones generadas que
+                pertenecen a un objeto. Los scripts pueden reproducirlas con
+                <code>play_music(object, "id")</code>. La musica usa la
+                capacidad <code>voices.music</code> del Audio Chip y no consume
+                <code>voices.sound</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">music</div>
+<pre><code>"music": {
+    "theme": {
+        "tempo": 120,
+        "loop": true,
+        "channels": {
+            "lead": {
+                "instrument": {
+                    "source": {
+                        "type": "oscillator",
+                        "wave": "square"
+                    },
+                    "tone": {
+                        "material": {
+                            "brightness": 0.8,
+                            "roughness": 0.1,
+                            "noise": 0.0,
+                            "resonance": 0.2,
+                            "metal": 0.0
+                        },
+                        "envelope": {
+                            "attack": 0.0,
+                            "decay": 0.05,
+                            "sustain": 0.5,
+                            "release": 0.03
+                        },
+                        "space": {
+                            "mode": "mono",
+                            "width": 0.0,
+                            "echo": 0.0
+                        }
+                    },
+                    "play": {
+                        "legato": false,
+                        "glide": 0.0,
+                        "vibrato": 0.0
+                    },
+                    "range": {
+                        "min": "C0",
+                        "max": "B8"
+                    }
+                },
+                "volume": 0.35,
+                "length": "1/8",
+                "notes": ["C4", "E4", "G4", "C5"]
+            },
+            "bass": {
+                "wave": "triangle",
+                "volume": 0.25,
+                "length": "1/4",
+                "notes": ["C3", "-", "G2", "-"]
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <p>
+                Un canal puede declarar <code>instrument</code> en linea o como
+                referencia explicita, por ejemplo
+                <code>/music/instruments:lead_square</code>. Los instrumentos
+                usan el mismo modelo <code>source</code> y <code>tone</code> que
+                los sonidos, ademas de <code>play</code> y <code>range</code>.
+                En esta primera implementacion, <code>legato</code>,
+                <code>glide</code> y stereo width se cargan y validan, pero
+                quedan preparados para comportamiento audible futuro.
+                <code>play.vibrato</code> y <code>tone.space.echo</code> ya
+                afectan a la musica generada.
+            </p>
+
+            <p>
+                Para canales simples, <code>wave</code> puede declararse
+                directamente en el canal. FLX lo interpreta como
+                <code>instrument.source.wave</code>.
+            </p>
+
+            <p>
+                Cada canal puede declarar su propio <code>length</code>. Si se
+                omite, FLX usa <code>1/4</code>. Los valores aceptados son
+                <code>1/1</code>, <code>1/2</code>, <code>1/4</code>,
+                <code>1/8</code> y <code>1/16</code>. A tempo 120,
+                <code>1/4</code> dura 0.5 segundos, <code>1/8</code> dura
+                0.25 segundos y <code>1/16</code> dura 0.125 segundos.
+            </p>
+
+            <p>
+                <code>-</code> es silencio. En un canal <code>noise</code>,
+                <code>x</code> es un golpe de ruido. Los canales conservan el
+                orden declarado en JSON; si una cancion declara mas canales que
+                <code>voices.music</code>, los canales sobrantes se ignoran con
+                un warning.
+            </p>
+
+            <h2 id="states">States</h2>
+
+            <p>
+                El bloque opcional <code>states</code> declara una maquina de
+                estados ligera propiedad del objeto. JSON define solo los
+                nombres de estado y las transiciones validas; los scripts
+                deciden cuando ocurren.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code>"states": {
+    "initial": "title",
+
+    "title": {
+        "next": ["playing"]
+    },
+
+    "playing": {
+        "next": ["gameover", "next_level"]
+    },
+
+    "gameover": {
+        "next": ["title"]
+    }
+}</code></pre>
+
+                <div class="code-header">states (referencia)</div>
+<pre><code>"states": "logic/game_states"</code></pre>
+            </div>
+
+            <p>
+                Usa <code>state_to(object, "playing")</code> para solicitar una
+                transicion. Las declaraciones invalidas fallan durante la
+                compilacion. Las transiciones invalidas en runtime se ignoran y
+                se registran como warnings.
+            </p>
+            <p>
+                Cuando <code>states</code> existe, <code>initial</code> es
+                obligatorio y debe nombrar un estado declarado. Un estado sin
+                <code>next</code>, o con <code>next</code> vacio, es terminal.
+                Los ciclos son validos. Una autotransicion solo es valida si el
+                estado se incluye explicitamente a si mismo en
+                <code>next</code>.
+            </p>
+
+            <h2 id="like">ComposiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n JSON (like)</h2>
+
+            <p>
+                FLX permite reutilizar definiciones JSON mediante el campo
+                <code>like</code>.
+            </p>
+
+            <p>
+                Esta caracterÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­stica permite construir nuevas configuraciones
+                a partir de otras existentes, sobrescribiendo ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente
+                los campos necesarios.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">like</div>
+<pre><code>{    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                El runtime carga primero la definiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n indicada en
+                <code>like</code> y posteriormente sobrescribe
+                los campos declarados en el JSON actual.
+            </p>
+
+            <p>
+                La composiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n se realiza de forma recursiva,
+                permitiendo modificar ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente las partes necesarias.
+            </p>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>like</code>:
+                    ruta a la definiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n base utilizada para composiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.
+                </li>
+            </ul>
+
+            <p>
+                <strong>Importante:</strong>
+                <code>like</code> no implementa herencia.
+            </p>
+
+            <p>
+                Su objetivo es reutilizar y componer datos.
+            </p>
+
+            <hr />
+
+            <h2 class="placeholder">Object JSON</h2>
+
+            <p>
+                Un <code>object</code> define un conjunto de objetos, no se representa a nivel visual pero puede contener lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gica.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+    "collisions": {
+        "body": { "type": "box" }
+    },
+
+    "children": {
+        "laser": {
+            "like": "objects/laser",
+            "spawn": "manual"
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: declaraciones de colliders nombrados asociadas al objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <hr />
+
+            <h2 id="capabilities" class="placeholder">Capacidades de objeto</h2>
+
+            <p>
+                Un archivo <code>object</code> define un objeto FLX.
+                Sus propiedades determinan qué capacidades tiene.
+            </p>
+
+            <p>
+                Puede ser dibujable si declara <code>shape</code>,
+                colisionable si declara <code>collisions</code>,
+                scriptable si declara <code>behavior</code>
+                o un controlador lógico sin datos visuales.
+            </p>
+
+            <p>
+                Si no define información visual,
+                el objeto seguirá existiendo dentro del runtime
+                pero no será representado en pantalla.
+            </p>
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "origin": {
+        "x": 157,
+        "y": 87
+    },
+
+    "shape": {
+        "type": "triangle",
+        "color": "white",
+        "size": {
+            "width": 18,
+            "height": 24
+        }
+    },
+
+    "mechanics": {
+      "type": "polar",
+      "motion": {
+        "speed": { "start": 0, "limit": 180 },
+        "acceleration": 120,
+        "inertia": 0.99
+      },
+      "rotation": {
+        "speed": 180
+      }
+    },
+
+    "bounds": {
+      "mode": "wrap",
+      "overflow": true
+    },
+
+    "children": {
+        "laser": {
+            "like": "objects/laser",
+            "spawn": "manual",
+            "offset": {
+                "x": 0,
+                "y": -12
+            }
+        }
+    },
+
+    "group": "paddle",
+
+    "collisions": {
+        "body": {
+            "type": "ellipse",
+            "size": { "width": 32, "height": 32 }
+        }
+    },
+
+    "behavior": {
+        "scripts": [ "tofu" ]
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
+                                <li><a class="link" href="#origin">origin</a>: posiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n inicial del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#shape">shape</a>: informaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n visual del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#mechanics">mechanics</a>: reglas de movimiento y rotacion, si existen. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#inherit">inherit</a>: estado vivo heredado del parent al crear o mientras hay vinculo. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los limites del World. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#delimit">delimit</a>: hace que este objeto contribuya a la extension logica del World. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#states">states</a>: declaracion de maquina de estados ligera. <i>[ Opcional ]</i></li>
+                <li><code>control</code>: vinculacion opcional de input para este objeto. <i>[ Opcional ]</i></li>
+                <li><code>group</code>: grupo logico asociado al objeto. <i>[ Opcional ]</i></li>
+                <li><code>local</code>: estado local inicial de cada instancia. Solo admite valores string, number y boolean. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#collision">collisions</a>: declaraciones de colliders nombrados asociadas al objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#behavior">behavior</a>: scripts asociados al objeto. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                <code>control.player</code> vincula un objeto con un indice de
+                jugador. Esto permite llamar desde script a
+                <code>input_down(object, ...)</code> sin fijar
+                <code>player(1)</code> en el comportamiento.
+            </p>
+
+            <p>
+                <code>group</code> clasifica que tipo de objeto es para colisiones y consultas.
+            </p>
+
+            <p>
+                <code>local</code> inicializa el estado propio de cada instancia.
+                En JavaScript se accede mediante <code>read_local(object, key)</code>
+                y <code>write_local(object, key, value)</code>; no existe
+                <code>object.local</code> como propiedad mutable.
+            </p>
+
+            <h2 id="attach">Attach</h2>
+
+            <p>
+                Define como un objeto sigue a su parent original mientras esta attached.
+                Attach no cambia parent y no crea jerarquias dinamicas.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">attach</div>
+<pre><code>"attach": {
+    "born": true,
+    "position": true,
+    "angle": false
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>born</code>: el objeto nace attached cuando es true. <i>[ Opcional, por defecto false ]</i></li>
+                <li><code>position</code>: sigue X e Y del parent. <i>[ Opcional ]</i></li>
+                <li><code>x</code>: sigue X del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>y</code>: sigue Y del parent. Si se declara, sobrescribe <code>position</code> para este eje. <i>[ Opcional ]</i></li>
+                <li><code>angle</code>: sincroniza el angulo del parent sin rotar el offset. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                El objeto nace detached salvo que <code>born</code> este declarado como <code>true</code>.
+                Cuando <code>born</code> es true, el attach inicial usa el offset capturado
+                al crear el objeto. Las llamadas posteriores a <code>attach(object)</code>
+                conservan el parent original, pero capturan la posicion relativa actual
+                del objeto como offset vivo para los ejes seguidos. <code>detach(object)</code>
+                solo suspende el seguimiento y no cambia el offset de creacion.
+            </p>
+
+            <h2 id="origin">Origin</h2>
+
+            <p>
+                Define la posiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n inicial del objeto dentro del runtime.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">origin</div>
+<pre><code>"origin": {
+    "x": 157,
+    "y": 87
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>x</code>: Coordenada X (en referencia al origen de coordenadas, esquina superior izquierda) <i>[ Obligatorio ]</i></li>
+                <li><code>y</code>: Coordenada Y (en referencia al origen de coordenadas, esquina superior izquierda) <i>[ Obligatorio ]</i></li>
+            </ul>
+
+            <h2>Shape</h2>
+
+            <p>
+                Define la representaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n visual bÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡sica del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">shape</div>
+<pre><code>"shape": {
+    "type": "triangle",
+    "mode": "fill",
+    "color": "white",
+    "size": {
+        "width": 18,
+        "height": 24
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>type</code>: tipo de forma a dibujar. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>block</code>: bloque sÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³lido por defecto. No aplica mecÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡nicas de rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
+                        <li><code>rectangle</code>: rectÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ngulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
+                        <li><code>triangle</code>: triÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ngulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
+                        <li><code>circle</code>: circulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
+                        <li><code>polygon</code>: polÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­gono definido mediante una lista de puntos.</li>
+                        <li><code>line</code>: lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­nea definida entre dos puntos.</li>
+                        <li><code>text</code>: texto renderizable.</li>
+                    </ul>
+                </li>
+                <li>
+                    <code>mode</code>: modo en el que se dibujarÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ la forma. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>fill</code>: se dibuja completa y rellena del color especificado.</li>
+                        <li><code>outline</code>: se dibuja el contorno del color especificado </li>
+                    </ul>
+                </li>
+                <li><code>content</code>: cadena visible cuando <code>type</code> es <code>text</code>. <i>[ Opcional ]</i></li>
+                <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
+                <li><code>depth</code>: propiedad raíz para el orden de dibujado entre objetos en el renderer actual del mundo. Los valores menores se dibujan antes. Los objetos con el mismo depth mantienen el orden de creación. No es un sistema global de capas de video. <i>[ Opcional, por defecto 0 ]</i></li>
+                <li><a class="link" href="#size">size</a>: tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto. <i>[ Opcional ]</i></li>
+            </ul>
+
+            <p>
+                Una forma de texto es un objeto del mundo. Usa origin, angle,
+                bounds, collision y behavior como cualquier otro objeto. El motor
+                calcula un tamaño de fuente que encaja dentro del cuadro logico
+                definido por <code>size</code>.
+            </p>
+
+            <p>
+                Con <code>mode: "outline"</code>, el texto se dibuja primero con
+                el color seleccionado y luego de nuevo en negro con un tamaño
+                proporcionalmente menor, dejando el color seleccionado como contorno.
+            </p>
+
+            <h2 id="size">Size</h2>
+
+            <p>
+                Define el tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"size": {
+    "width": 18,
+    "height": 24
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>width</code>: anchura del objeto en pixels.</li>
+                <li><code>height</code>: altura del objeto en pixels.</li>
+            </ul>
+
+            <h2 id="polygon">Polygon</h2>
+
+            <p>
+                Los polÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­gonos permiten definir formas irregulares
+                mediante una lista de puntos locales.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">polygon</div>
+<pre><code>"shape": {
+    "type": "polygon",
+    "color": "white",
+
+    "points": [
+        { "x": 0, "y": -16 },
+        { "x": 12, "y": -8 },
+        { "x": 16, "y": 8 },
+        { "x": -8, "y": 14 }
+    ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                Cada punto se define en coordenadas locales
+                relativas al pivot del objeto.
+            </p>
+
+            <h2 id="mechanics">Mechanics</h2>
+
+            <p>
+                Define reglas de movimiento y rotacion. Mechanics es
+                declarativo: los scripts aplican intencion mediante funciones
+                como <code>move_horizontal()</code>, <code>move_vertical()</code>,
+                <code>advance()</code>, <code>accelerate()</code> y
+                <code>rotate()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">mechanics</div>
+<pre><code>"mechanics": {
+    "type": "polar",
+    "motion": {
+        "speed": {
+            "start": 90,
+            "limit": 150
+        },
+        "acceleration": 120,
+        "inertia": 0.99,
+        "step": 0,
+        "diagonal": "independent"
+    },
+    "rotation": {
+        "angle": 45,
+        "speed": 180,
+        "acceleration": 0,
+        "inertia": 0,
+        "step": 0
+    }
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>type</code>: <code>direct</code> o <code>polar</code>. Por defecto es <code>direct</code>.</li>
+                <li><code>motion.speed</code>: forma corta numerica u objeto con <code>start</code> y <code>limit</code>. Un limite <code>0</code> significa sin limite.</li>
+                <li><code>motion.acceleration</code>: tasa temporal de aceleracion. Por defecto es <code>0</code>.</li>
+                <li><code>motion.inertia</code>: persistencia normalizada de <code>0</code> a <code>1</code>. Por defecto es <code>0</code>.</li>
+                <li><code>motion.step</code>: cuantizacion del movimiento. <code>0</code> significa continuo.</li>
+                <li><code>motion.diagonal</code>: <code>independent</code> o <code>vector</code>.</li>
+                <li><code>motion.horizontal</code> y <code>motion.vertical</code>: overrides opcionales por eje para speed, acceleration, inertia y step. Los valores comunes de <code>motion</code> se aplican a ambos ejes salvo que un eje concreto sobrescriba ese campo.</li>
+                <li><code>rotation.angle</code>: angulo vivo inicial en grados.</li>
+                <li><code>rotation.speed</code>: velocidad de rotacion como forma corta numerica o <code>{ "start", "limit" }</code>.</li>
+                <li><code>rotation.acceleration</code>, <code>rotation.inertia</code> y <code>rotation.step</code>: equivalentes rotacionales de los campos de movimiento.</li>
+            </ul>
+
+            <h2 id="inherit">Inherit</h2>
+
+            <p>
+                Define que estado vivo recibe un child desde su parent original.
+                No hereda las reglas declarativas de mechanics.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">inherit</div>
+<pre><code>"inherit": {
+    "creation": {
+        "angle": "copy",
+        "velocity": "compose"
+    },
+    "live": {
+        "angle": "copy"
+    }
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>creation.angle = "copy"</code>: copia el angulo del parent cuando se crea el child.</li>
+                <li><code>creation.velocity = "copy"</code>: copia la velocity lineal viva del parent cuando se crea el child.</li>
+                <li><code>creation.velocity = "compose"</code>: suma la velocity lineal viva del parent a la velocity lineal propia del child al crearse, sin modificar su velocidad polar declarada.</li>
+                <li><code>live.angle = "copy"</code>: mantiene sincronizado el angulo del child con su parent original.</li>
+            </ul>
+
+            <h2 id="delimit">Delimit</h2>
+
+            <p>
+                <code>delimit: true</code> marca el objeto como contribuidor
+                declarativo de la extension logica del World. La extension del
+                World es la envolvente rectangular de todos los objetos delimit
+                al cargar. Movimiento, resize, spawn y kill en runtime no la
+                recalculan.
+            </p>
+
+            <p>
+                Si ningun objeto declara <code>delimit: true</code>, FLX usa la
+                extension World por defecto <code>0,0 / 640x480</code>. Este
+                default es independiente del raster de Machine Video, aunque
+                ambos defaults compartan inicialmente el mismo tamano.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">delimit</div>
+<pre><code>{
+    "origin": { "x": 160, "y": 90 },
+    "size": { "width": 320, "height": 180 },
+    "delimit": true
+}</code></pre>
+            </div>
+
+            <h2 id="bounds">Bounds</h2>
+
+            <p>
+                Define comportamiento del objeto al alcanzar los limites del
+                World. <code>bounds.wrap</code> usa la extension logica del
+                World, no el tamano de pantalla de Machine Video.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">motion</div>
+<pre><code>"bounds": {
+    "mode": "wrap",
+    "overflow": true
+},
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li>
+                    <code>mode</code>: modo del comportamiento. [ Opcional ]
+                    <ul>
+                        <li><code>none</code>: sin comportamiento especial.</li>
+                        <li><code>wrap</code>: al alcanzar un lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mite, el objeto aparecerÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ en el lado opuesto manteniendo su direcciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
+                    </ul>
+                </li>
+                <li>
+                    <code>overflow</code>: controla cÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³mo se aplica el comportamiento de lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites. <i>[ Opcional ]</i>
+                    <ul>
+                        <li><code>true</code>: el objeto comenzarÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ a aparecer por el lado opuesto mientras desaparece progresivamente.</li>
+                        <li><code>false</code>: el objeto reaparece inmediatamente al alcanzar el lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mite.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h2 id="manual-children">Hijos manuales</h2>
+
+            <p>
+                Los hijos manuales se declaran dentro de <code>children</code> con
+                <code>spawn: "manual"</code>. No entran en el mundo al cargar el padre;
+                los scripts los crean con <code>spawn()</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">hijo manual</div>
+<pre><code>"children": {
+    "laser": {
+        "like": "ship/laser",
+        "spawn": "manual",
+        "offset": {
+            "x": 0,
+            "y": -12
+        }
+    }
+}</code></pre>
+            </div>
+
+            <p>
+                El <code>offset</code> opcional es local al objeto que crea el hijo y
+                usa su rotaciÃƒÂ³n actual como referencia.
+            </p>
+
+            <p>
+                Si el parent usa <code>creation.mode = "grid"</code>,
+                <code>spawn(parent, "child")</code> sigue la politica del grid en vez
+                de crear una instancia libre. Crea todas las celdas del grid que
+                correspondan a ese child.
+            </p>
+
+            <hr />
+
+            <h2 id="collision">Collisions</h2>
+
+            <p>
+                Define uno o mas colliders nombrados asociados al objeto.
+                Cada collider puede habilitarse, filtrar por grupo, limitarse por estado
+                y tener forma independiente de la forma visual.
+            </p>
+
+            <p>
+                El callback <code>collision(object, other, contacts)</code> se ejecuta
+                cuando uno de los colliders habilitados del objeto declara el grupo del otro
+                objeto en <code>with</code> y la geometria se solapa.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">collisions</div>
+<pre><code>"collisions": {
+    "body": {
+        "type": "ellipse",
+        "size": { "width": 32, "height": 32 },
+        "with": [ "wall" ]
+    }
+}</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>type</code>: tipo de collider: <code>box</code> o <code>ellipse</code>.</li>
+                <li><code>enabled</code>: habilita o deshabilita este collider. Por defecto es <code>true</code>.</li>
+                <li><code>size</code>: tamaño logico opcional del collider. Si se omite, usa el tamaño del objeto.</li>
+                <li><code>offset</code>: desplazamiento local opcional desde la posicion del objeto.</li>
+                <li><code>angle</code>: angulo opcional del collider sumado al angulo del objeto.</li>
+                <li><code>with</code>: grupos que este collider consulta activamente. Vacio u omitido significa pasivo.</li>
+                <li><code>states</code>: lista opcional de estados efectivos donde existe este collider.</li>
+            </ul>
+            <hr />
+
+            <h2 id="behavior">Behavior</h2>
+
+            <p>
+                Define los scripts asociados al objeto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code>"behavior": {
+    "scripts": [ "tofu" ]
+}
+</code></pre>
+            </div>
+
+            <h3>Campos</h3>
+
+            <ul>
+                <li><code>scripts</code>: lista de scripts JavaScript (no es necesario incluir extensiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n) cargados para el objeto. [ Obligatorio ]</li>
+            </ul>
+
+            <hr />
+
+            <h2>Ruta recomendada</h2>
+
+            <p>
+                La documentaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ organizada para introducir los conceptos
+                progresivamente.
+            </p>
+
+            <p>
+                Puedes navegar libremente, pero el recorrido recomendado es:
+            </p>
+
+            <ul class="doc-path">
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="index.html">IntroducciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="mental-model.html">CÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³mo piensa FLX</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="philosophy.html">FilosofÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­a</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="concepts.html">Conceptos bÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡sicos</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="getting-started.html">Primeros pasos</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="scripting.html">Scripting</a></li>
+                <li class="current">ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Referencia JSON ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â EstÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡s aquÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­</li>
+                <li class="recommended"><a class="link" href="api.html">FLX API</a> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Recomendado</li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="examples.html">Ejemplos</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="howdo.html">ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿CÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³mo hacer...?</a></li>
+                <li>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ <a class="link" href="roadmap.html">Roadmap</a></li>
+            </ul>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

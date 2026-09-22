@@ -1,0 +1,12 @@
+# Game data
+title=Component Lifecycle
+name=component-lifecycle
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=component-lifecycle
+
+# Notes
+notes=Component lifetime cascade and normal child independence

@@ -1,0 +1,14 @@
+# Game data
+title=Tank
+name=Tank
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=tank
+root=game
+machine=machines/standard.yml
+input.mapping=controllers.input
+
+# Notes
+notes=FLX v0.3.0 acceptance game

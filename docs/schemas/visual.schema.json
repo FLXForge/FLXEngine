@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "visual.schema.json",
+  "title": "FLX Visual",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "color": {
+      "type": "string",
+      "description": "Base visual color. Representation elements may override it."
+    },
+
+    "depth": {
+      "type": "integer",
+      "default": 0,
+      "description": "Visual draw depth. Lower values are drawn first."
+    },
+
+    "representation": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/representationElement"
+      }
+    }
+  },
+
+  "$defs": {
+    "axisSize": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?%$" }
+      ]
+    },
+
+    "representationSize": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "$ref": "#/$defs/axisSize" },
+        "height": { "$ref": "#/$defs/axisSize" }
+      }
+    },
+
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "x", "y" ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+
+    "common": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": "string"
+        }
+      }
+    },
+
+    "primitiveElement": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "required": [ "primitive" ],
+          "additionalProperties": false,
+          "properties": {
+            "primitive": {
+              "type": "string",
+              "enum": [ "rectangle", "triangle", "ellipse" ]
+            },
+            "mode": {
+              "type": "string",
+              "enum": [ "fill", "outline" ],
+              "default": "fill"
+            },
+            "size": {
+              "$ref": "#/$defs/representationSize"
+            },
+            "color": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+
+    "geometryElement": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "required": [ "geometry" ],
+          "additionalProperties": false,
+          "properties": {
+            "geometry": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/point"
+              },
+              "minItems": 1
+            },
+            "mode": {
+              "type": "string",
+              "enum": [ "open", "close", "fill" ],
+              "default": "open"
+            },
+            "color": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+
+    "textElement": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "required": [ "text", "fontSize" ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "fontSize": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "color": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+
+    "representationElement": {
+      "oneOf": [
+        { "$ref": "#/$defs/primitiveElement" },
+        { "$ref": "#/$defs/geometryElement" },
+        { "$ref": "#/$defs/textElement" }
+      ]
+    }
+  }
+}

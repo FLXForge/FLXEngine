@@ -1,0 +1,61 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 300
+      }
+    }
+  },
+  "inherit": {
+    "creation": {
+      "angle": "copy",
+      "velocity": "compose"
+    }
+  },
+  "bounds": {
+    "mode": "wrap",
+    "overflow": false
+  },
+  "group": "laser",
+  "behavior": {
+    "scripts": [
+      "laser"
+    ]
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 4,
+        "height": 4
+      },
+      "with": [
+        "asteroid"
+      ]
+    }
+  },
+  "size": {
+    "width": 1,
+    "height": 12
+  },
+  "visual": {
+    "color": "red",
+    "representation": [
+      {
+        "geometry": [
+          {
+            "x": 0,
+            "y": -6
+          },
+          {
+            "x": 0,
+            "y": 6
+          }
+        ],
+        "mode": "open"
+      }
+    ]
+  }
+}

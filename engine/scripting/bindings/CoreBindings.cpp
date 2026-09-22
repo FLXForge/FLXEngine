@@ -10,6 +10,8 @@
 
 #include <optional>
 #include <string>
+#include <variant>
+#include <vector>
 
 namespace
 {
@@ -18,48 +20,157 @@ namespace
         const RayCastResult& result
     )
     {
+        if (!result.hit)
+        {
+            return JS_UNDEFINED;
+        }
+
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* objectHit =
+            scriptEngine == nullptr
+            ? nullptr
+            : scriptEngine->findObjectByRuntimeId(result.objectId);
+
+        if (objectHit == nullptr || !objectHit->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
         JSValue object =
             JS_NewObject(context);
 
         JS_SetPropertyStr(
             context,
             object,
-            "hit",
-            JS_NewBool(context, result.hit)
+            "object",
+            scriptEngine->createRuntimeObjectView(*objectHit)
         );
 
         JS_SetPropertyStr(
             context,
             object,
-            "group",
-            JS_NewString(context, result.group.c_str())
+            "collider",
+            JS_NewString(context, result.collider.c_str())
         );
 
-        if (result.hit)
+        JS_SetPropertyStr(context, object, "pointX", JS_NewFloat64(context, result.point.x));
+        JS_SetPropertyStr(context, object, "pointY", JS_NewFloat64(context, result.point.y));
+        JS_SetPropertyStr(context, object, "normalX", JS_NewFloat64(context, result.normal.x));
+        JS_SetPropertyStr(context, object, "normalY", JS_NewFloat64(context, result.normal.y));
+        JS_SetPropertyStr(context, object, "distance", JS_NewFloat64(context, result.distance));
+
+        JS_PreventExtensions(context, object);
+
+        return object;
+    }
+
+    bool jsValueToScriptValue(
+        JSContext* context,
+        JSValueConst value,
+        ScriptValue& scriptValue
+    )
+    {
+        if (JS_IsBool(value))
         {
-            JS_SetPropertyStr(
-                context,
-                object,
-                "distance",
-                JS_NewFloat64(context, result.distance)
-            );
+            scriptValue =
+                JS_ToBool(context, value) != 0;
 
-            JS_SetPropertyStr(
-                context,
-                object,
-                "x",
-                JS_NewFloat64(context, result.point.x)
-            );
+            return true;
+        }
 
-            JS_SetPropertyStr(
+        if (JS_IsNumber(value))
+        {
+            double number = 0.0;
+
+            if (JS_ToFloat64(context, &number, value) != 0)
+            {
+                return false;
+            }
+
+            scriptValue =
+                number;
+
+            return true;
+        }
+
+        if (JS_IsString(value))
+        {
+            const char* text =
+                JS_ToCString(context, value);
+
+            if (text == nullptr)
+            {
+                return false;
+            }
+
+            scriptValue =
+                std::string(text);
+
+            JS_FreeCString(context, text);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void warnRuntimeObjectCannotBePersisted()
+    {
+        Logger::warning(
+            "script",
+            "Cannot persist a live RuntimeObject. Store its `id` and resolve it with `find_id()` when needed."
+        );
+    }
+
+    JSValue scriptValueToJs(
+        JSContext* context,
+        const ScriptValue& value
+    )
+    {
+        if (std::holds_alternative<bool>(value))
+        {
+            return JS_NewBool(
                 context,
-                object,
-                "y",
-                JS_NewFloat64(context, result.point.y)
+                std::get<bool>(value)
             );
         }
 
-        return object;
+        if (std::holds_alternative<std::string>(value))
+        {
+            return JS_NewString(
+                context,
+                std::get<std::string>(value).c_str()
+            );
+        }
+
+        return JS_NewFloat64(
+            context,
+            std::get<double>(value)
+        );
+    }
+
+    bool readKeyArgument(
+        JSContext* context,
+        JSValueConst value,
+        std::string& key
+    )
+    {
+        const char* text =
+            JS_ToCString(context, value);
+
+        if (text == nullptr)
+        {
+            return false;
+        }
+
+        key =
+            text;
+
+        JS_FreeCString(context, text);
+
+        return true;
     }
 
     JSValue consoleLog(
@@ -100,17 +211,94 @@ namespace
         JSValueConst* argv
     )
     {
-        if (argc < 1)
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
         {
             return JS_UNDEFINED;
         }
 
-        JS_SetPropertyStr(
-            context,
-            argv[0],
-            "alive",
-            JS_NewBool(context, false)
-        );
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "kill called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->killObject(object->runtimeId);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsShow(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "show called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->showObject(object->runtimeId);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsHide(
+        JSContext* context,
+        JSValueConst thisValue,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "hide called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->hideObject(object->runtimeId);
 
         return JS_UNDEFINED;
     }
@@ -130,28 +318,121 @@ namespace
             return JS_UNDEFINED;
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
 
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
+        if (object == nullptr)
         {
             Logger::warning(
                 "runtime",
                 "keep_only called without a valid object"
             );
 
-            JS_FreeValue(context, idValue);
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->keepOnly(object->runtimeId);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsDepth(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "depth called without a valid object"
+            );
 
             return JS_UNDEFINED;
         }
 
-        scriptEngine->keepOnly(id);
+        int depth = object->depth;
+        JS_ToInt32(context, &depth, argv[1]);
 
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+        object->depth =
+            depth;
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsApplyColor(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "apply_color called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        const char* colorText =
+            JS_ToCString(context, argv[1]);
+
+        if (colorText == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        object->visualColor =
+            scriptEngine->parseColor(
+                colorText,
+                object->hasVisualColor ? object->visualColor : WHITE
+            );
+        object->hasVisualColor =
+            true;
+
+        JS_FreeCString(context, colorText);
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsRestoreColor(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            Logger::warning(
+                "runtime",
+                "restore_color called without a valid object"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        object->hasVisualColor =
+            object->originalHasVisualColor;
+        object->visualColor =
+            object->originalVisualColor;
 
         return JS_UNDEFINED;
     }
@@ -266,27 +547,8 @@ namespace
             );
         }
 
-        JSValue idValue =
-            JS_GetPropertyStr(context, argv[0], "id");
-
-        const char* id =
-            JS_ToCString(context, idValue);
-
-        if (id == nullptr)
-        {
-            JS_FreeValue(context, idValue);
-
-            return createRayResult(
-                context,
-                RayCastResult{}
-            );
-        }
-
         RuntimeObject* source =
-            scriptEngine->findObjectByRuntimeId(id);
-
-        JS_FreeCString(context, id);
-        JS_FreeValue(context, idValue);
+            runtimeObjectViewFromArgument(context, argv[0]);
 
         if (source == nullptr)
         {
@@ -295,32 +557,6 @@ namespace
                 RayCastResult{}
             );
         }
-
-        RuntimeObject querySource =
-            *source;
-
-        JSValue xValue =
-            JS_GetPropertyStr(context, argv[0], "x");
-
-        JSValue yValue =
-            JS_GetPropertyStr(context, argv[0], "y");
-
-        double x =
-            querySource.position.x;
-
-        double y =
-            querySource.position.y;
-
-        JS_ToFloat64(context, &x, xValue);
-        JS_ToFloat64(context, &y, yValue);
-
-        querySource.position = Vector2{
-            static_cast<float>(x),
-            static_cast<float>(y)
-        };
-
-        JS_FreeValue(context, xValue);
-        JS_FreeValue(context, yValue);
 
         double angle = 0.0;
         double distance = 0.0;
@@ -331,7 +567,7 @@ namespace
         return createRayResult(
             context,
             scriptEngine->rayCast(
-                querySource,
+                *source,
                 static_cast<float>(angle),
                 static_cast<float>(distance)
             )
@@ -581,6 +817,365 @@ namespace
             loaded.value()
         );
     }
+
+    JSValue jsReadLocal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        std::string key;
+
+        if (object == nullptr || !readKeyArgument(context, argv[1], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        const auto it =
+            object->local.find(key);
+
+        if (it == object->local.end())
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptValueToJs(context, it->second);
+    }
+
+    JSValue jsWriteLocal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        RuntimeObject* object =
+            argc < 3 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        std::string key;
+        ScriptValue value;
+
+        if (object == nullptr || !readKeyArgument(context, argv[1], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        if (isRuntimeObjectView(context, argv[2]))
+        {
+            warnRuntimeObjectCannotBePersisted();
+
+            return JS_UNDEFINED;
+        }
+
+        if (!jsValueToScriptValue(context, argv[2], value))
+        {
+            Logger::warning(
+                "script",
+                "write_local() supports only boolean, number and string values"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        object->local[key] =
+            value;
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsReadGlobal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string key;
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        std::optional<ScriptValue> value =
+            scriptEngine->readGlobalValue(key);
+
+        if (!value.has_value())
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptValueToJs(context, value.value());
+    }
+
+    JSValue jsWriteGlobal(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string key;
+        ScriptValue value;
+
+        if (scriptEngine == nullptr ||
+            argc < 2 ||
+            !readKeyArgument(context, argv[0], key))
+        {
+            return JS_UNDEFINED;
+        }
+
+        if (isRuntimeObjectView(context, argv[1]))
+        {
+            warnRuntimeObjectCannotBePersisted();
+
+            return JS_UNDEFINED;
+        }
+
+        if (!jsValueToScriptValue(context, argv[1], value))
+        {
+            Logger::warning(
+                "script",
+                "write_global() supports only boolean, number and string values"
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        scriptEngine->writeGlobalValue(
+            key,
+            value
+        );
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsColliderSetEnabled(
+        JSContext* context,
+        int argc,
+        JSValueConst* argv,
+        bool enabled
+    )
+    {
+        RuntimeObject* object =
+            argc < 2 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        std::string colliderName;
+
+        if (object == nullptr ||
+            !readKeyArgument(context, argv[1], colliderName))
+        {
+            return JS_UNDEFINED;
+        }
+
+        auto it =
+            object->collisions.find(colliderName);
+
+        if (it == object->collisions.end())
+        {
+            Logger::warning(
+                "collision",
+                "Unknown collider '" + colliderName + "' in " + object->runtimeId
+            );
+
+            return JS_UNDEFINED;
+        }
+
+        it->second.enabled =
+            enabled;
+
+        return JS_UNDEFINED;
+    }
+
+    JSValue jsColliderOn(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        return jsColliderSetEnabled(
+            context,
+            argc,
+            argv,
+            true
+        );
+    }
+
+    JSValue jsColliderOff(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        return jsColliderSetEnabled(
+            context,
+            argc,
+            argv,
+            false
+        );
+    }
+
+    JSValue jsFindId(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string id;
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], id))
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* object =
+            scriptEngine->findObjectByRuntimeId(id);
+
+        if (object == nullptr || !object->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptEngine->createRuntimeObjectView(*object);
+    }
+
+    JSValue jsFindName(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        std::string name;
+
+        JSValue array =
+            JS_NewArray(context);
+
+        if (scriptEngine == nullptr ||
+            argc < 1 ||
+            !readKeyArgument(context, argv[0], name))
+        {
+            return array;
+        }
+
+        std::vector<RuntimeObject*> matches =
+            scriptEngine->findObjectsByName(name);
+
+        uint32_t index = 0;
+
+        for (RuntimeObject* object : matches)
+        {
+            if (object == nullptr || !object->alive)
+            {
+                continue;
+            }
+
+            JS_SetPropertyUint32(
+                context,
+                array,
+                index++,
+                scriptEngine->createRuntimeObjectView(*object)
+            );
+        }
+
+        return array;
+    }
+
+    JSValue jsFindParent(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            return JS_UNDEFINED;
+        }
+
+        RuntimeObject* parent =
+            scriptEngine->findParent(object->runtimeId);
+
+        if (parent == nullptr || !parent->alive)
+        {
+            return JS_UNDEFINED;
+        }
+
+        return scriptEngine->createRuntimeObjectView(*parent);
+    }
+
+    JSValue jsFindChildren(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        RuntimeObject* object =
+            argc < 1 ? nullptr : runtimeObjectViewFromArgument(context, argv[0]);
+
+        JSValue array =
+            JS_NewArray(context);
+
+        if (scriptEngine == nullptr || object == nullptr)
+        {
+            return array;
+        }
+
+        std::vector<RuntimeObject*> children =
+            scriptEngine->findChildren(object->runtimeId);
+
+        uint32_t index = 0;
+
+        for (RuntimeObject* child : children)
+        {
+            if (child == nullptr || !child->alive)
+            {
+                continue;
+            }
+
+            JS_SetPropertyUint32(
+                context,
+                array,
+                index++,
+                scriptEngine->createRuntimeObjectView(*child)
+            );
+        }
+
+        return array;
+    }
 }
 
 void CoreBindings::registerAll(JSContext* context)
@@ -616,8 +1211,43 @@ void CoreBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(
         context,
         global,
+        "show",
+        JS_NewCFunction(context, jsShow, "show", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "hide",
+        JS_NewCFunction(context, jsHide, "hide", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
         "keep_only",
         JS_NewCFunction(context, jsKeepOnly, "keep_only", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "depth",
+        JS_NewCFunction(context, jsDepth, "depth", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "apply_color",
+        JS_NewCFunction(context, jsApplyColor, "apply_color", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "restore_color",
+        JS_NewCFunction(context, jsRestoreColor, "restore_color", 1)
     );
 
     JS_SetPropertyStr(
@@ -651,6 +1281,20 @@ void CoreBindings::registerAll(JSContext* context)
     JS_SetPropertyStr(
         context,
         global,
+        "collider_on",
+        JS_NewCFunction(context, jsColliderOn, "collider_on", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "collider_off",
+        JS_NewCFunction(context, jsColliderOff, "collider_off", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
         "exit",
         JS_NewCFunction(context, jsExit, "exit", 0)
     );
@@ -667,6 +1311,62 @@ void CoreBindings::registerAll(JSContext* context)
         global,
         "load",
         JS_NewCFunction(context, jsLoad, "load", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "read_local",
+        JS_NewCFunction(context, jsReadLocal, "read_local", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "write_local",
+        JS_NewCFunction(context, jsWriteLocal, "write_local", 3)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "read_global",
+        JS_NewCFunction(context, jsReadGlobal, "read_global", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "write_global",
+        JS_NewCFunction(context, jsWriteGlobal, "write_global", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_id",
+        JS_NewCFunction(context, jsFindId, "find_id", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_name",
+        JS_NewCFunction(context, jsFindName, "find_name", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_parent",
+        JS_NewCFunction(context, jsFindParent, "find_parent", 1)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "find_children",
+        JS_NewCFunction(context, jsFindChildren, "find_children", 1)
     );
 
     JS_FreeValue(context, global);

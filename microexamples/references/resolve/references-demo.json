@@ -1,0 +1,60 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "behavior": {
+    "scripts": [
+      "references-demo"
+    ]
+  },
+  "children": {
+    "target": {
+      "origin": {
+        "x": 50,
+        "y": 80
+      },
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 70
+          }
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "target"
+        ]
+      },
+      "size": {
+        "width": 12,
+        "height": 12
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "marker": {
+      "origin": {
+        "x": 50,
+        "y": 120
+      },
+      "size": {
+        "width": 16,
+        "height": 16
+      },
+      "visual": {
+        "color": "blue",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -2,12 +2,20 @@
 
 #include "CompiledProject.h"
 
+#include <cstdint>
 #include <string>
+
+struct CompiledProjectBinaryMetadata
+{
+    uint32_t formatVersion = 0;
+    std::string producerVersion;
+};
 
 struct CompiledProjectBinaryResult
 {
     bool success = false;
     CompiledProject project;
+    CompiledProjectBinaryMetadata metadata;
     Diagnostics diagnostics;
 };
 

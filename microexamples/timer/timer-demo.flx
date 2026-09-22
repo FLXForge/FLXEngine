@@ -1,0 +1,12 @@
+# Game data
+title=Timer Demo
+name=timer-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=timer-demo
+
+# Notes
+notes=Minimal timer process demo

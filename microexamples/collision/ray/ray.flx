@@ -1,0 +1,12 @@
+# Game data
+title=Collision: Ray
+name=ray
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=ray
+
+# Notes
+notes=Ray query against passive effective collider without with or collision callback

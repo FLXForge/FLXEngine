@@ -47,13 +47,16 @@ FLX is especially suited for:
     "y": 160
   },
 
-  "shape": {
-    "type": "triangle",
-    "color": "WHITE",
-    "size": {
-      "width": 18,
-      "height": 24
-    }
+  "size": {
+    "width": 18,
+    "height": 24
+  },
+
+  "visual": {
+    "color": "white",
+    "representation": [
+      { "primitive": "triangle" }
+    ]
   }
 }
 ```
@@ -69,8 +72,8 @@ function motion(ship) {
 FLX keeps game structure simple, readable and easy to modify.
 
 JSON files describe FLX objects. Objects gain capabilities from the
-properties they declare: `shape` makes them drawable, `collision` makes
-them collide, `behavior` attaches scripts and `children` declares what
+properties they declare: `visual.representation` makes them drawable,
+`collision` makes them collide, `behavior` attaches scripts and `children` declares what
 can exist below them.
 
 Objects can also declare local sounds:
@@ -176,37 +179,77 @@ Every FLX project starts with a single entry point:
 MyGame.flx
 ```
 
-This file defines project metadata, runtime configuration, the root object and,
-optionally, the Machine YAML used by the project.
+This file defines project metadata, the root object and, optionally, the
+Machine YAML and input mapping used by the project.
 
 ```text
 machine=machines/standard.yml
 input.mapping=input/default.input
-window.mode=window
-debug.console=false
 ```
 
 If no Machine is declared, FLX uses an internal default Machine compatible with
 the current runtime behavior.
 
-`window.mode` can be `window` or `fullscreen`. `debug.console` controls runtime
-console output and defaults to `false`; `debug.logs` remains a separate switch
-for internal debug traces. On Windows, a build without a physical console window
-can be produced by configuring CMake with `FLX_WINDOWS_SUBSYSTEM=ON`.
-Fullscreen keeps the video chip logical resolution and scales it to the physical
-display while preserving aspect ratio.
+Runtime options such as window mode, console visibility and debug drawing are
+not project manifest fields. They belong to the CLI or host execution layer.
+Screen size, background color and default output scale come from the Machine
+video chip. For example, `--scale` overrides the Machine output scale only for
+the current execution.
 
-The normalized JavaScript input API uses an explicit mapping file:
+Objects declare movement rules through `mechanics`. Runtime scripts apply
+intent with explicit verbs:
 
-```text
-system.buttons.0=KEY_ESCAPE
-players.1.direction.left=KEY_A,JOY1_LEFT
-players.1.direction.right=KEY_D,JOY1_RIGHT
-players.1.buttons.0=KEY_SPACE,JOY1_A
+```json
+{
+  "mechanics": {
+    "type": "direct",
+    "motion": {
+      "speed": 120
+    }
+  },
+  "control": {
+    "player": 1
+  }
+}
 ```
 
-Scripts read this through `Input.system` and `Input.player(index)`. FLX does not
-create an implicit mapping when `input.mapping` is missing.
+```js
+const MOVE = direction(0);
+
+function motion(player) {
+    move_horizontal(
+        player,
+        input_direction(player, MOVE, HORIZONTAL)
+    );
+}
+```
+
+For polar movement, `advance(object)` moves using the object's live angle and
+speed. `accelerate(object)` changes live velocity using declared acceleration
+and moves the object during the same frame. `apply_speed()` changes live speed
+without changing the declaration, while `restore_speed()` returns it to
+`mechanics.motion.speed.start`.
+
+The normalized JavaScript input API uses a properties-style mapping file:
+
+```text
+players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
+players.1.buttons.0=KEY_SPACE,JOY1_A
+players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
+players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
+players.1.buttons.3=KEY_Z,JOY1_Y
+system.buttons.0=KEY_ENTER,JOY1_START
+system.buttons.1=KEY_ESCAPE,JOY1_SELECT
+```
+
+Scripts read this through descriptors such as `system()`, `player(index)`,
+`button(index)`, `direction(index)` and the `input_*` query functions. If
+`input.mapping` is missing, FLX compiles a default mapping. If it is declared
+explicitly, the file must exist and be intrinsically valid. Machine/Input
+coverage differences are reported as warnings and do not trim the mapping.
 
 JSON files can reference reusable project resources with FLX-root paths. The
 leading slash points to the manifest `path`, not to the operating system root:
@@ -214,7 +257,7 @@ leading slash points to the manifest `path`, not to the operating system root:
 ```json
 {
   "note": "/music/notes:a",
-  "shape": "/ui/title_shape"
+  "visual": "/ui/title_visual"
 }
 ```
 
@@ -224,7 +267,7 @@ character, fidelity and external audio resource support. Runtime support applies
 voice limits before generating waves. In `reserved` mode music and sound voices
 stay separate; in `shared` mode they form a common pool and `steal_from_music`
 can temporarily pause music so a sound effect can play. Synthesis/fidelity
-settings shape generated oscillators. File audio resources are validated but not
+settings affect generated oscillators. File audio resources are validated but not
 played yet.
 
 ---
@@ -235,8 +278,8 @@ FLX can produce a temporary compiled project file for testing the future build
 pipeline:
 
 ```text
-FlxEngine.exe compile examples/pong.flx -o pong.flxc
-FlxEngine.exe run-compiled pong.flxc
+flx compile --output=pong.flxc examples/pong.flx
+flx run-compiled pong.flxc
 ```
 
 The compiled file is binary and versioned. It contains the effective project
@@ -244,6 +287,33 @@ context, Machine, object registry, declarative sounds/music and embedded
 JavaScript source. It is not the final packaging system yet: there is no
 compression, cache, bytecode, atlas, sprite compiler or standalone game
 executable in this step.
+
+## CLI
+
+The executable is `flx.exe` and the command form is:
+
+```text
+flx [command] [options] [target]
+```
+
+The default command is `run` and the default target is the current directory, so
+`flx`, `flx .` and `flx run .` are equivalent. Use `flx --help` for available
+commands and `flx --version` for the semantic FLX version read from `VERSION`.
+In text output, human diagnostics always go to stderr, including info messages;
+stdout is reserved for command results. Diagnostics include a stable code and
+identifier, for example `FLX-COMP-00000 CompInformationUnclassified`.
+Structured JSON output is currently supported only by `compile` and `validate`.
+Runtime JSON output for `run` and `run-compiled` is planned for a later step,
+once the engine returns a structured runtime result and owns its streams.
+
+Runtime-only options are accepted by `run` and `run-compiled`:
+
+```text
+flx run --window-mode=fullscreen --scale=3 examples/pong.flx
+flx run-compiled --debug-logs --debug-collisions game.flxc
+```
+
+These options are not written to `.flx` or `.flxc`; they describe one launch.
 
 ---
 

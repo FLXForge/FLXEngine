@@ -1,75 +1,84 @@
 #pragma once
 
+#include "InputMapping.h"
 #include "../machine/MachineDefinition.h"
 
-#include <raylib.h>
-
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+class PhysicalInputProvider
+{
+public:
+    virtual ~PhysicalInputProvider() = default;
+
+    virtual bool keyDown(int key) const = 0;
+    virtual bool keyPressed(int key) const = 0;
+    virtual bool gamepadButtonDown(int device, int button) const = 0;
+    virtual bool gamepadButtonPressed(int device, int button) const = 0;
+};
 
 class InputSystem
 {
 public:
     void configure(const InputChipDefinition& inputChip);
-    void loadMapping(const std::string& path);
-    void loadMappingContent(
-        const std::string& sourceName,
-        const std::string& content
-    );
-    void update(
-        float delta,
-        int screenWidth,
-        int screenHeight,
-        Rectangle screenArea
-    );
+    void setPhysicalInputProvider(PhysicalInputProvider* nextProvider);
+    void setMapping(const InputMapping& nextMapping);
+    void update(float delta);
 
-    bool systemDown(int button) const;
-    bool systemPressed(int button) const;
+    bool systemButtonPressed(int button) const;
+    bool systemButtonDown(int button) const;
+    bool systemButtonReleased(int button) const;
 
-    bool playerUp(int player) const;
-    bool playerDown(int player) const;
-    bool playerLeft(int player) const;
-    bool playerRight(int player) const;
-    bool playerButtonDown(int player, int button) const;
     bool playerButtonPressed(int player, int button) const;
+    bool playerButtonDown(int player, int button) const;
+    bool playerButtonReleased(int player, int button) const;
 
-    float pointerX() const;
-    float pointerY() const;
-    bool pointerDown(int button) const;
-    bool pointerPressed(int button) const;
+    bool playerDirectionPressed(
+        int player,
+        int direction,
+        InputComponent component
+    ) const;
+    bool playerDirectionDown(
+        int player,
+        int direction,
+        InputComponent component
+    ) const;
+    bool playerDirectionReleased(
+        int player,
+        int direction,
+        InputComponent component
+    ) const;
+
+    bool validPlayer(int player) const;
+    bool validSystemButton(int button) const;
+    bool validPlayerButton(int button) const;
+    bool validDirection(int direction) const;
+    bool componentAllowed(int direction, InputComponent component) const;
 
 private:
-    enum class PhysicalType
+    struct ButtonState
     {
-        Key,
-        GamepadButton
+        bool previous = false;
+        bool current = false;
     };
 
-    struct PhysicalInput
+    struct DirectionState
     {
-        PhysicalType type = PhysicalType::Key;
-        int device = 0;
-        int code = 0;
+        InputComponent previous = InputComponent::Neutral;
+        InputComponent current = InputComponent::Neutral;
+        InputComponent pending = InputComponent::Neutral;
+        float pendingLeft = 0.0f;
+        int nextOrder = 1;
+        std::array<bool, 7> physical = {};
+        std::array<int, 7> order = {};
     };
 
-    struct InputCombination
+    struct PlayerState
     {
-        std::vector<PhysicalInput> inputs;
-    };
-
-    struct InputAction
-    {
-        std::vector<InputCombination> alternatives;
-    };
-
-    struct PlayerMapping
-    {
-        InputAction up;
-        InputAction down;
-        InputAction left;
-        InputAction right;
-        std::unordered_map<int, InputAction> buttons;
+        std::vector<DirectionState> directions;
+        std::unordered_map<int, ButtonState> buttons;
     };
 
     bool actionDown(const InputAction& action) const;
@@ -79,49 +88,51 @@ private:
     bool physicalDown(const PhysicalInput& input) const;
     bool physicalPressed(const PhysicalInput& input) const;
 
-    void parseLine(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    void parseSystemButton(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    void parsePlayerInput(
-        const std::string& key,
-        const std::string& value,
-        int lineNumber
-    );
-
-    InputAction parseAction(
-        const std::string& value,
-        int lineNumber
+    void resizeRuntimeState();
+    ButtonState buttonState(
+        const std::unordered_map<int, ButtonState>& buttons,
+        int button
     ) const;
 
-    bool parsePhysicalInput(
-        const std::string& token,
-        PhysicalInput& input
+    DirectionState directionState(
+        int player,
+        int direction
     ) const;
 
-    bool validPlayer(int player, int lineNumber) const;
-    bool validPlayerButton(int button, int lineNumber) const;
-    bool validSystemButton(int button, int lineNumber) const;
-    bool directionMappingAllowed(int lineNumber) const;
+    InputComponent resolveDirection(
+        const InputDirectionDefinition& definition,
+        const DirectionMapping& mapping,
+        DirectionState& state,
+        float delta
+    ) const;
 
-    static std::string trim(const std::string& value);
-    static std::vector<std::string> split(
-        const std::string& value,
-        char separator
-    );
+    InputComponent resolveLast(
+        const std::vector<InputComponent>& active,
+        const DirectionState& state
+    ) const;
+
+    InputComponent resolveNeutral(
+        const std::vector<InputComponent>& active
+    ) const;
+
+    InputComponent resolveFirst(
+        const std::vector<InputComponent>& active,
+        const InputDirectionDefinition& definition,
+        DirectionState& state,
+        float delta
+    ) const;
+
+    bool componentMatches(
+        const InputDirectionDefinition& definition,
+        InputComponent value,
+        InputComponent query
+    ) const;
+
+    static int componentIndex(InputComponent component);
 
     InputChipDefinition chip;
-    std::unordered_map<int, InputAction> systemButtons;
-    std::unordered_map<int, PlayerMapping> players;
-    Vector2 mousePointer = Vector2{ 0.0f, 0.0f };
-    Vector2 virtualPointer = Vector2{ 0.0f, 0.0f };
-    bool virtualPointerInitialized = false;
+    InputMapping mapping;
+    std::unordered_map<int, ButtonState> systemButtonStates;
+    std::unordered_map<int, PlayerState> playerStates;
+    PhysicalInputProvider* provider = nullptr;
 };

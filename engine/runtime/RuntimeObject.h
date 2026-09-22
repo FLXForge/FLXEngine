@@ -1,16 +1,29 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include "WorldExtent.h"
+#include "ScriptValue.h"
 
 #include <string>
 #include <raylib.h>
 #include <vector>
 #include <unordered_map>
+#include <map>
+#include <memory>
 #include <cstdint>
+
+enum class RuntimeTimerStatus
+{
+    Running,
+    Paused,
+    Done
+};
 
 struct RuntimeTimer
 {
+    float duration = 0.0f;
     float left = 0.0f;
+    RuntimeTimerStatus status = RuntimeTimerStatus::Running;
 };
 
 class RuntimeObject
@@ -23,47 +36,49 @@ public:
         Color color
     );
 
-    std::unordered_map<std::string, double> local;
+    std::unordered_map<std::string, ScriptValue> local;
 
-    std::unordered_map<std::string, ObjectDefinition> children;
+    std::map<std::string, std::shared_ptr<ObjectDefinition>> children;
     std::unordered_map<std::string, std::string> childResources;
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, RuntimeTimer> timers;
-    std::unordered_map<std::string, std::vector<std::string>> stateTransitions;
     std::string creationMode = "individual";
     GridCreationRules gridRules;
     bool gridPatternIsRows = false;
     std::vector<std::string> gridPattern;
     std::vector<std::vector<std::string>> gridRowPattern;
+    IteratorCreationRules iteratorRules;
+    std::vector<std::string> iteratorPattern;
+    size_t iteratorCursor = 0;
 
-    void draw(
-        int scale,
-        float screenWidth,
-        float screenHeight
-    ) const;
-    void drawAt(Vector2 drawPosition, int scale) const;
-    void drawCollision(float scale) const;
-
-    void applyBounds(float screenWidth, float screenHeight);
+    void applyBounds(const WorldExtent& worldExtent);
 
 public:
     std::string name;
     std::string runtimeId;
+    std::string definitionId;
     std::string parentId;
-    std::string originalParentId;
+    std::string creationChildId;
+    std::string creationOwnerId;
     std::string sourcePath;
     std::string group;
-    std::string role;
+    int controlPlayer = 0;
     std::string state;
     float stateTime = 0.0f;
     uint64_t stateEnteredFrame = 0;
 
+    bool component = false;
     bool visible;
     bool alive;
     bool deadCalled;
     bool attached = false;
-    int layer = 0;
+    int depth = 0;
+    bool hasSize = false;
+    bool hasVisualColor = false;
+    bool originalHasVisualColor = false;
+    Color visualColor = WHITE;
+    Color originalVisualColor = WHITE;
 
     Vector2 origin;
     Vector2 position;
@@ -77,32 +92,33 @@ public:
 
     bool hasOrigin = false;
 
-    Color color;
-    std::string shapeMode;
+    MechanicsDefinition mechanics;
+    InheritDefinition inherit;
+    MechanicsType mechanicsType = MechanicsType::Direct;
+    MechanicsMotionDefinition mechanicsMotion;
+    MechanicsRotationDefinition mechanicsRotation;
 
-    float radius;
     float speed;
     float angle;
     float originSpeed;
     
     Vector2 velocity;
+    float angularVelocity = 0.0f;
+    bool motionCommanded = false;
+    bool rotationCommanded = false;
+    Vector2 frameMotionDelta = Vector2{ 0.0f, 0.0f };
 
     float rotationSpeed;
     float acceleration;
     float maxSpeed;
     float inertia;
 
-    std::string shapeType;
-    std::string textContent;
-    std::vector<Vector2> points;
+    std::vector<RepresentationElementDefinition> representation;
 
     std::string boundsMode;
     bool boundsOverflow;
 
-    bool collisionActive;
-    std::vector<std::string> collisionWith;
-    std::string collisionType;
-    float collisionRadius;
+    std::unordered_map<std::string, ColliderDefinition> collisions;
 
     std::vector<std::string> scripts;
     std::vector<std::string> resolvedScriptPaths;

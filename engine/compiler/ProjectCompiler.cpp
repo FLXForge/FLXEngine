@@ -69,6 +69,92 @@ namespace
         compiled.gridPatternIsRows = definition.gridPatternIsRows;
         compiled.gridPattern = definition.gridPattern;
         compiled.gridRowPattern = definition.gridRowPattern;
+        compiled.iteratorRules = definition.iteratorRules;
+        compiled.iteratorPattern = definition.iteratorPattern;
+    }
+
+    void validateCreation(
+        const ObjectDefinition& definition,
+        const ObjectDefinition& compiled,
+        Diagnostics& diagnostics
+    )
+    {
+        if (
+            compiled.creationMode != "individual" &&
+            compiled.creationMode != "grid" &&
+            compiled.creationMode != "iterator"
+            )
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Unsupported creation mode: " + compiled.creationMode,
+                definition.sourcePath,
+                definition.id + ".creation.mode"
+            );
+        }
+
+        if (compiled.creationMode != "iterator")
+        {
+            return;
+        }
+
+        if (compiled.iteratorRules.concurrent < 1)
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Iterator creation concurrent must be greater than zero",
+                definition.sourcePath,
+                definition.id + ".creation.rules.concurrent"
+            );
+        }
+
+        if (compiled.iteratorPattern.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Iterator creation pattern must contain at least one child",
+                definition.sourcePath,
+                definition.id + ".creation.pattern"
+            );
+        }
+
+        for (const std::string& childId : compiled.iteratorPattern)
+        {
+            const auto childResourceIt =
+                compiled.childResources.find(childId);
+
+            if (childResourceIt == compiled.childResources.end())
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Iterator creation pattern references missing child: " +
+                    childId,
+                    definition.sourcePath,
+                    definition.id + ".creation.pattern"
+                );
+
+                continue;
+            }
+
+            const auto childIt =
+                definition.children.find(childId);
+
+            if (childIt == definition.children.end() || !childIt->second)
+            {
+                continue;
+            }
+
+            if (childIt->second->spawnMode != "auto")
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Iterator creation pattern child must use spawn auto: " +
+                    childId,
+                    childIt->second->sourcePath,
+                    childId + ".spawn"
+                );
+            }
+        }
     }
 }
 
@@ -438,6 +524,12 @@ void ProjectCompiler::compileDefinition(
         compiled->childResources[child.first] =
             childResourceId;
     }
+
+    validateCreation(
+        definition,
+        *compiled,
+        diagnostics
+    );
 
     compiled->children.clear();
 

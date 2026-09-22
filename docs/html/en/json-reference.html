@@ -396,6 +396,19 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
         ["b"]
     ]
 }</code></pre>
+
+                <div class="code-header">iterator creation</div>
+<pre><code>"children": {
+    "tank": { "like": "tank" }
+},
+"creation": {
+    "mode": "iterator",
+    "rules": {
+        "concurrent": 1,
+        "repeat": false
+    },
+    "pattern": ["tank"]
+}</code></pre>
             </div>
 
             <p>
@@ -411,6 +424,22 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 Manual children inside a grid do not appear automatically; calling
                 <code>spawn(parent, "child")</code> creates every grid cell where the
                 pattern references that child.
+            </p>
+
+            <p>
+                Iterator mode consumes a flat pattern of child names over time.
+                <code>rules.concurrent</code> limits how many instances produced by
+                that iterator may be alive or pending at once. <code>rules.repeat</code>
+                wraps the pattern when it reaches the end. If <code>rules</code> is
+                omitted, FLX uses <code>concurrent: 1</code> and
+                <code>repeat: false</code>. In this version, iterator pattern entries
+                must reference children with <code>spawn: "auto"</code>.
+            </p>
+
+            <p>
+                Scripts can query iterator progress with
+                <code>creation_active(object)</code>. Individual and grid creation
+                return <code>false</code>.
             </p>
 
             <h2 id="sounds">Sounds</h2>

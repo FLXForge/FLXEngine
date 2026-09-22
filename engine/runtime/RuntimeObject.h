@@ -48,6 +48,9 @@ public:
     bool gridPatternIsRows = false;
     std::vector<std::string> gridPattern;
     std::vector<std::vector<std::string>> gridRowPattern;
+    IteratorCreationRules iteratorRules;
+    std::vector<std::string> iteratorPattern;
+    size_t iteratorCursor = 0;
 
     void applyBounds(const WorldExtent& worldExtent);
 
@@ -56,6 +59,8 @@ public:
     std::string runtimeId;
     std::string definitionId;
     std::string parentId;
+    std::string creationChildId;
+    std::string creationOwnerId;
     std::string sourcePath;
     std::string group;
     int controlPlayer = 0;

@@ -1703,7 +1703,7 @@ namespace
         }
     }
 
-    void parseCreationPattern(
+    void parseGridCreationPattern(
         const Json& pattern,
         ObjectDefinition& definition
     )
@@ -1790,6 +1790,43 @@ namespace
         }
     }
 
+    void parseIteratorCreationPattern(
+        const Json& pattern,
+        ObjectDefinition& definition
+    )
+    {
+        definition.iteratorPattern.clear();
+
+        if (!pattern.is_array())
+        {
+            Logger::error(
+                "json",
+                "Invalid iterator creation pattern in '" + definition.id +
+                "': expected array"
+            );
+
+            return;
+        }
+
+        for (const auto& childId : pattern)
+        {
+            if (!childId.is_string())
+            {
+                Logger::warning(
+                    "json",
+                    "Ignoring invalid iterator pattern value in '" +
+                    definition.id + "'"
+                );
+
+                continue;
+            }
+
+            definition.iteratorPattern.push_back(
+                childId.get<std::string>()
+            );
+        }
+    }
+
     void parseCreation(
         const Json& object,
         ObjectDefinition& definition
@@ -1809,13 +1846,39 @@ namespace
             );
 
         if (definition.creationMode != "individual" &&
-            definition.creationMode != "grid")
+            definition.creationMode != "grid" &&
+            definition.creationMode != "iterator")
         {
             Logger::warning(
                 "json",
                 "Unsupported creation mode '" + definition.creationMode +
                 "' in '" + definition.id + "'"
             );
+        }
+
+        if (definition.creationMode == "iterator")
+        {
+            if (creation.contains("rules") && creation["rules"].is_object())
+            {
+                const auto& rules =
+                    creation["rules"];
+
+                definition.iteratorRules.concurrent =
+                    rules.value("concurrent", definition.iteratorRules.concurrent);
+
+                definition.iteratorRules.repeat =
+                    rules.value("repeat", definition.iteratorRules.repeat);
+            }
+
+            if (creation.contains("pattern"))
+            {
+                parseIteratorCreationPattern(
+                    creation["pattern"],
+                    definition
+                );
+            }
+
+            return;
         }
 
         if (definition.creationMode != "grid")
@@ -1843,7 +1906,7 @@ namespace
 
         if (creation.contains("pattern"))
         {
-            parseCreationPattern(
+            parseGridCreationPattern(
                 creation["pattern"],
                 definition
             );

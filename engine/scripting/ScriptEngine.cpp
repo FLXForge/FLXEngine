@@ -186,7 +186,7 @@ namespace
         RuntimeViewProperty property
     )
     {
-        JSCFunctionType functionType;
+        JSCFunctionType functionType = {};
         functionType.getter_magic =
             runtimeViewGetter;
 
@@ -205,7 +205,7 @@ namespace
         const char* name
     )
     {
-        JSCFunctionType functionType;
+        JSCFunctionType functionType = {};
         functionType.getter_magic =
             runtimeViewUndefinedGetter;
 
@@ -224,7 +224,7 @@ namespace
         const char* name
     )
     {
-        JSCFunctionType functionType;
+        JSCFunctionType functionType = {};
         functionType.setter_magic =
             runtimeViewIgnoredSetter;
 
@@ -1128,6 +1128,26 @@ void ScriptEngine::spawnObject(
         source,
         resourceId
     );
+}
+
+void ScriptEngine::setCreationActiveFunction(
+    CreationActiveFunction function
+)
+{
+    creationActiveFunction =
+        function;
+}
+
+bool ScriptEngine::creationActive(
+    const RuntimeObject& object
+) const
+{
+    if (!creationActiveFunction)
+    {
+        return false;
+    }
+
+    return creationActiveFunction(object);
 }
 
 void ScriptEngine::setRayCastFunction(

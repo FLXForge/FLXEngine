@@ -529,6 +529,15 @@ declare function spawn(
 ): void;
 
 /**
+ * Returns true when the object's iterator creation is still active.
+ *
+ * Individual and grid creation return false. A finite iterator remains active
+ * while its pattern still has pending entries or while its produced instances
+ * are alive. A repeating iterator remains active while the owner exists.
+ */
+declare function creation_active(object: RuntimeObject): boolean;
+
+/**
  * Requests a transition to another state using the object's JSON states
  * declaration.
  */

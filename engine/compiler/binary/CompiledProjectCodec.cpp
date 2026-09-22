@@ -1375,6 +1375,10 @@ namespace flx::binary
             {
                 writeStringVector(writer, row);
             }
+
+            writer.writeI32(object.iteratorRules.concurrent);
+            writer.writeBool(object.iteratorRules.repeat);
+            writeStringVector(writer, object.iteratorPattern);
         }
 
         ObjectDefinition readObject(BinaryReader& reader)
@@ -1596,6 +1600,13 @@ namespace flx::binary
             {
                 object.gridRowPattern.push_back(readStringVector(reader));
             }
+
+            object.iteratorRules.concurrent =
+                reader.readI32("object.creation.iterator.concurrent");
+            object.iteratorRules.repeat =
+                reader.readBool("object.creation.iterator.repeat");
+            object.iteratorPattern =
+                readStringVector(reader);
 
             return object;
         }

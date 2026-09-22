@@ -69,6 +69,35 @@ namespace
 
         return JS_UNDEFINED;
     }
+
+    JSValue jsCreationActive(
+        JSContext* context,
+        JSValueConst,
+        int argc,
+        JSValueConst* argv
+    )
+    {
+        ScriptEngine* scriptEngine =
+            scriptEngineFromContext(context);
+
+        if (argc < 1 || scriptEngine == nullptr)
+        {
+            return JS_NewBool(context, false);
+        }
+
+        RuntimeObject* object =
+            runtimeObjectViewFromArgument(context, argv[0]);
+
+        if (object == nullptr)
+        {
+            return JS_NewBool(context, false);
+        }
+
+        return JS_NewBool(
+            context,
+            scriptEngine->creationActive(*object)
+        );
+    }
 }
 
 void SpawnBindings::registerAll(JSContext* context)
@@ -81,6 +110,13 @@ void SpawnBindings::registerAll(JSContext* context)
         global,
         "spawn",
         JS_NewCFunction(context, jsSpawn, "spawn", 2)
+    );
+
+    JS_SetPropertyStr(
+        context,
+        global,
+        "creation_active",
+        JS_NewCFunction(context, jsCreationActive, "creation_active", 1)
     );
 
     JS_FreeValue(context, global);

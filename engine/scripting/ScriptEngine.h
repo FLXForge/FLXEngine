@@ -89,6 +89,9 @@ public:
             const std::string& resourceId
             )>;
 
+    using CreationActiveFunction =
+        std::function<bool(const RuntimeObject&)>;
+
     using RayCastFunction =
         std::function<RayCastResult(
             RuntimeObject& source,
@@ -119,6 +122,9 @@ public:
         RuntimeObject& source,
         const std::string& resourceId
     );
+
+    void setCreationActiveFunction(CreationActiveFunction function);
+    bool creationActive(const RuntimeObject& object) const;
 
     void setRayCastFunction(RayCastFunction function);
 
@@ -296,6 +302,7 @@ private:
     ObjectRuntimeFunction showObjectFunction;
     ObjectRuntimeFunction hideObjectFunction;
     SpawnObjectFunction spawnObjectFunction;
+    CreationActiveFunction creationActiveFunction;
     RayCastFunction rayCastFunction;
     KeepOnlyFunction keepOnlyFunction;
     FindObjectFunction findObject;

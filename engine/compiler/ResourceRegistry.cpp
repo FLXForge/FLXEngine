@@ -60,6 +60,8 @@ namespace
         target.gridPatternIsRows = source.gridPatternIsRows;
         target.gridPattern = source.gridPattern;
         target.gridRowPattern = source.gridRowPattern;
+        target.iteratorRules = source.iteratorRules;
+        target.iteratorPattern = source.iteratorPattern;
     }
 }
 

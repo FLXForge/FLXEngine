@@ -112,6 +112,128 @@ namespace
         require(rootObject(result.project).childResources.count("brick") == 1, "grid child should have resource id");
     }
 
+    void testGraphWithIteratorChildren()
+    {
+        const std::filesystem::path root =
+            testRoot() / "graph_iterator";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=Iterator\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"creation\": {\n"
+            "    \"mode\": \"iterator\",\n"
+            "    \"pattern\": [\"enemy\"]\n"
+            "  },\n"
+            "  \"children\": {\n"
+            "    \"enemy\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
+            "  }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "iterator graph should compile");
+        require(rootObject(result.project).creationMode == "iterator", "iterator mode should compile");
+        require(rootObject(result.project).iteratorRules.concurrent == 1, "iterator default concurrent should be 1");
+        require(!rootObject(result.project).iteratorRules.repeat, "iterator default repeat should be false");
+        require(rootObject(result.project).iteratorPattern.size() == 1, "iterator pattern should compile");
+        require(rootObject(result.project).iteratorPattern.front() == "enemy", "iterator pattern child id should compile");
+    }
+
+    void testIteratorCreationRejectsInvalidContracts()
+    {
+        const auto compileIterator =
+            [](const std::string& name, const std::string& rootJson)
+            {
+                const std::filesystem::path root =
+                    testRoot() / name;
+
+                std::filesystem::remove_all(root);
+                std::filesystem::create_directories(root / "game");
+
+                writeFile(
+                    root / "game.flx",
+                    "name=IteratorInvalid\n"
+                    "path=game\n"
+                    "root=root\n"
+                );
+
+                writeFile(
+                    root / "game" / "root.json",
+                    rootJson
+                );
+
+                return compile(root / "game.flx");
+            };
+
+        {
+            const CompilationResult result =
+                compileIterator(
+                    "iterator_empty_pattern",
+                    "{\n"
+                    "  \"creation\": { \"mode\": \"iterator\", \"pattern\": [] },\n"
+                    "  \"children\": { \"enemy\": {} }\n"
+                    "}\n"
+                );
+
+            require(!result.success, "iterator empty pattern should fail");
+            require(result.diagnostics.hasErrors(), "iterator empty pattern should produce diagnostics");
+        }
+
+        {
+            const CompilationResult result =
+                compileIterator(
+                    "iterator_missing_child",
+                    "{\n"
+                    "  \"creation\": { \"mode\": \"iterator\", \"pattern\": [\"missing\"] },\n"
+                    "  \"children\": { \"enemy\": {} }\n"
+                    "}\n"
+                );
+
+            require(!result.success, "iterator missing child should fail");
+            require(result.diagnostics.hasErrors(), "iterator missing child should produce diagnostics");
+        }
+
+        {
+            const CompilationResult result =
+                compileIterator(
+                    "iterator_manual_child",
+                    "{\n"
+                    "  \"creation\": { \"mode\": \"iterator\", \"pattern\": [\"enemy\"] },\n"
+                    "  \"children\": { \"enemy\": { \"spawn\": \"manual\" } }\n"
+                    "}\n"
+                );
+
+            require(!result.success, "iterator manual child should fail in v1");
+            require(result.diagnostics.hasErrors(), "iterator manual child should produce diagnostics");
+        }
+
+        {
+            const CompilationResult result =
+                compileIterator(
+                    "iterator_invalid_concurrent",
+                    "{\n"
+                    "  \"creation\": { \"mode\": \"iterator\", \"rules\": { \"concurrent\": 0 }, \"pattern\": [\"enemy\"] },\n"
+                    "  \"children\": { \"enemy\": {} }\n"
+                    "}\n"
+                );
+
+            require(!result.success, "iterator concurrent below one should fail");
+            require(result.diagnostics.hasErrors(), "iterator concurrent below one should produce diagnostics");
+        }
+    }
+
     void testGraphWithLike()
     {
         const std::filesystem::path root =
@@ -530,6 +652,8 @@ int main()
         { "graph with auto and manual children", testGraphWithAutoAndManualChildren },
 
         { "graph with grid children", testGraphWithGridChildren },
+        { "graph with iterator children", testGraphWithIteratorChildren },
+        { "iterator creation rejects invalid contracts", testIteratorCreationRejectsInvalidContracts },
 
         { "graph with like", testGraphWithLike },
 

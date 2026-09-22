@@ -129,6 +129,8 @@ RuntimeObject RuntimeObjectBuilder::build(
     object.gridPatternIsRows = definition.gridPatternIsRows;
     object.gridPattern = definition.gridPattern;
     object.gridRowPattern = definition.gridRowPattern;
+    object.iteratorRules = definition.iteratorRules;
+    object.iteratorPattern = definition.iteratorPattern;
 
     return object;
 }

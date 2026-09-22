@@ -20,6 +20,12 @@ struct GridCreationRules
     float cellHeight = 0.0f;
 };
 
+struct IteratorCreationRules
+{
+    int concurrent = 1;
+    bool repeat = false;
+};
+
 enum class MechanicsType
 {
     Direct,
@@ -214,4 +220,6 @@ struct ObjectDefinition
     bool gridPatternIsRows = false;
     std::vector<std::string> gridPattern;
     std::vector<std::vector<std::string>> gridRowPattern;
+    IteratorCreationRules iteratorRules;
+    std::vector<std::string> iteratorPattern;
 };

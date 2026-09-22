@@ -499,14 +499,17 @@ RuntimeLoadResult RuntimeWorld::load(
     );
     AttachmentRuntimeState::registerObject(objects.back());
 
-    RuntimeObject rootSnapshot =
-        objects.front();
+    std::vector<RuntimeObject> initialObjects;
 
     instantiateAutoChildren(
-        rootSnapshot,
-        objects
+        objects.front(),
+        initialObjects
     );
-
+    objects.insert(
+        objects.end(),
+        std::make_move_iterator(initialObjects.begin()),
+        std::make_move_iterator(initialObjects.end())
+    );
     for (const auto& object : objects)
     {
         AttachmentRuntimeState::registerObject(object);
@@ -586,6 +589,8 @@ void RuntimeWorld::update(
 
     deadPhase(scriptEngine);
     cleanupDeadObjects();
+    maintainIteratorCreation(scriptEngine);
+    flushSpawnQueue(scriptEngine);
 }
 
 void RuntimeWorld::setCollisionDebugEnabled(bool enabled)
@@ -737,22 +742,51 @@ void RuntimeWorld::spawn(
     }
     else if (source.creationMode == "individual")
     {
+        std::string childId;
+
+        for (const auto& pair : source.childResources)
+        {
+            if (pair.second == resourceId)
+            {
+                childId = pair.first;
+                break;
+            }
+        }
+
         RuntimeObject instance =
             createIndividualChild(
                 source,
                 *definition,
-                resourceId
+                resourceId,
+                childId
             );
 
-        pendingObjects.push_back(instance);
-
-        RuntimeObject parentSnapshot =
-            pendingObjects.back();
+        std::vector<RuntimeObject> descendants;
 
         instantiateAutoChildren(
-            parentSnapshot,
-            pendingObjects
+            instance,
+            descendants
         );
+
+        pendingObjects.push_back(
+            std::move(instance)
+        );
+
+        pendingObjects.insert(
+            pendingObjects.end(),
+            std::make_move_iterator(descendants.begin()),
+            std::make_move_iterator(descendants.end())
+        );
+    }
+    else if (source.creationMode == "iterator")
+    {
+        Logger::warning(
+            "creation",
+            "spawn() is not supported for iterator creation in " +
+            source.runtimeId
+        );
+
+        return;
     }
     else
     {
@@ -788,6 +822,34 @@ void RuntimeWorld::spawn(
         "spawn",
         "Queued child: " + definition->id
     );
+}
+
+bool RuntimeWorld::creationActive(const RuntimeObject& object) const
+{
+    if (object.creationMode != "iterator")
+    {
+        return false;
+    }
+
+    if (!object.alive)
+    {
+        return false;
+    }
+
+    if (object.iteratorRules.repeat)
+    {
+        return true;
+    }
+
+    if (object.iteratorCursor < object.iteratorPattern.size())
+    {
+        return true;
+    }
+
+    return iteratorInstanceCount(
+        object,
+        nullptr
+    ) > 0;
 }
 
 void RuntimeWorld::kill(const std::string& runtimeId)
@@ -860,7 +922,8 @@ void RuntimeWorld::hide(const std::string& runtimeId)
 RuntimeObject RuntimeWorld::createIndividualChild(
     const RuntimeObject& parent,
     const ObjectDefinition& definition,
-    const std::string& resourceId
+    const std::string& resourceId,
+    const std::string& childId
 )
 {
     RuntimeObject child =
@@ -869,6 +932,9 @@ RuntimeObject RuntimeWorld::createIndividualChild(
             resourceId,
             parent.runtimeId
         );
+
+    child.creationChildId =
+        childId;
 
     const float radians =
         parent.angle * DEG2RAD;
@@ -922,6 +988,7 @@ RuntimeObject RuntimeWorld::createGridChild(
     const RuntimeObject& parent,
     const ObjectDefinition& definition,
     const std::string& resourceId,
+    const std::string& childId,
     int row,
     int column
 )
@@ -932,6 +999,9 @@ RuntimeObject RuntimeWorld::createGridChild(
             resourceId,
             parent.runtimeId
         );
+
+    child.creationChildId =
+        childId;
 
     const float cellX =
         static_cast<float>(column) *
@@ -972,7 +1042,7 @@ RuntimeObject RuntimeWorld::createGridChild(
 }
 
 void RuntimeWorld::instantiateAutoChildren(
-    const RuntimeObject& parent,
+    RuntimeObject& parent,
     std::vector<RuntimeObject>& target
 )
 {
@@ -1022,6 +1092,17 @@ void RuntimeWorld::instantiateAutoChildren(
             parent,
             "",
             "auto",
+            target
+        );
+
+        automaticInstantiationStack.pop_back();
+        return;
+    }
+
+    if (parent.creationMode == "iterator")
+    {
+        instantiateIteratorChildren(
+            parent,
             target
         );
 
@@ -1347,7 +1428,8 @@ void RuntimeWorld::instantiateIndividualAutoChildren(
             createIndividualChild(
                 parent,
                 *definition,
-                pair.second
+                pair.second,
+                pair.first
             );
 
         ++automaticInstantiationCreated;
@@ -1468,6 +1550,7 @@ void RuntimeWorld::instantiateGridChildren(
                     parent,
                     *definition,
                     it->second,
+                    childId,
                     row,
                     column
                 );
@@ -1504,6 +1587,198 @@ void RuntimeWorld::instantiateGridChildren(
                 std::make_move_iterator(descendants.end())
             );
         }
+    }
+}
+
+size_t RuntimeWorld::iteratorInstanceCount(
+    const RuntimeObject& parent,
+    const std::vector<RuntimeObject>* target
+) const
+{
+    const auto countIn =
+        [&parent](const std::vector<RuntimeObject>& candidates)
+        {
+            return static_cast<size_t>(
+                std::count_if(
+                    candidates.begin(),
+                    candidates.end(),
+                    [&parent](const RuntimeObject& candidate)
+                    {
+                        return
+                            candidate.creationOwnerId == parent.runtimeId &&
+                            candidate.alive;
+                    }
+                )
+            );
+        };
+
+    size_t count =
+        countIn(objects);
+
+    count +=
+        countIn(pendingObjects);
+
+    if (target != nullptr && target != &pendingObjects)
+    {
+        count +=
+            countIn(*target);
+    }
+
+    return count;
+}
+
+void RuntimeWorld::instantiateIteratorChildren(
+    RuntimeObject& parent,
+    std::vector<RuntimeObject>& target
+)
+{
+    if (resources == nullptr)
+    {
+        Logger::error(
+            "creation",
+            "Resource registry is not available"
+        );
+
+        return;
+    }
+
+    if (parent.iteratorRules.concurrent < 1)
+    {
+        Logger::error(
+            "creation",
+            "Invalid iterator creation concurrent in " + parent.runtimeId
+        );
+
+        return;
+    }
+
+    if (parent.iteratorPattern.empty())
+    {
+        Logger::error(
+            "creation",
+            "Iterator creation pattern is empty in " + parent.runtimeId
+        );
+
+        return;
+    }
+
+    size_t active =
+        iteratorInstanceCount(
+            parent,
+            &target
+        );
+
+    while (active < static_cast<size_t>(parent.iteratorRules.concurrent))
+    {
+        if (
+            !parent.iteratorRules.repeat &&
+            parent.iteratorCursor >= parent.iteratorPattern.size()
+            )
+        {
+            return;
+        }
+
+        if (parent.iteratorCursor >= parent.iteratorPattern.size())
+        {
+            parent.iteratorCursor = 0;
+        }
+
+        const std::string childId =
+            parent.iteratorPattern[parent.iteratorCursor];
+
+        ++parent.iteratorCursor;
+
+        if (
+            parent.iteratorRules.repeat &&
+            parent.iteratorCursor >= parent.iteratorPattern.size()
+            )
+        {
+            parent.iteratorCursor = 0;
+        }
+
+        const auto childResourceIt =
+            parent.childResources.find(childId);
+
+        if (childResourceIt == parent.childResources.end())
+        {
+            Logger::error(
+                "creation",
+                "Iterator pattern references missing child '" +
+                childId + "' in " + parent.runtimeId
+            );
+
+            continue;
+        }
+
+        const ObjectDefinition* definition =
+            resources->findObject(childResourceIt->second);
+
+        if (definition == nullptr)
+        {
+            Logger::error(
+                "creation",
+                "Compiled iterator child resource not found: " +
+                childResourceIt->second
+            );
+
+            continue;
+        }
+
+        if (definition->spawnMode != "auto")
+        {
+            Logger::error(
+                "creation",
+                "Iterator pattern child must use spawn auto: " +
+                childId
+            );
+
+            continue;
+        }
+
+        RuntimeObject child =
+            createIndividualChild(
+                parent,
+                *definition,
+                childResourceIt->second,
+                childId
+            );
+
+        child.creationOwnerId =
+            parent.runtimeId;
+
+        ++automaticInstantiationCreated;
+
+        if (automaticInstantiationCreated > MaxAutomaticInstantiationObjects)
+        {
+            automaticInstantiationFailed = true;
+            automaticInstantiationFailure =
+                "Automatic iterator instantiation limit exceeded under object: " +
+                parent.name;
+            Logger::error(
+                "creation",
+                automaticInstantiationFailure
+            );
+            return;
+        }
+
+        std::vector<RuntimeObject> descendants;
+
+        instantiateAutoChildren(
+            child,
+            descendants
+        );
+
+        target.push_back(
+            std::move(child)
+        );
+
+        target.insert(
+            target.end(),
+            std::make_move_iterator(descendants.begin()),
+            std::make_move_iterator(descendants.end())
+        );
+
+        ++active;
     }
 }
 
@@ -1912,6 +2187,41 @@ void RuntimeWorld::cleanupDeadObjects()
     );
 
     AttachmentRuntimeState::pruneMissing(objects);
+}
+
+void RuntimeWorld::maintainIteratorCreation(ScriptEngine& scriptEngine)
+{
+    const size_t firstQueuedIndex =
+        pendingObjects.size();
+
+    automaticInstantiationCreated = 0;
+
+    for (RuntimeObject& object : objects)
+    {
+        if (!object.alive || object.creationMode != "iterator")
+        {
+            continue;
+        }
+
+        instantiateIteratorChildren(
+            object,
+            pendingObjects
+        );
+
+        if (automaticInstantiationFailed)
+        {
+            break;
+        }
+    }
+
+    for (
+        size_t i = firstQueuedIndex;
+        i < pendingObjects.size();
+        ++i
+        )
+    {
+        loadScriptsForObject(pendingObjects[i], scriptEngine);
+    }
 }
 
 void RuntimeWorld::updateObjectTime(float delta)

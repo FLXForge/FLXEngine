@@ -530,6 +530,13 @@ void Engine::configureScriptEngine()
         }
     );
 
+    scriptEngine.setCreationActiveFunction(
+        [this](const RuntimeObject& object)
+        {
+            return world->creationActive(object);
+        }
+    );
+
     scriptEngine.setRayCastFunction(
         [this](
             RuntimeObject& source,

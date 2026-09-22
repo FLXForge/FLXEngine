@@ -472,6 +472,72 @@ namespace
         require(rootObject(loaded.project).creationMode == "grid", "grid creation mode should survive");
     }
 
+    void testCompiledProjectRoundTripIteratorCreation()
+    {
+        const std::filesystem::path root =
+            testRoot() / "roundtrip_iterator";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=RoundTripIterator\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"creation\": {\n"
+            "    \"mode\": \"iterator\",\n"
+            "    \"rules\": { \"concurrent\": 2, \"repeat\": true },\n"
+            "    \"pattern\": [\"a\", \"b\"]\n"
+            "  },\n"
+            "  \"children\": {\n"
+            "    \"a\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } },\n"
+            "    \"b\": { \"size\": { \"width\": 8, \"height\": 8 }, \"visual\": { \"representation\": [{ \"primitive\": \"rectangle\" }] } }\n"
+            "  }\n"
+            "}\n"
+        );
+
+        CompilationResult compiled =
+            compile(root / "game.flx");
+
+        require(compiled.success, "iterator project should compile before roundtrip");
+
+        const std::filesystem::path output =
+            root / "game.flxc";
+
+        Diagnostics writeDiagnostics;
+
+        require(
+            CompiledProjectWriter::write(
+                output.generic_string(),
+                compiled.project,
+                writeDiagnostics
+            ),
+            "iterator project should write"
+        );
+
+        CompiledProjectBinaryResult loaded =
+            CompiledProjectReader::read(output.generic_string());
+
+        require(loaded.success, "iterator project should read");
+
+        const ObjectDefinition& rootDefinition =
+            rootObject(loaded.project);
+
+        require(rootDefinition.creationMode == "iterator", "iterator creation mode should survive");
+        require(rootDefinition.iteratorRules.concurrent == 2, "iterator concurrent should survive");
+        require(rootDefinition.iteratorRules.repeat, "iterator repeat should survive");
+        require(rootDefinition.iteratorPattern.size() == 2, "iterator pattern should survive");
+        require(rootDefinition.iteratorPattern[0] == "a", "iterator first pattern entry should survive");
+        require(rootDefinition.iteratorPattern[1] == "b", "iterator second pattern entry should survive");
+        require(rootDefinition.children.empty(), "iterator compiled root should not keep embedded children");
+    }
+
     void testCompiledProjectRoundTripInputV7()
     {
         const std::filesystem::path root =
@@ -1490,6 +1556,7 @@ int main()
         { "compiled project roundtrip minimal", testCompiledProjectRoundTripMinimal },
 
         { "compiled project roundtrip graph", testCompiledProjectRoundTripGraph },
+        { "compiled project roundtrip iterator creation", testCompiledProjectRoundTripIteratorCreation },
 
         { "compiled project roundtrip input current format", testCompiledProjectRoundTripInputV7 },
 

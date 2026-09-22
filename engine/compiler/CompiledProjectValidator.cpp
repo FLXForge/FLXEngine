@@ -64,11 +64,52 @@ namespace
         stack.push_back(objectId);
 
         bool foundCycle = false;
+        std::vector<std::string> automaticChildIds;
 
-        for (const auto& childPair : object->childResources)
+        if (object->creationMode == "grid")
         {
+            if (object->gridPatternIsRows)
+            {
+                for (const auto& row : object->gridRowPattern)
+                {
+                    automaticChildIds.insert(
+                        automaticChildIds.end(),
+                        row.begin(),
+                        row.end()
+                    );
+                }
+            }
+            else
+            {
+                automaticChildIds =
+                    object->gridPattern;
+            }
+        }
+        else if (object->creationMode == "iterator")
+        {
+            automaticChildIds =
+                object->iteratorPattern;
+        }
+        else
+        {
+            for (const auto& childPair : object->childResources)
+            {
+                automaticChildIds.push_back(childPair.first);
+            }
+        }
+
+        for (const std::string& childId : automaticChildIds)
+        {
+            const auto childResourceIt =
+                object->childResources.find(childId);
+
+            if (childResourceIt == object->childResources.end())
+            {
+                continue;
+            }
+
             const ObjectDefinition* child =
-                project.resources.findObject(childPair.second);
+                project.resources.findObject(childResourceIt->second);
 
             if (child == nullptr || child->spawnMode != "auto")
             {
@@ -77,7 +118,7 @@ namespace
 
             foundCycle =
                 detectAutomaticCycleFrom(
-                    childPair.second,
+                    childResourceIt->second,
                     project,
                     stack,
                     completed,
@@ -188,6 +229,90 @@ namespace
                         objectId + ".states." + transition.first + ".next"
                     );
                 }
+            }
+        }
+    }
+
+    void validateCreation(
+        const CompiledProject& project,
+        const ObjectDefinition& object,
+        Diagnostics& diagnostics,
+        const std::string& source,
+        const ResourceId& objectId
+    )
+    {
+        if (
+            object.creationMode != "individual" &&
+            object.creationMode != "grid" &&
+            object.creationMode != "iterator"
+            )
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled object has unsupported creation mode",
+                source,
+                objectId + ".creation.mode"
+            );
+        }
+
+        if (object.creationMode != "iterator")
+        {
+            return;
+        }
+
+        if (object.iteratorRules.concurrent < 1)
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled iterator concurrent must be greater than zero",
+                source,
+                objectId + ".creation.rules.concurrent"
+            );
+        }
+
+        if (object.iteratorPattern.empty())
+        {
+            diagnostics.error(
+                DiagnosticCode::CompErrorUnclassified,
+                "Compiled iterator pattern must contain at least one child",
+                source,
+                objectId + ".creation.pattern"
+            );
+        }
+
+        for (const std::string& childId : object.iteratorPattern)
+        {
+            const auto childResourceIt =
+                object.childResources.find(childId);
+
+            if (childResourceIt == object.childResources.end())
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled iterator pattern references a missing child",
+                    source,
+                    objectId + ".creation.pattern"
+                );
+
+                continue;
+            }
+
+            const ObjectDefinition* child =
+                project.resources.findObject(childResourceIt->second);
+
+            if (child == nullptr)
+            {
+                continue;
+            }
+
+            if (child->spawnMode != "auto")
+            {
+                diagnostics.error(
+                    DiagnosticCode::CompErrorUnclassified,
+                    "Compiled iterator pattern child must use spawn auto",
+                    source,
+                    objectId + ".creation.pattern." + childId
+                );
             }
         }
     }
@@ -405,6 +530,14 @@ bool CompiledProjectValidator::validate(
         }
 
         validateStateMachine(
+            object,
+            diagnostics,
+            source,
+            objectId
+        );
+
+        validateCreation(
+            project,
             object,
             diagnostics,
             source,

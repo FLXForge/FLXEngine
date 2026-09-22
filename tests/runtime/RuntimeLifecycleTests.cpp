@@ -78,6 +78,13 @@ namespace
                 }
             );
 
+            scripts.setCreationActiveFunction(
+                [this](const RuntimeObject& object)
+                {
+                    return world.creationActive(object);
+                }
+            );
+
             scripts.setKeepOnlyFunction(
                 [this](const std::string& runtimeId)
                 {
@@ -204,6 +211,14 @@ namespace
         require(object != nullptr, "runtime object should exist: " + name);
 
         return *object;
+    }
+
+    std::size_t countLiveByName(
+        RuntimeWorld& world,
+        const std::string& name
+    )
+    {
+        return world.findAllLiveByName(name).size();
     }
 
     double localValue(
@@ -650,6 +665,234 @@ namespace
         require(localValue(collisionRuntime, "bornCount") == 1.0, "collision spawn should be born once");
         require(localValue(collisionRuntime, "actionCount") == 0.0, "collision spawn should miss current action phase");
         require(localValue(collisionRuntime, "motionCount") == 0.0, "collision spawn should miss current motion phase");
+    }
+
+    void testIteratorCreationFiniteSequenceDefaults()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "rootProbe",
+            "function action(o) { write_global('rootActive', creation_active(o)); }"
+        );
+
+        harness.addScript(
+            "firstProbe",
+            "function dead(o) { write_global('firstDead', 1); }"
+        );
+
+        harness.addScript(
+            "secondProbe",
+            "function born(o) { write_local(o, 'bornAfterDead', read_global('firstDead') || 0); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root", "rootProbe");
+        root.creationMode = "iterator";
+        root.iteratorPattern = { "first", "second" };
+        root.childResources["first"] = "first";
+        root.childResources["second"] = "second";
+
+        ObjectDefinition first =
+            objectDefinition("first", "firstProbe");
+
+        ObjectDefinition second =
+            objectDefinition("second", "secondProbe");
+
+        harness.addObject(root);
+        harness.addObject(first);
+        harness.addObject(second);
+
+        require(harness.load().success, "finite iterator project should load");
+        require(countLiveByName(harness.world, "first") == 1, "default iterator concurrent should create first child only");
+        require(countLiveByName(harness.world, "second") == 0, "default iterator should not consume second child while first is alive");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(harness.world.creationActive(runtimeRoot), "finite iterator should be active while pattern or instances remain");
+
+        RuntimeObject& runtimeFirst =
+            requireObject(harness.world, "first");
+
+        harness.world.kill(runtimeFirst.runtimeId);
+        harness.update();
+
+        require(countLiveByName(harness.world, "first") == 0, "dead iterator child should be cleaned");
+        require(countLiveByName(harness.world, "second") == 1, "iterator should advance to second child");
+
+        RuntimeObject& runtimeSecond =
+            requireObject(harness.world, "second");
+
+        require(localValue(runtimeSecond, "bornAfterDead") == 1.0, "replacement born should run after old dead");
+        require(harness.world.creationActive(runtimeRoot), "finite iterator should remain active while final child lives");
+
+        harness.world.kill(runtimeSecond.runtimeId);
+        harness.update();
+
+        require(!harness.world.creationActive(runtimeRoot), "finite iterator should finish after pattern is consumed and instances are gone");
+
+        harness.update();
+
+        require(globalValue(harness.scripts, "rootActive") == 0.0, "creation_active() should report false to JavaScript after finite iterator finishes");
+    }
+
+    void testIteratorCreationRepeatWrapsAndKeepsConcurrency()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.creationMode = "iterator";
+        root.iteratorRules.concurrent = 3;
+        root.iteratorRules.repeat = true;
+        root.iteratorPattern = { "a", "b" };
+        root.childResources["a"] = "a";
+        root.childResources["b"] = "b";
+
+        ObjectDefinition a =
+            objectDefinition("a");
+        ObjectDefinition b =
+            objectDefinition("b");
+
+        harness.addObject(root);
+        harness.addObject(a);
+        harness.addObject(b);
+
+        require(harness.load().success, "repeat iterator project should load");
+        require(countLiveByName(harness.world, "a") == 2, "repeat iterator should wrap when concurrent exceeds pattern length");
+        require(countLiveByName(harness.world, "b") == 1, "repeat iterator should keep pattern order");
+
+        const std::vector<RuntimeObject*> firstA =
+            harness.world.findAllLiveByName("a");
+        require(firstA.size() == 2, "two a instances should be live");
+        require(firstA[0]->runtimeId != firstA[1]->runtimeId, "iterator instances should have unique runtime ids");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(harness.world.creationActive(runtimeRoot), "repeat iterator should remain active while owner lives");
+
+        harness.world.kill(firstA.front()->runtimeId);
+        harness.update();
+
+        require(countLiveByName(harness.world, "a") == 1, "repeat iterator should remove killed instance");
+        require(countLiveByName(harness.world, "b") == 2, "repeat iterator should refill using wrapped cursor");
+        require(harness.world.creationActive(runtimeRoot), "repeat iterator should remain active after refill");
+    }
+
+    void testIteratorCreationConcurrentStopsAtFinitePatternEnd()
+    {
+        RuntimeHarness harness;
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.creationMode = "iterator";
+        root.iteratorRules.concurrent = 3;
+        root.iteratorPattern = { "a", "b" };
+        root.childResources["a"] = "a";
+        root.childResources["b"] = "b";
+
+        ObjectDefinition a =
+            objectDefinition("a");
+        ObjectDefinition b =
+            objectDefinition("b");
+
+        harness.addObject(root);
+        harness.addObject(a);
+        harness.addObject(b);
+
+        require(harness.load().success, "finite concurrent iterator should load");
+        require(countLiveByName(harness.world, "a") == 1, "finite iterator should create first child");
+        require(countLiveByName(harness.world, "b") == 1, "finite iterator should create second child");
+
+        RuntimeObject& runtimeRoot =
+            requireObject(harness.world, "root");
+
+        require(harness.world.creationActive(runtimeRoot), "finite iterator should be active while produced instances live");
+
+        for (RuntimeObject* object : harness.world.findAllLiveByName("a"))
+        {
+            harness.world.kill(object->runtimeId);
+        }
+
+        for (RuntimeObject* object : harness.world.findAllLiveByName("b"))
+        {
+            harness.world.kill(object->runtimeId);
+        }
+
+        harness.update();
+
+        require(countLiveByName(harness.world, "a") == 0, "finite iterator should not repeat first child");
+        require(countLiveByName(harness.world, "b") == 0, "finite iterator should not repeat second child");
+        require(!harness.world.creationActive(runtimeRoot), "finite iterator should finish after all produced instances die");
+    }
+
+    void testIteratorCreationCountsPendingReplacement()
+    {
+        RuntimeHarness harness;
+
+        harness.addScript(
+            "selfKill",
+            "function action(o) { kill(o); }"
+        );
+
+        ObjectDefinition root =
+            objectDefinition("root");
+        root.creationMode = "iterator";
+        root.iteratorRules.concurrent = 1;
+        root.iteratorRules.repeat = true;
+        root.iteratorPattern = { "loop" };
+        root.childResources["loop"] = "loop";
+
+        ObjectDefinition loop =
+            objectDefinition("loop", "selfKill");
+
+        harness.addObject(root);
+        harness.addObject(loop);
+
+        require(harness.load().success, "pending iterator project should load");
+        require(countLiveByName(harness.world, "loop") == 1, "iterator should create one loop child");
+
+        harness.update();
+
+        require(countLiveByName(harness.world, "loop") == 1, "iterator should refill exactly one replacement after cleanup");
+    }
+
+    void testIteratorCreationKeepsIndividualAndGridRegressions()
+    {
+        RuntimeHarness individualHarness;
+
+        ObjectDefinition individualRoot =
+            objectDefinition("root");
+        individualRoot.childResources["a"] = "a";
+        individualRoot.childResources["b"] = "b";
+
+        individualHarness.addObject(individualRoot);
+        individualHarness.addObject(objectDefinition("a"));
+        individualHarness.addObject(objectDefinition("b"));
+
+        require(individualHarness.load().success, "individual creation should still load");
+        require(countLiveByName(individualHarness.world, "a") == 1, "individual creation should still instantiate auto child a");
+        require(countLiveByName(individualHarness.world, "b") == 1, "individual creation should still instantiate auto child b");
+
+        RuntimeHarness gridHarness;
+
+        ObjectDefinition gridRoot =
+            objectDefinition("root");
+        gridRoot.creationMode = "grid";
+        gridRoot.gridRules.rows = 1;
+        gridRoot.gridRules.columns = 2;
+        gridRoot.gridRules.cellWidth = 8.0f;
+        gridRoot.gridRules.cellHeight = 8.0f;
+        gridRoot.gridPattern = { "cell" };
+        gridRoot.childResources["cell"] = "cell";
+
+        gridHarness.addObject(gridRoot);
+        gridHarness.addObject(objectDefinition("cell"));
+
+        require(gridHarness.load().success, "grid creation should still load");
+        require(countLiveByName(gridHarness.world, "cell") == 2, "grid creation should still instantiate pattern cells");
     }
 
     void testKillDuringActionMotionAndCollisionIsTerminal()
@@ -1751,7 +1994,7 @@ namespace
             "    'rotate','position','position_origin','apply_speed','restore_speed','draw_text','draw_pixel','draw_line','draw_rectangle',"
             "    'fade_on','fade_off','fade_set','fade_active','fade_done','fade_alpha',"
             "    'play_sound','play_music','stop_music','pause_music','music_active','music_paused',"
-            "    'spawn','state_to','state_current','state_active','state_entered','state_time',"
+            "    'spawn','creation_active','state_to','state_current','state_active','state_entered','state_time',"
             "    'play_timer','pause_timer','stop_timer','timer_active','timer_paused','timer_done','timer_left',"
             "    'button','direction','player','system','input_pressed','input_down','input_released','input_direction'"
             "  ];"
@@ -2925,6 +3168,11 @@ int main()
         { "recursive spawn during born is stabilized before load returns", testRecursiveSpawnDuringBornIsStabilizedBeforeLoadReturns },
         { "spawn during born limit fails load", testSpawnDuringBornLimitFailsLoad },
         { "spawn during action motion and collision phases", testSpawnDuringActionMotionAndCollisionPhases },
+        { "iterator creation finite sequence defaults", testIteratorCreationFiniteSequenceDefaults },
+        { "iterator creation repeat wraps and keeps concurrency", testIteratorCreationRepeatWrapsAndKeepsConcurrency },
+        { "iterator creation concurrent stops at finite pattern end", testIteratorCreationConcurrentStopsAtFinitePatternEnd },
+        { "iterator creation counts pending replacement", testIteratorCreationCountsPendingReplacement },
+        { "iterator creation keeps individual and grid regressions", testIteratorCreationKeepsIndividualAndGridRegressions },
         { "kill during action motion and collision is terminal", testKillDuringActionMotionAndCollisionIsTerminal },
         { "alive is read-only from JavaScript", testAliveIsReadOnlyFromJavaScript },
         { "world extent defaults without delimiters", testWorldExtentDefaultsWithoutDelimiters },

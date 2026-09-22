@@ -58,6 +58,7 @@ public:
         ScriptEngine& scriptEngine
     );
 
+    bool creationActive(const RuntimeObject& object) const;
     void kill(const std::string& runtimeId);
     void show(const std::string& runtimeId);
     void hide(const std::string& runtimeId);
@@ -85,19 +86,21 @@ private:
     RuntimeObject createIndividualChild(
         const RuntimeObject& parent,
         const ObjectDefinition& definition,
-        const std::string& resourceId
+        const std::string& resourceId,
+        const std::string& childId
     );
 
     RuntimeObject createGridChild(
         const RuntimeObject& parent,
         const ObjectDefinition& definition,
         const std::string& resourceId,
+        const std::string& childId,
         int row,
         int column
     );
 
     void instantiateAutoChildren(
-        const RuntimeObject& parent,
+        RuntimeObject& parent,
         std::vector<RuntimeObject>& target
     );
 
@@ -112,6 +115,18 @@ private:
         const std::string& requestedSpawnMode,
         std::vector<RuntimeObject>& target
     );
+
+    void instantiateIteratorChildren(
+        RuntimeObject& parent,
+        std::vector<RuntimeObject>& target
+    );
+
+    size_t iteratorInstanceCount(
+        const RuntimeObject& parent,
+        const std::vector<RuntimeObject>* target
+    ) const;
+
+    void maintainIteratorCreation(ScriptEngine& scriptEngine);
 
     bool gridChildIdAt(
         const RuntimeObject& parent,

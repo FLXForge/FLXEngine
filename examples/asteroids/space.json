@@ -33,8 +33,26 @@
         "y": 20
       }
     },
-    "ship": {
-      "like": "ship/ship"
+    "ship_spawn": {
+      "origin": {
+        "x": 320,
+        "y": 160
+      },
+      "creation": {
+        "mode": "iterator",
+        "rules": {
+          "concurrent": 1,
+          "repeat": true
+        },
+        "pattern": [
+          "ship"
+        ]
+      },
+      "children": {
+        "ship": {
+          "like": "ship/ship"
+        }
+      }
     }
   }
 }

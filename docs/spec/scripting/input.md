@@ -600,6 +600,8 @@ input_direction(subject, direction(index), HORIZONTAL);
 input_direction(subject, direction(index), VERTICAL);
 ```
 
+The axis selector is closed: only `HORIZONTAL` and `VERTICAL` are valid.
+
 `input_direction()` returns `-1`, `0` or `1` for the digital input types
 implemented in v0.3.0. In a `2way` direction, both axes project onto the same
 logical way so a Machine can later expand to `4way` without forcing script

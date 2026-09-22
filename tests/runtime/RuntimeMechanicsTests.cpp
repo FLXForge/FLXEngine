@@ -800,6 +800,7 @@ namespace
             "  write_local(o, 'vertical', input_direction(o, MOVE, VERTICAL));"
             "  write_local(o, 'twoWayHorizontal', input_direction(o, THROTTLE, HORIZONTAL));"
             "  write_local(o, 'twoWayVertical', input_direction(o, THROTTLE, VERTICAL));"
+            "  write_local(o, 'invalidAxis', input_direction(o, MOVE, 999));"
             "  write_local(o, 'system', input_direction(system(), MOVE, HORIZONTAL));"
             "}"
         );
@@ -827,10 +828,18 @@ namespace
 
         harness.provider.setKeys({ KEY_D });
         harness.input.update(0.016f);
+
+        Logger::setConsoleEnabled(true);
+        StreamCapture invalidAxisCapture;
         harness.update(0.016f);
 
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), 1.0f), "4way right should be positive horizontal");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 0.0f), "4way right should not leak into vertical");
+        require(nearlyEqual(static_cast<float>(read_local(rootObject, "invalidAxis")), 0.0f), "invalid axis selector should return neutral value");
+        require(
+            invalidAxisCapture.output.str().find("input_direction requires HORIZONTAL or VERTICAL axis") != std::string::npos,
+            "invalid axis selector should emit warning"
+        );
 
         harness.provider.setKeys({ KEY_S });
         harness.input.update(0.016f);

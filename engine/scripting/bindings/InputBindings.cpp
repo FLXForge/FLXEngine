@@ -516,6 +516,12 @@ namespace
         const int axisValue =
             intArgument(context, argv[2], 0);
 
+        if (axisValue != 0 && axisValue != 1)
+        {
+            Logger::warning("input", "input_direction requires HORIZONTAL or VERTICAL axis");
+            return JS_NewInt32(context, 0);
+        }
+
         const InputAxis axis =
             axisValue == 1
                 ? InputAxis::Vertical

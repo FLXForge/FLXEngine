@@ -1,0 +1,21 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "group": "wall",
+
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
+  },
+
+  "visual": {
+    "color": "#B04A32",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
+  }
+}

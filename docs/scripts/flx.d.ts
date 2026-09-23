@@ -1,5 +1,5 @@
 // FLX Engine JavaScript API
-// Version: 0.0.1
+// Version: 0.3.0
 //
 // Provides IntelliSense/documentation support for FLX scripts.
 //
@@ -33,86 +33,7 @@ declare const HORIZONTAL: number;
 /** Vertical axis selector for input_direction(). */
 declare const VERTICAL: number;
 
-type AudioSourceType = "oscillator" | "noise" | "impact" | "pulse";
-type AudioWave = "sine" | "square" | "triangle" | "saw" | "pulse" | "noise";
-type AudioMovementType = "none" | "rise" | "fall" | "pulse" | "wobble" | "scatter" | "random";
-type AudioSpaceMode = "mono" | "stereo";
-type MusicLength = "1/1" | "1/2" | "1/4" | "1/8" | "1/16";
 type ScriptValue = number | boolean | string;
-
-interface AudioSourceConfig {
-    type?: AudioSourceType;
-    wave?: AudioWave;
-    /** Pulse duty cycle from 0.05 to 0.95. Only pulse uses it; square is fixed at 0.5. */
-    duty?: number;
-}
-
-interface AudioMovementConfig {
-    type?: AudioMovementType;
-    amount?: number;
-}
-
-type AudioNoteConfig =
-    string |
-    number |
-    {
-        frequency: number;
-    };
-
-interface AudioToneConfig {
-    material?: {
-        brightness?: number;
-        roughness?: number;
-        noise?: number;
-        resonance?: number;
-        metal?: number;
-    };
-    envelope?: {
-        attack?: number;
-        decay?: number;
-        sustain?: number;
-        release?: number;
-    };
-    space?: {
-        mode?: AudioSpaceMode;
-        width?: number;
-        echo?: number;
-    };
-}
-
-interface SoundConfig {
-    kind?: {
-        source?: AudioSourceConfig | string;
-        note?: AudioNoteConfig;
-        slide?: number;
-        movement?: AudioMovementConfig | string;
-    };
-    tone?: AudioToneConfig | string;
-    duration?: number;
-    volume?: number;
-}
-
-interface InstrumentConfig {
-    source?: AudioSourceConfig | string;
-    tone?: AudioToneConfig | string;
-    play?: {
-        legato?: boolean;
-        glide?: number;
-        vibrato?: number;
-    };
-    range?: {
-        min?: string;
-        max?: string;
-    };
-}
-
-interface MusicChannelConfig {
-    instrument?: InstrumentConfig | string;
-    wave?: AudioWave;
-    volume?: number;
-    length?: MusicLength;
-    notes: string[];
-}
 
 /**
  * Runtime representation of an object created by FLX.
@@ -216,13 +137,24 @@ interface InputDirection {
     readonly index: number;
 }
 
-interface InputSubject {
-    readonly __flxInputSubject?: "player" | "system";
+interface InputPlayerSubject {
+    readonly __flxInputSubject?: "player";
+    readonly index: number;
+}
+
+interface InputSystemSubject {
+    readonly __flxInputSubject?: "system";
     readonly index: number;
 }
 
 type InputControl = InputButton | InputDirection;
-type InputReadableSubject = RuntimeObject | InputSubject;
+type InputButtonSubject =
+    RuntimeObject |
+    InputPlayerSubject |
+    InputSystemSubject;
+type InputDirectionSubject =
+    RuntimeObject |
+    InputPlayerSubject;
 
 /** Returns a logical button descriptor. */
 declare function button(index: number): InputButton;
@@ -231,22 +163,22 @@ declare function button(index: number): InputButton;
 declare function direction(index: number): InputDirection;
 
 /** Returns an explicit player input subject. Player indexes start at 1. */
-declare function player(playerIndex: number): InputSubject;
+declare function player(playerIndex: number): InputPlayerSubject;
 
 /** Returns the system input subject. */
-declare function system(): InputSubject;
+declare function system(): InputSystemSubject;
 
 /** True on the frame a mapped button or direction component becomes active. */
-declare function input_pressed(subject: InputReadableSubject, control: InputButton): boolean;
-declare function input_pressed(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+declare function input_pressed(subject: InputButtonSubject, control: InputButton): boolean;
+declare function input_pressed(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;
 
 /** True while a mapped button or direction component is active. */
-declare function input_down(subject: InputReadableSubject, control: InputButton): boolean;
-declare function input_down(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+declare function input_down(subject: InputButtonSubject, control: InputButton): boolean;
+declare function input_down(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;
 
 /** True on the frame a mapped button or direction component stops being active. */
-declare function input_released(subject: InputReadableSubject, control: InputButton): boolean;
-declare function input_released(subject: InputReadableSubject, control: InputDirection, component: number): boolean;
+declare function input_released(subject: InputButtonSubject, control: InputButton): boolean;
+declare function input_released(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;
 
 /**
  * Returns -1, 0 or 1 for a logical direction on a concrete axis.
@@ -255,7 +187,7 @@ declare function input_released(subject: InputReadableSubject, control: InputDir
  * In 4way, HORIZONTAL reads LEFT/RIGHT and VERTICAL reads UP/DOWN.
  * In 2way, POSITIVE/NEGATIVE project onto either axis.
  */
-declare function input_direction(subject: InputReadableSubject, control: InputDirection, axis: number): number;
+declare function input_direction(subject: InputDirectionSubject, control: InputDirection, axis: number): number;
 
 /** Reads a value from the local state owned by one runtime object. */
 declare function read_local(object: RuntimeObject, key: string): ScriptValue | undefined;

@@ -57,14 +57,11 @@ namespace
 
     nlohmann::json readSchema(const std::string& name)
     {
-        std::filesystem::path schemaPath =
-            std::filesystem::path("docs") / "schemas" / name;
-
-        if (!std::filesystem::exists(schemaPath))
-        {
-            schemaPath =
-                std::filesystem::path("../../../docs/schemas") / name;
-        }
+        const std::filesystem::path schemaPath =
+            std::filesystem::path(FLX_SOURCE_DIR) /
+            "docs" /
+            "schemas" /
+            name;
 
         std::ifstream schemaFile(schemaPath);
         require(schemaFile.good(), "schema should be readable: " + name);
@@ -442,20 +439,8 @@ namespace
 
     void testOnePointGeometryIsAcceptedBySchemaAndCompiler()
     {
-        std::filesystem::path schemaPath =
-            "docs/schemas/visual.schema.json";
-
-        if (!std::filesystem::exists(schemaPath))
-        {
-            schemaPath =
-                "../../../docs/schemas/visual.schema.json";
-        }
-
-        std::ifstream schemaFile(schemaPath);
-        require(schemaFile.good(), "visual schema should be readable");
-
         const nlohmann::json schema =
-            nlohmann::json::parse(schemaFile);
+            readSchema("visual.schema.json");
 
         require(
             schema["$defs"]["geometryElement"]["allOf"][1]["properties"]["geometry"]["minItems"].get<int>() == 1,

@@ -147,7 +147,6 @@ interface InputSystemSubject {
     readonly index: number;
 }
 
-type InputControl = InputButton | InputDirection;
 type InputButtonSubject =
     RuntimeObject |
     InputPlayerSubject |

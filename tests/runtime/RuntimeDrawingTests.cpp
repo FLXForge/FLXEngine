@@ -1224,6 +1224,18 @@ namespace
     }
 }
 
+bool requiresGraphics(const std::string& name)
+{
+    return
+        name == "Renderer scales logical pixel to physical pixels" ||
+        name == "Renderer stretches world extent to machine raster" ||
+        name == "Circle outline scales with output scale" ||
+        name == "One-point geometry builds and draws as logical point" ||
+        name == "Rotated ellipse fill and outline respect angle" ||
+        name == "Multiline text centers each line" ||
+        name == "Text cases do not depend on RuntimeObject size";
+}
+
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
@@ -1254,6 +1266,20 @@ int main()
 
     for (const auto& test : tests)
     {
+        if (
+            isHeadlessTestEnvironment() &&
+            requiresGraphics(test.first)
+            )
+        {
+            std::cout
+                << "[SKIP] "
+                << test.first
+                << " (headless environment)"
+                << std::endl;
+
+            continue;
+        }
+
         try
         {
             std::cout << "[RUN] " << test.first << std::endl;

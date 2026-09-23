@@ -297,6 +297,15 @@ namespace
     }
 }
 
+bool requiresGraphics(const std::string& name)
+{
+    return
+        name == "Engine does not enter loop when Runtime fails" ||
+        name == "Engine frame limit exit reason" ||
+        name == "Engine script requested exit reason" ||
+        name == "Engine second run fails";
+}
+
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
@@ -312,6 +321,20 @@ int main()
 
     for (const auto& test : tests)
     {
+        if (
+            isHeadlessTestEnvironment() &&
+            requiresGraphics(test.first)
+            )
+        {
+            std::cout
+                << "[SKIP] "
+                << test.first
+                << " (headless environment)"
+                << std::endl;
+
+            continue;
+        }
+
         try
         {
             std::cout << "[RUN] " << test.first << std::endl;

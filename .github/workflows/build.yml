@@ -23,6 +23,8 @@ jobs:
       - name: Run tests
         shell: pwsh
         working-directory: build
+        env:
+          FLX_TEST_HEADLESS: "1"
         run: ctest -C Release --output-on-failure
 
       - name: Run CLI smoke tests

@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 namespace flx::test
 {
@@ -13,6 +14,16 @@ namespace flx::test
         return
             std::filesystem::temp_directory_path() /
             "flx_project_compiler_tests";
+    }
+
+    bool isHeadlessTestEnvironment()
+    {
+        const char* value =
+            std::getenv("FLX_TEST_HEADLESS");
+
+        return
+            value != nullptr &&
+            std::string(value) == "1";
     }
 
     void writeFile(

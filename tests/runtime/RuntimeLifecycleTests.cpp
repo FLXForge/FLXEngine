@@ -3160,6 +3160,18 @@ namespace
     }
 }
 
+bool requiresGraphics(const std::string& name)
+{
+    return
+        name == "hide suppresses draw but keeps runtime phases and show restores draw" ||
+        name == "hide suppresses declarative drawing" ||
+        name == "rectangle representation draws around pivot" ||
+        name == "visible is read-only from JavaScript" ||
+        name == "draw callbacks follow stable depth order" ||
+        name == "declarative draw and JS draw share object depth order" ||
+        name == "script errors are logged and runtime continues";
+}
+
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
@@ -3224,6 +3236,20 @@ int main()
 
     for (const auto& test : tests)
     {
+        if (
+            isHeadlessTestEnvironment() &&
+            requiresGraphics(test.first)
+            )
+        {
+            std::cout
+                << "[SKIP] "
+                << test.first
+                << " (headless environment)"
+                << std::endl;
+
+            continue;
+        }
+
         try
         {
             std::cout << "[RUN] " << test.first << std::endl;

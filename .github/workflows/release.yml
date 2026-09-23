@@ -74,6 +74,8 @@ jobs:
           Copy-Item "examples/asteroids" "$PackageDir/examples/asteroids" -Recurse -Force
           Copy-Item "examples/arkanoid.flx" "$PackageDir/examples/arkanoid.flx" -Force
           Copy-Item "examples/arkanoid" "$PackageDir/examples/arkanoid" -Recurse -Force
+          Copy-Item "examples/tank.flx" "$PackageDir/examples/tank.flx" -Force
+          Copy-Item "examples/tank" "$PackageDir/examples/tank" -Recurse -Force
 
           Copy-Item "docs/schemas" "$PackageDir/schemas" -Recurse -Force
 
@@ -100,6 +102,12 @@ jobs:
           flx.exe examples\arkanoid.flx
           pause
           "@ | Set-Content "$PackageDir\run_arkanoid.bat"
+
+          @"
+          @echo off
+          flx.exe examples\tank.flx
+          pause
+          "@ | Set-Content "$PackageDir\run_tank.bat"
 
           Compress-Archive -Path "$PackageDir\*" -DestinationPath "dist/$PackageName.zip" -Force
 

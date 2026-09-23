@@ -23,12 +23,12 @@
             <h1>Referencia JSON</h1>
 
             <p>
-                Esta secciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n documenta el manifiesto de proyecto y las estructuras JSON
+                Esta sección documenta el manifiesto de proyecto y las estructuras JSON
                 utilizadas por FLX para definir objetos y sus propiedades.
             </p>
 
             <p class="placeholder">
-                FLX estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
+                FLX está en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
             </p>
 
             <h2>Archivos del proyecto</h2>
@@ -72,11 +72,11 @@ notes=FLX example with spawn and basic UI
 
             <ul>
                 <li><code>name</code>: nombre del proyecto. <i>[ Opcional ]</i></li>
-                <li><code>version</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n del proyecto. <i>[ Opcional ]</i></li>
-                <li><code>engine</code>: versiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n objetivo de FLX. <i>[ Opcional ]</i></li>
+                <li><code>version</code>: versión del proyecto. <i>[ Opcional ]</i></li>
+                <li><code>engine</code>: versión objetivo de FLX. <i>[ Opcional ]</i></li>
                 <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
-                <li><code>title</code>: tÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulo de la ventana. <i>[ Opcional ]</i></li>
+                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
                 <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, FLX usa el mapping por defecto. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
@@ -267,10 +267,10 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 </code></pre>
             </div>
 
-            <h2 id="root">Objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z</h2>
+            <h2 id="root">Objeto raíz</h2>
 
             <p>
-                El objeto raÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­z es especial ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente porque el manifiesto apunta a ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©l.
+                El objeto raíz es especial únicamente porque el manifiesto apunta a él.
                 Su JSON utiliza el mismo schema que cualquier otro nodo.
             </p>
 
@@ -330,8 +330,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </div>
 
             <p>
-                Cada clave de <code>children</code> es el nombre lÃƒÂ³gico de la instancia.
-                Un valor string es azÃƒÂºcar sintÃƒÂ¡ctico para un objeto con <code>like</code>.
+                Cada clave de <code>children</code> es el nombre lógico de la instancia.
+                Un valor string es azúcar sintáctico para un objeto con <code>like</code>.
             </p>
 
             <p>
@@ -694,7 +694,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <code>next</code>.
             </p>
 
-            <h2 id="like">ComposiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n JSON (like)</h2>
+            <h2 id="like">Composición JSON (like)</h2>
 
             <p>
                 FLX permite reutilizar definiciones JSON mediante el campo
@@ -702,8 +702,8 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </p>
 
             <p>
-                Esta caracterÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­stica permite construir nuevas configuraciones
-                a partir de otras existentes, sobrescribiendo ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente
+                Esta característica permite construir nuevas configuraciones
+                a partir de otras existentes, sobrescribiendo únicamente
                 los campos necesarios.
             </p>
 
@@ -720,14 +720,14 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             </div>
 
             <p>
-                El runtime carga primero la definiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n indicada en
+                El runtime carga primero la definición indicada en
                 <code>like</code> y posteriormente sobrescribe
                 los campos declarados en el JSON actual.
             </p>
 
             <p>
-                La composiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n se realiza de forma recursiva,
-                permitiendo modificar ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºnicamente las partes necesarias.
+                La composición se realiza de forma recursiva,
+                permitiendo modificar únicamente las partes necesarias.
             </p>
 
             <h3>Campos</h3>
@@ -735,7 +735,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <ul>
                 <li>
                     <code>like</code>:
-                    ruta a la definiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n base utilizada para composiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.
+                    ruta a la definición base utilizada para composición.
                 </li>
             </ul>
 
@@ -753,7 +753,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h2 class="placeholder">Object JSON</h2>
 
             <p>
-                Un <code>object</code> define un conjunto de objetos, no se representa a nivel visual pero puede contener lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³gica.
+                Un <code>object</code> define un conjunto de objetos, no se representa a nivel visual pero puede contener lógica.
             </p>
 
             <div class="code-card">
@@ -778,10 +778,10 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h3>Campos</h3>
 
             <ul>
-                <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
+                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#collision">collisions</a>: declaraciones de colliders nombrados asociadas al objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#children">children</a>: objetos hijos cargados con este objeto. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados después con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
@@ -874,14 +874,14 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h3>Campos</h3>
 
             <ul>
-                <li><code>$schema</code>: ruta al schema utilizado para validaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n. <i>[ Opcional ]</i></li>
-                                <li><a class="link" href="#origin">origin</a>: posiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n inicial del objeto. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#shape">shape</a>: informaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n visual del objeto. <i>[ Opcional ]</i></li>
+                <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
+                                <li><a class="link" href="#origin">origin</a>: posición inicial del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#shape">shape</a>: información visual del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#mechanics">mechanics</a>: reglas de movimiento y rotacion, si existen. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#inherit">inherit</a>: estado vivo heredado del parent al crear o mientras hay vinculo. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#bounds">bounds</a>: comportamiento del objeto al alcanzar los limites del World. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#delimit">delimit</a>: hace que este objeto contribuya a la extension logica del World. <i>[ Opcional ]</i></li>
-                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados despuÃ©s con <code>spawn()</code>. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#manual-children">hijos manuales</a>: hijos creados después con <code>spawn()</code>. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#attach">attach</a>: reglas usadas cuando el objeto sigue a su parent original. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#sounds">sounds</a>: declaraciones de sonido del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#music">music</a>: declaraciones de musica generada del objeto. <i>[ Opcional ]</i></li>
@@ -949,7 +949,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h2 id="origin">Origin</h2>
 
             <p>
-                Define la posiciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n inicial del objeto dentro del runtime.
+                Define la posición inicial del objeto dentro del runtime.
             </p>
 
             <div class="code-card">
@@ -971,7 +971,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h2>Shape</h2>
 
             <p>
-                Define la representaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n visual bÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡sica del objeto.
+                Define la representación visual básica del objeto.
             </p>
 
             <div class="code-card">
@@ -994,17 +994,17 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li>
                     <code>type</code>: tipo de forma a dibujar. <i>[ Opcional ]</i>
                     <ul>
-                        <li><code>block</code>: bloque sÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³lido por defecto. No aplica mecÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡nicas de rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
-                        <li><code>rectangle</code>: rectÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ngulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
-                        <li><code>triangle</code>: triÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ngulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
-                        <li><code>circle</code>: circulo con soporte para rotaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n y movimiento orientado.</li>
-                        <li><code>polygon</code>: polÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­gono definido mediante una lista de puntos.</li>
-                        <li><code>line</code>: lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­nea definida entre dos puntos.</li>
+                        <li><code>block</code>: bloque sólido por defecto. No aplica mecánicas de rotación.</li>
+                        <li><code>rectangle</code>: rectángulo con soporte para rotación y movimiento orientado.</li>
+                        <li><code>triangle</code>: triángulo con soporte para rotación y movimiento orientado.</li>
+                        <li><code>circle</code>: circulo con soporte para rotación y movimiento orientado.</li>
+                        <li><code>polygon</code>: polígono definido mediante una lista de puntos.</li>
+                        <li><code>line</code>: línea definida entre dos puntos.</li>
                         <li><code>text</code>: texto renderizable.</li>
                     </ul>
                 </li>
                 <li>
-                    <code>mode</code>: modo en el que se dibujarÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ la forma. <i>[ Opcional ]</i>
+                    <code>mode</code>: modo en el que se dibujará la forma. <i>[ Opcional ]</i>
                     <ul>
                         <li><code>fill</code>: se dibuja completa y rellena del color especificado.</li>
                         <li><code>outline</code>: se dibuja el contorno del color especificado </li>
@@ -1013,7 +1013,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                 <li><code>content</code>: cadena visible cuando <code>type</code> es <code>text</code>. <i>[ Opcional ]</i></li>
                 <li><code>color</code>: color del objeto. <i>[ Opcional ]</i></li>
                 <li><code>depth</code>: propiedad raíz para el orden de dibujado entre objetos en el renderer actual del mundo. Los valores menores se dibujan antes. Los objetos con el mismo depth mantienen el orden de creación. No es un sistema global de capas de video. <i>[ Opcional, por defecto 0 ]</i></li>
-                <li><a class="link" href="#size">size</a>: tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#size">size</a>: tamaño del objeto. <i>[ Opcional ]</i></li>
             </ul>
 
             <p>
@@ -1032,7 +1032,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h2 id="size">Size</h2>
 
             <p>
-                Define el tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del objeto.
+                Define el tamaño del objeto.
             </p>
 
             <div class="code-card">
@@ -1054,7 +1054,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
             <h2 id="polygon">Polygon</h2>
 
             <p>
-                Los polÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­gonos permiten definir formas irregulares
+                Los polígonos permiten definir formas irregulares
                 mediante una lista de puntos locales.
             </p>
 
@@ -1207,14 +1207,14 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
                     <code>mode</code>: modo del comportamiento. [ Opcional ]
                     <ul>
                         <li><code>none</code>: sin comportamiento especial.</li>
-                        <li><code>wrap</code>: al alcanzar un lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mite, el objeto aparecerÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ en el lado opuesto manteniendo su direcciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n.</li>
+                        <li><code>wrap</code>: al alcanzar un límite, el objeto aparecerá en el lado opuesto manteniendo su dirección.</li>
                     </ul>
                 </li>
                 <li>
-                    <code>overflow</code>: controla cÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³mo se aplica el comportamiento de lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mites. <i>[ Opcional ]</i>
+                    <code>overflow</code>: controla cómo se aplica el comportamiento de límites. <i>[ Opcional ]</i>
                     <ul>
-                        <li><code>true</code>: el objeto comenzarÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ a aparecer por el lado opuesto mientras desaparece progresivamente.</li>
-                        <li><code>false</code>: el objeto reaparece inmediatamente al alcanzar el lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­mite.</li>
+                        <li><code>true</code>: el objeto comenzará a aparecer por el lado opuesto mientras desaparece progresivamente.</li>
+                        <li><code>false</code>: el objeto reaparece inmediatamente al alcanzar el límite.</li>
                     </ul>
                 </li>
             </ul>
@@ -1243,7 +1243,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <p>
                 El <code>offset</code> opcional es local al objeto que crea el hijo y
-                usa su rotaciÃƒÂ³n actual como referencia.
+                usa su rotación actual como referencia.
             </p>
 
             <p>

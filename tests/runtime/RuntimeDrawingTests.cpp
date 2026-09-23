@@ -1229,6 +1229,13 @@ bool requiresGraphics(const std::string& name)
     return
         name == "Renderer scales logical pixel to physical pixels" ||
         name == "Renderer stretches world extent to machine raster" ||
+        name == "Local primitive wraps with reference but world primitive does not" ||
+        name == "Representation presentation snapshot does not change after draw mutation" ||
+        name == "Local primitive presentation snapshot does not change after reference mutation" ||
+        name == "Representation and local primitive wrap use same snapshot" ||
+        name == "Immediate drawing outside draw callback does not render" ||
+        name == "HUD pattern reads state in draw after action" ||
+        name == "Representation and immediate draw share same object depth" ||
         name == "Circle outline scales with output scale" ||
         name == "One-point geometry builds and draws as logical point" ||
         name == "Rotated ellipse fill and outline respect angle" ||

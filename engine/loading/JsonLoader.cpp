@@ -857,6 +857,36 @@ namespace
         const std::string& owner
     )
     {
+        static const std::unordered_set<std::string> allowedProperties = {
+            "$schema",
+            "like",
+            "spawn",
+            "component",
+            "creation",
+            "offset",
+            "visible",
+            "attach",
+            "origin",
+            "size",
+            "visual",
+            "mechanics",
+            "inherit",
+            "bounds",
+            "delimit",
+            "group",
+            "control",
+            "local",
+            "collisions",
+            "behavior",
+            "states",
+            "sounds",
+            "music",
+            "children",
+            "__sourceFile",
+            "__behaviorSourceFile",
+            "__childSourceFiles"
+        };
+
         rejectRootProperty(object, "color", owner, "visual");
         if (object.contains("shape"))
         {
@@ -902,6 +932,19 @@ namespace
             throw std::runtime_error(
                 "Invalid FLX object '" + owner +
                 "': property 'motion' was replaced by 'mechanics'"
+            );
+        }
+
+        for (auto it = object.begin(); it != object.end(); ++it)
+        {
+            if (allowedProperties.contains(it.key()))
+            {
+                continue;
+            }
+
+            throw std::runtime_error(
+                "Invalid FLX object '" + owner +
+                "': unknown root property '" + it.key() + "'"
             );
         }
     }

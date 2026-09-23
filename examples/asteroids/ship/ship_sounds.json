@@ -1,6 +1,4 @@
 {
-  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
-
   "laser": {
     "kind": {
       "source": {

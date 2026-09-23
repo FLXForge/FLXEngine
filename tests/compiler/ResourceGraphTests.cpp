@@ -40,6 +40,61 @@ namespace
         );
     }
 
+    bool diagnosticsContain(
+        const Diagnostics& diagnostics,
+        const std::string& text
+    )
+    {
+        return std::any_of(
+            diagnostics.all().begin(),
+            diagnostics.all().end(),
+            [&text](const Diagnostic& diagnostic)
+            {
+                return diagnostic.message.find(text) != std::string::npos;
+            }
+        );
+    }
+
+    nlohmann::json readSchema(const std::string& name)
+    {
+        std::filesystem::path schemaPath =
+            std::filesystem::path("docs") / "schemas" / name;
+
+        if (!std::filesystem::exists(schemaPath))
+        {
+            schemaPath =
+                std::filesystem::path("../../../docs/schemas") / name;
+        }
+
+        std::ifstream schemaFile(schemaPath);
+        require(schemaFile.good(), "schema should be readable: " + name);
+
+        return nlohmann::json::parse(schemaFile);
+    }
+
+    const nlohmann::json& creationBranch(
+        const nlohmann::json& schema,
+        const std::string& mode
+    )
+    {
+        for (const nlohmann::json& branch : schema["oneOf"])
+        {
+            if (
+                branch.contains("properties") &&
+                branch["properties"].contains("mode") &&
+                branch["properties"]["mode"].contains("const") &&
+                branch["properties"]["mode"]["const"] == mode
+            )
+            {
+                return branch;
+            }
+        }
+
+        throw std::runtime_error(
+            "creation schema branch not found: " + mode
+        );
+    }
+
     void testGraphWithAutoAndManualChildren()
     {
         const std::filesystem::path root =
@@ -495,6 +550,254 @@ namespace
         require(diagnostics.hasErrors(), "automatic instantiation cycle should report diagnostics");
     }
 
+    void testObjectSchemaClosedContract()
+    {
+        const nlohmann::json objectSchema =
+            readSchema("object.schema.json");
+
+        require(objectSchema["additionalProperties"] == false, "object schema should reject unknown root properties");
+        require(objectSchema["properties"]["attach"]["$ref"] == "attach.schema.json", "object schema should reference attach schema");
+
+        const nlohmann::json collisions =
+            objectSchema["properties"]["collisions"];
+
+        require(collisions.contains("oneOf"), "collisions should accept multiple shapes");
+        require(collisions["oneOf"][0]["type"] == "string", "collisions should accept block reference string");
+        require(collisions["oneOf"][1]["type"] == "object", "collisions should accept inline collider map");
+
+        const nlohmann::json colliderValue =
+            collisions["oneOf"][1]["additionalProperties"]["oneOf"];
+
+        require(colliderValue[0]["type"] == "string", "collider value should accept reference string");
+        require(colliderValue[1]["$ref"] == "collision.schema.json", "collider value should accept inline collision schema");
+    }
+
+    void testAttachSchemaClosedContract()
+    {
+        const nlohmann::json attachSchema =
+            readSchema("attach.schema.json");
+
+        require(attachSchema["type"] == "object", "attach should be an object");
+        require(attachSchema["additionalProperties"] == false, "attach should reject unknown properties");
+
+        const std::vector<std::string> properties = {
+            "position",
+            "born",
+            "x",
+            "y",
+            "angle"
+        };
+
+        require(attachSchema["properties"].size() == properties.size(), "attach should expose only v0.3 properties");
+
+        for (const std::string& property : properties)
+        {
+            require(attachSchema["properties"].contains(property), "attach property should exist: " + property);
+            require(attachSchema["properties"][property]["type"] == "boolean", "attach property should be boolean: " + property);
+        }
+    }
+
+    void testCreationSchemaDiscriminatesModes()
+    {
+        const nlohmann::json creationSchema =
+            readSchema("creation.schema.json");
+
+        require(creationSchema.contains("oneOf"), "creation schema should discriminate modes with oneOf");
+        require(creationSchema["oneOf"].size() == 3, "creation schema should expose three mode branches");
+
+        const nlohmann::json& individual =
+            creationBranch(creationSchema, "individual");
+
+        require(individual["additionalProperties"] == false, "individual creation should reject grid and iterator properties");
+        require(!individual.contains("required"), "individual creation should allow omitted mode");
+        require(!individual["properties"].contains("rules"), "individual creation should not allow rules");
+        require(!individual["properties"].contains("pattern"), "individual creation should not allow pattern");
+
+        const nlohmann::json& grid =
+            creationBranch(creationSchema, "grid");
+
+        require(grid["additionalProperties"] == false, "grid creation should reject unknown properties");
+        require(grid["required"] == nlohmann::json::array({ "mode", "rules", "pattern" }), "grid creation should require mode rules and pattern");
+        require(grid["properties"]["rules"]["additionalProperties"] == false, "grid rules should reject iterator rules");
+        require(grid["properties"]["rules"]["required"] == nlohmann::json::array({ "rows", "columns", "cellWidth", "cellHeight" }), "grid rules should require grid dimensions");
+        require(!grid["properties"]["rules"]["properties"].contains("concurrent"), "grid rules should not accept iterator concurrent");
+        require(!grid["properties"]["rules"]["properties"].contains("repeat"), "grid rules should not accept iterator repeat");
+        require(grid["properties"]["pattern"].contains("oneOf"), "grid should keep flat and row pattern forms");
+
+        const nlohmann::json& iterator =
+            creationBranch(creationSchema, "iterator");
+
+        require(iterator["additionalProperties"] == false, "iterator creation should reject unknown properties");
+        require(iterator["required"] == nlohmann::json::array({ "mode", "pattern" }), "iterator creation should require mode and pattern");
+        require(iterator["properties"]["pattern"]["minItems"] == 1, "iterator pattern should reject empty arrays");
+        require(iterator["properties"]["pattern"]["items"]["type"] == "string", "iterator pattern should be a flat string array");
+        require(iterator["properties"]["rules"]["additionalProperties"] == false, "iterator rules should reject grid rules");
+        require(iterator["properties"]["rules"]["properties"]["concurrent"]["minimum"] == 1, "iterator concurrent should be at least one");
+        require(iterator["properties"]["rules"]["properties"]["repeat"]["type"] == "boolean", "iterator repeat should be boolean");
+        require(!iterator["properties"]["rules"]["properties"].contains("rows"), "iterator rules should not accept grid rows");
+        require(!iterator["properties"]["rules"]["properties"].contains("columns"), "iterator rules should not accept grid columns");
+        require(!iterator["properties"]["rules"]["properties"].contains("cellWidth"), "iterator rules should not accept grid cellWidth");
+        require(!iterator["properties"]["rules"]["properties"].contains("cellHeight"), "iterator rules should not accept grid cellHeight");
+    }
+
+    void testClosedObjectRootValidation()
+    {
+        const std::filesystem::path root =
+            testRoot() / "closed_object_root";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game");
+
+        writeFile(
+            root / "game.flx",
+            "name=ClosedObject\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{}\n"
+        );
+
+        CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "empty object should remain valid");
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"visible\": true }\n"
+        );
+
+        result =
+            compile(root / "game.flx");
+
+        require(result.success, "object with public root property should compile");
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"visble\": true }\n"
+        );
+
+        result =
+            compile(root / "game.flx");
+
+        require(!result.success, "object with unknown root property should fail");
+        require(diagnosticsContain(result.diagnostics, "unknown root property 'visble'"), "unknown root property diagnostic should name property");
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"color\": \"white\" }\n"
+        );
+
+        result =
+            compile(root / "game.flx");
+
+        require(!result.success, "legacy root property should still fail");
+        require(diagnosticsContain(result.diagnostics, "property 'color' must be declared inside 'visual'"), "legacy root property should keep specific diagnostic");
+    }
+
+    void testClosedObjectRootValidationAfterLike()
+    {
+        const std::filesystem::path root =
+            testRoot() / "closed_object_like";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game" / "base");
+
+        writeFile(
+            root / "game.flx",
+            "name=ClosedLike\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{ \"like\": \"base/root\" }\n"
+        );
+
+        writeFile(
+            root / "game" / "base" / "root.json",
+            "{ \"visble\": true }\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(!result.success, "object resolved through like should not keep unknown root properties");
+        require(diagnosticsContain(result.diagnostics, "unknown root property 'visble'"), "like diagnostic should name unknown root property");
+    }
+
+    void testCollisionReferenceGranularitiesCompile()
+    {
+        const std::filesystem::path root =
+            testRoot() / "collision_reference_granularities";
+
+        std::filesystem::remove_all(root);
+        std::filesystem::create_directories(root / "game" / "blocks");
+
+        writeFile(
+            root / "game.flx",
+            "name=CollisionReferences\n"
+            "path=game\n"
+            "root=root\n"
+        );
+
+        writeFile(
+            root / "game" / "root.json",
+            "{\n"
+            "  \"collisions\": \"/blocks/collisions\",\n"
+            "  \"children\": {\n"
+            "    \"child\": {\n"
+            "      \"collisions\": {\n"
+            "        \"body\": \"/blocks/collider:body\"\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n"
+        );
+
+        writeFile(
+            root / "game" / "blocks" / "collisions.json",
+            "{\n"
+            "  \"body\": {\n"
+            "    \"type\": \"box\",\n"
+            "    \"size\": { \"width\": 8, \"height\": 8 }\n"
+            "  }\n"
+            "}\n"
+        );
+
+        writeFile(
+            root / "game" / "blocks" / "collider.json",
+            "{\n"
+            "  \"body\": {\n"
+            "    \"type\": \"ellipse\",\n"
+            "    \"size\": { \"width\": 4, \"height\": 4 }\n"
+            "  }\n"
+            "}\n"
+        );
+
+        const CompilationResult result =
+            compile(root / "game.flx");
+
+        require(result.success, "collision block and collider references should compile");
+
+        const ObjectDefinition& rootDefinition =
+            rootObject(result.project);
+
+        require(rootDefinition.collisions.count("body") == 1, "root should load referenced collisions block");
+        require(rootDefinition.collisions.at("body").type == "box", "root collision block should keep collider data");
+
+        const ObjectDefinition* child =
+            result.project.resources.findObject(rootDefinition.childResources.at("child"));
+
+        require(child != nullptr, "child should be compiled");
+        require(child->collisions.count("body") == 1, "child should load referenced collider");
+        require(child->collisions.at("body").type == "ellipse", "child collider reference should keep collider data");
+    }
+
     void testAutoChildCycleFailsCompilation()
     {
         const std::filesystem::path root =
@@ -662,6 +965,12 @@ int main()
         { "invalid FLX reference", testInvalidFlxReference },
         { "visual representation compiles", testVisualRepresentationCompiles },
         { "one-point geometry is accepted by schema and compiler", testOnePointGeometryIsAcceptedBySchemaAndCompiler },
+        { "object schema closed contract", testObjectSchemaClosedContract },
+        { "attach schema closed contract", testAttachSchemaClosedContract },
+        { "creation schema discriminates modes", testCreationSchemaDiscriminatesModes },
+        { "closed object root validation", testClosedObjectRootValidation },
+        { "closed object root validation after like", testClosedObjectRootValidationAfterLike },
+        { "collision reference granularities compile", testCollisionReferenceGranularitiesCompile },
         { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation },
         { "auto child cycle fails compilation", testAutoChildCycleFailsCompilation },
         { "manual child cycle compiles", testManualChildCycleCompiles },

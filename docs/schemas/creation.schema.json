@@ -2,141 +2,100 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "creation.schema.json",
   "title": "FLX Creation",
-  "type": "object",
-  "additionalProperties": false,
-
-  "properties": {
-    "mode": {
-      "type": "string",
-      "enum": [ "individual", "grid", "iterator" ],
-      "default": "individual"
-    },
-
-    "rules": {
+  "oneOf": [
+    {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "rows": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "columns": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "cellWidth": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "cellHeight": {
-          "type": "number",
-          "exclusiveMinimum": 0
-        },
-        "concurrent": {
-          "type": "integer",
-          "minimum": 1,
-          "default": 1
-        },
-        "repeat": {
-          "type": "boolean",
-          "default": false
+        "mode": {
+          "type": "string",
+          "const": "individual",
+          "default": "individual"
         }
       }
     },
-
-    "pattern": {
-      "oneOf": [
-        {
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "mode", "rules", "pattern" ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "grid"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [ "rows", "columns", "cellWidth", "cellHeight" ],
+          "properties": {
+            "rows": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "columns": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "cellWidth": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cellHeight": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "pattern": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "mode", "pattern" ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "const": "iterator"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "concurrent": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "repeat": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "pattern": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "string"
-          }
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      ]
-    }
-  },
-
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "mode": {
-            "const": "grid"
-          }
-        },
-        "required": [ "mode" ]
-      },
-      "then": {
-        "required": [ "rules", "pattern" ],
-        "properties": {
-          "rules": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [ "rows", "columns", "cellWidth", "cellHeight" ],
-            "properties": {
-              "rows": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "columns": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "cellWidth": {
-                "type": "number",
-                "exclusiveMinimum": 0
-              },
-              "cellHeight": {
-                "type": "number",
-                "exclusiveMinimum": 0
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "mode": {
-            "const": "iterator"
-          }
-        },
-        "required": [ "mode" ]
-      },
-      "then": {
-        "required": [ "pattern" ],
-        "properties": {
-          "pattern": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "string"
-            }
-          },
-          "rules": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "concurrent": {
-                "type": "integer",
-                "minimum": 1,
-                "default": 1
-              },
-              "repeat": {
-                "type": "boolean",
-                "default": false
-              }
-            }
           }
         }
       }

@@ -32,11 +32,27 @@ function markActiveLinks() {
   });
 }
 
+function updateLanguageLinks() {
+  const page = path.split("/").pop() || "index.html";
+
+  const spanish = document.querySelector('[data-language="es"]');
+  const english = document.querySelector('[data-language="en"]');
+
+  if (spanish) {
+    spanish.href = `../es/${page}`;
+  }
+
+  if (english) {
+    english.href = `../en/${page}`;
+  }
+}
+
 async function init() {
   await loadComponent("navbar", components.navbar);
   await loadComponent("sidebar", components.sidebar);
   await loadComponent("footer", components.footer);
 
+  updateLanguageLinks();
   markActiveLinks();
 }
 

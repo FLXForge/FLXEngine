@@ -134,14 +134,19 @@ Runtime -> Conecta ambos
                 en editores compatibles como Visual Studio Code.
             </p>
 
+            <p>
+                <code>flx.d.ts</code> ayuda al editor a conocer el contrato público de FLX; no participa en la ejecución del juego.
+            </p>
+
             <hr />
 
             <h2>Input</h2>
 
             <p>
-                Los scripts leen input mediante controles logicos.
-                Las teclas fisicas y botones de mando se declaran en el archivo
-                <code>input.mapping</code> del proyecto, no directamente en scripts.
+                Los scripts trabajan con controles lógicos, no con teclas o botones físicos. 
+                El Input Mapping conecta esos controles con las entradas físicas. 
+                Si el proyecto no selecciona un mapping mediante <code>input.mapping</code>, 
+                FLX utiliza el mapping predeterminado.
             </p>
 
             <div class="code-card">
@@ -156,6 +161,10 @@ if (input_pressed(player, FIRE)) {
 }</code></pre>
             </div>
 
+            <p>
+                Cuando se utiliza un RuntimeObject como sujeto de input, el objeto debe declarar <code>control.player</code>.
+            </p>
+
             <hr />
 
             <h2>Ciclo de vida</h2>
@@ -167,21 +176,25 @@ if (input_pressed(player, FIRE)) {
 
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
-<pre><code>Runtime Start
-      |
- Object Born
-      |
-   born()
-
- action()
- motion()
- collision()
-
- kill()
-
- dead()
-
- cleanup()
+<pre><code>Objeto entra en el mundo
+        │
+        ▼
+      born()
+        │
+        ▼
+ ┌─────────────────┐
+ │     action()    │
+ │     motion()    │
+ │   collision()   │
+ │      draw()     │
+ └─────────────────┘
+        │
+        │ kill()
+        ▼
+      dead()
+        │
+        ▼
+     eliminado
 </code></pre>
             </div>
 
@@ -247,10 +260,8 @@ if (input_pressed(player, FIRE)) {
             <h2>Destrucción</h2>
 
             <p>
-                La destrucción de un objeto se solicita mediante
-                <code>kill(object)</code>.
-                Las escrituras directas sobre <code>object.alive</code> son ignoradas
-                por el runtime.
+                El estado alive del RuntimeObject es de solo lectura. 
+                La muerte de una instancia se solicita mediante <code>kill(object)</code>.
             </p>
 
             <div class="code-card">

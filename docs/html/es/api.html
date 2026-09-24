@@ -226,7 +226,7 @@ write_local(ship, "timer", timer);
             <div class="code-card">
                 <div class="code-header">accelerate</div>
 <pre><code>accelerate(ship);
-accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
+accelerate(ship, -input_direction(ship, direction(0), VERTICAL));</code></pre>
             </div>
 
             <h3>Configuración utilizada</h3>
@@ -1077,8 +1077,8 @@ let music = load("settings", "music", true);</code></pre>
                 Devuelve intencion direccional normalizada para una direccion
                 logica: <code>-1</code>, <code>0</code> o <code>1</code> en la
                 implementacion digital actual.
-                <code>RIGHT</code> y <code>UP</code> son positivos;
-                <code>LEFT</code> y <code>DOWN</code> son negativos.
+                <code>RIGHT</code> y <code>DOWN</code> son positivos;
+                <code>LEFT</code> y <code>UP</code> son negativos.
                 En una direccion <code>4way</code>, <code>HORIZONTAL</code> lee
                 solo <code>LEFT</code>/<code>RIGHT</code> y
                 <code>VERTICAL</code> lee solo <code>UP</code>/<code>DOWN</code>.
@@ -1086,8 +1086,8 @@ let music = load("settings", "music", true);</code></pre>
                 puede proyectarse sobre cualquiera de los dos ejes. Los archivos
                 de mapping siguen declarando solo <code>up</code>,
                 <code>right</code>, <code>down</code> y <code>left</code>;
-                <code>up</code>/<code>right</code> se normalizan a positivo y
-                <code>down</code>/<code>left</code> a negativo en chips
+                <code>down</code>/<code>right</code> se normalizan a positivo y
+                <code>up</code>/<code>left</code> a negativo en chips
                 <code>2way</code>.
             </p>
 

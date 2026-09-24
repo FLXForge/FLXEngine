@@ -12,7 +12,7 @@ const MOVE = direction(0);
 
 function action(ship) {
 
-    const thrust = input_direction(ship, MOVE, VERTICAL);
+    const thrust = -input_direction(ship, MOVE, VERTICAL);
     const rotation = input_direction(ship, MOVE, HORIZONTAL);
 
     if (thrust > 0) {

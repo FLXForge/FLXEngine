@@ -102,7 +102,7 @@ Runtime -> Connects both
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
 function action(ship) {
-    const thrust = input_direction(ship, direction(0), VERTICAL);
+    const thrust = -input_direction(ship, direction(0), VERTICAL);
 
     if (thrust > 0) {
         accelerate(ship, thrust);

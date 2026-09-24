@@ -213,7 +213,7 @@ write_local(ship, "timer", timer);
 
 
 <pre><code>accelerate(ship);
-accelerate(ship, input_direction(ship, direction(0), VERTICAL));</code></pre>
+accelerate(ship, -input_direction(ship, direction(0), VERTICAL));</code></pre>
 
 
             </div>
@@ -1104,16 +1104,16 @@ let music = load("settings", "music", true);</code></pre>
                 Returns normalized directional intent for a logical direction:
                 <code>-1</code>, <code>0</code> or <code>1</code> in the current
                 digital input implementation.
-                <code>RIGHT</code> and <code>UP</code> are positive;
-                <code>LEFT</code> and <code>DOWN</code> are negative.
+                <code>RIGHT</code> and <code>DOWN</code> are positive;
+                <code>LEFT</code> and <code>UP</code> are negative.
                 In a <code>4way</code> direction, <code>HORIZONTAL</code> reads
                 only <code>LEFT</code>/<code>RIGHT</code> and
                 <code>VERTICAL</code> reads only <code>UP</code>/<code>DOWN</code>.
                 In a <code>2way</code> direction, positive/negative intent can be
                 projected onto either axis. Mapping files still declare only
                 <code>up</code>, <code>right</code>, <code>down</code> and
-                <code>left</code>; <code>up</code>/<code>right</code> normalize
-                to positive and <code>down</code>/<code>left</code> normalize to
+                <code>left</code>; <code>down</code>/<code>right</code> normalize
+                to positive and <code>up</code>/<code>left</code> normalize to
                 negative for <code>2way</code> chips.
             </p>
 

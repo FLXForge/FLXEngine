@@ -621,8 +621,8 @@ namespace
         require(loaded.project.context.machine.input.directions[1].simultaneous == "neutral", "second direction simultaneous policy should survive roundtrip");
         require(loaded.project.context.inputMapping.players.count(1) == 1, "compiled input mapping player should survive roundtrip");
         require(loaded.project.context.inputMapping.players.at(1).directions.size() == 1, "compiled input mapping should preserve mapped directions without trimming to chip");
-        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Positive) == 1, "2way default up/right should be normalized to positive in compiled mapping");
-        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Negative) == 1, "2way default down/left should be normalized to negative in compiled mapping");
+        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Positive) == 1, "2way default down/right should be normalized to positive in compiled mapping");
+        require(loaded.project.context.inputMapping.players.at(1).directions[0].components.count(InputComponent::Negative) == 1, "2way default up/left should be normalized to negative in compiled mapping");
         require(loaded.project.context.inputMapping.systemButtons.count(0) == 1, "compiled system mapping should survive roundtrip");
         require(rootObject(loaded.project).controlPlayer == 2, "control.player should survive roundtrip");
         require(std::get<double>(localValue(rootObject(loaded.project), "score")) == 12.0, "numeric local value should survive roundtrip");

@@ -661,7 +661,7 @@ bool InputSystem::componentMatches(
 
         if (definition.type == "4way")
         {
-            return value == InputComponent::Down ||
+            return value == InputComponent::Up ||
                 value == InputComponent::Left;
         }
     }
@@ -675,7 +675,7 @@ bool InputSystem::componentMatches(
 
         if (definition.type == "4way")
         {
-            return value == InputComponent::Up ||
+            return value == InputComponent::Down ||
                 value == InputComponent::Right;
         }
     }

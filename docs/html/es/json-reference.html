@@ -23,47 +23,47 @@
             <h1>Referencia JSON</h1>
 
             <p>
-                Esta sección documenta el manifiesto de proyecto y las estructuras JSON
-                utilizadas por FLX para definir objetos y sus propiedades.
+                Referencia de las declaraciones utilizadas por un proyecto FLX:
+                el manifiesto <code>.flx</code>, los objetos JSON y sus bloques declarativos.
             </p>
 
             <p class="placeholder">
                 FLX está en desarrollo activo. Algunos campos pueden cambiar durante las versiones 0.x.
             </p>
 
-            <h2>Archivos del proyecto</h2>
-
-            <p>
-                FLX separa los metadatos del proyecto de los datos del mundo.
-            </p>
+            <h2>Índice</h2>
 
             <ul>
-                <li><code>.flx</code>: define metadatos del proyecto y puntos de entrada de compilacion.</li>
-                <li><code>object</code>: define un objeto que puede contener otros elementos.</li>
-                <li><code>object</code>: define objetos que pueden representarse visualmente.</li>
+                <li><a class="link" href="#project">Project</a></li>
+                <li><a class="link" href="#object">Object</a></li>
+                <li><a class="link" href="#composition">Composition</a></li>
+                <li><a class="link" href="#visual">Visual</a></li>
+                <li><a class="link" href="#creation">Creation</a></li>
+                <li><a class="link" href="#mechanics">Mechanics</a></li>
+                <li><a class="link" href="#collision">Collision</a></li>
+                <li><a class="link" href="#audio">Audio</a></li>
             </ul>
 
-            <hr />
-
-            <h2 class="placeholder">Manifiesto FLX</h2>
+            <h2 id="project">Project</h2>
 
             <p>
-                El archivo <code>.flx</code> es un manifiesto de estilo properties.
-                Apunta al objeto raiz, a la Machine y al mapping de input.
-                Las opciones de runtime, como debug o pantalla completa,
-                pertenecen al CLI o al entorno de ejecucion, no al manifiesto.
+                El archivo <code>.flx</code> es el manifiesto del proyecto.
+                Utiliza un formato de propiedades y define sus metadatos y puntos
+                de entrada.
             </p>
 
             <div class="code-card">
                 <div class="code-header">game.flx</div>
-<pre><code>name=Asteroids
-version=1.0.0
-engine=0.2.0
+<pre><code>title=Asteroids
+name=Asteroids
+version=2.0
+engine=0.3.0
+
 path=asteroids
 root=space
-title=Asteroids
-machine=machines/standard.yml
-input.mapping=input/default.input
+machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
+
 notes=FLX example with spawn and basic UI
 </code></pre>
             </div>
@@ -76,7 +76,6 @@ notes=FLX example with spawn and basic UI
                 <li><code>engine</code>: versión objetivo de FLX. <i>[ Opcional ]</i></li>
                 <li><code>path</code>: directorio de contenido del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>root</code>: objeto JSON raiz compilado como entrada del mundo. <i>[ Obligatorio ]</i></li>
-                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>machine</code>: definicion YAML de Machine usada por el proyecto. Si se omite, FLX usa una Machine interna por defecto. <i>[ Opcional ]</i></li>
                 <li><code>input.mapping</code>: mapping de input tipo properties usado por la API logica de input. Si se omite, FLX usa el mapping por defecto. <i>[ Opcional ]</i></li>
                 <li><code>notes</code>: notas libres del proyecto. <i>[ Opcional ]</i></li>
@@ -90,42 +89,6 @@ notes=FLX example with spawn and basic UI
                 chip de video. Las opciones de debug/ventana pertenecen a la
                 capa de ejecucion, por ejemplo
                 <code>flx run --window-mode=fullscreen --scale=3 project.flx</code>.
-            </p>
-
-            <p>
-                Una Machine describe capacidades disponibles mediante chips como
-                video, audio e input. El tamano de pantalla, el color de fondo
-                y la escala de salida vienen ahora del chip de video, no del
-                manifiesto <code>.flx</code>.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">input/default.input</div>
-<pre><code>players.1.directions.0.up=KEY_W,KEY_UP,JOY1_UP
-players.1.directions.0.down=KEY_S,KEY_DOWN,JOY1_DOWN
-players.1.directions.0.left=KEY_A,KEY_LEFT,JOY1_LEFT
-players.1.directions.0.right=KEY_D,KEY_RIGHT,JOY1_RIGHT
-
-players.1.buttons.0=KEY_SPACE,JOY1_A
-players.1.buttons.1=KEY_LEFT_CONTROL,KEY_RIGHT_CONTROL,JOY1_B
-players.1.buttons.2=KEY_LEFT_SHIFT,KEY_RIGHT_SHIFT,JOY1_X
-players.1.buttons.3=KEY_Z,JOY1_Y
-
-system.buttons.0=KEY_ENTER,JOY1_START
-system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
-            </div>
-
-            <p>
-                En archivos <code>.input</code>, la coma separa alternativas y
-                <code>+</code> une entradas simultaneas. Las direcciones usan
-                solo <code>up</code>, <code>right</code>, <code>down</code> y
-                <code>left</code>. En un Input Chip <code>2way</code>,
-                <code>down</code>/<code>right</code> se normalizan a intento
-                positivo y <code>up</code>/<code>left</code> a intento
-                negativo. Un mapping explicito ausente, vacio o invalido es un
-                error de compilacion; no hay fallback silencioso. Las diferencias
-                de cobertura entre Machine e Input generan warnings y no recortan
-                el mapping.
             </p>
 
             <h2 id="flx-references">Referencias JSON FLX</h2>
@@ -267,34 +230,40 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 </code></pre>
             </div>
 
-            <h2 id="root">Objeto raíz</h2>
+            <h2 id="object">Object</h2>
 
             <p>
-                El objeto raíz es especial únicamente porque el manifiesto apunta a él.
-                Su JSON utiliza el mismo schema que cualquier otro nodo.
+                Un objeto es la unidad declarativa con la que FLX describe los
+                elementos que forman el mundo. Puede declarar representación visual,
+                comportamiento, movimiento, colisiones, estado, audio y otros objetos,
+                sin que ninguna de estas capacidades sea obligatoria por sí misma.
+            </p>
+
+            <p>
+                El objeto raíz utiliza el mismo schema que cualquier otro objeto.
+                Es especial únicamente porque el manifiesto <code>.flx</code> lo
+                selecciona mediante <code>root</code>.
             </p>
 
             <div class="code-card">
-                <div class="code-header">space.json</div>
+                <div class="code-header">children (referencia)</div>
 <pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",    "behavior": {
-        "scripts": [ "scripts/game" ]
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "origin": {
+        "x": 160,
+        "y": 90
     },
-
-    "children": {
-        "level": "space/level"
-    }
-}
-</code></pre>
-                <div class="code-header">shape text</div>
-<pre><code>"shape": {
-    "type": "text",
-    "content": "ARKANOID",
-    "color": "white",
-    "mode": "fill",
     "size": {
-        "width": 260,
-        "height": 60
+        "width": 18,
+        "height": 24
+    },
+    "visual": {
+        "color": "white",
+        "representation": [
+            {
+                "primitive": "triangle"
+            }
+        ]
     }
 }</code></pre>
             </div>
@@ -875,7 +844,7 @@ system.buttons.1=KEY_ESCAPE,JOY1_SELECT</code></pre>
 
             <ul>
                 <li><code>$schema</code>: ruta al schema utilizado para validación. <i>[ Opcional ]</i></li>
-                                <li><a class="link" href="#origin">origin</a>: posición inicial del objeto. <i>[ Opcional ]</i></li>
+                <li><a class="link" href="#origin">origin</a>: posición inicial del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#shape">shape</a>: información visual del objeto. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#mechanics">mechanics</a>: reglas de movimiento y rotacion, si existen. <i>[ Opcional ]</i></li>
                 <li><a class="link" href="#inherit">inherit</a>: estado vivo heredado del parent al crear o mientras hay vinculo. <i>[ Opcional ]</i></li>

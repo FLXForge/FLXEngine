@@ -430,36 +430,54 @@ machine=machines/standard.yml
 
             <div class="code-card">
                 <div class="code-header">rotation</div>
-<pre><code>rotate(ship, RIGHT);
-advance(ship);
+<pre><code>rotate(ship, 1);   // gira en sentido horario
+rotate(ship, -1);  // gira en sentido antihorario
 </code></pre>
             </div>
+
+            <p>
+                En movimiento polar, <code>advance()</code> utiliza el ángulo actual
+                del objeto para determinar la dirección de avance.
+            </p>
 
             <hr />
 
             <h2>Movimiento</h2>
 
             <p>
-                FLX combina un sistema clásico basado en velocidad
-                con un sistema basado en aceleración e inercia.
+                El movimiento de un objeto se configura mediante <code>mechanics</code>.
             </p>
 
             <p>
-                Entre las propiedades más habituales se encuentran:
+                FLX distingue dos modelos principales:
             </p>
 
             <ul>
-                <li><code>speed</code></li>
-                <li><code>velocityX</code></li>
-                <li><code>velocityY</code></li>
-                <li><code>acceleration</code></li>
-                <li><code>inertia</code></li>
-                <li><code>rotationSpeed</code></li>
+                <li>
+                    <code>direct</code>: movimiento sobre los ejes horizontal y vertical.
+                </li>
+                <li>
+                    <code>polar</code>: movimiento definido mediante velocidad y ángulo.
+                </li>
             </ul>
 
             <p>
-                Las funciones de movimiento utilizan automáticamente
-                la convención angular FLX.
+                <code>mechanics</code> puede declarar velocidad, aceleración, inercia
+                y otras características del movimiento y la rotación.
+            </p>
+
+            <p>
+                Durante la ejecución, el runtime mantiene el estado vivo del movimiento.
+                Los scripts pueden consultar valores como <code>speed</code>,
+                <code>angle</code>, <code>velocityX</code>, <code>velocityY</code>
+                y <code>rotationSpeed</code> a través del objeto recibido por los hooks.
+            </p>
+
+            <p>
+                Las operaciones de movimiento, como <code>move_horizontal()</code>,
+                <code>move_vertical()</code>, <code>advance()</code>,
+                <code>accelerate()</code> o <code>rotate()</code>,
+                actúan sobre ese estado respetando las mechanics declaradas.
             </p>
 
             <div id="doc-path"></div>

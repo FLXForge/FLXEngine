@@ -214,13 +214,14 @@ machine=machines/standard.yml
             <h2>Children y momento de spawn</h2>
 
             <p>
-                Modelo resumido: <code>children</code> define que puede existir,
-                <code>spawn</code> define cuando entra en runtime y
-                <code>creation</code> define como el parent materializa esos
-                children. Si <code>creation</code> no se declara, el modo usado es
-                <code>individual</code>. En modo <code>grid</code>,
-                <code>spawn(parent, "child")</code> crea las celdas manuales que
-                correspondan al pattern.
+                <code>children</code> declara qué objetos puede crear un objeto padre.
+                El valor <code>spawn</code> de cada hijo determina si su primera instancia
+                nace automáticamente o queda disponible para creación manual.
+            </p>
+
+            <p>
+                <code>creation</code> define cómo organiza el padre la creación de sus hijos.
+                Si no se declara, el modo utilizado es <code>individual</code>.
             </p>
 
             <p>
@@ -244,90 +245,82 @@ machine=machines/standard.yml
             <p>
                 <code>spawn(parent, "child")</code> puede crear cualquier hijo
                 declarado. El valor <code>spawn</code> solo controla si la
-                primera instancia nace automaticamente cuando el padre entra
+                primera instancia nace automáticamente cuando el padre entra
                 en el mundo.
-            </p>
-
-            <p>
-                Junto con <code>like</code>, esto mantiene composición,
-                reutilización y creación dinámica bajo una sola propiedad JSON.
             </p>
 
             <hr />
 
-            <h2>Tipos de shape</h2>
+            <h2>Representación visual</h2>
 
             <p>
-                FLX proporciona varios tipos básicos de representación visual.
+                La apariencia de un objeto se declara mediante <code>visual</code>.
+            </p>
+
+            <p>
+                Un objeto puede contener varios elementos dentro de
+                <code>representation</code>. Cada elemento puede ser una primitiva,
+                una geometría definida mediante puntos o un texto.
             </p>
 
             <table>
                 <tr>
-                    <th>Tipo</th>
-                    <th>Origen</th>
+                    <th>Representación</th>
+                    <th>Uso</th>
                 </tr>
 
                 <tr>
-                    <td><code>block</code></td>
-                    <td>Pivot / centro</td>
+                    <td><code>primitive</code></td>
+                    <td>Formas básicas: <code>rectangle</code>, <code>triangle</code> y <code>ellipse</code>.</td>
                 </tr>
 
                 <tr>
-                    <td><code>rectangle</code></td>
-                    <td>Pivot / centro</td>
-                </tr>
-
-                <tr>
-                    <td><code>triangle</code></td>
-                    <td>Pivot / centro</td>
-                </tr>
-
-                <tr>
-                    <td><code>line</code></td>
-                    <td>Pivot / centro</td>
-                </tr>
-
-                <tr>
-                    <td><code>polygon</code></td>
-                    <td>Pivot</td>
+                    <td><code>geometry</code></td>
+                    <td>Geometría definida mediante una lista de puntos.</td>
                 </tr>
 
                 <tr>
                     <td><code>text</code></td>
-                    <td>Pivot / centro de caja</td>
+                    <td>Texto con tamaño de fuente configurable.</td>
                 </tr>
             </table>
 
             <p>
-                Los colores pueden declararse directamente desde JSON usando
-                nombres de color de raylib o valores hexadecimales en formato
-                <code>#rgb</code> y <code>#rrggbb</code>.
+                <code>visual</code> puede definir un color base y cada elemento de
+                <code>representation</code> puede utilizar su propio color.
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape.json</div>
-<pre><code>"shape": {
-    "type": "triangle",
-    "color": "#2f3a44"
+                <div class="code-header">visual</div>
+<pre><code>"visual": {
+    "color": "white",
+    "representation": [
+        {
+            "primitive": "triangle",
+            "mode": "outline"
+        }
+    ]
 }
 </code></pre>
             </div>
 
             <p>
-                Los polígonos permiten definir formas irregulares
-                mediante listas de puntos.
+                Las geometrías permiten construir representaciones mediante puntos
+                y elegir si se dibujan abiertas, cerradas o rellenas.
             </p>
 
             <div class="code-card">
-                <div class="code-header">polygon</div>
-<pre><code>"shape": {
-    "type": "polygon",
-
-    "points": [
-        { "x": 0, "y": -16 },
-        { "x": 12, "y": -8 },
-        { "x": 16, "y": 8 },
-        { "x": -8, "y": 14 }
+                <div class="code-header">geometry</div>
+<pre><code>"visual": {
+    "representation": [
+        {
+            "geometry": [
+                { "x": 0, "y": -16 },
+                { "x": 12, "y": 8 },
+                { "x": -12, "y": 8 }
+            ],
+            "mode": "close"
+        }
     ]
 }
 </code></pre>
@@ -335,16 +328,16 @@ machine=machines/standard.yml
 
             <hr />
 
-            <h2>Shape y Collision</h2>
+            <h2>Visual y Collision</h2>
 
             <p>
                 En FLX, la representación visual y la colisión son sistemas independientes.
             </p>
 
             <p>
-                El bloque <code>shape</code> define cómo se dibuja un objeto,
-                mientras que el bloque <code>collisions</code> define cómo interactúa
-                con otros objetos dentro del runtime.
+                El bloque <code>visual</code> define cómo se representa un objeto,
+                mientras que <code>collisions</code> define sus colliders y cómo participan
+                en la detección de colisiones.
             </p>
 
             <p>

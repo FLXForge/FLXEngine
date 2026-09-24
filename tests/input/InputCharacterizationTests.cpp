@@ -544,7 +544,7 @@ namespace
 
         provider.setKeys({ KEY_W });
         input.update(0.016f);
-        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "2way up should normalize to positive");
+        require(input.playerDirectionDown(1, 0, InputComponent::Negative), "2way up should normalize to negative");
 
         provider.setKeys({ KEY_D });
         input.update(0.016f);
@@ -552,7 +552,7 @@ namespace
 
         provider.setKeys({ KEY_S });
         input.update(0.016f);
-        require(input.playerDirectionDown(1, 0, InputComponent::Negative), "2way down should normalize to negative");
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "2way down should normalize to positive");
 
         provider.setKeys({ KEY_A });
         input.update(0.016f);
@@ -694,8 +694,8 @@ namespace
         input.setPhysicalInputProvider(&provider);
         loadMappingInto(input, chip,
             "twoway.input",
-            "players.1.directions.0.down=KEY_A\n"
-            "players.1.directions.0.up=KEY_D\n"
+            "players.1.directions.0.left=KEY_A\n"
+            "players.1.directions.0.right=KEY_D\n"
         );
 
         provider.setKeys({});
@@ -725,22 +725,22 @@ namespace
         input.setPhysicalInputProvider(&provider);
         loadMappingInto(input, inputChip("4way"),
             "direction.input",
-            "players.1.directions.0.up=KEY_W\n"
+            "players.1.directions.0.down=KEY_S\n"
             "players.1.directions.0.right=KEY_D\n"
         );
 
-        provider.setKeys({ KEY_W });
+        provider.setKeys({ KEY_S });
         input.update(0.016f);
 
-        require(input.playerDirectionPressed(1, 0, InputComponent::Up), "up should be pressed first");
-        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "up projects to positive");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Down), "down should be pressed first");
+        require(input.playerDirectionDown(1, 0, InputComponent::Positive), "down projects to positive");
 
-        provider.setKeys({ KEY_W, KEY_D });
+        provider.setKeys({ KEY_S, KEY_D });
         input.update(0.016f);
 
-        require(input.playerDirectionReleased(1, 0, InputComponent::Up), "last policy should release up when right wins");
+        require(input.playerDirectionReleased(1, 0, InputComponent::Down), "last policy should release down when right wins");
         require(input.playerDirectionPressed(1, 0, InputComponent::Right), "right should be pressed when it wins");
-        require(!input.playerDirectionPressed(1, 0, InputComponent::Positive), "positive projection should not retrigger between up and right");
+        require(!input.playerDirectionPressed(1, 0, InputComponent::Positive), "positive projection should not retrigger between down and right");
         require(input.playerDirectionDown(1, 0, InputComponent::Positive), "right also projects to positive");
     }
 
@@ -753,7 +753,7 @@ namespace
         loadMappingInto(input, inputChip("4way"),
             "projection.input",
             "players.1.directions.0.right=KEY_D\n"
-            "players.1.directions.0.down=KEY_S\n"
+            "players.1.directions.0.up=KEY_W\n"
         );
 
         provider.setKeys({ KEY_D });
@@ -761,13 +761,13 @@ namespace
 
         require(input.playerDirectionDown(1, 0, InputComponent::Positive), "right should project to positive");
 
-        provider.setKeys({ KEY_D, KEY_S });
+        provider.setKeys({ KEY_D, KEY_W });
         input.update(0.016f);
 
-        require(input.playerDirectionReleased(1, 0, InputComponent::Right), "right should release when down wins");
-        require(input.playerDirectionPressed(1, 0, InputComponent::Down), "down should press when it wins");
-        require(input.playerDirectionReleased(1, 0, InputComponent::Positive), "positive projection should release on right to down");
-        require(input.playerDirectionPressed(1, 0, InputComponent::Negative), "negative projection should press on right to down");
+        require(input.playerDirectionReleased(1, 0, InputComponent::Right), "right should release when up wins");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Up), "up should press when it wins");
+        require(input.playerDirectionReleased(1, 0, InputComponent::Positive), "positive projection should release on right to up");
+        require(input.playerDirectionPressed(1, 0, InputComponent::Negative), "negative projection should press on right to up");
     }
 
     void testFourWayNeutralPolicy()
@@ -1281,9 +1281,9 @@ namespace
             "twoway_project_input_direction",
             "2way",
             {
-                { KEY_W, 1.0, 1.0 },
+                { KEY_W, -1.0, -1.0 },
                 { KEY_D, 1.0, 1.0 },
-                { KEY_S, -1.0, -1.0 },
+                { KEY_S, 1.0, 1.0 },
                 { KEY_A, -1.0, -1.0 }
             }
         );

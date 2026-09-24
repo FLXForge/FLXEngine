@@ -343,13 +343,13 @@ namespace
             return component;
         }
 
-        if (component == InputComponent::Up ||
+        if (component == InputComponent::Down ||
             component == InputComponent::Right)
         {
             return InputComponent::Positive;
         }
 
-        if (component == InputComponent::Down ||
+        if (component == InputComponent::Up ||
             component == InputComponent::Left)
         {
             return InputComponent::Negative;

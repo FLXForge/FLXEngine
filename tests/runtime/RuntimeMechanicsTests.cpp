@@ -855,14 +855,14 @@ namespace
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "horizontal")), -1.0f), "4way left should be negative horizontal");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "vertical")), 0.0f), "4way left should not leak into vertical");
 
-        harness.provider.setKeys({ KEY_E });
+        harness.provider.setKeys({ KEY_Q });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayHorizontal")), 1.0f), "2way positive should project as positive horizontal");
         require(nearlyEqual(static_cast<float>(read_local(rootObject, "twoWayVertical")), 1.0f), "2way positive should project as positive vertical");
 
-        harness.provider.setKeys({ KEY_Q });
+        harness.provider.setKeys({ KEY_E });
         harness.input.update(0.016f);
         harness.update(0.016f);
 
@@ -940,6 +940,69 @@ namespace
         harness.update(1.0f);
 
         require(nearlyEqual(rootObject.position.y, 0.0f), "opposed vertical input should remain neutral through move_vertical");
+    }
+
+    void testTwoWayInputDirectionFeedsMoveVerticalSpatially()
+    {
+        RuntimeHarness harness;
+
+        harness.project.context.machine.input.players = 1;
+        harness.project.context.machine.input.directions = {
+            InputDirectionDefinition{ "2way", "neutral", 0.0f }
+        };
+
+        harness.input.configure(harness.project.context.machine.input);
+        harness.input.setPhysicalInputProvider(&harness.provider);
+        require(
+            loadMappingInto(
+                harness.input,
+                harness.project.context.machine.input,
+                "twoway-movement.input",
+                "players.1.directions.0.up=KEY_W\n"
+                "players.1.directions.0.down=KEY_S\n"
+            ),
+            "2way movement input mapping should load"
+        );
+
+        harness.addScript(
+            "twowayMovementProbe",
+            "const MOVE = direction(0);"
+            "function action(o) {"
+            "  move_vertical(o, input_direction(o, MOVE, VERTICAL));"
+            "}"
+        );
+
+        ObjectDefinition root;
+        root.id = "root";
+        root.controlPlayer = 1;
+        root.resolvedScriptPaths.push_back("twowayMovementProbe");
+        root.mechanics.motion.speed.start = 10.0f;
+
+        harness.addObject(root);
+        require(harness.load().success, "runtime should load 2way movement probe");
+        RuntimeObject& rootObject = requireObject(harness.world, "root");
+
+        harness.provider.setKeys({ KEY_W });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+
+        require(nearlyEqual(rootObject.position.y, -10.0f), "2way UP should move upward through move_vertical");
+
+        rootObject.position.y = 0.0f;
+
+        harness.provider.setKeys({ KEY_S });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+
+        require(nearlyEqual(rootObject.position.y, 10.0f), "2way DOWN should move downward through move_vertical");
+
+        rootObject.position.y = 0.0f;
+
+        harness.provider.setKeys({ KEY_W, KEY_S });
+        harness.input.update(1.0f);
+        harness.update(1.0f);
+
+        require(nearlyEqual(rootObject.position.y, 0.0f), "opposed 2way vertical input should remain neutral through move_vertical");
     }
 
     void testAsteroidsInputIntentDoesNotCrossAxes()
@@ -1047,6 +1110,7 @@ int main()
         { "direct asteroid rotation does not curve trajectory", testDirectAsteroidRotationDoesNotCurveTrajectory },
         { "input_direction axes do not cross", testInputDirectionAxesDoNotCross },
         { "input_direction feeds move_vertical spatially", testInputDirectionFeedsMoveVerticalSpatially },
+        { "2way input_direction feeds move_vertical spatially", testTwoWayInputDirectionFeedsMoveVerticalSpatially },
         { "Asteroids input intent does not cross axes", testAsteroidsInputIntentDoesNotCrossAxes }
     };
 

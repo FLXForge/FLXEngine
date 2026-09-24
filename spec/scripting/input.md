@@ -200,8 +200,8 @@ For compatibility, a `4way` direction can be queried with `POSITIVE` and
 In a `4way` direction:
 
 ```text
-POSITIVE = UP or RIGHT
-NEGATIVE = DOWN or LEFT
+POSITIVE = DOWN or RIGHT
+NEGATIVE = UP or LEFT
 ```
 
 These are projections. They are not additional native values of a `4way`.
@@ -211,7 +211,7 @@ Projection temporality is based on previous and current projected state.
 Example:
 
 ```text
-previous = UP
+previous = DOWN
 current  = RIGHT
 ```
 
@@ -420,20 +420,20 @@ poles:
 
 ```text
 up    ┐
-right ├-> POSITIVE
+left  ├-> NEGATIVE
 
 down  ┐
-left  ├-> NEGATIVE
+right ├-> POSITIVE
 ```
 
-The physical sources of `up` and `right` become alternatives for the positive
-pole. The physical sources of `down` and `left` become alternatives for the
+The physical sources of `down` and `right` become alternatives for the positive
+pole. The physical sources of `up` and `left` become alternatives for the
 negative pole.
 
 This projection does not require several physical directions to be active at
 the same time.
 
-The loss of distinction between `UP` and `RIGHT`, or between `DOWN` and `LEFT`,
+The loss of distinction between `DOWN` and `RIGHT`, or between `UP` and `LEFT`,
 is inherent to the lower logical capacity of a `2way` direction.
 
 ### Alternatives and combinations

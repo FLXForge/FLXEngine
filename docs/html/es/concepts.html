@@ -46,21 +46,23 @@
             </p>
 
             <div class="code-card">
-                <div class="code-header">Asteroids.flx</div>
-<pre><code>name=Asteroids
-version=1.0
+                <div class="code-header">asteroids.flx</div>
+<pre><code>title=Asteroids
+name=Asteroids
+version=2.0
 engine=0.3.0
+
 path=asteroids
 root=space
-title=Asteroids
-machine=machines/standard.yml
+machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
 </code></pre>
             </div>
 
             <p>
                 A partir de este archivo,
                 el runtime carga el objeto raíz,
-                los recursos y la configuración necesaria.
+                los recursos y la configuración del proyecto.
             </p>
 
             <hr />
@@ -171,8 +173,6 @@ machine=machines/standard.yml
             <div class="code-card">
                 <div class="code-header">DeepSpaceLeft</div>
 <pre><code>{
-    "name": "DeepSpaceLeft",
-
     "like": "asteroid/deep_space",
 
     "origin": {
@@ -199,8 +199,9 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                Además, <code>name</code> identifica el objeto de forma lógica o humana,
-                mientras que <code>id</code> identifica una instancia concreta dentro del runtime.
+                Durante la ejecución, <code>name</code> conserva el nombre lógico
+                de la definición del objeto, mientras que <code>id</code> identifica
+                una instancia concreta dentro del runtime.
             </p>
 
 
@@ -323,7 +324,7 @@ machine=machines/standard.yml
 
             <hr />
 
-            <h2>Visual y Collision</h2>
+            <h2>Representación visual y colisiones</h2>
 
             <p>
                 En FLX, la representación visual y la colisión son sistemas independientes.

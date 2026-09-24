@@ -6,6 +6,7 @@ const componentPrefix = "../components/";
 const components = {
   navbar: isEnglish ? "navbar-en.html" : "navbar-es.html",
   sidebar: isEnglish ? "sidebar-en.html" : "sidebar-es.html",
+  docPath: isEnglish ? "doc-path-en.html" : "doc-path-es.html",
   footer: isEnglish ? "footer-en.html" : "footer-es.html",
 };
 
@@ -32,6 +33,33 @@ function markActiveLinks() {
   });
 }
 
+function updateDocPath() {
+  const section = document.body.dataset.section;
+  if (!section) return;
+
+  const items = Array.from(document.querySelectorAll("[data-path]"));
+  const currentIndex = items.findIndex(item => item.dataset.path === section);
+
+  if (currentIndex === -1) return;
+
+  const current = items[currentIndex];
+  const currentLink = current.querySelector("a");
+
+  current.classList.add("current");
+
+  if (currentLink) {
+    const label = currentLink.textContent;
+    current.textContent = `↓ ${label} ← ${isEnglish ? "You are here" : "Estás aquí"}`;
+  }
+
+  const next = items[currentIndex + 1];
+
+  if (next) {
+    next.classList.add("recommended");
+    next.append(` → ${isEnglish ? "Recommended" : "Recomendado"}`);
+  }
+}
+
 function updateLanguageLinks() {
   const page = path.split("/").pop() || "index.html";
 
@@ -50,10 +78,12 @@ function updateLanguageLinks() {
 async function init() {
   await loadComponent("navbar", components.navbar);
   await loadComponent("sidebar", components.sidebar);
+  await loadComponent("doc-path", components.docPath);
   await loadComponent("footer", components.footer);
 
   updateLanguageLinks();
   markActiveLinks();
+  updateDocPath();
 }
 
 init();

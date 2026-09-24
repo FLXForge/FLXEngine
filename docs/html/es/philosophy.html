@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conceptos básicos | FLX Engine</title>
+    <title>Filosofía | FLX Engine</title>
     <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
     <link rel="shortcut icon" href="../favicon.ico" />
@@ -66,20 +66,19 @@
             <h2>Simplicidad mediante comprensión</h2>
 
             <p>
-                FLX no intenta ocultar cómo funciona internamente.
+                FLX no intenta ocultar las reglas con las que funciona.
             </p>
 
             <p>
-                Tampoco intenta reemplazar C++,
-                ni abstraer todos los detalles del runtime.
+                Intenta que esas reglas sean pocas, claras y predecibles.
             </p>
 
             <p>
-                La idea es diferente:
+                La idea es:
             </p>
 
             <p>
-                utilizar estructuras sencillas y predecibles para que el comportamiento
+                Utilizar estructuras sencillas y predecibles para que el comportamiento
                 pueda comprenderse, modificarse y ampliarse con facilidad.
             </p>
 
@@ -152,21 +151,22 @@ Runtime -> Conecta ambos
 
             <hr />
 
-            <h2>Alto y bajo nivel</h2>
+            <h2>Declaración y comportamiento</h2>
 
             <p>
-                FLX proporciona funciones de alto nivel para resolver rápidamente
-                comportamientos comunes.
+                FLX permite declarar de forma sencilla muchos comportamientos
+                y capacidades comunes.
             </p>
 
             <p>
-                Pero también permite trabajar directamente sobre los datos
-                cuando se necesita un comportamiento más específico.
+                Cuando un objeto necesita un comportamiento específico,
+                los scripts pueden trabajar con su estado y utilizar las operaciones
+                que proporciona el runtime.
             </p>
 
             <p>
-                Existen convenciones recomendadas,
-                pero no caminos cerrados.
+                La declaración establece las capacidades del objeto;
+                el script expresa cómo utilizarlas durante la ejecución.
             </p>
 
             <hr />

@@ -41,12 +41,12 @@
 
             <div class="code-card">
                 <div class="code-header">Project structure</div>
-<pre><code>Asteroids/
-│
-├── first.flx
-├── world.json
-├── tofu.json
-└── tofu.js
+<pre><code>my-first-flx/
+    │
+    ├── first.flx
+    ├── world.json
+    ├── tofu.json
+    └── tofu.js
 </code></pre>
             </div>
 
@@ -69,11 +69,15 @@
                 <div class="code-header">first.flx</div>
 <pre><code>name=My first FLX
 version=1.0
-engine=0.2.0
+engine=0.3.0
 root=world
 title=My first FLX
 </code></pre>
             </div>
+
+            <p>
+                No hemos declarado <code>machine</code> ni <code>input.mapping</code>. FLX utilizará sus configuraciones predeterminadas.
+            </p>
 
             <h2>Objeto raíz</h2>
 
@@ -121,16 +125,35 @@ title=My first FLX
 <pre><code>{
     "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-    "origin": {
-        "x": 157,
-        "y": 87
+    "control" :{
+        "player": 1
     },
 
-    "shape": {
+    "origin": {
+        "x": 311,
+        "y": 228
+    },
+
+    "size": {
+        "width": 18,
+        "height": 24
+    },
+
+    "visual": {
         "color": "white",
-        "size": {
-            "width": 18,
-            "height": 24
+        "representation": [
+            {
+                "primitive": "rectangle"
+            }
+        ]
+    },
+
+    "mechanics": {
+        "type": "direct",
+        "motion": {
+            "speed": {
+                "start": 120
+            }
         }
     },
 
@@ -156,9 +179,9 @@ title=My first FLX
                 <div class="code-header">tofu.js</div>
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
-function motion(tofu) {
-    const MOVE = direction(0);
+const MOVE = direction(0);
 
+function motion(tofu) {
     move_horizontal(tofu, input_direction(tofu, MOVE, HORIZONTAL));
     move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));
 }
@@ -175,7 +198,17 @@ function motion(tofu) {
 
             <div class="code-card">
                 <div class="code-header">Terminal</div>
-<pre><code>.\flx project.flx
+<pre><code>.\flx validate first.flx
+</code></pre>
+            </div>
+
+            <p>
+                FLX validará la estructura del proyecto y sus recursos.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Terminal</div>
+<pre><code>.\flx first.flx
 </code></pre>
             </div>
 
@@ -187,7 +220,19 @@ function motion(tofu) {
             </p>
 
             <p>
-                Nuestro tofu estará en el mundo que le hemos creado y podremos moverlo con las flechas de dirección.
+                FLX abrirá una ventana utilizando la machine predeterminada. Verás el tofu y podrás moverlo con WASD, las flechas de dirección o un joystick.
+            </p>
+
+            <p>
+                Felicitaciones, has creado tu primer proyecto FLX.
+            </p>
+
+            <p>
+                Ya tienes un mundo, un objeto y comportamiento ejecutándose en FLX.
+            </p>
+
+            <p>
+                Prueba a cambiar white por otro color, modifica width y height, o cambia speed.start. Guarda los archivos y vuelve a ejecutar el proyecto.
             </p>
 
             <div id="doc-path"></div>

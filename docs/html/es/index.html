@@ -28,7 +28,7 @@
                 </div>
 
                 <div class="hero-text">
-                    <h2>Un pequeño motor 2D basado en datos</h2>
+                    <h2>Un pequeño motor 2D declarativo</h2>
                     <p>
                         Define estructuras mediante JSON, comportamientos mediante JavaScript
                         y deja que el runtime haga el resto.
@@ -67,28 +67,34 @@ Runtime -> Conecta ambos
             <div class="code-card">
                 <div class="code-header">ship.json</div>
 <pre><code>{
-    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
 
-    "shape": {
-        "type": "triangle",
-        "color": "white",
-        "size": {
-            "width": 18,
-            "height": 24
-        }
+  "size": {
+    "width": 18,
+    "height": 24
+  },
+
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "triangle",
+        "mode": "outline"
+      }
+    ]
+  },
+
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": { "limit": 180 },
+      "acceleration": 120,
+      "inertia": 0.99
     },
-
-    "mechanics": {
-        "type": "polar",
-        "motion": {
-            "speed": { "start": 0, "limit": 180 },
-            "acceleration": 120,
-            "inertia": 0.99
-        },
-        "rotation": {
-            "speed": 180
-        }
+    "rotation": {
+      "speed": { "start": 180 }
     }
+  }
 }
 </code></pre>
             </div>
@@ -101,16 +107,18 @@ Runtime -> Conecta ambos
                 <div class="code-header">ship.js</div>
 <pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
 
-function action(ship) {
-    const thrust = input_direction(ship, direction(0), VERTICAL);
+const MOVE = direction(0);
 
-    if (thrust > 0) {
-        accelerate(ship, thrust);
-    }
+function action(ship) {
+  const thrust = input_direction(ship, MOVE, VERTICAL);
+
+  if (thrust > 0) {
+    accelerate(ship, thrust);
+  }
 }
 
 function motion(ship) {
-    advance(ship);
+  advance(ship);
 }
 </code></pre>
             </div>
@@ -120,11 +128,12 @@ function motion(ship) {
             </p>
 
             <p>
-                FLX no intenta simplificar C++.
+                FLX no intenta trasladar el motor al script.
             </p>
 
             <p>
-                Intenta que el comportamiento del runtime pueda escribirse como script.
+                El runtime mantiene las reglas del mundo; los scripts expresan
+                el comportamiento de los objetos.
             </p>
 
             <hr />

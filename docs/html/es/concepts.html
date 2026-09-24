@@ -224,11 +224,6 @@ machine=machines/standard.yml
                 Si no se declara, el modo utilizado es <code>individual</code>.
             </p>
 
-            <p>
-                FLX utiliza <code>children</code> para declarar qué puede existir bajo un objeto.
-                El valor <code>spawn</code> del hijo define cuándo entra en el runtime.
-            </p>
-
             <ul>
                 <li>
                     <code>spawn: "auto"</code>:
@@ -346,9 +341,8 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                Además de definir colliders nombrados,
-                <code>collisions</code> puede controlar si cada collider está habilitado
-                y qué grupos consulta activamente.
+                Cada collider puede estar habilitado o deshabilitado y declarar mediante
+                <code>with</code> los grupos con los que consulta colisión.
             </p>
 
             <p>
@@ -359,26 +353,33 @@ machine=machines/standard.yml
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape + collisions</div>
+                <div class="code-header">visual + collisions</div>
 <pre><code>{
-    "shape": {
-        "type": "polygon"
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
     },
 
     "collisions": {
         "body": {
             "type": "ellipse",
-            "size": { "width": 24, "height": 24 }
+            "size": {
+                "width": 24,
+                "height": 24
+            }
         }
     }
-
-} </code></pre>
-
+}
+</code></pre>
             </div>
 
             <p>
-                Esta separación permite que la detección de colisiones sea sencilla y eficiente,
-                mientras la representación visual puede ser tan detallada como sea necesario.
+                Esta separación permite definir la representación y la detección
+                de colisiones de forma independiente.
             </p>
 
             <hr />
@@ -386,8 +387,9 @@ machine=machines/standard.yml
             <h2>Sistema de coordenadas</h2>
 
             <p>
-                FLX utiliza un sistema de coordenadas 2D con origen
-                en la esquina superior izquierda de la pantalla.
+                FLX utiliza un sistema de coordenadas 2D.
+                En la máquina actual, el origen lógico se encuentra en la esquina
+                superior izquierda.
             </p>
 
             <ul>
@@ -409,13 +411,6 @@ machine=machines/standard.yml
                 locales cuando se pasa un <code>RuntimeObject</code> como
                 referencia.
             </p>
-
-            <p>
-                El sistema de cámara, scroll y transformaciones más ricas entre
-                coordenadas de mundo, pantalla, vista y coordenadas locales
-                queda pendiente para futuras versiones.
-            </p>
-
 
             <hr />
 

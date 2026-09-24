@@ -208,10 +208,17 @@ if (input_pressed(player, FIRE)) {
                 y finalmente desaparecen.
             </p>
 
+            <p>
+                <code>kill()</code> no es una fase del ciclo de ejecución. 
+                Puede solicitarse durante la vida del objeto y, desde ese momento, 
+                el objeto deja de participar en las fases activas posteriores. 
+                <code>draw()</code> se ejecuta durante el dibujado y solo para objetos vivos y visibles.
+            </p>
+
             <h3>Funciones principales</h3>
 
             <ul>
-                <li><code>born(object)</code>: se ejecuta cuando un objeto entra en el mundo.</li>
+                <li><code>born(object)</code>: se ejecuta una vez cuando una instancia entra en el mundo.</li>
 
                 <li><code>action(object)</code>: lógica principal e interacción.</li>
 
@@ -260,7 +267,7 @@ if (input_pressed(player, FIRE)) {
             <h2>Destrucción</h2>
 
             <p>
-                El estado alive del RuntimeObject es de solo lectura. 
+                El estado <code>alive</code> de un <code>RuntimeObject</code> es de solo lectura.
                 La muerte de una instancia se solicita mediante <code>kill(object)</code>.
             </p>
 
@@ -402,10 +409,10 @@ function born(laser) {
                 <li>El estado compartido por todo el runtime se gestiona con <code>read_global()</code> y <code>write_global()</code>.</li>
             </ul>
 
-            <h3>Ámbito global</h3>
+            <h3>Ámbito del runtime</h3>
 
             <p>
-                FLX proporciona un estado global compartido mediante
+                FLX proporciona un estado compartido por todo el runtime mediante
                 <code>read_global()</code> y <code>write_global()</code>.
             </p>
 
@@ -417,7 +424,7 @@ function born(laser) {
             </p>
 
             <div class="code-card">
-                <div class="code-header">Global scope</div>
+                <div class="code-header">Runtime scope</div>
 <pre><code>function born(game) {
     write_global("score", 0);
     write_global("lives", 3);

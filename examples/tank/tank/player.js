@@ -6,7 +6,7 @@ const FIRE = button(0);
 function action(tank) {
 
     const forward =
-        input_direction(tank, MOVE, VERTICAL);
+        -input_direction(tank, MOVE, VERTICAL);
 
     const rotation =
         input_direction(tank, MOVE, HORIZONTAL);

@@ -1295,9 +1295,9 @@ namespace
             "fourway_project_input_direction",
             "4way",
             {
-                { KEY_W, 0.0, 1.0 },
+                { KEY_W, 0.0, -1.0 },
                 { KEY_D, 1.0, 0.0 },
-                { KEY_S, 0.0, -1.0 },
+                { KEY_S, 0.0, 1.0 },
                 { KEY_A, -1.0, 0.0 }
             }
         );

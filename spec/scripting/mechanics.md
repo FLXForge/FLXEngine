@@ -620,22 +620,22 @@ Convención digital:
 
 ```text
 RIGHT = +1
-UP    = +1
+DOWN  = +1
 LEFT  = -1
-DOWN  = -1
+UP    = -1
 ```
 
-Esta convención pertenece a la intención de Input, no a los ejes espaciales de World.
+Esta convención pertenece a la intención de Input y coincide con los signos espaciales de los helpers directos de World.
 
-Por tanto, una intención vertical procedente directamente de Input puede necesitar ser transformada por el comportamiento antes de aplicarse a `move_vertical()`.
+Por tanto, una intención vertical procedente directamente de Input puede pasarse a `move_vertical()` sin invertir manualmente el signo.
 
-Por ejemplo, si `UP = +1` debe producir movimiento hacia arriba en World:
+Por ejemplo:
 
 ```js
 const vertical =
     input_direction(object, MOVE, VERTICAL);
 
-move_vertical(object, -vertical);
+move_vertical(object, vertical);
 ```
 
 Input expresa intención. Mechanics opera sobre movimiento espacial.

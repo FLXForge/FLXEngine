@@ -181,7 +181,7 @@ declare function input_released(subject: InputDirectionSubject, control: InputDi
 
 /**
  * Returns -1, 0 or 1 for a logical direction on a concrete axis.
- * RIGHT and UP are positive; LEFT and DOWN are negative.
+ * RIGHT and DOWN are positive; LEFT and UP are negative.
  * The axis selector must be HORIZONTAL or VERTICAL.
  * In 4way, HORIZONTAL reads LEFT/RIGHT and VERTICAL reads UP/DOWN.
  * In 2way, POSITIVE/NEGATIVE project onto either axis.

@@ -616,13 +616,14 @@ The normalized convention is:
 
 ```text
 RIGHT = +1
-UP    = +1
+DOWN  = +1
 LEFT  = -1
-DOWN  = -1
+UP    = -1
 ```
 
-This is input intent, not screen-space movement. A script that wants screen Y
-to increase downward should decide that explicitly when applying the intent.
+This is digital input intent expressed with the same spatial sign convention
+used by direct movement helpers: vertical positive moves downward and vertical
+negative moves upward.
 
 ## P. Examples
 

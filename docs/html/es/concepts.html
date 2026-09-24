@@ -24,7 +24,7 @@
 
             <p>
                 FLX organiza los proyectos mediante estructuras de datos simples,
-                objetos, transformaciones y reglas de ejecución claramente definidas.
+                objetos, comportamiento y reglas de ejecución claramente definidas.
             </p>
 
             <p>
@@ -49,7 +49,7 @@
                 <div class="code-header">Asteroids.flx</div>
 <pre><code>name=Asteroids
 version=1.0
-engine=0.2.0
+engine=0.3.0
 path=asteroids
 root=space
 title=Asteroids
@@ -73,8 +73,8 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                Es un objeto JSON normal que organiza objetos,
-                recursos y lógica de ejecución.
+                Es un objeto JSON normal que organiza la estructura principal
+                del mundo y los recursos asociados.
             </p>
 
             <p>
@@ -128,8 +128,18 @@ machine=machines/standard.yml
             <div class="code-card">
                 <div class="code-header">ship.json</div>
 <pre><code>{
-    "shape": {
-        "type": "triangle"
+    "size": {
+        "width": 18,
+        "height": 24
+    },
+
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
     },
 
     "mechanics": {
@@ -183,7 +193,7 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                Si define <code>behavior</code>, <code>children</code> o <code>collision</code>,
+                Si define <code>behavior</code>, <code>children</code> o <code>collisions</code>,
                 puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
                 o controlador de juego.
             </p>

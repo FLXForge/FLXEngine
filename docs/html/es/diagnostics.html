@@ -46,7 +46,7 @@
 <div class="code-card"><div class="code-header">Identidad y detalle</div><pre><code>code       = FLX-RESOURCE-00010
 identifier = MissingReferencedResource
 message    = detalle concreto del recurso que falta</code></pre></div>
-<p>Para integraciones externas, utiliza <code>code</code> como identificador estable del tipo de diagnóstico. <code>identifier</code> proporciona su nombre simbólico y <code>message<</code> describe la aparición concreta. El mensaje puede cambiar para mejorar la explicación sin cambiar la identidad del diagnóstico.</p>
+<p>Para integraciones externas, utiliza <code>code</code> como identificador estable del tipo de diagnóstico. <code>identifier</code> proporciona su nombre simbólico y <code>message</code> describe la aparición concreta. El mensaje puede cambiar para mejorar la explicación sin cambiar la identidad del diagnóstico.</p>
 <h2 id="severity">Severidades</h2>
 <table><caption>Interpretación de severity</caption><thead><tr><th scope="col">Severidad</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row">info</th><td data-label="Significado">Información sobre la operación.</td></tr><tr><th scope="row">warning</th><td data-label="Significado">Advertencia que no implica por sí sola que la operación haya fallado.</td></tr><tr><th scope="row">error</th><td data-label="Significado">Incidencia de error. <code>hasErrors()</code> devuelve true si existe al menos un diagnóstico con esta severidad.</td></tr></tbody></table>
 <p>La severidad pertenece a cada aparición del diagnóstico. El registro contiene una severidad habitual por código; para interpretar un resultado utiliza su campo <code>severity</code>.</p>

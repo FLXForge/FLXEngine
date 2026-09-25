@@ -22,7 +22,10 @@
             <p class="eyebrow">FLX Documentation · v0.3.0</p>
             <h1>Object · Referencia JSON</h1>
             <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html" aria-current="page"><strong>Object</strong></a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
-            <h2 id="object">Objeto JSON</h2><p>Un Object es una declaración de un elemento del World. Puede combinar representación, movimiento, colisiones, comportamiento, estado, audio y children. Ninguna propiedad raíz es obligatoria por sí sola; un objeto vacío es válido según el schema.</p><div class="code-card"><div class="code-header">Objeto mínimo visible</div><pre><code data-schema="object">{
+            <h2 id="object">Objeto JSON</h2>
+            <p>Un Object es una declaración de un elemento del World. Puede combinar representación, movimiento, colisiones, comportamiento, estado, audio y children. Ninguna propiedad raíz es obligatoria por sí sola; un objeto vacío es válido según el schema.</p>
+            <div class="code-card"><div class="code-header">Objeto mínimo visible</div>
+<pre><code data-schema="object">{
   &quot;origin&quot;: {
     &quot;x&quot;: 160,
     &quot;y&quot;: 90
@@ -39,62 +42,125 @@
       }
     ]
   }
-}</code></pre></div><h2 id="properties">Propiedades raíz</h2><p>El schema raíz tiene <code>additionalProperties: false</code>. Las únicas propiedades admitidas son las siguientes; las claves de los mapas nombrados se definen dentro de cada bloque.</p><ul><li><a class="link" href="json/object.html#schema"><code>$schema</code></a>: string; metadato de validación.</li>
-<li><a class="link" href="json/composition.html#like"><code>like</code></a>: string; composición desde una base.</li>
-<li><a class="link" href="json/creation.html#spawn"><code>spawn</code></a>: auto o manual.</li>
-<li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; pertenencia a una entidad lógica.</li>
-<li><a class="link" href="json/creation.html#creation"><code>creation</code></a>: objeto o referencia; materialización de children.</li>
-<li><a class="link" href="json/creation.html#offset"><code>offset</code></a>: objeto; desplazamiento de creación.</li>
-<li><a class="link" href="json/object.html#visible"><code>visible</code></a>: boolean; visibilidad inicial.</li>
-<li><a class="link" href="json/creation.html#attach"><code>attach</code></a>: objeto; seguimiento del parent.</li>
-<li><a class="link" href="json/object.html#origin"><code>origin</code></a>: objeto; posición inicial.</li>
-<li><a class="link" href="json/object.html#size"><code>size</code></a>: objeto; tamaño lógico.</li>
-<li><a class="link" href="json/visual.html#visual"><code>visual</code></a>: objeto o referencia; representación.</li>
-<li><a class="link" href="json/mechanics.html#mechanics"><code>mechanics</code></a>: objeto o referencia; movimiento y rotación.</li>
-<li><a class="link" href="json/creation.html#inherit"><code>inherit</code></a>: objeto o referencia; estado vivo recibido del parent.</li>
-<li><a class="link" href="json/object.html#bounds"><code>bounds</code></a>: objeto o referencia; límites del World.</li>
-<li><a class="link" href="json/object.html#delimit"><code>delimit</code></a>: boolean; extensión lógica del World.</li>
-<li><a class="link" href="json/object.html#group"><code>group</code></a>: string; grupo lógico.</li>
-<li><a class="link" href="json/object.html#control"><code>control</code></a>: objeto; jugador asociado.</li>
-<li><a class="link" href="json/object.html#local"><code>local</code></a>: mapa; valores iniciales de instancia.</li>
-<li><a class="link" href="json/collision.html#collisions"><code>collisions</code></a>: mapa o referencia; colliders nombrados.</li>
-<li><a class="link" href="json/object.html#behavior"><code>behavior</code></a>: objeto o referencia; scripts.</li>
-<li><a class="link" href="json/object.html#states"><code>states</code></a>: objeto o referencia; estados y transiciones.</li>
-<li><a class="link" href="json/audio.html#sounds"><code>sounds</code></a>: mapa; sonidos nombrados.</li>
-<li><a class="link" href="json/audio.html#music"><code>music</code></a>: mapa; música nombrada.</li>
-<li><a class="link" href="json/creation.html#children"><code>children</code></a>: mapa; declaraciones de hijos.</li></ul><h2 id="schema">$schema</h2><p>String opcional que identifica el schema para herramientas de validación. No selecciona la versión del motor ni cambia los defaults del objeto.</p><div class="code-card"><div class="code-header">$schema</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="properties">Propiedades raíz</h2>
+            <p>El schema raíz tiene <code>additionalProperties: false</code>. Las únicas propiedades admitidas son las siguientes; las claves de los mapas nombrados se definen dentro de cada bloque.</p>
+            <ul>
+                <li><a class="link" href="json/object.html#schema"><code>$schema</code></a>: string; metadato de validación.</li>
+                <li><a class="link" href="json/composition.html#like"><code>like</code></a>: string; composición desde una base.</li>
+                <li><a class="link" href="json/creation.html#spawn"><code>spawn</code></a>: auto o manual.</li>
+                <li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; pertenencia a una entidad lógica.</li>
+                <li><a class="link" href="json/creation.html#creation"><code>creation</code></a>: objeto o referencia; materialización de children.</li>
+                <li><a class="link" href="json/creation.html#offset"><code>offset</code></a>: objeto; desplazamiento de creación.</li>
+                <li><a class="link" href="json/object.html#visible"><code>visible</code></a>: boolean; visibilidad inicial.</li>
+                <li><a class="link" href="json/creation.html#attach"><code>attach</code></a>: objeto; seguimiento del parent.</li>
+                <li><a class="link" href="json/object.html#origin"><code>origin</code></a>: objeto; posición inicial.</li>
+                <li><a class="link" href="json/object.html#size"><code>size</code></a>: objeto; tamaño lógico.</li>
+                <li><a class="link" href="json/visual.html#visual"><code>visual</code></a>: objeto o referencia; representación.</li>
+                <li><a class="link" href="json/mechanics.html#mechanics"><code>mechanics</code></a>: objeto o referencia; movimiento y rotación.</li>
+                <li><a class="link" href="json/creation.html#inherit"><code>inherit</code></a>: objeto o referencia; estado vivo recibido del parent.</li>
+                <li><a class="link" href="json/object.html#bounds"><code>bounds</code></a>: objeto o referencia; límites del World.</li>
+                <li><a class="link" href="json/object.html#delimit"><code>delimit</code></a>: boolean; extensión lógica del World.</li>
+                <li><a class="link" href="json/object.html#group"><code>group</code></a>: string; grupo lógico.</li>
+                <li><a class="link" href="json/object.html#control"><code>control</code></a>: objeto; jugador asociado.</li>
+                <li><a class="link" href="json/object.html#local"><code>local</code></a>: mapa; valores iniciales de instancia.</li>
+                <li><a class="link" href="json/collision.html#collisions"><code>collisions</code></a>: mapa o referencia; colliders nombrados.</li>
+                <li><a class="link" href="json/object.html#behavior"><code>behavior</code></a>: objeto o referencia; scripts.</li>
+                <li><a class="link" href="json/object.html#states"><code>states</code></a>: objeto o referencia; estados y transiciones.</li>
+                <li><a class="link" href="json/audio.html#sounds"><code>sounds</code></a>: mapa; sonidos nombrados.</li>
+                <li><a class="link" href="json/audio.html#music"><code>music</code></a>: mapa; música nombrada.</li>
+                <li><a class="link" href="json/creation.html#children"><code>children</code></a>: mapa; declaraciones de hijos.</li>
+            </ul>
+            <h2 id="schema">$schema</h2>
+            <p>String opcional que identifica el schema para herramientas de validación. No selecciona la versión del motor ni cambia los defaults del objeto.</p>
+            <div class="code-card">
+                <div class="code-header">$schema</div>
+<pre><code data-schema="object">{
   &quot;$schema&quot;: &quot;https://flxforge.github.io/FLXEngine/schemas/object.schema.json&quot;
-}</code></pre></div><h2 id="origin">origin</h2><p>Objeto opcional con coordenadas numéricas <code>x</code> e <code>y</code>; cada eje omitido vale <code>0</code>. X crece hacia la derecha e Y hacia abajo. Es la posición del objeto, no la esquina de su caja lógica. En un child, omitir todo el bloque permite partir de la posición del parent; declararlo explícitamente fija la posición salvo las reglas de <a class="link" href="json/creation.html#offset">offset</a> o <a class="link" href="json/creation.html#grid">grid</a>.</p><div class="code-card"><div class="code-header">origin</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="origin">origin</h2>
+            <p>Objeto opcional con coordenadas numéricas <code>x</code> e <code>y</code>; cada eje omitido vale <code>0</code>. X crece hacia la derecha e Y hacia abajo. Es la posición del objeto, no la esquina de su caja lógica. En un child, omitir todo el bloque permite partir de la posición del parent; declararlo explícitamente fija la posición salvo las reglas de <a class="link" href="json/creation.html#offset">offset</a> o <a class="link" href="json/creation.html#grid">grid</a>.</p>
+            <div class="code-card">
+                <div class="code-header">origin</div>
+<pre><code data-schema="object">{
   &quot;origin&quot;: {
     &quot;x&quot;: 160,
     &quot;y&quot;: 90
   }
-}</code></pre></div><h2 id="size">size</h2><p>Objeto opcional con <code>width</code> y <code>height</code> numéricos, ambos obligatorios cuando aparece. Define el tamaño lógico; no se calcula automáticamente desde el dibujo. Sin <code>size</code> no hay tamaño lógico declarado. Las primitivas visuales y los colliders pueden aportar su propio tamaño. El schema de Object no impone un mínimo positivo, pero un collider necesita dimensiones efectivas positivas.</p><div class="code-card"><div class="code-header">size</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="size">size</h2>
+            <p>Objeto opcional con <code>width</code> y <code>height</code> numéricos, ambos obligatorios cuando aparece. Define el tamaño lógico; no se calcula automáticamente desde el dibujo. Sin <code>size</code> no hay tamaño lógico declarado. Las primitivas visuales y los colliders pueden aportar su propio tamaño. El schema de Object no impone un mínimo positivo, pero un collider necesita dimensiones efectivas positivas.</p>
+            <div class="code-card">
+                <div class="code-header">size</div>
+<pre><code data-schema="object">{
   &quot;size&quot;: {
     &quot;width&quot;: 32,
     &quot;height&quot;: 16
   }
-}</code></pre></div><p>Véanse <a class="link" href="json/visual.html#representation-size">tamaño de representación</a> y <a class="link" href="json/collision.html#size">tamaño de collider</a>.</p><h2 id="visible">visible</h2><p>Boolean opcional; default del runtime: <code>true</code>. Controla la presentación visual inicial. Ocultar el objeto no equivale a eliminarlo ni deshabilita por sí solo sus colliders.</p><div class="code-card"><div class="code-header">visible</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <p>Véanse <a class="link" href="json/visual.html#representation-size">tamaño de representación</a> y <a class="link" href="json/collision.html#size">tamaño de collider</a>.</p>
+            <h2 id="visible">visible</h2>
+            <p>Boolean opcional; default del runtime: <code>true</code>. Controla la presentación visual inicial. Ocultar el objeto no equivale a eliminarlo ni deshabilita por sí solo sus colliders.</p>
+            <div class="code-card">
+                <div class="code-header">visible</div>
+<pre><code data-schema="object">{
   &quot;visible&quot;: false
-}</code></pre></div><h2 id="group">group</h2><p>String opcional; por defecto no hay grupo asignado (cadena vacía). Clasifica el objeto para filtros de colisión y consultas. <a class="link" href="json/collision.html#with">collisions.&lt;id&gt;.with</a> contiene los nombres de grupo que un collider consulta activamente.</p><div class="code-card"><div class="code-header">group</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="group">group</h2>
+            <p>String opcional; por defecto no hay grupo asignado (cadena vacía). Clasifica el objeto para filtros de colisión y consultas. <a class="link" href="json/collision.html#with">collisions.&lt;id&gt;.with</a> contiene los nombres de grupo que un collider consulta activamente.</p>
+            <div class="code-card">
+                <div class="code-header">group</div>
+<pre><code data-schema="object">{
   &quot;group&quot;: &quot;enemy&quot;
-}</code></pre></div><h2 id="control">control</h2><ul><li><code>player</code> — integer ≥ 1. <i>Opcional; sin asociación si se omite.</i> Asocia el objeto con un jugador para las consultas de input que reciben un objeto. No declara acciones ni capacidades de la Machine.</li></ul><div class="code-card"><div class="code-header">control</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="control">control</h2>
+            <ul>
+                <li><code>player</code> — integer ≥ 1. <i>Opcional; sin asociación si se omite.</i> Asocia el objeto con un jugador para las consultas de input que reciben un objeto. No declara acciones ni capacidades de la Machine.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">control</div>
+<pre><code data-schema="object">{
   &quot;control&quot;: {
     &quot;player&quot;: 1
   }
-}</code></pre></div><h2 id="local">local</h2><p>Mapa opcional de valores <code>string</code>, <code>number</code> o <code>boolean</code>. Inicializa el estado propio de cada instancia; sin el bloque, el mapa está vacío. No admite objetos, arrays ni <code>null</code>.</p><div class="code-card"><div class="code-header">local</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="local">local</h2>
+            <p>Mapa opcional de valores <code>string</code>, <code>number</code> o <code>boolean</code>. Inicializa el estado propio de cada instancia; sin el bloque, el mapa está vacío. No admite objetos, arrays ni <code>null</code>.</p>
+            <div class="code-card">
+                <div class="code-header">local</div>
+<pre><code data-schema="object">{
   &quot;local&quot;: {
     &quot;lives&quot;: 3,
     &quot;ready&quot;: true,
     &quot;label&quot;: &quot;player&quot;
   }
-}</code></pre></div><h2 id="behavior">behavior</h2><p>Objeto o <a class="link" href="json/composition.html#blocks">referencia de bloque</a>. Si se declara inline, <code>scripts</code> es obligatorio: array de strings con rutas de scripts JavaScript. Sin <code>behavior</code> no se asocian scripts; <code>scripts: []</code> es válido. Las rutas relativas se resuelven desde el archivo de origen que el cargador conserva para el comportamiento; <code>.js</code> es opcional.</p><div class="code-card"><div class="code-header">behavior</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <h2 id="behavior">behavior</h2>
+            <p>Objeto o <a class="link" href="json/composition.html#blocks">referencia de bloque</a>. Si se declara inline, <code>scripts</code> es obligatorio: array de strings con rutas de scripts JavaScript. Sin <code>behavior</code> no se asocian scripts; <code>scripts: []</code> es válido. Las rutas relativas se resuelven desde el archivo de origen que el cargador conserva para el comportamiento; <code>.js</code> es opcional.</p>
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code data-schema="object">{
   &quot;behavior&quot;: {
     &quot;scripts&quot;: [
       &quot;player&quot;
     ]
   }
-}</code></pre></div><p>El archivo del ejemplo es <code>player.js</code>. Los callbacks y funciones se documentan en <a class="link" href="scripting.html">Scripting</a> y <a class="link" href="api.html">FLX API</a>.</p><h2 id="states">states</h2><p>Objeto o referencia de bloque. Declara una máquina de estados ligera. <code>initial</code> es un string no vacío obligatorio y debe nombrar un estado declarado. Cada otra clave nombra un estado cuyo valor es un objeto con un único campo opcional, <code>next</code>: array de nombres no vacíos, únicos y declarados en el mismo bloque. Sin <code>next</code>, no hay destinos declarados desde ese estado. Sin <code>states</code>, el objeto no declara máquina de estados propia.</p><div class="code-card"><div class="code-header">states</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <p>El archivo del ejemplo es <code>player.js</code>. Los callbacks y funciones se documentan en <a class="link" href="scripting.html">Scripting</a> y <a class="link" href="api.html">FLX API</a>.</p>
+            <h2 id="states">states</h2>
+            <p>Objeto o referencia de bloque. Declara una máquina de estados ligera. <code>initial</code> es un string no vacío obligatorio y debe nombrar un estado declarado. Cada otra clave nombra un estado cuyo valor es un objeto con un único campo opcional, <code>next</code>: array de nombres no vacíos, únicos y declarados en el mismo bloque. Sin <code>next</code>, no hay destinos declarados desde ese estado. Sin <code>states</code>, el objeto no declara máquina de estados propia.</p>
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code data-schema="object">{
   &quot;states&quot;: {
     &quot;initial&quot;: &quot;idle&quot;,
     &quot;idle&quot;: {
@@ -108,13 +174,30 @@
       ]
     }
   }
-}</code></pre></div><p>Un <a class="link" href="json/creation.html#component">component</a> sin máquina propia puede utilizar el estado efectivo de su cadena de parents. Los filtros de <a class="link" href="json/collision.html#states">collider.states</a> consultan ese estado efectivo.</p><h2 id="bounds">bounds</h2><p>Objeto o referencia de bloque. Define el comportamiento al cruzar la extensión lógica del World.</p><ul><li><code>mode</code> — string: none | wrap. <i>Default: none.</i> <code>none</code> no aplica envoltura; <code>wrap</code> lleva el objeto al lado opuesto.</li>
-<li><code>overflow</code> — boolean. <i>Default: false.</i> Con wrap, controla la presentación del objeto al atravesar los bordes; <code>true</code> habilita las copias visuales de continuidad.</li></ul><div class="code-card"><div class="code-header">bounds</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <p>Un <a class="link" href="json/creation.html#component">component</a> sin máquina propia puede utilizar el estado efectivo de su cadena de parents. Los filtros de <a class="link" href="json/collision.html#states">collider.states</a> consultan ese estado efectivo.</p>
+            <h2 id="bounds">bounds</h2>
+            <p>Objeto o referencia de bloque. Define el comportamiento al cruzar la extensión lógica del World.</p>
+            <ul>
+                <li><code>mode</code> — string: none | wrap. <i>Default: none.</i> <code>none</code> no aplica envoltura; <code>wrap</code> lleva el objeto al lado opuesto.</li>
+                <li><code>overflow</code> — boolean. <i>Default: false.</i> Con wrap, controla la presentación del objeto al atravesar los bordes; <code>true</code> habilita las copias visuales de continuidad.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">bounds</div>
+<pre><code data-schema="object">{
   &quot;bounds&quot;: {
     &quot;mode&quot;: &quot;wrap&quot;,
     &quot;overflow&quot;: true
   }
-}</code></pre></div><p>Los límites proceden de <a class="link" href="json/object.html#delimit">delimit</a>, no del tamaño de la pantalla.</p><h2 id="delimit">delimit</h2><p>Boolean opcional; default: <code>false</code>. Con <code>true</code>, aporta su posición y tamaño lógico a la extensión del World durante la carga. Con tamaño, aporta el rectángulo centrado en su posición; sin tamaño, un punto. La envolvente final debe tener anchura y altura positivas: un único punto no basta.</p><div class="code-card"><div class="code-header">delimit</div><pre><code data-schema="object">{
+}</code></pre>
+            </div>
+            <p>Los límites proceden de <a class="link" href="json/object.html#delimit">delimit</a>, no del tamaño de la pantalla.</p>
+            <h2 id="delimit">delimit</h2>
+            <p>Boolean opcional; default: <code>false</code>. Con <code>true</code>, aporta su posición y tamaño lógico a la extensión del World durante la carga. Con tamaño, aporta el rectángulo centrado en su posición; sin tamaño, un punto. La envolvente final debe tener anchura y altura positivas: un único punto no basta.</p>
+            <div class="code-card">
+                <div class="code-header">delimit</div>
+<pre><code data-schema="object">{
   &quot;origin&quot;: {
     &quot;x&quot;: 160,
     &quot;y&quot;: 90
@@ -124,18 +207,28 @@
     &quot;height&quot;: 180
   },
   &quot;delimit&quot;: true
-}</code></pre></div><p>La extensión se fija al cargar: movimiento, resize y nuevas instancias posteriores no la recalculan. Si no hay contribuidores, el runtime usa <code>(0, 0), 640 × 480</code>.</p>
+}</code></pre>
+            </div>
+            <p>La extensión se fija al cargar: movimiento, resize y nuevas instancias posteriores no la recalculan. Si no hay contribuidores, el runtime usa <code>(0, 0), 640 × 480</code>.</p>
             <hr>
-            <details><summary>Fuentes de esta página · v0.3.0</summary><p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/behavior.schema.json">docs/schemas/behavior.schema.json</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/states.schema.json">docs/schemas/states.schema.json</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/bounds.schema.json">docs/schemas/bounds.schema.json</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/ObjectDefinition.h">engine/runtime/ObjectDefinition.h</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeObjectBuilder.cpp">engine/runtime/RuntimeObjectBuilder.cpp</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
-<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/scripting/ScriptEngine.cpp">engine/scripting/ScriptEngine.cpp</a></li></ul></details>
-            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html" aria-current="page"><strong>Object</strong></a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <details>
+                <summary>Fuentes de esta página · v0.3.0</summary>
+                <p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/behavior.schema.json">docs/schemas/behavior.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/states.schema.json">docs/schemas/states.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/bounds.schema.json">docs/schemas/bounds.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/ObjectDefinition.h">engine/runtime/ObjectDefinition.h</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeObjectBuilder.cpp">engine/runtime/RuntimeObjectBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/scripting/ScriptEngine.cpp">engine/scripting/ScriptEngine.cpp</a></li>
+                </ul>
+            </details>
+            <nav aria-label="Áreas de la Referencia JSON">
+                <p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html" aria-current="page"><strong>Object</strong></a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
             <div id="doc-path"></div>
         </article>
     </main>

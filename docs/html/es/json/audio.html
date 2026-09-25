@@ -48,7 +48,7 @@
                 <li><code>tone</code> — objeto o referencia FLX. <i>Opcional.</i> Material, envolvente y espacio.</li>
                 <li><code>duration</code> — number > 0. <i>Default: 0.1.</i> Duración en segundos.</li>
                 <li><code>volume</code> — number de 0 a 1. <i>Default: 0.4.</i> Volumen declarado.</li>
-                <li><code>priority</code> — integer. <i>Default: 0.</i> Prioridad disponible para la política de asignación de voces del runtime.</li>
+                <li><code>priority</code> — integer. <i>Default: 0.</i> Prioridad utilizada por el runtime al asignar las voces disponibles para sonidos.</li>
             </ul>
             <h3 id="kind">kind</h3>
             <ul>
@@ -152,7 +152,7 @@
             <p>Mapa de identificadores a Music inline o referencias relativas/FLX. Cada canción requiere <code>channels</code>, un objeto de canales nombrados. Sin el bloque no hay música declarada. La reproducción se solicita desde la API.</p>
             <ul>
                 <li><code>like</code> — string. <i>Opcional.</i> Base reutilizable.</li>
-                <li><code>tempo</code> — number > 0. <i>Default: 120.</i> Tempo en negras por minuto. El sintetizador utiliza al menos 1 BPM.</li>
+                <li><code>tempo</code> — number &gt; 0. <i>Default: 120.</i> Tempo en negras por minuto.</li>
                 <li><code>loop</code> — boolean. <i>Default: false.</i> Repetición de la canción.</li>
                 <li><code>channels</code> — objeto. <i>Obligatorio.</i> Mapa de canales.</li>
             </ul>
@@ -257,7 +257,7 @@
 }</code></pre>
             </div>
             <h2 id="references">Referencias de audio</h2>
-            <p>Sound y Music completos admiten rutas relativas y FLX, y <code>like</code>. Las referencias anidadas a source, tone, movement, note e instrument utilizan <code>/archivo</code> o <code>/archivo:miembro</code>. Un string como <code>"square"</code> no sustituye a un objeto source: wave debe ser un campo de source.</p>
+            <p>Sound y Music completos admiten referencias relativas y FLX, además de <code>like</code>. Las referencias anidadas a source, tone, movement, note e instrument siguen las mismas reglas de resolución. Un string como <code>"square"</code> no sustituye a un objeto source: wave debe ser un campo de source.</p>
             <div class="code-card"><div class="code-header">Recursos externos</div>
 <pre><code data-schema="object">{
   &quot;sounds&quot;: {

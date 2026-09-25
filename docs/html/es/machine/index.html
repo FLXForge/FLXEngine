@@ -108,7 +108,7 @@ La Machine declara qué puede hacer el mundo.</code></pre>
 </div>
 <p>El archivo externo debe contener un mapa con la raíz del chip correspondiente: <code>video:</code>, <code>audio:</code> o <code>input:</code>. Puede mezclar chips inline y externos en una misma Machine.</p>
 <h2 id="defaults">Machine parcial y defaults</h2>
-<p>La carga parte de una definición interna por defecto y superpone los campos declarados. Omitir un chip conserva sus capacidades por defecto: no declarar <code>audio</code> no desactiva el audio. Las listas declaradas, como la paleta o las direcciones, aportan la lista indicada; no se concatenan con la lista interna.</p>
+<p>La carga parte de una definición interna por defecto y superpone los campos declarados. Omitir un chip conserva sus capacidades por defecto: no declarar <code>audio</code> no desactiva el audio. Cuando se declara players.controls.directions, la lista indicada sustituye la dirección por defecto. Las reglas específicas de otros bloques, como color.palette, se detallan en la referencia de cada chip.</p>
 <table>
 <caption>Defaults principales</caption>
 <thead><tr><th scope="col">Chip</th><th scope="col">Definición inicial</th></tr></thead>

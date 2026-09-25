@@ -50,7 +50,7 @@
                 <li><a class="link" href="json/object.html#schema"><code>$schema</code></a>: string; metadato de validación.</li>
                 <li><a class="link" href="json/composition.html#like"><code>like</code></a>: string; composición desde una base.</li>
                 <li><a class="link" href="json/creation.html#spawn"><code>spawn</code></a>: auto o manual.</li>
-                <li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; pertenencia a una entidad lógica.</li>
+                <li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; integra el child en la entidad lógica de su parent.</li>
                 <li><a class="link" href="json/creation.html#creation"><code>creation</code></a>: objeto o referencia; materialización de children.</li>
                 <li><a class="link" href="json/creation.html#offset"><code>offset</code></a>: objeto; desplazamiento de creación.</li>
                 <li><a class="link" href="json/object.html#visible"><code>visible</code></a>: boolean; visibilidad inicial.</li>
@@ -59,7 +59,7 @@
                 <li><a class="link" href="json/object.html#size"><code>size</code></a>: objeto; tamaño lógico.</li>
                 <li><a class="link" href="json/visual.html#visual"><code>visual</code></a>: objeto o referencia; representación.</li>
                 <li><a class="link" href="json/mechanics.html#mechanics"><code>mechanics</code></a>: objeto o referencia; movimiento y rotación.</li>
-                <li><a class="link" href="json/creation.html#inherit"><code>inherit</code></a>: objeto o referencia; estado vivo recibido del parent.</li>
+                <li><a class="link" href="json/creation.html#inherit"><code>inherit</code></a>: objeto o referencia; herencia de movimiento y orientación desde el parent.</li>
                 <li><a class="link" href="json/object.html#bounds"><code>bounds</code></a>: objeto o referencia; límites del World.</li>
                 <li><a class="link" href="json/object.html#delimit"><code>delimit</code></a>: boolean; extensión lógica del World.</li>
                 <li><a class="link" href="json/object.html#group"><code>group</code></a>: string; grupo lógico.</li>
@@ -81,7 +81,7 @@
 }</code></pre>
             </div>
             <h2 id="origin">origin</h2>
-            <p>Objeto opcional con coordenadas numéricas <code>x</code> e <code>y</code>; cada eje omitido vale <code>0</code>. X crece hacia la derecha e Y hacia abajo. Es la posición del objeto, no la esquina de su caja lógica. En un child, omitir todo el bloque permite partir de la posición del parent; declararlo explícitamente fija la posición salvo las reglas de <a class="link" href="json/creation.html#offset">offset</a> o <a class="link" href="json/creation.html#grid">grid</a>.</p>
+            <p>Objeto opcional con coordenadas numéricas <code>x</code> e <code>y</code>; cada eje omitido vale <code>0</code>. X crece hacia la derecha e Y hacia abajo. Es la posición del objeto, no la esquina de su caja lógica. En los children, las reglas de <a class="link" href="json/creation.html">Creation</a> determinan cómo se obtiene la posición inicial a partir del parent, <code>origin</code>, <code>offset</code> y el modo de creación.</p>
             <div class="code-card">
                 <div class="code-header">origin</div>
 <pre><code data-schema="object">{
@@ -209,7 +209,7 @@
   &quot;delimit&quot;: true
 }</code></pre>
             </div>
-            <p>La extensión se fija al cargar: movimiento, resize y nuevas instancias posteriores no la recalculan. Si no hay contribuidores, el runtime usa <code>(0, 0), 640 × 480</code>.</p>
+            <p>La extensión se calcula durante la carga a partir de los objetos <code>delimit</code> materializados en esa fase. Una vez fijada, movimiento, resize e instancias creadas posteriormente no la recalculan. Si no hay contribuidores, el runtime usa <code>(0, 0), 640 × 480</code>.</p>
             <hr>
             <details>
                 <summary>Fuentes de esta página · v0.3.0</summary>

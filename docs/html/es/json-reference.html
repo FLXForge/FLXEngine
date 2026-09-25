@@ -53,7 +53,7 @@
             </p>
 
             <div class="code-card">
-                <div class="code-header">game.flx</div>
+                <div class="code-header">asteroids.flx</div>
 <pre><code>title=Asteroids
 name=Asteroids
 version=2.0
@@ -71,6 +71,7 @@ notes=FLX example with spawn and basic UI
             <h3>Campos</h3>
 
             <ul>
+                <li><code>title</code>: título de la ventana. <i>[ Opcional ]</i></li>
                 <li><code>name</code>: nombre del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>version</code>: versión del proyecto. <i>[ Opcional ]</i></li>
                 <li><code>engine</code>: versión objetivo de FLX. <i>[ Opcional ]</i></li>
@@ -246,7 +247,7 @@ notes=FLX example with spawn and basic UI
             </p>
 
             <div class="code-card">
-                <div class="code-header">children (referencia)</div>
+                <div class="code-header">object</div>
 <pre><code>{
     "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
     "origin": {
@@ -267,6 +268,35 @@ notes=FLX example with spawn and basic UI
     }
 }</code></pre>
             </div>
+
+            <h3>Propiedades</h3>
+
+            <ul>
+                <li><code>$schema</code>: schema utilizado para validar el objeto.</li>
+                <li><a class="link" href="#composition"><code>like</code></a>: composición a partir de otra declaración.</li>
+                <li><code>spawn</code>: política de creación automática o manual.</li>
+                <li><code>component</code>: declara el objeto como componente.</li>
+                <li><a class="link" href="#creation"><code>creation</code></a>: reglas para crear los children.</li>
+                <li><code>offset</code>: desplazamiento local aplicado durante la creación.</li>
+                <li><code>visible</code>: visibilidad inicial del objeto.</li>
+                <li><a class="link" href="#attach"><code>attach</code></a>: reglas de seguimiento del parent original.</li>
+                <li><a class="link" href="#origin"><code>origin</code></a>: posición inicial del objeto.</li>
+                <li><a class="link" href="#size"><code>size</code></a>: tamaño lógico del objeto.</li>
+                <li><a class="link" href="#visual"><code>visual</code></a>: representación visual.</li>
+                <li><a class="link" href="#mechanics"><code>mechanics</code></a>: reglas declarativas de movimiento y rotación.</li>
+                <li><a class="link" href="#inherit"><code>inherit</code></a>: estado vivo recibido desde el parent original.</li>
+                <li><a class="link" href="#bounds"><code>bounds</code></a>: comportamiento en los límites del World.</li>
+                <li><a class="link" href="#delimit"><code>delimit</code></a>: contribución a la extensión lógica del World.</li>
+                <li><code>group</code>: grupo lógico del objeto.</li>
+                <li><code>control</code>: asociación opcional con un jugador.</li>
+                <li><code>local</code>: estado local inicial de la instancia.</li>
+                <li><a class="link" href="#collision"><code>collisions</code></a>: colliders asociados al objeto.</li>
+                <li><a class="link" href="#behavior"><code>behavior</code></a>: scripts asociados al objeto.</li>
+                <li><a class="link" href="#states"><code>states</code></a>: estados y transiciones declarados.</li>
+                <li><a class="link" href="#sounds"><code>sounds</code></a>: sonidos pertenecientes al objeto.</li>
+                <li><a class="link" href="#music"><code>music</code></a>: música perteneciente al objeto.</li>
+                <li><a class="link" href="#children"><code>children</code></a>: objetos declarados como hijos.</li>
+            </ul>
 
             <h2 id="children">Children</h2>
 

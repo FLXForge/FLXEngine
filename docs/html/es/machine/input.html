@@ -134,7 +134,7 @@ LEFT (−1) ─┼─ RIGHT (+1)
 <thead><tr><th scope="col">Valor</th><th scope="col">Comportamiento</th></tr></thead>
 <tbody>
 <tr><th scope="row"><code>last</code></th><td data-label="Comportamiento">Gana la última componente activada entre las que siguen activas.</td></tr>
-<tr><th scope="row"><code>first</code></th><td data-label="Comportamiento">La componente dominante conserva el control mientras siga activa. Al desaparecer, se resuelve la candidata pendiente o la siguiente componente activa según la política.</td></tr>
+<tr><th scope="row"><code>first</code></th><td data-label="Comportamiento">La componente dominante conserva el control mientras siga activa. Al desaparecer, puede promoverse una candidata pendiente válida; si no la hay, se resuelve de nuevo entre las componentes que continúan activas.</td></tr>
 <tr><th scope="row"><code>neutral</code></th><td data-label="Comportamiento">Más de una componente activa produce neutral; una única componente activa se conserva.</td></tr>
 </tbody>
 </table>

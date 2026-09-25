@@ -56,7 +56,7 @@
 <thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
 <tbody>
 <tr><th scope="row"><code>voices.music</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>8</code></td><td data-label="Comportamiento en v0.3.0">Límite de canales de música utilizados. Los canales que superen las voces disponibles se ignoran con aviso.</td></tr>
-<tr><th scope="row"><code>voices.sound</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>16</code></td><td data-label="Comportamiento en v0.3.0">Reserva de efectos en reserved/preferred; en shared contribuye al tamaño total del pool.</td></tr>
+<tr><th scope="row"><code>voices.sound</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>16</code></td><td data-label="Comportamiento en v0.3.0">Límite de efectos simultáneos en reserved/preferred; en shared contribuye al tamaño total del pool.</td></tr>
 <tr><th scope="row"><code>voices.mode</code></th><td data-label="Tipo / valores">shared · reserved · preferred</td><td data-label="Default"><code>shared</code></td><td data-label="Comportamiento en v0.3.0">Política de reparto detallada a continuación.</td></tr>
 <tr><th scope="row"><code>voices.overflow</code></th><td data-label="Tipo / valores">ignore · replace_oldest · replace_newest · replace_lowest_priority · steal_from_music</td><td data-label="Default"><code>replace_oldest</code></td><td data-label="Comportamiento en v0.3.0">Política al solicitar un sonido cuando se han agotado las voces disponibles.</td></tr>
 </tbody>

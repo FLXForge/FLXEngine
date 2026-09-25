@@ -61,7 +61,8 @@ function updateDocPath() {
 }
 
 function updateLanguageLinks() {
-  const page = path.split("/").pop() || "index.html";
+  const languageMatch = path.match(/\/(?:es|en)\/(.+)$/);
+  const page = languageMatch ? languageMatch[1] : "index.html";
 
   const spanish = document.querySelector('[data-language="es"]');
   const english = document.querySelector('[data-language="en"]');

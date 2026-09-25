@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostics | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.reference-page { min-width: 0; overflow-wrap: anywhere; }
+.reference-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 24px 0; }
+.reference-page caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+.reference-page th, .reference-page td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+.reference-page thead { background: var(--panel); }
+.reference-page td { color: var(--muted); }
+@media(max-width:600px) {
+.reference-page table, .reference-page caption, .reference-page tbody, .reference-page tr, .reference-page th, .reference-page td { display: block; width: 100%; }
+.reference-page thead { display: none; }
+.reference-page tr { margin-bottom: 18px; }
+.reference-page th { background: var(--panel); }
+.reference-page td { border-top: 0; }
+.reference-page td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+}
+</style>
+</head>
+<body data-section="diagnostics">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div><article class="doc-content reference-page">
+<p class="eyebrow">Documentación FLX · v0.3.0</p><h1>Diagnostics</h1>
+<nav aria-label="En esta página"><p><a class="link" href="#fields">Campos del diagnóstico</a> · <a class="link" href="#severity">Severidades</a> · <a class="link" href="#domains">Dominios y códigos</a> · <a class="link" href="#location">Localización</a> · <a class="link" href="#text">Salida textual</a> · <a class="link" href="#json">Salida JSON</a> · <a class="link" href="#exit-codes">Diagnostics y códigos de salida</a></p></nav>
+<p>Un <em>diagnostic</em> representa información estructurada producida por un subsistema FLX. Permite comunicar una incidencia a una persona y clasificarla desde una herramienta sin depender del texto de su mensaje.</p>
+<div class="code-card"><div class="code-header">Modelo público</div><pre><code>Diagnostic
+├── severity
+├── code
+├── identifier
+├── file
+├── field
+├── message
+└── range?</code></pre></div>
+<h2 id="fields">Campos del diagnóstico</h2>
+<table><caption>Forma pública en JSON</caption><thead><tr><th scope="col">Campo</th><th scope="col">Tipo</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row">severity</th><td data-label="Tipo">Cadena</td><td data-label="Significado"><code>info</code>, <code>warning</code> o <code>error</code>.</td></tr><tr><th scope="row">code</th><td data-label="Tipo">Cadena</td><td data-label="Significado">Código estable legible por herramientas, como <code>FLX-RESOURCE-00010</code>.</td></tr><tr><th scope="row">identifier</th><td data-label="Tipo">Cadena</td><td data-label="Significado">Identificador simbólico estable del código, como <code>MissingReferencedResource</code>.</td></tr><tr><th scope="row">file</th><td data-label="Tipo">Cadena</td><td data-label="Significado">Archivo de contexto; cadena vacía si no se proporciona.</td></tr><tr><th scope="row">field</th><td data-label="Tipo">Cadena</td><td data-label="Significado">Campo de contexto; cadena vacía si no se proporciona.</td></tr><tr><th scope="row">message</th><td data-label="Tipo">Cadena</td><td data-label="Significado">Explicación concreta de esta aparición del diagnóstico.</td></tr><tr><th scope="row">range</th><td data-label="Tipo">Objeto opcional</td><td data-label="Significado">Posición de origen, sólo cuando existe.</td></tr></tbody></table>
+<div class="code-card"><div class="code-header">Identidad y detalle</div><pre><code>code       = FLX-RESOURCE-00010
+identifier = MissingReferencedResource
+message    = detalle concreto del recurso que falta</code></pre></div>
+<p>Las herramientas deben clasificar por <code>code</code> o <code>identifier</code>, no parsear <code>message</code>. El mensaje puede cambiar para mejorar la explicación sin cambiar la identidad del diagnóstico.</p>
+<h2 id="severity">Severidades</h2>
+<table><caption>Interpretación de severity</caption><thead><tr><th scope="col">Severidad</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row">info</th><td data-label="Significado">Información sobre la operación.</td></tr><tr><th scope="row">warning</th><td data-label="Significado">Advertencia que no implica por sí sola que la operación haya fallado.</td></tr><tr><th scope="row">error</th><td data-label="Significado">Incidencia de error. <code>hasErrors()</code> devuelve true si existe al menos un diagnóstico con esta severidad.</td></tr></tbody></table>
+<p>La severidad pertenece a cada aparición del diagnóstico. El registro contiene una severidad habitual por código; para interpretar un resultado utiliza su campo <code>severity</code>.</p>
+<h2 id="domains">Dominios y códigos</h2>
+<p>Los códigos siguen <code>FLX-DOMAIN-NNNNN</code>: prefijo FLX, dominio y cinco dígitos. Los dominios registrados son:</p>
+<table><caption>Áreas de diagnóstico</caption><thead><tr><th scope="col">Dominio</th><th scope="col">Área</th></tr></thead><tbody><tr><th scope="row">CLI</th><td data-label="Área">Comandos y argumentos.</td></tr><tr><th scope="row">PROJECT</th><td data-label="Área">Manifiesto y resolución del proyecto.</td></tr><tr><th scope="row">COMP</th><td data-label="Área">Compilación y consistencia del proyecto compilado.</td></tr><tr><th scope="row">RESOURCE</th><td data-label="Área">Recursos y referencias.</td></tr><tr><th scope="row">MACHINE</th><td data-label="Área">Configuración de Machine y sus chips.</td></tr><tr><th scope="row">INPUT</th><td data-label="Área">Mapping y controles de entrada.</td></tr><tr><th scope="row">BINARY</th><td data-label="Área">Lectura, escritura y formato del proyecto compilado.</td></tr><tr><th scope="row">RUNTIME</th><td data-label="Área">Carga y ejecución con Engine.</td></tr><tr><th scope="row">BUILD</th><td data-label="Área">Dominio registrado para construcción; no implica un comando build disponible.</td></tr></tbody></table>
+<p>Cada dominio reserva los sufijos <code>00000</code> (información), <code>00001</code> (warning), <code>00002</code> (error), <code>00003</code> (error interno) y <code>00004</code> (funcionalidad obsoleta). Hay además códigos específicos; esta selección no es un catálogo exhaustivo.</p>
+<table><caption>Ejemplos del registro actual</caption><thead><tr><th scope="col">Código</th><th scope="col">Identifier</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row">FLX-CLI-00002</th><td data-label="Identifier">CliErrorUnclassified</td><td data-label="Significado">Error genérico del CLI.</td></tr><tr><th scope="row">FLX-PROJECT-00010</th><td data-label="Identifier">ProjectManifestCouldNotBeOpened</td><td data-label="Significado">No se pudo abrir el manifiesto.</td></tr><tr><th scope="row">FLX-RESOURCE-00010</th><td data-label="Identifier">MissingReferencedResource</td><td data-label="Significado">No se encontró un recurso referenciado.</td></tr><tr><th scope="row">FLX-INPUT-00020</th><td data-label="Identifier">InputMappingDuplicateBinding</td><td data-label="Significado">Una misma clave lógica aparece más de una vez en el mapping.</td></tr><tr><th scope="row">FLX-RUNTIME-00015</th><td data-label="Identifier">RuntimeLoadSpawnLimitExceeded</td><td data-label="Significado">Se superó el límite de spawn durante la carga del runtime.</td></tr></tbody></table>
+<h2 id="location">Localización</h2>
+<p><code>file</code> y <code>field</code> añaden contexto cuando está disponible. No todos los diagnósticos identifican un fichero, campo o rango. En JSON, <code>file</code> y <code>field</code> siempre están presentes como cadenas; <code>range</code> se omite cuando no existe.</p>
+<div class="code-card"><div class="code-header">Fragmento de un diagnóstico con rango</div><pre><code>&quot;range&quot;: {
+  &quot;startLine&quot;: 2,
+  &quot;startColumn&quot;: 4,
+  &quot;endLine&quot;: 2,
+  &quot;endColumn&quot;: 11
+}</code></pre></div>
+<p>Los cuatro valores son enteros que identifican las líneas y columnas de inicio y fin proporcionadas por el productor. El modelo por sí solo no establece una convención universal de extremo inclusivo/exclusivo ni garantiza rango para todas las incidencias.</p>
+<h2 id="text">Salida textual</h2>
+<div class="code-card"><div class="code-header">Ejemplo de formato, verificado por los tests</div><pre><code>error FLX-CLI-00002 CliErrorUnclassified: game/root.json [children.ship]: Invalid child</code></pre></div>
+<p>El formato comienza con severidad, código e identifier, seguidos de dos puntos. Si hay archivo, se añade éste y, si existe, el campo entre corchetes; después aparece el mensaje. El impresor textual actual no muestra el rango y sólo muestra el campo cuando también hay archivo.</p>
+<p>Todos los diagnósticos textuales se escriben en <code>stderr</code>, incluidos <code>info</code> y <code>warning</code>. El mensaje normal de resultado satisfactorio de compile o validate va a <code>stdout</code>. Así pueden separarse el resultado y las incidencias.</p>
+<h2 id="json">Salida JSON</h2>
+<p>Con <code>--format=json</code> reconocido por el CLI, compile y validate escriben el resultado estructurado completo en <code>stdout</code>; el impresor de diagnósticos deja <code>stderr</code> vacío. No se ofrece este formato para los comandos de runtime. Consulta <a class="link" href="cli.html#output">CLI · Formato de salida</a>.</p>
+<div class="code-card"><div class="code-header">Envelope conceptual</div><pre><code>{
+  &quot;success&quot;: false,
+  &quot;command&quot;: &quot;compile&quot;,
+  &quot;exitCode&quot;: 4,
+  &quot;diagnostics&quot;: []
+}</code></pre></div>
+<p>El array contiene los diagnósticos de la operación; el ejemplo anterior sólo muestra la estructura. Un resultado satisfactorio incluye además <code>message</code> con el mensaje global del resultado. Ese campo es distinto del <code>message</code> dentro de cada diagnóstico.</p>
+<div class="code-card"><div class="code-header">Ejemplo conceptual de un elemento de diagnostics</div><pre><code>{
+  &quot;severity&quot;: &quot;error&quot;,
+  &quot;code&quot;: &quot;FLX-RESOURCE-00010&quot;,
+  &quot;identifier&quot;: &quot;MissingReferencedResource&quot;,
+  &quot;file&quot;: &quot;objects/player.json&quot;,
+  &quot;field&quot;: &quot;children.laser&quot;,
+  &quot;message&quot;: &quot;Referenced resource was not found.&quot;
+}</code></pre></div>
+<p>Cada elemento contiene los seis campos de cadena mostrados; sólo añade <code>range</code> cuando existe. No dependas del orden de las claves del objeto JSON.</p>
+<p>El parser procesa los argumentos en orden y se detiene ante un error. Por ello, <code>flx validate --unknown --format=json .</code> falla todavía en texto, mientras que <code>flx validate --format=json --unknown .</code> emite un resultado JSON. La presencia de la opción al final de una invocación inválida no garantiza el formato.</p>
+<h2 id="exit-codes">Diagnostics y códigos de salida</h2>
+<div class="code-card"><div class="code-header">Dos niveles de información</div><pre><code>exit code
+└── categoría global del resultado del comando
+
+diagnostics
+└── información concreta sobre lo ocurrido</code></pre></div>
+<p>Un comando puede terminar correctamente y producir warnings. Comprueba <code>success</code> y <code>exitCode</code> para el resultado global, y recorre <code>diagnostics</code> para los detalles. La tabla de <a class="link" href="cli.html#exit-codes">códigos de salida del CLI</a> distingue los códigos definidos de los caminos funcionales actuales.</p>
+<hr /><details><summary>Fuentes de esta referencia · v0.3.0</summary><p>Contrastado con el código y los tests de <code>feature/audit-public-doc</code>, revisión <code>15817f5dd141</code>. La implementación actual prevalece sobre planes futuros.</p>
+<ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/diagnostics/Diagnostics.h">engine/diagnostics/Diagnostics.h</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/diagnostics/Diagnostics.cpp">engine/diagnostics/Diagnostics.cpp</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/cli/DiagnosticPrinter.cpp">engine/cli/DiagnosticPrinter.cpp</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/tests/diagnostics/">tests/diagnostics/</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/tests/cli/DiagnosticPrinterTests.cpp">tests/cli/DiagnosticPrinterTests.cpp</a></li></ul></details><div id="doc-path"></div></article></main><div id="footer"></div><script src="../js/main.js"></script></body></html>

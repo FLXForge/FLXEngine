@@ -71,11 +71,16 @@ function updateLanguageLinks() {
     spanish.href = `../es/${page}`;
   }
 
+  const sectionLink = Array.from(document.querySelectorAll("#sidebar [data-link]")).find(
+      link => link.dataset.link === document.body.dataset.section
+    );
+  const languages = (sectionLink?.dataset.languages || "es en").split(/\s+/);
+
   if (english) {
-    if (document.body.dataset.section === "machine") {
+    if (!languages.includes("en")) {
       english.removeAttribute("href");
       english.setAttribute("aria-disabled", "true");
-      english.title = "Machine todavía no está disponible en inglés";
+      english.title = "Esta sección todavía no está disponible en inglés";
     } else {
       english.href = `../en/${page}`;
     }

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen machine/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+        .machine-reference table { width: 100%; border-collapse: collapse; margin: 24px 0; table-layout: fixed; }
+        .machine-reference caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+        .machine-reference th, .machine-reference td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+        .machine-reference thead { background: var(--panel); }
+        .machine-reference td { color: var(--muted); }
+        .machine-reference th { font-weight: 600; }
+        @media (max-width: 600px) {
+            .machine-reference caption { display: block; width: 100%; }
+            .machine-reference table, .machine-reference tbody, .machine-reference tr, .machine-reference th, .machine-reference td { display: block; width: 100%; }
+            .machine-reference thead { display: none; }
+            .machine-reference tr { margin-bottom: 18px; }
+            .machine-reference th { background: var(--panel); }
+            .machine-reference td { border-top: 0; }
+            .machine-reference td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+        }
+    </style>
+</head>
+<body data-section="machine">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content machine-reference" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Machine</h1>
+            <nav aria-label="Áreas de Machine"><p><a class="link" href="machine/index.html" aria-current="page"><strong>Índice</strong></a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <nav aria-label="En esta página"><p><a class="link" href="machine/index.html#chips">Tres chips</a> · <a class="link" href="machine/index.html#project">Selección desde el proyecto</a> · <a class="link" href="machine/index.html#structure">Estructura canónica</a> · <a class="link" href="machine/index.html#external">Chips inline y externos</a> · <a class="link" href="machine/index.html#defaults">Machine parcial y defaults</a> · <a class="link" href="machine/index.html#scope">Formato admitido y capacidad efectiva</a></p></nav>
+<p><strong>Una Machine define las capacidades y restricciones del entorno en el que se ejecuta un proyecto FLX.</strong> Describe las posibilidades de ejecución del proyecto; las entidades y el comportamiento se declaran en otras capas.</p>
+<div class="code-card">
+    <div class="code-header">Separación de responsabilidades</div>
+<pre><code>Los objetos declaran qué existe.
+Los scripts declaran qué hace.
+La Machine declara qué puede hacer el mundo.</code></pre>
+</div>
+<h2 id="chips">Tres chips</h2>
+<div class="code-card">
+    <div class="code-header">Machine</div>
+<pre><code>Machine
+├── Video
+├── Audio
+└── Input</code></pre>
+</div>
+<ul>
+    <li><a class="link" href="machine/video.html">Video</a> — pantalla lógica, capacidades de color y presentación física.</li>
+    <li><a class="link" href="machine/audio.html">Audio</a> — voces disponibles, síntesis y fidelidad del audio.</li>
+    <li><a class="link" href="machine/input.html">Input</a> — jugadores, botones lógicos y controles direccionales.</li>
+</ul>
+<p>Machine no describe el juego: no contiene objetos, canciones, acciones como «disparar» ni comportamientos. Establece las capacidades con las que trabajan esas declaraciones.</p>
+<h2 id="project">Selección desde el proyecto</h2>
+<div class="code-card">
+    <div class="code-header">Entrada del manifiesto .flx</div>
+<pre><code data-example="ini">machine=machines/asteroidsMachine.yml</code></pre>
+</div>
+<p>La ruta se resuelve respecto al directorio del manifiesto <code>.flx</code>, no respecto a su <code>path</code> de contenido JSON. Si el proyecto no selecciona una Machine propia, utiliza la Default Machine interna. Véase <a class="link" href="json/project.html#fields">Project</a>.</p>
+<h2 id="structure">Estructura canónica</h2>
+<div class="code-card">
+    <div class="code-header">Machine parcial con los tres chips</div>
+<pre><code data-example="yaml">machine:
+  video:
+    screen:
+      width: 320
+      height: 240
+  audio:
+    voices:
+      music: 3
+      sound: 1
+  input:
+    players:
+      count: 1</code></pre>
+</div>
+<p>La forma canónica utiliza la raíz <code>machine:</code>. El loader también admite los bloques <code>video</code>, <code>audio</code> e <code>input</code> directamente en la raíz del archivo como formato alternativo. Las propiedades públicas de esta referencia son las capacidades de esos tres chips.</p>
+<h2 id="external">Chips inline y externos</h2>
+<p>Cada chip puede ser un mapa YAML inline o un string con la ruta de un archivo externo. Las rutas de chips se resuelven respecto al archivo Machine que las declara; escriba la extensión del recurso.</p>
+<div class="code-card">
+    <div class="code-header">Machine con Video inline</div>
+<pre><code data-example="yaml">machine:
+  video:
+    screen:
+      width: 320
+      height: 240</code></pre>
+</div>
+<div class="code-card">
+    <div class="code-header">Machine con Video externo</div>
+<pre><code data-example="yaml">machine:
+  video: chips/video/retro.yml</code></pre>
+</div>
+<div class="code-card">
+    <div class="code-header">chips/video/retro.yml — relativo al archivo Machine</div>
+<pre><code data-example="yaml">video:
+  screen:
+    width: 320
+    height: 240</code></pre>
+</div>
+<p>El archivo externo debe contener un mapa con la raíz del chip correspondiente: <code>video:</code>, <code>audio:</code> o <code>input:</code>. Puede mezclar chips inline y externos en una misma Machine.</p>
+<h2 id="defaults">Machine parcial y defaults</h2>
+<p>La carga parte de una definición interna por defecto y superpone los campos declarados. Omitir un chip conserva sus capacidades por defecto: no declarar <code>audio</code> no desactiva el audio. Las listas declaradas, como la paleta o las direcciones, aportan la lista indicada; no se concatenan con la lista interna.</p>
+<table>
+<caption>Defaults principales</caption>
+<thead><tr><th scope="col">Chip</th><th scope="col">Definición inicial</th></tr></thead>
+<tbody>
+<tr><th scope="row">Video</th><td data-label="Definición inicial">640 × 480; clear color <code>black</code>; <code>output.scale: 1</code>; <code>output.smoothing: false</code>.</td></tr>
+<tr><th scope="row">Audio</th><td data-label="Definición inicial">8 voces de música y 16 de sonido; modo <code>shared</code>; overflow <code>replace_oldest</code>; modelo <code>open</code>.</td></tr>
+<tr><th scope="row">Input</th><td data-label="Definición inicial">2 botones de sistema; 1 jugador; 4 botones por jugador; una dirección <code>4way</code>, con <code>simultaneous: last</code> y <code>buffer: 0</code>.</td></tr>
+</tbody>
+</table>
+<p>Los defaults completos y los rangos se detallan en cada chip. Un valor cero tiene significado propio donde se admite; no equivale a omitir el campo.</p>
+<h2 id="scope">Formato admitido y capacidad efectiva</h2>
+<p>Que una propiedad se acepte y almacene no implica que tenga ya un comportamiento aplicado o diferenciado. Esta referencia distingue capacidades efectivas, valores que comparten implementación y propiedades todavía sin efecto funcional. Los detalles de cada caso están en Video, Audio e Input.</p>
+<p>Los ejemplos muestran valores válidos y usan <code>true</code>/<code>false</code> para booleanos. El loader aplica avisos y fallback a defaults en varios campos inválidos; las capacidades Input no soportadas generan diagnóstico de error. No debe deducirse soporte de una propiedad sólo porque un archivo pueda cargarse.</p>
+
+            <hr />
+            <details>
+                <summary>Fuentes de esta página · v0.3.0</summary>
+                <p>Verificado por lectura directa de feature/audit-public-doc, revisión <code>ed9753b20d86</code>.</p>
+                <ul>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineDefinition.h">engine/machine/MachineDefinition.h</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineLoader.cpp">engine/machine/MachineLoader.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/compiler/ProjectCompiler.cpp">engine/compiler/ProjectCompiler.cpp</a></li>
+</ul>
+
+            </details>
+            <nav aria-label="Áreas de Machine"><p><a class="link" href="machine/index.html" aria-current="page"><strong>Índice</strong></a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

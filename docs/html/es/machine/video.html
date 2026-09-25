@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen machine/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Chip | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+        .machine-reference table { width: 100%; border-collapse: collapse; margin: 24px 0; table-layout: fixed; }
+        .machine-reference caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+        .machine-reference th, .machine-reference td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+        .machine-reference thead { background: var(--panel); }
+        .machine-reference td { color: var(--muted); }
+        .machine-reference th { font-weight: 600; }
+        @media (max-width: 600px) {
+            .machine-reference caption { display: block; width: 100%; }
+            .machine-reference table, .machine-reference tbody, .machine-reference tr, .machine-reference th, .machine-reference td { display: block; width: 100%; }
+            .machine-reference thead { display: none; }
+            .machine-reference tr { margin-bottom: 18px; }
+            .machine-reference th { background: var(--panel); }
+            .machine-reference td { border-top: 0; }
+            .machine-reference td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+        }
+    </style>
+</head>
+<body data-section="machine">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content machine-reference" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Video Chip</h1>
+            <nav aria-label="Áreas de Machine"><p><a class="link" href="machine/index.html">Índice</a> · <a class="link" href="machine/video.html" aria-current="page"><strong>Video</strong></a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <nav aria-label="En esta página"><p><a class="link" href="machine/video.html#screen">Screen</a> · <a class="link" href="machine/video.html#color">Color</a> · <a class="link" href="machine/video.html#palette">color.palette</a> · <a class="link" href="machine/video.html#levels">color.levels</a> · <a class="link" href="machine/video.html#tone">color.tone</a> · <a class="link" href="machine/video.html#alpha">color.alpha</a> · <a class="link" href="machine/video.html#output">Output</a> · <a class="link" href="machine/video.html#reserved">Campos admitidos sin efecto funcional específico</a></p></nav>
+<p><strong>Video Chip define la pantalla lógica, las capacidades de color y la forma en que esa pantalla se presenta físicamente.</strong> Se declara en <code>machine.video</code>, inline o como <a class="link" href="machine/index.html#external">chip externo</a>.</p>
+<div class="code-card">
+    <div class="code-header">Estructura</div>
+<pre><code>video
+├── screen: width, height, color
+├── color
+│   ├── palette
+│   ├── levels: red, green, blue
+│   ├── tone: base, levels
+│   └── alpha
+├── planes: enabled
+├── objects: sprites
+└── output: scale, smoothing</code></pre>
+</div>
+<h2 id="screen">Screen</h2>
+<table>
+<caption>Pantalla lógica</caption>
+<thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>screen.width</code></th><td data-label="Tipo / valores">Entero ≥ 1</td><td data-label="Default"><code>640</code></td><td data-label="Comportamiento en v0.3.0">Anchura de la pantalla lógica y de la render texture.</td></tr>
+<tr><th scope="row"><code>screen.height</code></th><td data-label="Tipo / valores">Entero ≥ 1</td><td data-label="Default"><code>480</code></td><td data-label="Comportamiento en v0.3.0">Altura de la pantalla lógica y de la render texture.</td></tr>
+<tr><th scope="row"><code>screen.color</code></th><td data-label="Tipo / valores">String de color</td><td data-label="Default"><code>black</code></td><td data-label="Comportamiento en v0.3.0">Clear color; pasa por el procesamiento de color de la Machine.</td></tr>
+</tbody>
+</table>
+<div class="code-card">
+    <div class="code-header">Escala de presentación</div>
+<pre><code>Pantalla lógica
+320 × 180
+    ↓ output.scale = 3
+Ventana
+960 × 540</code></pre>
+</div>
+<p>La escala no modifica las coordenadas ni las dimensiones lógicas. El ejemplo corresponde a una ventana con esa escala efectiva; las opciones de ejecución pueden sobrescribir la escala o seleccionar pantalla completa. La resolución de Video tampoco redefine la extensión lógica del World usada por <a class="link" href="json/object.html#delimit">delimit</a> y <a class="link" href="json/object.html#bounds">bounds</a>.</p>
+<div class="code-card">
+    <div class="code-header">Pantalla y salida</div>
+<pre><code data-example="yaml">machine:
+  video:
+    screen:
+      width: 320
+      height: 180
+      color: black
+    output:
+      scale: 3
+      smoothing: false</code></pre>
+</div>
+<h2 id="color">Color</h2>
+<div class="code-card">
+    <div class="code-header">Color solicitado y color efectivo</div>
+<pre><code>Visual solicita un color
+        ↓
+Video Chip determina qué color puede representar
+        ↓
+Color efectivo</code></pre>
+</div>
+<p>El color solicitado pertenece a <a class="link" href="json/visual.html#color">JSON Visual</a>. Video lo proyecta a las capacidades de la Machine. También se procesa el clear color de screen. Los colores se expresan como nombres admitidos por FLX o como strings hexadecimales <code>"#RGB"</code> y <code>"#RRGGBB"</code>.</p>
+<div class="code-card">
+    <div class="code-header">Precedencia efectiva</div>
+<pre><code>palette válida y no vacía
+    ↓ si no existe
+tone configurado
+    ↓ si no existe
+levels declarado
+    ↓ si no existe
+color original</code></pre>
+</div>
+<p>No se encadenan los tres modelos: se utiliza el primero disponible según esta precedencia. <code>alpha</code> se aplica independientemente del modelo elegido.</p>
+<h2 id="palette">color.palette</h2>
+<p>Lista de colores. Por defecto no hay paleta activa; una lista vacía tampoco activa el modelo. Con una paleta válida y no vacía, se selecciona el color más próximo al solicitado por distancia RGB. Tiene prioridad sobre tone y levels.</p>
+<div class="code-card">
+    <div class="code-header">Paleta limitada</div>
+<pre><code data-example="yaml">machine:
+  video:
+    color:
+      palette: [&quot;#000000&quot;, &quot;#FFFFFF&quot;, &quot;#FF4040&quot;]</code></pre>
+</div>
+<h2 id="levels">color.levels</h2>
+<table>
+<caption>Cuantización independiente por canal</caption>
+<thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>color.levels.red</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>0</code></td><td data-label="Comportamiento en v0.3.0">Número de niveles del canal rojo cuando se declara el bloque levels.</td></tr>
+<tr><th scope="row"><code>color.levels.green</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>0</code></td><td data-label="Comportamiento en v0.3.0">Número de niveles del canal verde.</td></tr>
+<tr><th scope="row"><code>color.levels.blue</code></th><td data-label="Tipo / valores">Entero ≥ 0</td><td data-label="Default"><code>0</code></td><td data-label="Comportamiento en v0.3.0">Número de niveles del canal azul.</td></tr>
+</tbody>
+</table>
+<p>Son niveles, no bits. Un valor <code>2</code> permite dos niveles en ese canal. Tanto <code>0</code> como <code>1</code> producen canal cero en la implementación actual. Omitir todo <code>levels</code> deja este modelo inactivo; declararlo con un canal omitido deja ese canal en su default 0. Por eso conviene declarar los tres ejes de color explícitamente.</p>
+<div class="code-card">
+    <div class="code-header">Niveles RGB</div>
+<pre><code data-example="yaml">machine:
+  video:
+    color:
+      levels:
+        red: 4
+        green: 4
+        blue: 2</code></pre>
+</div>
+<h2 id="tone">color.tone</h2>
+<table>
+<caption>Gama tonal</caption>
+<thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>color.tone.base</code></th><td data-label="Tipo / valores">String de color</td><td data-label="Default"><code>Sin base</code></td><td data-label="Comportamiento en v0.3.0">Color del que deriva la gama tonal.</td></tr>
+<tr><th scope="row"><code>color.tone.levels</code></th><td data-label="Tipo / valores">Entero ≥ 1 si se declara</td><td data-label="Default"><code>Sin gama activa</code></td><td data-label="Comportamiento en v0.3.0">Número de colores de la gama. Necesita una base y un número de niveles válido para activarse.</td></tr>
+</tbody>
+</table>
+<p>Tone restringe el color efectivo a una gama derivada de la base. No es una paleta libre: esa gama se genera a partir de <code>base</code> y <code>levels</code>. Elija colores hexadecimales entre comillas en YAML para que sean inequívocos.</p>
+<div class="code-card">
+    <div class="code-header">Gama tonal</div>
+<pre><code data-example="yaml">machine:
+  video:
+    color:
+      tone:
+        base: &quot;#9BBC0F&quot;
+        levels: 4</code></pre>
+</div>
+<h2 id="alpha">color.alpha</h2>
+<p>Boolean, default <code>true</code>. Con <code>false</code>, el procesador fuerza una salida opaca. Con <code>true</code>, conserva el alpha del color recibido, incluso al proyectarlo a paleta o gama tonal.</p>
+<div class="code-card">
+    <div class="code-header">Salida opaca</div>
+<pre><code data-example="yaml">machine:
+  video:
+    color:
+      alpha: false</code></pre>
+</div>
+<h2 id="output">Output</h2>
+<table>
+<caption>Presentación física</caption>
+<thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>output.scale</code></th><td data-label="Tipo / valores">Entero ≥ 1</td><td data-label="Default"><code>1</code></td><td data-label="Comportamiento en v0.3.0">Factor de escala solicitado para la presentación en ventana.</td></tr>
+<tr><th scope="row"><code>output.smoothing</code></th><td data-label="Tipo / valores">Boolean</td><td data-label="Default"><code>false</code></td><td data-label="Comportamiento en v0.3.0">false usa filtro point; true usa bilinear.</td></tr>
+</tbody>
+</table>
+<p><code>smoothing: false</code> mantiene el escalado de píxel duro apropiado para pixel art. El filtro se aplica a la textura de salida; no cambia las coordenadas lógicas del juego.</p>
+<h2 id="reserved">Campos admitidos sin efecto funcional específico</h2>
+<table>
+<caption>Capacidades almacenadas</caption>
+<thead><tr><th scope="col">Campo</th><th scope="col">Tipo / valores</th><th scope="col">Default</th><th scope="col">Comportamiento en v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>planes.enabled</code></th><td data-label="Tipo / valores">Boolean</td><td data-label="Default"><code>false</code></td><td data-label="Comportamiento en v0.3.0">Se admite y almacena, pero no activa un sistema funcional de planos en v0.3.0.</td></tr>
+<tr><th scope="row"><code>objects.sprites</code></th><td data-label="Tipo / valores">Boolean</td><td data-label="Default"><code>false</code></td><td data-label="Comportamiento en v0.3.0">Se admite y almacena, pero no activa un sistema funcional de sprites en v0.3.0.</td></tr>
+</tbody>
+</table>
+<p>Estos flags no describen funciones de dibujo ya implementadas. Las representaciones disponibles se consultan en <a class="link" href="json/visual.html#representation">JSON Visual</a>.</p>
+
+            <hr />
+            <details>
+                <summary>Fuentes de esta página · v0.3.0</summary>
+                <p>Verificado por lectura directa de feature/audit-public-doc, revisión <code>ed9753b20d86</code>.</p>
+                <ul>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineDefinition.h">engine/machine/MachineDefinition.h</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineLoader.cpp">engine/machine/MachineLoader.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/VideoColorProcessor.cpp">engine/machine/VideoColorProcessor.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/core/Engine.cpp">engine/core/Engine.cpp</a></li>
+</ul>
+
+            </details>
+            <nav aria-label="Áreas de Machine"><p><a class="link" href="machine/index.html">Índice</a> · <a class="link" href="machine/video.html" aria-current="page"><strong>Video</strong></a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

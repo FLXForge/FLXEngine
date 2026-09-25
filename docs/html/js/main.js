@@ -72,7 +72,13 @@ function updateLanguageLinks() {
   }
 
   if (english) {
-    english.href = `../en/${page}`;
+    if (document.body.dataset.section === "machine") {
+      english.removeAttribute("href");
+      english.setAttribute("aria-disabled", "true");
+      english.title = "Machine todavía no está disponible en inglés";
+    } else {
+      english.href = `../en/${page}`;
+    }
   }
 }
 

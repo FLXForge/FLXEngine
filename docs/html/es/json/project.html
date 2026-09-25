@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project · Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Project · Referencia JSON</h1>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html" aria-current="page"><strong>Project</strong></a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <p>El archivo <code>.flx</code> es el manifiesto del proyecto: declara metadatos, la raíz de contenido y el objeto de entrada. Su formato es texto <code>clave=valor</code>; no es JSON.</p><h2 id="format">Formato .flx</h2><p>Una propiedad por línea. Se recortan espacios al principio y al final de claves y valores; el primer <code>=</code> separa ambos. Las líneas vacías y las que comienzan con <code>#</code> se ignoran. No se necesitan comillas. Una clave repetida, desconocida o una línea sin <code>=</code> produce un error.</p><div class="code-card"><div class="code-header">Manifiesto mínimo</div><pre><code>root=world
+</code></pre></div><p>Este mínimo carga <code>world.json</code> junto al manifiesto. El objeto de entrada usa el mismo contrato <a class="link" href="json/object.html#object">Object</a> que sus children; el compilador no permite que esa raíz declare <code>component: true</code>.</p><h2 id="fields">Campos</h2><ul><li><code>title</code> — string. <i>Opcional; si está vacío, toma name.</i> Título del proyecto utilizado por la ventana.</li>
+<li><code>name</code> — string. <i>Opcional; vacío.</i> Nombre del proyecto.</li>
+<li><code>version</code> — string. <i>Opcional; vacío.</i> Versión del proyecto, independiente de la versión del motor.</li>
+<li><code>engine</code> — string. <i>Opcional; vacío.</i> Versión objetivo/requisito declarado del motor. El cargador conserva este texto; no interpreta aquí un rango de versiones.</li>
+<li><code>path</code> — ruta. <i>Opcional; ..</i> Directorio del contenido JSON, relativo al directorio del manifiesto cuando no es absoluto. Un valor vacío también equivale a <code>.</code>.</li>
+<li><code>root</code> — ruta de objeto. <i>Obligatorio y no vacío.</i> Entrada del World, resuelta desde <code>path</code>. La extensión <code>.json</code> es opcional.</li>
+<li><code>machine</code> — ruta de archivo YAML. <i>Opcional; Machine interna por defecto.</i> Ruta relativa al directorio del manifiesto, no a <code>path</code>. Aquí solo se declara el archivo que se utilizará.</li>
+<li><code>input.mapping</code> — ruta de archivo properties. <i>Opcional; mapping por defecto.</i> Ruta relativa al directorio del manifiesto. Es un punto de entrada al mapping, no una declaración de capacidades de entrada.</li>
+<li><code>notes</code> — string. <i>Opcional; vacío.</i> Notas libres del proyecto.</li></ul><h2 id="paths">Resolución de rutas</h2><p>Con <code>path=asteroids</code> y <code>root=space</code>, el objeto raíz es <code>asteroids/space.json</code> desde la carpeta del manifiesto. Una referencia JSON <code>/ui/title</code> parte de esa misma raíz de contenido: <code>asteroids/ui/title.json</code>. Véase <a class="link" href="json/composition.html#references">References</a>.</p><h2 id="example">Manifiesto real v0.3.0</h2><div class="code-card"><div class="code-header">examples/asteroids.flx</div><pre><code># Game data
+title=Asteroids
+name=Asteroids
+version=2.0
+engine=0.3.0
+
+# Configuration
+path=asteroids
+root=space
+machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
+
+# Notes
+notes=FLX example with spawn and basic UI
+</code></pre></div><p>El ejemplo conserva <code>version=2.0</code> porque es la versión de Asteroids; <code>engine=0.3.0</code> identifica la versión objetivo de FLX. Los manifiestos actuales de Asteroids y Pong utilizan este formato.</p>
+            <hr>
+            <details><summary>Fuentes de esta página · v0.3.0</summary><p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/project/ProjectManifestLoader.cpp">engine/project/ProjectManifestLoader.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/project/ProjectManifest.h">engine/project/ProjectManifest.h</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/compiler/ProjectCompiler.cpp">engine/compiler/ProjectCompiler.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/examples/asteroids.flx">examples/asteroids.flx</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/examples/pong.flx">examples/pong.flx</a></li></ul></details>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html" aria-current="page"><strong>Project</strong></a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

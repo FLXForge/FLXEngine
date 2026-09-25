@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio · Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Audio · Referencia JSON</h1>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html" aria-current="page"><strong>Audio</strong></a></p></nav>
+            <p>Audio documenta los sonidos y la música declarados en un Object. Estos recursos describen contenido generado; su declaración no implica reproducción automática. Las capacidades de la Machine son externas a estos bloques y no se configuran aquí.</p><h2 id="sounds">sounds</h2><p>Mapa de identificadores a Sound inline o referencias relativas/FLX. Sin el bloque no hay sonidos declarados. Cada identificador puede reproducirse desde la API, por ejemplo <code>play_sound(object, "beep")</code>.</p><div class="code-card"><div class="code-header">sounds</div><pre><code data-schema="object">{
+  &quot;sounds&quot;: {
+    &quot;beep&quot;: {
+      &quot;kind&quot;: {
+        &quot;note&quot;: 880
+      },
+      &quot;duration&quot;: 0.1,
+      &quot;volume&quot;: 0.4
+    }
+  }
+}</code></pre></div><h3 id="sound">Sound</h3><ul><li><code>like</code> — string. <i>Opcional.</i> Base reutilizable; véase Composition.</li>
+<li><code>kind</code> — objeto. <i>Opcional.</i> Fuente, nota y variación de frecuencia.</li>
+<li><code>tone</code> — objeto o referencia FLX. <i>Opcional.</i> Material, envolvente y espacio.</li>
+<li><code>duration</code> — number > 0. <i>Default: 0.1.</i> Duración en segundos.</li>
+<li><code>volume</code> — number de 0 a 1. <i>Default: 0.4.</i> Volumen declarado.</li>
+<li><code>priority</code> — integer. <i>Default: 0.</i> Prioridad disponible para la política de asignación de voces del runtime.</li></ul><h3 id="kind">kind</h3><ul><li><code>source</code> — objeto o referencia FLX. <i>Default: oscillator, square, duty 0.5.</i> Fuente generadora.</li>
+<li><code>note</code> — string, number u objeto frequency. <i>Default del runtime: 440 Hz.</i> Nota musical como <code>A4</code>, frecuencia numérica en Hz o <code>{"frequency": 440}</code>. También puede ser referencia FLX a uno de esos valores.</li>
+<li><code>slide</code> — number. <i>Default: 0.</i> Variación de frecuencia en Hz a lo largo del sonido. Un slide distinto de cero tiene prioridad sobre el deslizamiento rise/fall.</li>
+<li><code>movement</code> — objeto o referencia FLX. <i>Default: type none, amount 0.</i> Modulación declarada.</li></ul><div class="code-card"><div class="code-header">kind</div><pre><code data-schema="object">{
+  &quot;sounds&quot;: {
+    &quot;laser&quot;: {
+      &quot;kind&quot;: {
+        &quot;source&quot;: {
+          &quot;type&quot;: &quot;oscillator&quot;,
+          &quot;wave&quot;: &quot;square&quot;
+        },
+        &quot;note&quot;: &quot;A4&quot;,
+        &quot;slide&quot;: -200,
+        &quot;movement&quot;: {
+          &quot;type&quot;: &quot;fall&quot;,
+          &quot;amount&quot;: 0.5
+        }
+      },
+      &quot;duration&quot;: 0.15
+    }
+  }
+}</code></pre></div><h3 id="source">source</h3><ul><li><code>type</code> — string: oscillator | noise | impact | pulse. <i>Default: oscillator.</i> Tipo de fuente. El parser fuerza wave=noise cuando type=noise.</li>
+<li><code>wave</code> — string: sine | square | triangle | saw | pulse | noise. <i>Default: square.</i> Forma de onda.</li>
+<li><code>duty</code> — number de 0.05 a 0.95. <i>Default: 0.5.</i> Ciclo útil de la onda de pulso.</li></ul><div class="code-card"><div class="code-header">source — dentro de kind o instrument</div><pre><code data-schema="sound#/$defs/source">{
+  &quot;type&quot;: &quot;pulse&quot;,
+  &quot;wave&quot;: &quot;pulse&quot;,
+  &quot;duty&quot;: 0.25
+}</code></pre></div><h3 id="movement">movement</h3><ul><li><code>type</code> — string: none | rise | fall | pulse | wobble | scatter | random. <i>Default: none.</i> Tipo de movimiento sonoro.</li>
+<li><code>amount</code> — number de 0 a 1. <i>Default: 0.</i> Intensidad normalizada.</li></ul><div class="code-card"><div class="code-header">movement</div><pre><code data-schema="sound#/$defs/movement">{
+  &quot;type&quot;: &quot;wobble&quot;,
+  &quot;amount&quot;: 0.2
+}</code></pre></div><h2 id="tone">tone</h2><p>Objeto o referencia FLX compartido por Sound e Instrument. Sus tres grupos son opcionales; al omitirlos se aplican los defaults siguientes.</p><h3 id="material">material</h3><ul><li><code>brightness</code> — number de 0 a 1. <i>Default: 0.5.</i> Brillo del material.</li>
+<li><code>roughness</code> — number de 0 a 1. <i>Default: 0.</i> Rugosidad.</li>
+<li><code>noise</code> — number de 0 a 1. <i>Default: 0.</i> Componente de ruido.</li>
+<li><code>resonance</code> — number de 0 a 1. <i>Default: 0.</i> Resonancia.</li>
+<li><code>metal</code> — number de 0 a 1. <i>Default: 0.</i> Componente metálica.</li></ul><h3 id="envelope">envelope</h3><ul><li><code>attack</code> — number ≥ 0. <i>Default: 0.</i> Tiempo de ataque en segundos.</li>
+<li><code>decay</code> — number ≥ 0. <i>Default: 0.05.</i> Tiempo de caída en segundos.</li>
+<li><code>sustain</code> — number de 0 a 1. <i>Default: 0.</i> Nivel sostenido.</li>
+<li><code>release</code> — number ≥ 0. <i>Default: 0.</i> Tiempo de liberación en segundos.</li></ul><h3 id="space">space</h3><ul><li><code>mode</code> — string: mono | stereo. <i>Default: mono.</i> Modo espacial declarado.</li>
+<li><code>width</code> — number de 0 a 1. <i>Default: 0.</i> Anchura declarada.</li>
+<li><code>echo</code> — number de 0 a 1. <i>Default: 0.</i> Cantidad de eco.</li></ul><p>En el generador actual, echo se utiliza en la síntesis; mode y width se leen y conservan, pero la onda generada sigue siendo mono. Declarar stereo no garantiza salida estéreo en esta versión.</p><div class="code-card"><div class="code-header">tone</div><pre><code data-schema="sound#/$defs/tone">{
+  &quot;material&quot;: {
+    &quot;brightness&quot;: 0.8,
+    &quot;noise&quot;: 0.1
+  },
+  &quot;envelope&quot;: {
+    &quot;attack&quot;: 0.01,
+    &quot;decay&quot;: 0.05,
+    &quot;sustain&quot;: 0.2,
+    &quot;release&quot;: 0.03
+  },
+  &quot;space&quot;: {
+    &quot;mode&quot;: &quot;mono&quot;,
+    &quot;echo&quot;: 0.1
+  }
+}</code></pre></div><h2 id="music">music</h2><p>Mapa de identificadores a Music inline o referencias relativas/FLX. Cada canción requiere <code>channels</code>, un objeto de canales nombrados. Sin el bloque no hay música declarada. La reproducción se solicita desde la API.</p><ul><li><code>like</code> — string. <i>Opcional.</i> Base reutilizable.</li>
+<li><code>tempo</code> — number > 0. <i>Default: 120.</i> Tempo en negras por minuto. El sintetizador utiliza al menos 1 BPM.</li>
+<li><code>loop</code> — boolean. <i>Default: false.</i> Repetición de la canción.</li>
+<li><code>channels</code> — objeto. <i>Obligatorio.</i> Mapa de canales.</li></ul><div class="code-card"><div class="code-header">music mínima</div><pre><code data-schema="object">{
+  &quot;music&quot;: {
+    &quot;theme&quot;: {
+      &quot;tempo&quot;: 120,
+      &quot;loop&quot;: false,
+      &quot;channels&quot;: {
+        &quot;lead&quot;: {
+          &quot;notes&quot;: [
+            &quot;C4&quot;,
+            &quot;E4&quot;,
+            &quot;G4&quot;,
+            &quot;-&quot;
+          ]
+        }
+      }
+    }
+  }
+}</code></pre></div><h3 id="channels">channels</h3><ul><li><code>notes</code> — array de strings. <i>Obligatorio.</i> Secuencia de notas de este canal.</li>
+<li><code>instrument</code> — objeto o referencia FLX. <i>Opcional; defaults de Instrument.</i> Fuente y timbre del canal.</li>
+<li><code>wave</code> — string: square | sine | triangle | saw | noise. <i>Default: square si no hay otra fuente.</i> Forma corta por canal. Si se declara, sustituye la wave de instrument.source.</li>
+<li><code>volume</code> — number de 0 a 1. <i>Default: 1.</i> Volumen del canal.</li>
+<li><code>length</code> — string: 1/1 | 1/2 | 1/4 | 1/8 | 1/16. <i>Default: 1/4.</i> Duración de cada entrada de notes, relativa a una redonda. Una negra (1/4) dura 60/tempo segundos.</li></ul><h3 id="notes">notes</h3><p>Las notas usan nombres de <code>C</code> a <code>B</code> con octava de 0 a 8, con sostenidos o bemoles admitidos por el conversor, por ejemplo <code>C#4</code> y <code>Db4</code>. <code>"-"</code> y <code>""</code> son silencios. <code>"x"</code> o <code>"X"</code> dispara una entrada de ruido solo en canales de ruido; en otros se ignora con aviso. Una nota inválida o fuera de instrument.range queda como silencio con aviso.</p><div class="code-card"><div class="code-header">Canal de ruido</div><pre><code data-schema="object">{
+  &quot;music&quot;: {
+    &quot;beat&quot;: {
+      &quot;channels&quot;: {
+        &quot;drum&quot;: {
+          &quot;wave&quot;: &quot;noise&quot;,
+          &quot;length&quot;: &quot;1/8&quot;,
+          &quot;notes&quot;: [
+            &quot;x&quot;,
+            &quot;-&quot;,
+            &quot;x&quot;,
+            &quot;-&quot;
+          ]
+        }
+      }
+    }
+  }
+}</code></pre></div><h2 id="instrument">instrument</h2><ul><li><code>source</code> — objeto o referencia FLX. <i>Defaults de source.</i> Fuente generadora; el mismo bloque que en Sound.</li>
+<li><code>tone</code> — objeto o referencia FLX. <i>Defaults de tone.</i> Material, envolvente y espacio.</li>
+<li><code>play.legato</code> — boolean. <i>Default: false.</i> Parámetro de interpretación conservado por el parser.</li>
+<li><code>play.glide</code> — number de 0 a 1. <i>Default: 0.</i> Parámetro de interpretación conservado por el parser.</li>
+<li><code>play.vibrato</code> — number de 0 a 1. <i>Default: 0.</i> Intensidad del vibrato aplicado a la frecuencia durante la síntesis.</li>
+<li><code>range.min</code> — string de nota. <i>Default: C0.</i> Límite inferior de las notas reproducibles.</li>
+<li><code>range.max</code> — string de nota. <i>Default: B8.</i> Límite superior de las notas reproducibles.</li></ul><p>play y range son objetos opcionales. El generador actual comprueba range y aplica vibrato. Legato y glide se conservan, pero todavía no se aplican al cálculo de la onda: se documentan como declaración aceptada, sin atribuirles un efecto audible no implementado.</p><div class="code-card"><div class="code-header">Instrumento de un canal</div><pre><code data-schema="object">{
+  &quot;music&quot;: {
+    &quot;theme&quot;: {
+      &quot;channels&quot;: {
+        &quot;lead&quot;: {
+          &quot;instrument&quot;: {
+            &quot;source&quot;: {
+              &quot;type&quot;: &quot;oscillator&quot;,
+              &quot;wave&quot;: &quot;triangle&quot;
+            },
+            &quot;tone&quot;: {
+              &quot;envelope&quot;: {
+                &quot;attack&quot;: 0.01,
+                &quot;decay&quot;: 0.05,
+                &quot;sustain&quot;: 0.4,
+                &quot;release&quot;: 0.02
+              }
+            },
+            &quot;range&quot;: {
+              &quot;min&quot;: &quot;C3&quot;,
+              &quot;max&quot;: &quot;C6&quot;
+            }
+          },
+          &quot;length&quot;: &quot;1/4&quot;,
+          &quot;notes&quot;: [
+            &quot;C4&quot;,
+            &quot;E4&quot;,
+            &quot;G4&quot;
+          ]
+        }
+      }
+    }
+  }
+}</code></pre></div><h2 id="references">Referencias de audio</h2><p>Sound y Music completos admiten rutas relativas y FLX, y <code>like</code>. Las referencias anidadas a source, tone, movement, note e instrument utilizan <code>/archivo</code> o <code>/archivo:miembro</code>. Un string como <code>"square"</code> no sustituye a un objeto source: wave debe ser un campo de source.</p><div class="code-card"><div class="code-header">Recursos externos</div><pre><code data-schema="object">{
+  &quot;sounds&quot;: {
+    &quot;beep&quot;: &quot;/audio/beep&quot;
+  },
+  &quot;music&quot;: {
+    &quot;theme&quot;: &quot;audio/theme&quot;
+  }
+}</code></pre></div><p>Los schemas de Sound y Music son abiertos (<code>additionalProperties: true</code>) en varias estructuras. Esto permite propiedades adicionales al validar, pero no implica que el runtime las interprete. Esta referencia enumera los campos leídos por la implementación actual. Véase <a class="link" href="json/composition.html#references">Composition</a>.</p>
+            <hr>
+            <details><summary>Fuentes de esta página · v0.3.0</summary><p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/sound.schema.json">docs/schemas/sound.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/music.schema.json">docs/schemas/music.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/audio/SoundDefinition.h">engine/audio/SoundDefinition.h</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/audio/MusicDefinition.h">engine/audio/MusicDefinition.h</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/audio/NoteTools.cpp">engine/audio/NoteTools.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/audio/AudioSystem.cpp">engine/audio/AudioSystem.cpp</a></li></ul></details>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html" aria-current="page"><strong>Audio</strong></a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

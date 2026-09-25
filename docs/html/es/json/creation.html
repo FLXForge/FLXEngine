@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creation · Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Creation · Referencia JSON</h1>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html" aria-current="page"><strong>Creation</strong></a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <p>Creation reúne las declaraciones que determinan qué children puede crear un parent, cuándo se crean y cómo reciben posición o estado vivo. Las reglas de creación se declaran en el parent; spawn, component, offset, attach e inherit describen al child.</p><h2 id="children">children</h2><p>Mapa de nombres de child a objetos inline o strings de referencia. Sin el bloque no hay children declarados. Cada valor inline usa <a class="link" href="json/object.html#object">Object</a>; el string equivale a un Object con <code>like</code>. Un nombre identifica la declaración reutilizable, no una única instancia de runtime.</p><div class="code-card"><div class="code-header">children</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;ship&quot;: &quot;objects/ship&quot;,
+    &quot;marker&quot;: {
+      &quot;origin&quot;: {
+        &quot;x&quot;: 80,
+        &quot;y&quot;: 40
+      }
+    },
+    &quot;laser&quot;: {
+      &quot;like&quot;: &quot;objects/laser&quot;,
+      &quot;spawn&quot;: &quot;manual&quot;
+    }
+  }
+}</code></pre></div><h2 id="spawn">spawn</h2><p>String: <code>auto</code> o <code>manual</code>; default <code>auto</code>. En modo individual, un child auto entra con su parent y uno manual espera una llamada a <code>spawn(parent, "child")</code>. La llamada también puede crear instancias adicionales de un child auto. Grid e iterator aplican sus reglas específicas. No es un temporizador ni una condición de aparición.</p><div class="code-card"><div class="code-header">Child manual</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;bullet&quot;: {
+      &quot;spawn&quot;: &quot;manual&quot;,
+      &quot;offset&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: -12
+      }
+    }
+  }
+}</code></pre></div><h2 id="component">component</h2><p>Boolean; default <code>false</code>. Marca un child como parte de la entidad lógica de su parent. Las consultas de rayos excluyen la entidad lógica del objeto que consulta; al matar al parent se eliminan sus descendientes unidos por una cadena de components. Un componente sin máquina de estados propia busca estado efectivo en esa cadena. El Object raíz no puede declarar <code>component: true</code>.</p><p>Component no activa automáticamente el seguimiento espacial: para ello se declara <a class="link" href="json/creation.html#attach">attach</a>.</p><div class="code-card"><div class="code-header">Componente unido al parent</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;turret&quot;: {
+      &quot;component&quot;: true,
+      &quot;offset&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: -10
+      },
+      &quot;attach&quot;: {
+        &quot;born&quot;: true,
+        &quot;position&quot;: true
+      }
+    }
+  }
+}</code></pre></div><h2 id="creation">creation</h2><p>Objeto o <a class="link" href="json/composition.html#blocks">referencia de bloque</a> del parent. <code>mode</code> selecciona <code>individual</code>, <code>grid</code> o <code>iterator</code>. Si se omite el bloque o el modo de la forma individual, se usa <code>individual</code>. Cada modo tiene una estructura distinta; no se combinan sus campos.</p><h3 id="individual">individual</h3><p>Admite únicamente <code>mode</code>, opcional. Materializa una instancia inicial de cada child auto. La posición sigue las reglas de <a class="link" href="json/creation.html#offset">offset/origin</a>.</p><div class="code-card"><div class="code-header">creation individual</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;marker&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;individual&quot;
+  }
+}</code></pre></div><h3 id="grid">grid</h3><ul><li><code>mode</code> — string: grid. <i>Obligatorio.</i> Selecciona rejilla.</li>
+<li><code>rules.rows / rules.columns</code> — integer ≥ 1. <i>Ambos obligatorios.</i> Número de filas y columnas.</li>
+<li><code>rules.cellWidth / rules.cellHeight</code> — number > 0. <i>Ambos obligatorios.</i> Separación entre orígenes de celdas.</li>
+<li><code>pattern</code> — array de strings o array de filas de strings. <i>Obligatorio.</i> Nombres de children que ocupan las celdas. Use un patrón no vacío; el runtime rechaza la rejilla sin patrón efectivo.</li></ul><div class="code-card"><div class="code-header">grid — patrón lineal</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;a&quot;: {
+      &quot;size&quot;: {
+        &quot;width&quot;: 30,
+        &quot;height&quot;: 14
+      }
+    },
+    &quot;b&quot;: {
+      &quot;spawn&quot;: &quot;manual&quot;
+    }
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;grid&quot;,
+    &quot;rules&quot;: {
+      &quot;rows&quot;: 2,
+      &quot;columns&quot;: 3,
+      &quot;cellWidth&quot;: 32,
+      &quot;cellHeight&quot;: 16
+    },
+    &quot;pattern&quot;: [
+      &quot;a&quot;,
+      &quot;b&quot;
+    ]
+  }
+}</code></pre></div><p>El patrón lineal se recorre por filas y se repite. En un patrón por filas, se repiten las filas exteriores y cada fila repite sus columnas. Una fila vacía no produce child en sus celdas. Los nombres usados deben corresponder a children declarados.</p><div class="code-card"><div class="code-header">grid — patrón por filas</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;a&quot;: {},
+    &quot;b&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;grid&quot;,
+    &quot;rules&quot;: {
+      &quot;rows&quot;: 2,
+      &quot;columns&quot;: 3,
+      &quot;cellWidth&quot;: 32,
+      &quot;cellHeight&quot;: 16
+    },
+    &quot;pattern&quot;: [
+      [
+        &quot;a&quot;
+      ],
+      [
+        &quot;b&quot;
+      ]
+    ]
+  }
+}</code></pre></div><p>La posición es <code>parent.position + (column × cellWidth, row × cellHeight) + child.offset</code>. Se ignora <code>child.origin</code>; el offset no se rota con el ángulo del parent en este modo. Los children manuales no aparecen automáticamente. <code>spawn(parent, "child")</code> crea todas las celdas asignadas a ese nombre, no una instancia libre.</p><h3 id="iterator">iterator</h3><ul><li><code>mode</code> — string: iterator. <i>Obligatorio.</i> Selecciona creación secuencial.</li>
+<li><code>pattern</code> — array no vacío de strings. <i>Obligatorio.</i> Nombres de children existentes con <code>spawn: "auto"</code>. No admite patrón por filas.</li>
+<li><code>rules.concurrent</code> — integer ≥ 1. <i>Default: 1.</i> Máximo de instancias de este iterator vivas o pendientes simultáneamente.</li>
+<li><code>rules.repeat</code> — boolean. <i>Default: false.</i> Reinicia el recorrido del patrón al alcanzar el final.</li></ul><div class="code-card"><div class="code-header">iterator</div><pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;enemy&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;iterator&quot;,
+    &quot;rules&quot;: {
+      &quot;concurrent&quot;: 1,
+      &quot;repeat&quot;: false
+    },
+    &quot;pattern&quot;: [
+      &quot;enemy&quot;,
+      &quot;enemy&quot;
+    ]
+  }
+}</code></pre></div><p>El iterator produce entradas a medida que quedan plazas libres. <code>rules</code> es opcional. No admite <code>spawn(parent, "child")</code> manual en el parent iterator. Su creación usa el posicionamiento individual. <code>creation_active(object)</code> permite consultar si aún tiene actividad; individual y grid devuelven false.</p><h2 id="offset">offset</h2><p>Objeto opcional con <code>x</code> e <code>y</code> numéricos; cada eje vale <code>0</code> si se omite. En individual/iterator, si el bloque existe, el child nace en la posición del parent más el offset rotado por el ángulo actual del parent y se ignora <code>origin</code>. Sin offset, un origin declarado se conserva; si tampoco hay origin, nace en la posición del parent.</p><div class="code-card"><div class="code-header">offset</div><pre><code data-schema="object">{
+  &quot;offset&quot;: {
+    &quot;x&quot;: 0,
+    &quot;y&quot;: -14
+  }
+}</code></pre></div><p>Declarar <code>offset: {}</code> es significativo: aplica un offset cero y tiene prioridad sobre origin. En grid rige la fórmula de <a class="link" href="json/creation.html#grid">celda</a>.</p><h2 id="attach">attach</h2><p>Objeto inline opcional con flags booleanos. Usa siempre el parent original; no reasigna parents ni declara jerarquías dinámicas.</p><ul><li><code>born</code> — boolean. <i>Default: false.</i> Nace attached si es true.</li>
+<li><code>position</code> — boolean. <i>Default: false.</i> Activa seguimiento de X e Y.</li>
+<li><code>x / y</code> — boolean. <i>Por defecto toman position.</i> Cada eje explícito sustituye position para ese eje.</li>
+<li><code>angle</code> — boolean. <i>Default: false.</i> Sincroniza el ángulo sin rotar el offset de seguimiento.</li></ul><div class="code-card"><div class="code-header">attach</div><pre><code data-schema="object">{
+  &quot;attach&quot;: {
+    &quot;born&quot;: true,
+    &quot;position&quot;: true,
+    &quot;y&quot;: false,
+    &quot;angle&quot;: true
+  }
+}</code></pre></div><p>El attach inicial conserva la separación capturada al crear. Un attach posterior captura la separación actual en los ejes seguidos; detach suspende el seguimiento, manteniendo el parent original. Véase <a class="link" href="json/creation.html#inherit">inherit.live.angle</a> para sincronización declarativa del ángulo.</p><h2 id="inherit">inherit</h2><p>Objeto o referencia de bloque. Recibe estado vivo del parent original, no sus reglas declarativas de Mechanics. Los tres modos omitidos valen <code>none</code>.</p><ul><li><code>creation.angle</code> — string: none | copy. <i>Default: none.</i> Copia el ángulo al crear el child.</li>
+<li><code>creation.velocity</code> — string: none | copy | compose. <i>Default: none.</i> copy copia la velocidad lineal viva; compose suma la del parent a la propia del child al crearlo, sin cambiar su velocidad polar declarada.</li>
+<li><code>live.angle</code> — string: none | copy. <i>Default: none.</i> Sincroniza continuamente el ángulo con el parent original.</li></ul><div class="code-card"><div class="code-header">inherit</div><pre><code data-schema="object">{
+  &quot;inherit&quot;: {
+    &quot;creation&quot;: {
+      &quot;angle&quot;: &quot;copy&quot;,
+      &quot;velocity&quot;: &quot;compose&quot;
+    },
+    &quot;live&quot;: {
+      &quot;angle&quot;: &quot;none&quot;
+    }
+  }
+}</code></pre></div><p>La reutilización estática de declaraciones pertenece a <a class="link" href="json/composition.html#like">like</a>; las reglas de velocidad y rotación pertenecen a <a class="link" href="json/mechanics.html#mechanics">Mechanics</a>.</p>
+            <hr>
+            <details><summary>Fuentes de esta página · v0.3.0</summary><p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/creation.schema.json">docs/schemas/creation.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/attach.schema.json">docs/schemas/attach.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/inherit.schema.json">docs/schemas/inherit.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/compiler/ProjectCompiler.cpp">engine/compiler/ProjectCompiler.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/scripting/ScriptEngine.cpp">engine/scripting/ScriptEngine.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/collision/CollisionSystem.cpp">engine/collision/CollisionSystem.cpp</a></li></ul></details>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html">Índice</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html" aria-current="page"><strong>Creation</strong></a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

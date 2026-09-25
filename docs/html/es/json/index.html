@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referencia JSON | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Referencia JSON</h1>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html" aria-current="page"><strong>Índice</strong></a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <p>Referencia de las declaraciones de FLX Engine v0.3.0: manifiesto <code>.flx</code>, objetos JSON y bloques reutilizables. Español es la fuente canónica. Seleccione un área o vaya directamente a un campo en el índice alfabético.</p><h2 id="areas">Índice por áreas</h2><ul><li><a class="link" href="json/project.html">Project</a> — Manifiesto .flx, metadatos y rutas de entrada.</li>
+<li><a class="link" href="json/object.html">Object</a> — Contrato raíz y propiedades comunes del Object.</li>
+<li><a class="link" href="json/composition.html">Composition</a> — Referencias, like, merge, contexto de rutas y recursión.</li>
+<li><a class="link" href="json/visual.html">Visual</a> — Color, profundidad y representación: primitive, geometry, text.</li>
+<li><a class="link" href="json/creation.html">Creation</a> — Children, spawn, component, modos de creación, offset, attach e inherit.</li>
+<li><a class="link" href="json/mechanics.html">Mechanics</a> — Movimiento por ejes u orientado, velocidad y rotación.</li>
+<li><a class="link" href="json/collision.html">Collision</a> — Colliders, tamaño, filtros de grupos y estados efectivos.</li>
+<li><a class="link" href="json/audio.html">Audio</a> — Sound, Music, source, tone, canales e instrumentos.</li></ul><h2 id="reading">Convenciones</h2><p>Cada unidad indica forma, campos, valores, defaults y ejemplos mínimos. Los ejemplos JSON completos se pueden validar contra el schema correspondiente; los que incluyen referencias requieren los recursos señalados. Un default indica el valor al omitir un campo, no una propiedad obligatoria. Los requisitos adicionales de carga o runtime se indican donde afectan al uso.</p><p>Los nombres entre <code>&lt;…&gt;</code> representan claves elegidas por el proyecto. <code>parent</code>, <code>child</code>, <code>Object</code> y <code>World</code> mantienen la terminología de FLX. La selección de archivos externos pertenece a <a class="link" href="json/project.html#fields">Project</a>; sus capacidades y las llamadas de scripting tienen documentación propia.</p><h2 id="alphabetical">Índice alfabético</h2><ul><li><a class="link" href="json/object.html#schema">$schema</a> <span>— Object</span></li>
+<li><a class="link" href="json/mechanics.html#motion">acceleration</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#movement">amount</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#attach">attach</a> <span>— Creation</span></li>
+<li><a class="link" href="json/audio.html#envelope">attack</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#behavior">behavior</a> <span>— Object</span></li>
+<li><a class="link" href="json/composition.html#blocks">Bloques referenciables</a> <span>— Composition</span></li>
+<li><a class="link" href="json/creation.html#attach">born</a> <span>— Creation</span></li>
+<li><a class="link" href="json/object.html#bounds">bounds</a> <span>— Object</span></li>
+<li><a class="link" href="json/audio.html#material">brightness</a> <span>— Audio</span></li>
+<li><a class="link" href="json/project.html#fields">Campos</a> <span>— Project</span></li>
+<li><a class="link" href="json/creation.html#grid">cellHeight</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#grid">cellWidth</a> <span>— Creation</span></li>
+<li><a class="link" href="json/audio.html#channels">channels</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#children">children</a> <span>— Creation</span></li>
+<li><a class="link" href="json/collision.html#collider">Collider</a> <span>— Collision</span></li>
+<li><a class="link" href="json/collision.html#offset">collider.offset / angle</a> <span>— Collision</span></li>
+<li><a class="link" href="json/collision.html#size">collider.size</a> <span>— Collision</span></li>
+<li><a class="link" href="json/collision.html#states">collider.states</a> <span>— Collision</span></li>
+<li><a class="link" href="json/collision.html#collisions">collisions</a> <span>— Collision</span></li>
+<li><a class="link" href="json/visual.html#color">color</a> <span>— Visual</span></li>
+<li><a class="link" href="json/creation.html#grid">columns</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#component">component</a> <span>— Creation</span></li>
+<li><a class="link" href="json/composition.html#recursive">Composición recursiva y ciclos</a> <span>— Composition</span></li>
+<li><a class="link" href="json/creation.html#iterator">concurrent</a> <span>— Creation</span></li>
+<li><a class="link" href="json/composition.html#context">Contexto de las rutas</a> <span>— Composition</span></li>
+<li><a class="link" href="json/object.html#control">control</a> <span>— Object</span></li>
+<li><a class="link" href="json/creation.html#creation">creation</a> <span>— Creation</span></li>
+<li><a class="link" href="json/audio.html#envelope">decay</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#delimit">delimit</a> <span>— Object</span></li>
+<li><a class="link" href="json/visual.html#depth">depth</a> <span>— Visual</span></li>
+<li><a class="link" href="json/mechanics.html#motion">diagonal</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#sound">duration</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#source">duty</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#space">echo</a> <span>— Audio</span></li>
+<li><a class="link" href="json/collision.html#collider">enabled</a> <span>— Collision</span></li>
+<li><a class="link" href="json/project.html#fields">engine</a> <span>— Project</span></li>
+<li><a class="link" href="json/audio.html#envelope">envelope</a> <span>— Audio</span></li>
+<li><a class="link" href="json/visual.html#text">fontSize</a> <span>— Visual</span></li>
+<li><a class="link" href="json/project.html#format">Formato .flx</a> <span>— Project</span></li>
+<li><a class="link" href="json/visual.html#geometry">geometry</a> <span>— Visual</span></li>
+<li><a class="link" href="json/audio.html#instrument">glide</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#grid">grid</a> <span>— Creation</span></li>
+<li><a class="link" href="json/object.html#group">group</a> <span>— Object</span></li>
+<li><a class="link" href="json/mechanics.html#motion">horizontal</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/mechanics.html#axes">horizontal / vertical</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/creation.html#individual">individual</a> <span>— Creation</span></li>
+<li><a class="link" href="json/mechanics.html#inertia">inertia</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/creation.html#inherit">inherit</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#inherit">inherit.creation.angle</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#inherit">inherit.creation.velocity</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#inherit">inherit.live.angle</a> <span>— Creation</span></li>
+<li><a class="link" href="json/object.html#states">initial</a> <span>— Object</span></li>
+<li><a class="link" href="json/project.html#fields">input.mapping</a> <span>— Project</span></li>
+<li><a class="link" href="json/audio.html#instrument">instrument</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#iterator">iterator</a> <span>— Creation</span></li>
+<li><a class="link" href="json/audio.html#kind">kind</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#instrument">legato</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#channels">length</a> <span>— Audio</span></li>
+<li><a class="link" href="json/composition.html#like">like</a> <span>— Composition</span></li>
+<li><a class="link" href="json/object.html#local">local</a> <span>— Object</span></li>
+<li><a class="link" href="json/audio.html#music">loop</a> <span>— Audio</span></li>
+<li><a class="link" href="json/project.html#fields">machine</a> <span>— Project</span></li>
+<li><a class="link" href="json/project.html#example">Manifiesto real v0.3.0</a> <span>— Project</span></li>
+<li><a class="link" href="json/audio.html#material">material</a> <span>— Audio</span></li>
+<li><a class="link" href="json/mechanics.html#mechanics">mechanics</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/composition.html#merge">Merge y override</a> <span>— Composition</span></li>
+<li><a class="link" href="json/audio.html#material">metal</a> <span>— Audio</span></li>
+<li><a class="link" href="json/visual.html#geometry">mode (geometry)</a> <span>— Visual</span></li>
+<li><a class="link" href="json/visual.html#primitive">mode (primitive)</a> <span>— Visual</span></li>
+<li><a class="link" href="json/audio.html#space">mode (space)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/mechanics.html#motion">motion</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#movement">movement</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#music">music</a> <span>— Audio</span></li>
+<li><a class="link" href="json/project.html#fields">name</a> <span>— Project</span></li>
+<li><a class="link" href="json/object.html#states">next</a> <span>— Object</span></li>
+<li><a class="link" href="json/audio.html#material">noise (material)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#kind">note</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#notes">notes</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#object">Objeto JSON</a> <span>— Object</span></li>
+<li><a class="link" href="json/creation.html#offset">offset</a> <span>— Creation</span></li>
+<li><a class="link" href="json/object.html#origin">origin</a> <span>— Object</span></li>
+<li><a class="link" href="json/object.html#bounds">overflow</a> <span>— Object</span></li>
+<li><a class="link" href="json/project.html#fields">path</a> <span>— Project</span></li>
+<li><a class="link" href="json/creation.html#grid">pattern (grid)</a> <span>— Creation</span></li>
+<li><a class="link" href="json/creation.html#iterator">pattern (iterator)</a> <span>— Creation</span></li>
+<li><a class="link" href="json/audio.html#instrument">play</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#control">player</a> <span>— Object</span></li>
+<li><a class="link" href="json/creation.html#attach">position (attach)</a> <span>— Creation</span></li>
+<li><a class="link" href="json/visual.html#primitive">primitive</a> <span>— Visual</span></li>
+<li><a class="link" href="json/audio.html#sound">priority</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#properties">Propiedades raíz</a> <span>— Object</span></li>
+<li><a class="link" href="json/audio.html#instrument">range</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#instrument">range.max</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#instrument">range.min</a> <span>— Audio</span></li>
+<li><a class="link" href="json/composition.html#references">References</a> <span>— Composition</span></li>
+<li><a class="link" href="json/audio.html#references">Referencias de audio</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#envelope">release</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#iterator">repeat</a> <span>— Creation</span></li>
+<li><a class="link" href="json/visual.html#representation">representation</a> <span>— Visual</span></li>
+<li><a class="link" href="json/visual.html#representation-size">representation.size</a> <span>— Visual</span></li>
+<li><a class="link" href="json/project.html#paths">Resolución de rutas</a> <span>— Project</span></li>
+<li><a class="link" href="json/audio.html#material">resonance</a> <span>— Audio</span></li>
+<li><a class="link" href="json/project.html#fields">root</a> <span>— Project</span></li>
+<li><a class="link" href="json/mechanics.html#rotation">rotation</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/mechanics.html#rotation">rotation.angle</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/mechanics.html#rotation">rotation.speed</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#material">roughness</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#grid">rows</a> <span>— Creation</span></li>
+<li><a class="link" href="json/object.html#behavior">scripts</a> <span>— Object</span></li>
+<li><a class="link" href="json/object.html#size">size</a> <span>— Object</span></li>
+<li><a class="link" href="json/audio.html#kind">slide</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#sound">Sound</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#sounds">sounds</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#source">source</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#space">space</a> <span>— Audio</span></li>
+<li><a class="link" href="json/creation.html#spawn">spawn</a> <span>— Creation</span></li>
+<li><a class="link" href="json/mechanics.html#speed">speed</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/object.html#states">states</a> <span>— Object</span></li>
+<li><a class="link" href="json/mechanics.html#motion">step</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#envelope">sustain</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#music">tempo</a> <span>— Audio</span></li>
+<li><a class="link" href="json/visual.html#text">text</a> <span>— Visual</span></li>
+<li><a class="link" href="json/project.html#fields">title</a> <span>— Project</span></li>
+<li><a class="link" href="json/audio.html#tone">tone</a> <span>— Audio</span></li>
+<li><a class="link" href="json/mechanics.html#type">type</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/collision.html#collider">type (collider)</a> <span>— Collision</span></li>
+<li><a class="link" href="json/project.html#fields">version</a> <span>— Project</span></li>
+<li><a class="link" href="json/mechanics.html#motion">vertical</a> <span>— Mechanics</span></li>
+<li><a class="link" href="json/audio.html#instrument">vibrato</a> <span>— Audio</span></li>
+<li><a class="link" href="json/object.html#visible">visible</a> <span>— Object</span></li>
+<li><a class="link" href="json/visual.html#visual">visual</a> <span>— Visual</span></li>
+<li><a class="link" href="json/audio.html#channels">volume (channel)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#sound">volume (sound)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#channels">wave (channel)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#source">wave (source)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/audio.html#space">width (space)</a> <span>— Audio</span></li>
+<li><a class="link" href="json/collision.html#with">with</a> <span>— Collision</span></li></ul><h2 id="scope">Versión y alcance</h2><p>Primera versión para revisión visual y editorial, verificada mediante lectura directa de <code>feature/audit-public-doc</code>. Cada página enlaza los schemas y la producción consultados. Las diferencias entre validación y ejecución se describen sin ampliar el contrato del schema. La integración de esta área en la navegación global y el selector de idiomas se hará posteriormente.</p>
+            <hr>
+            <details><summary>Fuentes de esta página · v0.3.0</summary><p>Lectura directa de la rama feature/audit-public-doc. Los enlaces identifican los archivos de contrato y producción utilizados.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+<li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/html/es/json-reference.html">docs/html/es/json-reference.html</a></li></ul></details>
+            <nav aria-label="Áreas de la Referencia JSON"><p><a class="link" href="json/index.html" aria-current="page"><strong>Índice</strong></a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

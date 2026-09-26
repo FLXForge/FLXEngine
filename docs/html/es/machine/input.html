@@ -187,7 +187,7 @@ players.1.directions.0.left=KEY_A
 players.1.buttons.0=KEY_SPACE</code></pre>
 </div>
 <p>Estas entradas físicas pertenecen al mapping, no a la definición de Machine Input. El proyecto selecciona el archivo mediante <code>input.mapping</code> en <a class="link" href="json/project.html#fields">Project</a>. Cambiar las asociaciones físicas no debería requerir cambiar el mundo JSON ni los scripts que consultan los mismos controles lógicos.</p>
-<p>Las llamadas de lectura se documentan en <a class="link" href="api.html">FLX API</a>. La asociación de un objeto con un jugador pertenece a <a class="link" href="json/object.html#control">Object.control</a>.</p>
+<p>Las llamadas de lectura se documentan en <a class="link" href="api/index.html">FLX API</a>. La asociación de un objeto con un jugador pertenece a <a class="link" href="json/object.html#control">Object.control</a>.</p>
 <h2 id="unsupported">Capacidades no soportadas</h2>
 <p><code>input.pointer</code> e <code>input.text</code> no son capacidades disponibles en v0.3.0. Declararlas produce un diagnóstico de Machine no soportada. Del mismo modo, no se aceptan como implementados tipos direccionales distintos de <code>2way</code> y <code>4way</code>. No son campos futuros silenciosamente operativos.</p>
 

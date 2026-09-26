@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RuntimeObject / Transform · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>RuntimeObject / Transform</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a aria-current="page" class="link" href="api/runtime.html"><strong>RuntimeObject / Transform</strong></a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>RuntimeObject es la vista temporal de una instancia de World. Sus propiedades permiten observar estado vivo; las operaciones de esta página y de Mechanics lo modifican. Una definición JSON y una instancia runtime tienen funciones distintas.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/runtime.html#runtime-view">RuntimeObject</a> · <a class="link" href="api/runtime.html#values">Estado local y global</a> · <a class="link" href="api/runtime.html#search">Búsqueda</a> · <a class="link" href="api/runtime.html#transform">Transform</a></p></nav><h2 id="runtime-view">RuntimeObject</h2>
+<section data-api-symbol="RuntimeObject"><h3 id="runtime-object">RuntimeObject</h3>
+<p>Una vista viva temporal durante el hook actual. Las lecturas reflejan cambios del runtime, pero no puedes conservar la vista para hooks posteriores: caduca al terminar la invocación o morir la instancia. <a class="link" href="api/scripting.html#dead"><code>dead()</code></a> recibe expresamente un contexto final válido del objeto muerto durante ese hook.</p>
+<p>No guardes RuntimeObject en estado local/global ni en variables para reutilizarlo en otros hooks. Guarda su id y resuélvelo de nuevo con <a class="link" href="api/runtime.html#find-id"><code>find_id()</code></a>. Las quince propiedades públicas son readonly: usa las operaciones de la API para modificar estado.</p>
+<table><caption>Propiedades readonly</caption><thead><tr><th scope="col">Propiedad</th><th scope="col">Tipo</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row"><span id="property-id"><code>id</code></span></th><td data-label="Tipo"><code>string</code></td><td data-label="Significado">Identificador único de la instancia.</td></tr><tr><th scope="row"><span id="property-name"><code>name</code></span></th><td data-label="Tipo"><code>string</code></td><td data-label="Significado">Nombre lógico asignado por el mapa children del padre.</td></tr><tr><th scope="row"><span id="property-group"><code>group</code></span></th><td data-label="Tipo"><code>string</code></td><td data-label="Significado">Grupo de colisión.</td></tr><tr><th scope="row"><span id="property-alive"><code>alive</code></span></th><td data-label="Tipo"><code>boolean</code></td><td data-label="Significado">Vida de la instancia; usa kill para destruirla.</td></tr><tr><th scope="row"><span id="property-visible"><code>visible</code></span></th><td data-label="Tipo"><code>boolean</code></td><td data-label="Significado">Salida visual habilitada; usa show/hide.</td></tr><tr><th scope="row"><span id="property-x"><code>x</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Posición lógica X.</td></tr><tr><th scope="row"><span id="property-y"><code>y</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Posición lógica Y.</td></tr><tr><th scope="row"><span id="property-width"><code>width</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Ancho lógico runtime.</td></tr><tr><th scope="row"><span id="property-height"><code>height</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Alto lógico runtime.</td></tr><tr><th scope="row"><span id="property-speed"><code>speed</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Velocidad viva usada por el movimiento clásico speed + angle.</td></tr><tr><th scope="row"><span id="property-angle"><code>angle</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Ángulo en grados FLX: 0 arriba, 90 derecha, 180 abajo, 270 izquierda.</td></tr><tr><th scope="row"><span id="property-velocityX"><code>velocityX</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Componente horizontal de velocidad lineal.</td></tr><tr><th scope="row"><span id="property-velocityY"><code>velocityY</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Componente vertical de velocidad lineal.</td></tr><tr><th scope="row"><span id="property-rotationSpeed"><code>rotationSpeed</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Velocidad de rotación viva, en grados por segundo.</td></tr><tr><th scope="row"><span id="property-depth"><code>depth</code></span></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Profundidad visual; los valores menores se dibujan primero.</td></tr></tbody></table>
+<div class="code-card"><div class="code-header">Guardar identidad; resolver una vista nueva</div><pre><code data-example="javascript">function born(object) {
+  const target = find_name(&quot;target&quot;)[0];
+  if (target) write_local(object, &quot;targetId&quot;, target.id);
+}
+
+function motion(object) {
+  const id = read_local(object, &quot;targetId&quot;);
+  const target = typeof id === &quot;string&quot; ? find_id(id) : undefined;
+  if (target) follow_x(object, target);
+}</code></pre></div>
+</section>
+<h2 id="values">Estado local y global</h2>
+<section data-api-symbol="ScriptValue"><h3 id="script-value">ScriptValue</h3>
+<div class="code-card"><div class="code-header">Tipo</div><pre><code>type ScriptValue = number | boolean | string;</code></pre></div>
+<p>Valor escalar admitido por el estado local y global. undefined representa una lectura ausente, no un cuarto tipo almacenable. Para guardar una identidad usa string; para datos estructurados diseña claves escalares. Relacionados: <a class="link" href="api/runtime.html#write-local"><code>write_local()</code></a>, <a class="link" href="api/runtime.html#write-global"><code>write_global()</code></a>, <a class="link" href="api/world.html#save"><code>save()</code></a>.</p>
+</section>
+<p><span id="local-state">El estado local pertenece a una instancia.</span> <span id="global-state">El estado global es compartido por el runtime.</span> Ambos almacenan escalares en memoria; <a class="link" href="api/world.html#persistence">Persistence</a> añade almacenamiento entre ejecuciones.</p>
+<section data-api-symbol="read_local">
+<h3 id="read-local">read_local()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>read_local(object: RuntimeObject, key: string): ScriptValue | undefined;</code></pre></div>
+<p>Lee la clave <code>key</code> del estado local de <code>object</code>. Devuelve el valor escalar guardado o <code>undefined</code> si la clave no existe. Este estado pertenece a esa instancia, no a todas las instancias de la definición.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>key: string</code></dt><dd>Clave del valor.</dd></dl>
+<p><strong>Retorno:</strong> <code>ScriptValue | undefined</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const lives = read_local(object, &quot;lives&quot;) ?? 3;</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#write-local"><code>write_local()</code></a>, <a class="link" href="api/runtime.html#script-value"><code>ScriptValue</code></a>.</p>
+</section>
+<section data-api-symbol="write_local">
+<h3 id="write-local">write_local()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>write_local(object: RuntimeObject, key: string, value: ScriptValue): void;</code></pre></div>
+<p>Guarda o sustituye <code>key</code> en el estado local de la instancia. <code>value</code> sólo admite number, boolean o string; no guarda arrays, objetos ni vistas RuntimeObject. No escribe un archivo de persistencia.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>key: string</code></dt><dd>Clave del valor.</dd><dt><code>value: ScriptValue</code></dt><dd>Valor que se asigna.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">write_local(object, &quot;targetId&quot;, other.id);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#read-local"><code>read_local()</code></a>, <a class="link" href="api/runtime.html#find-id"><code>find_id()</code></a>, <a class="link" href="api/world.html#save"><code>save()</code></a>.</p>
+</section>
+<section data-api-symbol="read_global">
+<h3 id="read-global">read_global()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>read_global(key: string): ScriptValue | undefined;</code></pre></div>
+<p>Lee <code>key</code> del estado compartido del runtime. Devuelve un ScriptValue o <code>undefined</code> cuando no existe.</p>
+<dl><dt><code>key: string</code></dt><dd>Clave del valor.</dd></dl>
+<p><strong>Retorno:</strong> <code>ScriptValue | undefined</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const score = read_global(&quot;score&quot;) ?? 0;</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#write-global"><code>write_global()</code></a>, <a class="link" href="api/runtime.html#script-value"><code>ScriptValue</code></a>.</p>
+</section>
+<section data-api-symbol="write_global">
+<h3 id="write-global">write_global()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>write_global(key: string, value: ScriptValue): void;</code></pre></div>
+<p>Guarda o sustituye una clave compartida durante la ejecución. <code>value</code> es number, boolean o string. Compartido no significa persistente en disco; usa save para conservarlo entre ejecuciones.</p>
+<dl><dt><code>key: string</code></dt><dd>Clave del valor.</dd><dt><code>value: ScriptValue</code></dt><dd>Valor que se asigna.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">write_global(&quot;score&quot;, 100);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#read-global"><code>read_global()</code></a>, <a class="link" href="api/world.html#save"><code>save()</code></a>.</p>
+</section>
+<h2 id="search">Búsqueda</h2>
+<section data-api-symbol="find_id">
+<h3 id="find-id">find_id()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>find_id(id: string): RuntimeObject | undefined;</code></pre></div>
+<p>Resuelve un identificador de instancia durante el hook actual. Devuelve una vista RuntimeObject viva o <code>undefined</code> si la instancia no existe o ya no está viva. La vista obtenida vuelve a caducar al terminar el hook.</p>
+<dl><dt><code>id: string</code></dt><dd>Identificador descrito en esta referencia.</dd></dl>
+<p><strong>Retorno:</strong> <code>RuntimeObject | undefined</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const id = read_local(object, &quot;targetId&quot;);
+const target = typeof id === &quot;string&quot; ? find_id(id) : undefined;
+if (target) follow_x(object, target);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#runtime-object"><code>RuntimeObject</code></a>, <a class="link" href="api/runtime.html#find-name"><code>find_name()</code></a>.</p>
+</section>
+<section data-api-symbol="find_name">
+<h3 id="find-name">find_name()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>find_name(name: string): RuntimeObject[];</code></pre></div>
+<p>Busca todas las instancias vivas cuyo nombre lógico coincide con <code>name</code>, en orden de World. El array es una instantánea JavaScript, no una colección reactiva; sus elementos siguen siendo vistas temporales. Sin coincidencias devuelve <code>[]</code>.</p>
+<dl><dt><code>name: string</code></dt><dd>Nombre del archivo de persistencia, sin la extensión .flxsave.</dd></dl>
+<p><strong>Retorno:</strong> <code>RuntimeObject[]</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const balls = find_name(&quot;ball&quot;);
+if (balls.length) follow_y(object, balls[0]);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#find-id"><code>find_id()</code></a>, <a class="link" href="api/runtime.html#find-children"><code>find_children()</code></a>.</p>
+</section>
+<section data-api-symbol="find_parent">
+<h3 id="find-parent">find_parent()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>find_parent(object: RuntimeObject): RuntimeObject | undefined;</code></pre></div>
+<p>Devuelve el padre vivo de <code>object</code> o <code>undefined</code>. En dead, el objeto muerto es un contexto estructural válido, pero el padre devuelto debe seguir vivo.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>RuntimeObject | undefined</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const parent = find_parent(object);
+if (parent) console.log(parent.id);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#find-children"><code>find_children()</code></a>, <a class="link" href="api/scripting.html#dead"><code>dead()</code></a>.</p>
+</section>
+<section data-api-symbol="find_children">
+<h3 id="find-children">find_children()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>find_children(object: RuntimeObject): RuntimeObject[];</code></pre></div>
+<p>Devuelve los hijos directos vivos, en orden de World. Excluye declaraciones todavía no instanciadas, objetos pendientes, nietos e hijos muertos. Es una instantánea JavaScript; no persistas sus RuntimeObjects.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>RuntimeObject[]</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">for (const child of find_children(object)) {
+  hide(child);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#find-parent"><code>find_parent()</code></a>, <a class="link" href="api/world.html#spawn"><code>spawn()</code></a>.</p>
+</section>
+<h2 id="transform">Transform</h2>
+<section data-api-symbol="position">
+<h3 id="position">position()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>position(object: RuntimeObject, x: number, y: number): void;
+position(object: RuntimeObject, contact: CollisionContact): void;</code></pre></div>
+<p>Con <code>x, y</code>, coloca la instancia en coordenadas lógicas absolutas. Con <code>contact</code>, suma a su posición actual <code>normal × penetration</code> del contacto dirigido al objeto. La corrección no modifica angle, speed ni velocity y no produce rebote. Usa un contacto cuyo source sea el objeto que corriges; varios contactos no constituyen por sí solos un solver físico.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>x: number</code></dt><dd>Coordenada lógica X.</dd><dt><code>y: number</code></dt><dd>Coordenada lógica Y.</dd><dt><code>contact: CollisionContact</code></dt><dd>Contacto dirigido al objeto que recibe la corrección.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">position(object, 160, 90);
+// Dentro de collision(object, other, contacts):
+if (contacts.length) position(object, contacts[0]);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/collision.html#collision-contact"><code>CollisionContact</code></a>, <a class="link" href="api/collision.html#collision"><code>collision()</code></a>, <a class="link" href="api/mechanics.html#reflect-x"><code>reflect_x()</code></a>.</p>
+</section>
+<section data-api-symbol="position_x">
+<h3 id="position-x">position_x()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>position_x(object: RuntimeObject, x: number): void;</code></pre></div>
+<p>Asigna la coordenada lógica absoluta X; conserva Y.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>x: number</code></dt><dd>Coordenada lógica X.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">position_x(object, 160);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#position"><code>position()</code></a>.</p>
+</section>
+<section data-api-symbol="position_y">
+<h3 id="position-y">position_y()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>position_y(object: RuntimeObject, y: number): void;</code></pre></div>
+<p>Asigna la coordenada lógica absoluta Y; conserva X.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>y: number</code></dt><dd>Coordenada lógica Y.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">position_y(object, 90);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#position"><code>position()</code></a>.</p>
+</section>
+<section data-api-symbol="position_origin">
+<h3 id="position-origin">position_origin()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>position_origin(object: RuntimeObject): void;</code></pre></div>
+<p>Restaura las coordenadas lógicas de origen de la instancia. No restablece velocidad, ángulo, tamaño ni estado local. Una relación attach activa puede volver a determinar la posición en su fase de actualización.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">position_origin(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#position"><code>position()</code></a>, <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>.</p>
+</section>
+<section data-api-symbol="resize">
+<h3 id="resize">resize()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>resize(object: RuntimeObject, width: number, height: number): void;</code></pre></div>
+<p>Sustituye width y height del objeto runtime por los valores indicados en unidades lógicas. No modifica el recurso JSON compartido.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>width: number</code></dt><dd>Ancho en unidades lógicas.</dd><dt><code>height: number</code></dt><dd>Alto en unidades lógicas.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">resize(object, 48, 16);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#resize-width"><code>resize_width()</code></a>, <a class="link" href="api/runtime.html#resize-height"><code>resize_height()</code></a>.</p>
+</section>
+<section data-api-symbol="resize_width">
+<h3 id="resize-width">resize_width()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>resize_width(object: RuntimeObject, width: number): void;</code></pre></div>
+<p>Cambia el ancho lógico vivo y conserva la altura.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>width: number</code></dt><dd>Ancho en unidades lógicas.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">resize_width(object, 48);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#resize"><code>resize()</code></a>.</p>
+</section>
+<section data-api-symbol="resize_height">
+<h3 id="resize-height">resize_height()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>resize_height(object: RuntimeObject, height: number): void;</code></pre></div>
+<p>Cambia la altura lógica viva y conserva el ancho.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>height: number</code></dt><dd>Alto en unidades lógicas.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">resize_height(object, 16);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#resize"><code>resize()</code></a>.</p>
+</section>
+<section data-api-symbol="depth">
+<h3 id="depth">depth()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>depth(object: RuntimeObject, value: number): void;</code></pre></div>
+<p>Asigna la profundidad de dibujo (utiliza un valor entero). Los valores menores se dibujan primero. La vista JavaScript observa el nuevo valor inmediatamente; el pase de dibujo en curso conserva el orden capturado al iniciarse y el cambio de orden se aplica al siguiente pase.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>value: number</code></dt><dd>Valor que se asigna.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">depth(object, 10);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#runtime-object"><code>RuntimeObject</code></a>, <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</p>
+</section>
+<hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a aria-current="page" class="link" href="api/runtime.html"><strong>RuntimeObject / Transform</strong></a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

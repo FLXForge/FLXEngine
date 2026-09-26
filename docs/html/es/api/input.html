@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>Input</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a aria-current="page" class="link" href="api/input.html"><strong>Input</strong></a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>La consulta de entrada combina <strong>Subject + Control + Query</strong>. El subject identifica quién recibe la entrada, el control qué capacidad lógica se consulta y la query cómo se observa su estado.</p>
+<div class="code-card"><div class="code-header">Tres responsabilidades</div><pre><code>Machine/Input → capacidades lógicas
+Input Mapping → dispositivos físicos
+API/Input     → consulta lógica</code></pre></div>
+<p>Consulta <a class="link" href="machine/input.html">Machine · Input</a> para capacidades y mapping. Un RuntimeObject actúa como subject mediante su declaración <a class="link" href="json/object.html#control">control.player</a>; control no es una propiedad pública de la vista JavaScript. Los índices de jugador empiezan en 1; botones y direcciones, en 0.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/input.html#subjects">Subjects y controles</a> · <a class="link" href="api/input.html#queries">Consultas</a> · <a class="link" href="api/input.html#types">Tipos de Input</a> · <a class="link" href="api/input.html#constants">Constantes</a></p></nav><h2 id="subjects">Subjects y controles</h2>
+<section data-api-symbol="player">
+<h3 id="player">player()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>player(playerIndex: number): InputPlayerSubject;</code></pre></div>
+<p>Construye un subject explícito de jugador. <code>playerIndex</code> empieza en 1; el jugador debe existir en Machine/Input para que sus consultas sean válidas.</p>
+<dl><dt><code>playerIndex: number</code></dt><dd>Índice de jugador desde 1.</dd></dl>
+<p><strong>Retorno:</strong> <code>InputPlayerSubject</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const subject = player(1);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-player-subject"><code>InputPlayerSubject</code></a>, <a class="link" href="api/input.html#system"><code>system()</code></a>.</p>
+</section>
+<section data-api-symbol="system">
+<h3 id="system">system()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>system(): InputSystemSubject;</code></pre></div>
+<p>Devuelve el subject de controles globales del sistema. Sólo admite botones; no tiene direcciones.</p>
+<p><strong>Retorno:</strong> <code>InputSystemSubject</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_pressed(system(), button(0))) exit();</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-system-subject"><code>InputSystemSubject</code></a>, <a class="link" href="api/input.html#player"><code>player()</code></a>.</p>
+</section>
+<section data-api-symbol="button">
+<h3 id="button">button()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>button(index: number): InputButton;</code></pre></div>
+<p>Devuelve el descriptor de botón lógico <code>index</code>, empezando en 0. No representa una tecla física ni consulta su estado. El índice debe estar dentro de las capacidades del subject en Machine.</p>
+<dl><dt><code>index: number</code></dt><dd>Índice lógico desde 0.</dd></dl>
+<p><strong>Retorno:</strong> <code>InputButton</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const FIRE = button(0);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-button"><code>InputButton</code></a>, <a class="link" href="api/input.html#input-pressed"><code>input_pressed()</code></a>.</p>
+</section>
+<section data-api-symbol="direction">
+<h3 id="direction">direction()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>direction(index: number): InputDirection;</code></pre></div>
+<p>Devuelve el descriptor de dirección lógica <code>index</code>, empezando en 0. Sus componentes válidos dependen del tipo 2way o 4way declarado en Machine.</p>
+<dl><dt><code>index: number</code></dt><dd>Índice lógico desde 0.</dd></dl>
+<p><strong>Retorno:</strong> <code>InputDirection</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const MOVE = direction(0);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-direction-type"><code>InputDirection</code></a>, <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section>
+<h2 id="queries">Consultas</h2>
+<section data-api-symbol="input_pressed">
+<h3 id="input-pressed">input_pressed()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>input_pressed(subject: InputButtonSubject, control: InputButton): boolean;
+input_pressed(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Devuelve true en el frame en que el control pasa a activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_pressed(object, button(0))) {
+  console.log(&quot;Botón 0&quot;);
+}
+if (input_pressed(player(1), direction(0), LEFT)) {
+  console.log(&quot;Componente izquierda, dirección 4way&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_down">
+<h3 id="input-down">input_down()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>input_down(subject: InputButtonSubject, control: InputButton): boolean;
+input_down(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Devuelve true mientras el control permanece activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_down(object, button(0))) {
+  console.log(&quot;Botón 0&quot;);
+}
+if (input_down(player(1), direction(0), LEFT)) {
+  console.log(&quot;Componente izquierda, dirección 4way&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_released">
+<h3 id="input-released">input_released()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>input_released(subject: InputButtonSubject, control: InputButton): boolean;
+input_released(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Devuelve true en el frame en que el control deja de estar activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_released(object, button(0))) {
+  console.log(&quot;Botón 0&quot;);
+}
+if (input_released(player(1), direction(0), LEFT)) {
+  console.log(&quot;Componente izquierda, dirección 4way&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_direction">
+<h3 id="input-direction">input_direction()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>input_direction(subject: InputDirectionSubject, control: InputDirection, axis: number): number;</code></pre></div>
+<p>Devuelve intención lógica -1, 0 o +1 para el eje indicado por HORIZONTAL o VERTICAL. En 4way, LEFT/RIGHT corresponden a X y UP/DOWN a Y; en 2way, NEGATIVE/POSITIVE se proyectan sobre cualquiera de los dos ejes. LEFT, UP y NEGATIVE producen -1; RIGHT, DOWN y POSITIVE producen +1. El neutro devuelve 0. Son valores del resultado, no los valores numéricos de las constantes. No admite system.</p>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>axis: number</code></dt><dd>HORIZONTAL o VERTICAL.</dd></dl>
+<p><strong>Retorno:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">move_horizontal(object, input_direction(object, direction(0), HORIZONTAL));</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-down"><code>input_down()</code></a>, <a class="link" href="api/input.html#horizontal"><code>HORIZONTAL</code></a>, <a class="link" href="api/input.html#vertical"><code>VERTICAL</code></a>.</p>
+</section>
+<h2 id="types">Tipos de Input</h2>
+<section data-api-symbol="InputButton"><h3 id="input-button">InputButton</h3>
+<p>Descriptor de un botón lógico, index readonly desde 0. Obtén el descriptor mediante <a class="link" href="api/input.html#button"><code>button()</code></a>. Los marcadores opcionales del archivo de tipos distinguen descriptores; no necesitas construirlos o modificarlos manualmente.</p>
+<div class="code-card"><div class="code-header">Uso</div><pre><code data-example="javascript">const control = button(0);</code></pre></div>
+</section>
+<section data-api-symbol="InputDirection"><h3 id="input-direction-type">InputDirection</h3>
+<p>Descriptor de una dirección lógica, index readonly desde 0. Obtén el descriptor mediante <a class="link" href="api/input.html#direction"><code>direction()</code></a>. Los marcadores opcionales del archivo de tipos distinguen descriptores; no necesitas construirlos o modificarlos manualmente.</p>
+<div class="code-card"><div class="code-header">Uso</div><pre><code data-example="javascript">const control = direction(0);</code></pre></div>
+</section>
+<section data-api-symbol="InputPlayerSubject"><h3 id="input-player-subject">InputPlayerSubject</h3>
+<p>Subject explícito de jugador, index readonly desde 1. Obtén el descriptor mediante <a class="link" href="api/input.html#player"><code>player()</code></a>. Los marcadores opcionales del archivo de tipos distinguen descriptores; no necesitas construirlos o modificarlos manualmente.</p>
+<div class="code-card"><div class="code-header">Uso</div><pre><code data-example="javascript">const subject = player(1);</code></pre></div>
+</section>
+<section data-api-symbol="InputSystemSubject"><h3 id="input-system-subject">InputSystemSubject</h3>
+<p>Subject único de botones de sistema. Incluye index readonly; su uso público es system(), no seleccionar jugadores con ese índice. Obtén el descriptor mediante <a class="link" href="api/input.html#system"><code>system()</code></a>. Los marcadores opcionales del archivo de tipos distinguen descriptores; no necesitas construirlos o modificarlos manualmente.</p>
+<div class="code-card"><div class="code-header">Uso</div><pre><code data-example="javascript">const subject = system();</code></pre></div>
+</section>
+<section data-api-symbol="InputButtonSubject"><h3 id="input-button-subject">InputButtonSubject</h3>
+<div class="code-card"><div class="code-header">Tipo</div><pre><code>type InputButtonSubject =
+  RuntimeObject | InputPlayerSubject | InputSystemSubject;</code></pre></div>
+<p>Subjects admitidos por las consultas de botón. RuntimeObject requiere control.player. Relacionados: <a class="link" href="api/input.html#input-pressed"><code>input_pressed()</code></a>, <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#system"><code>system()</code></a>.</p>
+</section>
+<section data-api-symbol="InputDirectionSubject"><h3 id="input-direction-subject">InputDirectionSubject</h3>
+<div class="code-card"><div class="code-header">Tipo</div><pre><code>type InputDirectionSubject = RuntimeObject | InputPlayerSubject;</code></pre></div>
+<p>Subjects admitidos por consultas de dirección. System queda fuera. Relacionados: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<h2 id="constants">Constantes</h2>
+<p>Utiliza los nombres simbólicos; sus valores numéricos internos no forman parte del contrato. Los signos -1/+1 descritos aquí pertenecen al resultado de input_direction.</p>
+<section data-api-symbol="UP"><h3 id="up">UP</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const UP: number;</code></pre></div>
+<p>Componente arriba de una dirección 4way. En la consulta del eje vertical produce intención -1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="DOWN"><h3 id="down">DOWN</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const DOWN: number;</code></pre></div>
+<p>Componente abajo de una dirección 4way. En el eje vertical produce intención +1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="LEFT"><h3 id="left">LEFT</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const LEFT: number;</code></pre></div>
+<p>Componente izquierda de una dirección 4way. En el eje horizontal produce intención -1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="RIGHT"><h3 id="right">RIGHT</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const RIGHT: number;</code></pre></div>
+<p>Componente derecha de una dirección 4way. En el eje horizontal produce intención +1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="STOP"><h3 id="stop">STOP</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const STOP: number;</code></pre></div>
+<p>Movimiento neutro/detenido. Puede expresar intención neutra en una operación de movimiento; no sustituye un descriptor button o direction.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="NEGATIVE"><h3 id="negative">NEGATIVE</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const NEGATIVE: number;</code></pre></div>
+<p>Componente negativo de una dirección 2way. input_direction lo proyecta como -1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="POSITIVE"><h3 id="positive">POSITIVE</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const POSITIVE: number;</code></pre></div>
+<p>Componente positivo de una dirección 2way. input_direction lo proyecta como +1.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="HORIZONTAL"><h3 id="horizontal">HORIZONTAL</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const HORIZONTAL: number;</code></pre></div>
+<p>Selector de eje horizontal para input_direction. En 4way consulta LEFT/RIGHT.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="VERTICAL"><h3 id="vertical">VERTICAL</h3><div class="code-card"><div class="code-header">Tipo</div><pre><code>const VERTICAL: number;</code></pre></div>
+<p>Selector de eje vertical para input_direction. En 4way consulta UP/DOWN.</p>
+<p>Relacionado: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a aria-current="page" class="link" href="api/input.html"><strong>Input</strong></a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

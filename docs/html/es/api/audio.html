@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>Audio</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a aria-current="page" class="link" href="api/audio.html"><strong>Audio</strong></a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div class="code-card"><div class="code-header">Declaración, solicitud y capacidades</div><pre><code>JSON/Audio    → declaración de sounds/music
+API/Audio     → solicitud durante el runtime
+Machine/Audio → capacidades, voces y límites</code></pre></div>
+<p>Los identificadores se resuelven en los mapas del objeto. Consulta <a class="link" href="json/audio.html">JSON · Audio</a> para declarar sonidos y música, y <a class="link" href="machine/audio.html">Machine · Audio</a> para sus límites. Aquí se documenta el control de reproducción, no la síntesis.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/audio.html#sound">Sound</a> · <a class="link" href="api/audio.html#music">Music</a></p></nav><h2 id="sound">Sound</h2>
+<section data-api-symbol="play_sound">
+<h3 id="play-sound">play_sound()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>play_sound(object: RuntimeObject, id: string): void;</code></pre></div>
+<p>Solicita reproducir el sonido <code>id</code> declarado en sounds del objeto. No es una ruta de archivo arbitraria. Los sonidos pueden ocupar varias voces según Machine/Audio; sus límites y política de sustitución condicionan la reproducción. La llamada no devuelve un handle ni confirma que haya una voz disponible.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>id: string</code></dt><dd>Identificador descrito en esta referencia.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">play_sound(object, &quot;laser&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#play-music"><code>play_music()</code></a>.</p>
+</section>
+<h2 id="music">Music</h2>
+<section data-api-symbol="play_music">
+<h3 id="play-music">play_music()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>play_music(object: RuntimeObject, id: string): void;</code></pre></div>
+<p>Solicita reproducir la música generada <code>id</code> declarada en music del objeto. Hay una música actual del runtime; al reproducir una nueva se sustituye la anterior. Sus capacidades y voces dependen de Machine/Audio.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>id: string</code></dt><dd>Identificador descrito en esta referencia.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function born(object) {
+  play_music(object, &quot;theme&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#pause-music"><code>pause_music()</code></a>, <a class="link" href="api/audio.html#stop-music"><code>stop_music()</code></a>.</p>
+</section>
+<section data-api-symbol="pause_music">
+<h3 id="pause-music">pause_music()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>pause_music(): void;</code></pre></div>
+<p>Alterna pausa/reanudación de la música actual. No actúa sobre sonidos individuales.</p>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">pause_music();</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#music-paused"><code>music_paused()</code></a>, <a class="link" href="api/audio.html#music-active"><code>music_active()</code></a>.</p>
+</section>
+<section data-api-symbol="stop_music">
+<h3 id="stop-music">stop_music()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>stop_music(): void;</code></pre></div>
+<p>Detiene la música actual del runtime. No elimina el objeto que la solicitó.</p>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">stop_music();</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#play-music"><code>play_music()</code></a>, <a class="link" href="api/audio.html#music-active"><code>music_active()</code></a>.</p>
+</section>
+<section data-api-symbol="music_active">
+<h3 id="music-active">music_active()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>music_active(): boolean;</code></pre></div>
+<p>Devuelve true mientras hay música actual activa, también cuando está pausada.</p>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (music_active()) console.log(&quot;Hay música actual&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#music-paused"><code>music_paused()</code></a>.</p>
+</section>
+<section data-api-symbol="music_paused">
+<h3 id="music-paused">music_paused()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>music_paused(): boolean;</code></pre></div>
+<p>Devuelve true cuando la música actual está pausada.</p>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (music_paused()) pause_music();</code></pre></div>
+<p>Relacionados: <a class="link" href="api/audio.html#pause-music"><code>pause_music()</code></a>.</p>
+</section>
+<hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a aria-current="page" class="link" href="api/audio.html"><strong>Audio</strong></a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

@@ -115,7 +115,7 @@ if (target) follow_x(object, target);</code></pre></div>
 <h3 id="find-name">find_name()</h3>
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>find_name(name: string): RuntimeObject[];</code></pre></div>
 <p>Busca todas las instancias vivas cuyo nombre lógico coincide con <code>name</code>, en orden de World. El array es una instantánea JavaScript, no una colección reactiva; sus elementos siguen siendo vistas temporales. Sin coincidencias devuelve <code>[]</code>.</p>
-<dl><dt><code>name: string</code></dt><dd>Nombre del archivo de persistencia, sin la extensión .flxsave.</dd></dl>
+<dl><dt><code>name: string</code></dt><dd>Nombre lógico de las instancias que se quieren buscar.</dd></dl>
 <p><strong>Retorno:</strong> <code>RuntimeObject[]</code>.</p>
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const balls = find_name(&quot;ball&quot;);
 if (balls.length) follow_y(object, balls[0]);</code></pre></div>

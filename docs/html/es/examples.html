@@ -27,18 +27,54 @@
             </p>
 
             <p>
-                Cada proyecto existe para validar partes concretas del runtime,
-                descubrir problemas reales
-                y ayudar a definir la arquitectura del engine mediante casos prácticos.
+                Los ejemplos de FLX son juegos completos construidos con las mismas herramientas disponibles para cualquier proyecto.
             </p>
 
-            <p class="placeholder">
-                Cada ejemplo representa una etapa distinta en la evolución de FLX.
+            <p>
+                Cada uno explora una combinación diferente de objetos, mecánicas y comportamientos, desde las reglas fundamentales de Pong hasta la percepción y toma de decisiones de Tank.
+            </p>
+
+            <p>
+                Puedes utilizarlos como referencia, desmontarlos para entender cómo funcionan o simplemente ejecutarlos para ver qué puede construirse con FLX.
             </p>
 
             <hr />
 
-            <section class="example-card">
+            <nav class="examples-index" aria-label="Índice de ejemplos">
+                <a href="#pong">
+                    <img src="../assets/examples/pong-cover.png" alt="" height="100">
+                    <span>Pong</span>
+                </a>
+
+                <a href="#asteroids">
+                    <img src="../assets/examples/asteroids-cover.png" alt="" height="100">
+                    <span>Asteroids</span>
+                </a>
+
+                <a href="#arkanoid">
+                    <img src="../assets/examples/arkanoid-cover.png" alt="" height="100">
+                    <span>Arkanoid</span>
+                </a>
+
+                <a href="#invaders">
+                    <img src="../assets/examples/invaders-cover.png" alt="" height="100">
+                    <span>Invaders</span>
+                </a>
+
+                <a href="#tank">
+                    <img src="../assets/examples/tank-cover.png" alt="" height="100">
+                    <span>Tank</span>
+                </a>
+
+                <a href="#proximamente">
+                    <img src="../assets/proximamente_b.png" alt="" height="100">
+                    <span>Próximamente</span>
+                </a>
+            </nav>
+
+            <hr />
+
+            <section id="pong" class="example-card">
 
                 <div class="example-header">
                     <div>
@@ -97,7 +133,7 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="asteroids" class="example-card">
                 <div class="example-header">
                     <div>
                         <p class="example-status complete">Listo</p>
@@ -163,7 +199,7 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="arkanoid" class="example-card">
 
                 <div class="example-header">
                     <div>
@@ -225,7 +261,7 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="invaders" class="example-card">
                 <div class="example-header">
                     <div>
                         <p class="example-status complete">Listo</p>
@@ -292,7 +328,7 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="tank" class="example-card">
                 <div class="example-header">
                     <div>
                         <p class="example-status complete">Listo</p>
@@ -356,8 +392,43 @@
                 </section>
             </section>
 
+            <hr />
+
+            <section id="proximamente" class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status planned">Próximamente</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">La siguiente generación</h2>
+                    </div>
+                </div>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/proximamente_b.png"
+                         alt="Próximo ejemplo de FLX">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/working.png"
+                             alt="Próximo ejemplo todavía en desarrollo">
+                    </div>
+                </div>
+
+                <p>
+                    Los próximos ejemplos explorarán una nueva etapa de FLX:
+                    construir juegos dentro de las capacidades y restricciones
+                    declaradas por una máquina.
+                </p>
+
+                <p>
+                    Nuevos ejemplos aparecerán aquí a medida que esas capacidades
+                    formen parte del engine.
+                </p>
+            </section>
+
             <!-- PLANTILLA PARA UN PRÓXIMO EJEMPLO
-            <section class="example-card">
+            <section id="next-example" class="example-card">
                 <div class="example-header">
                     <div>
                         <p class="example-status progress">En desarrollo</p>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>How FLX Thinks | FLX Engine</title>
+    <title>How FLX thinks | FLX Engine</title>
     <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
     <link rel="shortcut icon" href="../favicon.ico" />
@@ -20,19 +20,18 @@
         <article class="doc-content">
 
             <p class="eyebrow">FLX Documentation</p>
-            <h1>How FLX Thinks</h1>
+            <h1>How FLX thinks</h1>
 
             <p>
-                Before learning JSON, APIs or lifecycles,
-                it is worth understanding the central idea behind FLX.
+                Before learning JSON, APIs or lifecycles, it is useful to understand the central idea on which FLX is built.
             </p>
 
             <p>
-                FLX does not try to simplify C++.
+                FLX does not try to move the engine into the script.
             </p>
 
             <p>
-                It tries to make runtime behavior scriptable.
+                The runtime maintains the rules of the world; scripts express object behavior.
             </p>
 
             <div class="code-card">
@@ -45,34 +44,46 @@ Runtime -> Connects both
 </code></pre>
             </div>
 
-            <h2>Objects Contain Data</h2>
+            <h2>The world exists on a machine</h2>
 
             <p>
-                An object describes something that exists inside the runtime.
+                The runtime does not execute the world in an undefined environment. Each project uses a <em>machine</em> that establishes the characteristics of the environment in which that world can exist.
             </p>
 
             <p>
-                It may contain position, size, velocity,
-                visual appearance or any other property.
+                FLX provides a default machine, so you do not need to define one to get started.
             </p>
 
             <p>
-                Objects do not contain behavior.
+                Later, we will see how a machine lets you explicitly control those characteristics.
+            </p>
+
+            <h2>Objects contain data</h2>
+
+            <p>
+                An object describes something that exists within the runtime.
             </p>
 
             <p>
-                They contain state.
+                It can have position, size, movement, visual representation, local state and other declared capabilities.
             </p>
 
-            <h2>Scripts Contain Functions</h2>
+            <p>
+                Objects do not implement their behavior.
+            </p>
+
+            <p>
+                They declare their state, capabilities and the scripts that can act on them.
+            </p>
+
+            <h2>Scripts contain functions</h2>
 
             <p>
                 A script is a collection of JavaScript functions.
             </p>
 
             <p>
-                Those functions describe what happens to objects
-                throughout their lifetime.
+                Those functions describe what happens to objects throughout their lives.
             </p>
 
             <p>
@@ -80,8 +91,7 @@ Runtime -> Connects both
             </p>
 
             <p>
-                They are shared resources that may be used
-                by many objects simultaneously.
+                They are shared resources that many objects can use simultaneously.
             </p>
 
             <div class="code-card">
@@ -92,12 +102,10 @@ Runtime -> Connects both
 </code></pre>
             </div>
 
-            <h2>The Runtime Connects Both</h2>
+            <h2>The runtime connects both</h2>
 
             <p>
-                During execution,
-                the runtime invokes functions and provides the objects
-                they should operate on.
+                During execution, the runtime invokes functions and provides them with the objects they should work on.
             </p>
 
             <p>
@@ -112,64 +120,73 @@ Runtime -> Connects both
                 The runtime coordinates the interaction between both.
             </p>
 
-            <h2>Shared State and Individual State</h2>
+            <h2>Shared state and individual state</h2>
 
             <p>
-                The same script may be used by hundreds of objects.
+                The same script can be used by hundreds of objects.
             </p>
 
             <p>
-                This means different scopes of information exist.
+                This means there are different scopes of information.
             </p>
 
             <ul>
-                <li>Function scope</li>
-                <li>Script scope</li>
-                <li>Object scope</li>
-                <li>Global scope (future)</li>
+                <li>Function scope: local variables for each execution.</li>
+                <li>Script scope: variables shared by the script's functions.</li>
+                <li>Object scope: its own state through <code>read_local()</code> and <code>write_local()</code>.</li>
+                <li>Global scope: shared state through <code>read_global()</code> and <code>write_global()</code>.</li>
             </ul>
 
             <p>
-                Understanding this distinction is one of the keys
-                to understanding FLX.
+                The same script can act on many objects, but each object maintains its own local state.
             </p>
 
-            <h2>Living Objects</h2>
+            <p>
+                Understanding this distinction is one of the keys to understanding FLX.
+            </p>
+
+            <h2>Living objects</h2>
 
             <p>
-                FLX treats objects as entities that are born,
-                exist and eventually disappear.
+                FLX sees objects as entities that are born, exist and disappear.
             </p>
 
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
-<pre><code>born()
-
-action()
-motion()
-collision()
-
-kill()
-
-dead()
-
-cleanup()
+<pre><code>         born()
+           ↓
+    ┌─────────────┐
+    │   action()  │
+    │   motion()  │
+    │ collision() │
+    │    draw()   │
+    └─────────────┘
+           ↓
+         dead()
 </code></pre>
             </div>
 
             <p>
-                This terminology is intentional.
+                <code>born()</code> runs when the object enters the world. During its life, the runtime may invoke its various behavior hooks.
+                <code>dead()</code> runs once before the object is removed.
             </p>
 
             <p>
-                The lifecycle is part of the runtime mental model.
+                A script can request its destruction through <code>kill()</code>, but the lifecycle belongs to the runtime.
             </p>
 
-            <h2>The Core Idea</h2>
+            <p>
+                This terminology is deliberate.
+            </p>
 
             <p>
-                If you remember only one thing about FLX,
-                let it be this:
+                The lifecycle is part of the runtime's mental model.
+            </p>
+
+            <h2>The main idea</h2>
+
+            <p>
+                If you remember just one thing about FLX, let it be this:
             </p>
 
             <div class="code-card">
@@ -182,7 +199,7 @@ Runtime
 </code></pre>
             </div>
 
-            <p class="placeholder">
+            <p>
                 The rest of the documentation explains how this idea is implemented.
             </p>
 

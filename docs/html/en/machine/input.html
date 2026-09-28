@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen machine/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Chip | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+        .machine-reference table { width: 100%; border-collapse: collapse; margin: 24px 0; table-layout: fixed; }
+        .machine-reference caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+        .machine-reference th, .machine-reference td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+        .machine-reference thead { background: var(--panel); }
+        .machine-reference td { color: var(--muted); }
+        .machine-reference th { font-weight: 600; }
+        @media (max-width: 600px) {
+            .machine-reference caption { display: block; width: 100%; }
+            .machine-reference table, .machine-reference tbody, .machine-reference tr, .machine-reference th, .machine-reference td { display: block; width: 100%; }
+            .machine-reference thead { display: none; }
+            .machine-reference tr { margin-bottom: 18px; }
+            .machine-reference th { background: var(--panel); }
+            .machine-reference td { border-top: 0; }
+            .machine-reference td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+        }
+    </style>
+</head>
+<body data-section="machine">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content machine-reference" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Input Chip</h1>
+            <nav aria-label="Machine areas"><p><a class="link" href="machine/index.html">Index</a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html" aria-current="page"><strong>Input</strong></a></p></nav>
+            <nav aria-label="On this page"><p><a class="link" href="machine/input.html#controls">Controls and defaults</a> · <a class="link" href="machine/input.html#direction">Direction</a> · <a class="link" href="machine/input.html#four-way">4way</a> · <a class="link" href="machine/input.html#two-way">2way</a> · <a class="link" href="machine/input.html#simultaneous">Simultaneous</a> · <a class="link" href="machine/input.html#buffer">Buffer</a> · <a class="link" href="machine/input.html#mapping">Relationship with Mapping and API</a> · <a class="link" href="machine/input.html#unsupported">Unsupported capabilities</a></p></nav>
+<p><strong>Input Chip defines which logical controls exist.</strong> It declares their budgets and resolution rules. The physical input that activates each control is assigned in another file, Input Mapping.</p>
+<div class="code-card">
+    <div class="code-header">Three responsibilities</div>
+<pre><code>Machine / Input
+Which controls exist?
+        ↓
+Input Mapping (.input)
+Which physical input activates each control?
+        ↓
+API Input
+What is that logical control doing now?</code></pre>
+</div>
+<div class="code-card">
+    <div class="code-header">Structure</div>
+<pre><code>input
+├── system
+│   └── buttons
+└── players
+    ├── count
+    └── controls
+        ├── buttons
+        └── directions[]
+            ├── type
+            ├── simultaneous
+            └── buffer</code></pre>
+</div>
+<h2 id="controls">Controls and defaults</h2>
+<table>
+<caption>Independent budgets</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>system.buttons</code></th><td data-label="Type / values">Integer ≥ 0</td><td data-label="Default"><code>2</code></td><td data-label="Behavior in v0.3.0">Global logical buttons, independent of players. The chip does not assign meanings such as Start or Select to them.</td></tr>
+<tr><th scope="row"><code>players.count</code></th><td data-label="Type / values">Integer ≥ 1</td><td data-label="Default"><code>1</code></td><td data-label="Behavior in v0.3.0">Number of available logical players.</td></tr>
+<tr><th scope="row"><code>players.controls.buttons</code></th><td data-label="Type / values">Integer ≥ 0</td><td data-label="Default"><code>4</code></td><td data-label="Behavior in v0.3.0">Number of logical buttons per player.</td></tr>
+<tr><th scope="row"><code>players.controls.directions</code></th><td data-label="Type / values">Nonempty array of maps</td><td data-label="Default"><code>One 4way direction</code></td><td data-label="Behavior in v0.3.0">List of independent directional controls available to each player. A declared array replaces the default list.</td></tr>
+</tbody>
+</table>
+<p>Players are identified starting at <code>1</code>; buttons and directions starting at <code>0</code>. For example, two directions per player are <code>direction 0</code> and <code>direction 1</code>. Omitting directions preserves the default direction; declaring it empty produces an error diagnostic.</p>
+<div class="code-card">
+    <div class="code-header">Default Input Chip</div>
+<pre><code data-example="yaml">machine:
+  input:
+    system:
+      buttons: 2
+    players:
+      count: 1
+      controls:
+        buttons: 4
+        directions:
+          - type: 4way
+            simultaneous: last
+            buffer: 0</code></pre>
+</div>
+<h2 id="direction">Direction</h2>
+<table>
+<caption>Fields of each directions element</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>type</code></th><td data-label="Type / values">2way · 4way</td><td data-label="Default"><code>4way</code></td><td data-label="Behavior in v0.3.0">Digital types implemented in v0.3.0.</td></tr>
+<tr><th scope="row"><code>simultaneous</code></th><td data-label="Type / values">last · first · neutral</td><td data-label="Default"><code>last</code></td><td data-label="Behavior in v0.3.0">Resolves simultaneously active components within this directional control.</td></tr>
+<tr><th scope="row"><code>buffer</code></th><td data-label="Type / values">Finite number ≥ 0, in seconds</td><td data-label="Default"><code>0</code></td><td data-label="Behavior in v0.3.0">Candidate time used by the first policy. Does not modify last or neutral.</td></tr>
+</tbody>
+</table>
+<h2 id="four-way">4way</h2>
+<div class="code-card">
+    <div class="code-header">Sign convention by axis</div>
+<pre><code>        UP (−1)
+           │
+LEFT (−1) ─┼─ RIGHT (+1)
+           │
+       DOWN (+1)</code></pre>
+</div>
+<p>A 4way control has a single active logical component, or neutral. It does not produce diagonals: simultaneous decides which component prevails. The axis query convention is UP = −1 and DOWN = +1 vertically; LEFT = −1 and RIGHT = +1 horizontally. These are signs of directional state, not a declaration of additional JavaScript constants.</p>
+<h2 id="two-way">2way</h2>
+<div class="code-card">
+    <div class="code-header">Logical state</div>
+<pre><code>NEGATIVE (−1) ← neutral (0) → POSITIVE (+1)</code></pre>
+</div>
+<p>The public mapping can use the names <code>up</code>, <code>right</code>, <code>down</code> and <code>left</code>. For a 2way control, they are normalized as follows:</p>
+<table>
+<caption>Mapping name normalization</caption>
+<thead><tr><th scope="col">Public name</th><th scope="col">Logical component</th></tr></thead>
+<tbody>
+<tr><th scope="row">up, left</th><td data-label="Logical component">negative (−1)</td></tr>
+<tr><th scope="row">down, right</th><td data-label="Logical component">positive (+1)</td></tr>
+</tbody>
+</table>
+<p>This grouping identifies alternatives for the same component; it does not require both names to be activated at once. The simultaneous policy operates on normalized components.</p>
+<h2 id="simultaneous">Simultaneous</h2>
+<table>
+<caption>Simultaneity resolution</caption>
+<thead><tr><th scope="col">Value</th><th scope="col">Behavior</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>last</code></th><td data-label="Behavior">The most recently activated component among those still active wins.</td></tr>
+<tr><th scope="row"><code>first</code></th><td data-label="Behavior">The dominant component retains control while it remains active. When it disappears, a valid pending candidate can be promoted; if there is none, resolution is performed again among the components still active.</td></tr>
+<tr><th scope="row"><code>neutral</code></th><td data-label="Behavior">More than one active component produces neutral; a single active component is retained.</td></tr>
+</tbody>
+</table>
+<p>Each direction resolves its own simultaneity. Having multiple directions per player does not turn them into a single combined control.</p>
+<h2 id="buffer">Buffer</h2>
+<p>Buffer is not a generic input queue. In <code>simultaneous: first</code>, it lets a blocked candidate component be retained temporarily while another remains dominant. That candidate can take control when the dominant component disappears, provided the candidate remains active. Time is expressed in seconds.</p>
+<p>It does not guarantee later execution of a press already released: a candidate that stops being active is discarded. With <code>last</code> or <code>neutral</code>, buffer does not modify resolution. The default <code>0</code> does not retain a candidate through this mechanism.</p>
+<div class="code-card">
+    <div class="code-header">Two directional controls per player</div>
+<pre><code data-example="yaml">machine:
+  input:
+    players:
+      count: 1
+      controls:
+        buttons: 2
+        directions:
+          - type: 4way
+            simultaneous: first
+            buffer: 0.15
+          - type: 2way
+            simultaneous: neutral
+            buffer: 0</code></pre>
+</div>
+<h2 id="mapping">Relationship with Mapping and API</h2>
+<div class="code-card">
+    <div class="code-header">From logical control to query</div>
+<pre><code>MACHINE
+  Player 1
+  direction 0 : 4way
+  button 0
+        ↓
+.input — physical binding
+  up      → KEY_W
+  right   → KEY_D
+  down    → KEY_S
+  left    → KEY_A
+  button0 → KEY_SPACE
+        ↓
+InputSystem
+        ↓
+API JS</code></pre>
+</div>
+<p>The diagram summarizes the associations. The actual syntax of the <code>.input</code> file uses full keys:</p>
+<div class="code-card">
+    <div class="code-header">Valid mapping snippet</div>
+<pre><code data-example="ini">players.1.directions.0.up=KEY_W
+players.1.directions.0.right=KEY_D
+players.1.directions.0.down=KEY_S
+players.1.directions.0.left=KEY_A
+players.1.buttons.0=KEY_SPACE</code></pre>
+</div>
+<p>These physical inputs belong to the mapping, not the Machine Input definition. The project selects the file through <code>input.mapping</code> in <a class="link" href="json/project.html#fields">Project</a>. Changing physical bindings should not require changing the JSON world or scripts that query the same logical controls.</p>
+<p>Read calls are documented in <a class="link" href="api/index.html">FLX API</a>. Associating an object with a player belongs to <a class="link" href="json/object.html#control">Object.control</a>.</p>
+<h2 id="unsupported">Unsupported capabilities</h2>
+<p><code>input.pointer</code> and <code>input.text</code> are not available capabilities in v0.3.0. Declaring them produces an unsupported Machine diagnostic. Likewise, directional types other than <code>2way</code> and <code>4way</code> are not accepted as implemented. These are not future fields that silently work.</p>
+
+            <hr />
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Verified by direct inspection of feature/audit-public-doc, revision <code>ed9753b20d86</code>.</p>
+                <ul>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineDefinition.h">engine/machine/MachineDefinition.h</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineLoader.cpp">engine/machine/MachineLoader.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/input/InputMappingLoader.cpp">engine/input/InputMappingLoader.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/input/InputSystem.cpp">engine/input/InputSystem.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/scripting/bindings/InputBindings.cpp">engine/scripting/bindings/InputBindings.cpp</a></li>
+</ul>
+
+            </details>
+            <nav aria-label="Machine areas"><p><a class="link" href="machine/index.html">Index</a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html">Audio</a> · <a class="link" href="machine/input.html" aria-current="page"><strong>Input</strong></a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

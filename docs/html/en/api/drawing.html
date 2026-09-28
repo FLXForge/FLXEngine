@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drawing / Visual · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<h1>Drawing / Visual</h1>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><table><caption>Four visual layers</caption><thead><tr><th scope="col">Layer</th><th scope="col">Responsibility</th></tr></thead><tbody><tr><th scope="row">JSON representation</th><td data-label="Responsibility"><a class="link" href="json/visual.html">Declarative visual representation</a> of the object.</td></tr><tr><th scope="row">Immediate drawing</th><td data-label="Responsibility">Primitives emitted during <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</td></tr><tr><th scope="row">Runtime visual state</th><td data-label="Responsibility">Instance color and <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>.</td></tr><tr><th scope="row">Global fade</th><td data-label="Responsibility">Layer over the screen, independent of RuntimeObject.</td></tr></tbody></table>
+<p>Without reference, coordinates are in the world's logical space. With a RuntimeObject as the first argument, they are local to its position and rotate with it. That spatial reference does not change the owner of the current draw. These are not physical coordinates multiplied by output.scale.</p>
+<nav aria-label="On this page"><p><a class="link" href="api/drawing.html#immediate">Immediate drawing</a> · <a class="link" href="api/drawing.html#visual">Runtime visual state</a> · <a class="link" href="api/drawing.html#fade">Global fade</a></p></nav><h2 id="immediate">Immediate drawing</h2>
+<section data-api-symbol="draw_text">
+<h3 id="draw-text">draw_text()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>draw_text(x: number, y: number, text: string, size?: number, color?: string): void;
+draw_text(reference: RuntimeObject, x: number, y: number, text: string, size?: number, color?: string): void;</code></pre></div>
+<p>Emits immediate text during draw. <code>x, y</code> represent its center/pivot in logical coordinates. <code>text</code> is the content; <code>size</code> defaults to 10 when omitted, and <code>color</code> defaults to white. With reference, the position is local to that view and the text rotates with it. The primitive belongs to the owner of the current draw.</p>
+<dl><dt><code>x: number</code></dt><dd>Logical X coordinate.</dd><dt><code>y: number</code></dt><dd>Logical Y coordinate.</dd><dt><code>text: string</code></dt><dd>Text to draw.</dd><dt><code>size?: number</code></dt><dd>Text size; 10 when omitted.</dd><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd><dt><code>reference: RuntimeObject</code></dt><dd>Local spatial reference; does not replace the draw owner.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function draw(object) {
+  draw_text(40, 10, &quot;SCORE: &quot; + (read_global(&quot;score&quot;) ?? 0));
+  draw_text(object, 0, -12, &quot;READY&quot;, 10, &quot;#ffffff&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>, <a class="link" href="api/runtime.html#runtime-object"><code>RuntimeObject</code></a>.</p>
+</section>
+<section data-api-symbol="draw_pixel">
+<h3 id="draw-pixel">draw_pixel()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>draw_pixel(x: number, y: number, color?: string): void;
+draw_pixel(reference: RuntimeObject, x: number, y: number, color?: string): void;</code></pre></div>
+<p>Emits an immediate logical pixel at x/y during draw. Defaults to white. With reference, the point is local and is transformed with that spatial reference; the owner remains that of the current draw.</p>
+<dl><dt><code>x: number</code></dt><dd>Logical X coordinate.</dd><dt><code>y: number</code></dt><dd>Logical Y coordinate.</dd><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd><dt><code>reference: RuntimeObject</code></dt><dd>Local spatial reference; does not replace the draw owner.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function draw(object) {
+  draw_pixel(10, 10, &quot;white&quot;);
+  draw_pixel(object, 0, 0);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#draw-line"><code>draw_line()</code></a>, <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</p>
+</section>
+<section data-api-symbol="draw_line">
+<h3 id="draw-line">draw_line()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>draw_line(x: number, y: number, x1: number, y1: number, color?: string): void;
+draw_line(reference: RuntimeObject, x: number, y: number, x1: number, y1: number, color?: string): void;</code></pre></div>
+<p>Emits an immediate line between x/y and x1/y1. Defaults to white. With reference, both endpoints are local and are transformed with the reference. Only has an effect during the current draw.</p>
+<dl><dt><code>x: number</code></dt><dd>Logical X coordinate.</dd><dt><code>y: number</code></dt><dd>Logical Y coordinate.</dd><dt><code>x1: number</code></dt><dd>Logical X coordinate of the second endpoint.</dd><dt><code>y1: number</code></dt><dd>Logical Y coordinate of the second endpoint.</dd><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd><dt><code>reference: RuntimeObject</code></dt><dd>Local spatial reference; does not replace the draw owner.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function draw(object) {
+  draw_line(10, 10, 40, 10);
+  draw_line(object, -8, 0, 8, 0, &quot;#ffffff&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#draw-pixel"><code>draw_pixel()</code></a>, <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</p>
+</section>
+<section data-api-symbol="draw_rectangle">
+<h3 id="draw-rectangle">draw_rectangle()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>draw_rectangle(x: number, y: number, width: number, height: number, color?: string): void;
+draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, height: number, color?: string): void;</code></pre></div>
+<p>Draws the outline, not the fill, of a logical rectangle. x/y is its center/pivot; width/height are its dimensions. Defaults to white. With reference, the center is local and the rectangle rotates with the reference.</p>
+<dl><dt><code>x: number</code></dt><dd>Logical X coordinate.</dd><dt><code>y: number</code></dt><dd>Logical Y coordinate.</dd><dt><code>width: number</code></dt><dd>Width in logical units.</dd><dt><code>height: number</code></dt><dd>Height in logical units.</dd><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd><dt><code>reference: RuntimeObject</code></dt><dd>Local spatial reference; does not replace the draw owner.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function draw(object) {
+  draw_rectangle(40, 30, 32, 16);
+  draw_rectangle(object, 0, 0, 32, 16, &quot;white&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>, <a class="link" href="api/drawing.html#draw-line"><code>draw_line()</code></a>.</p>
+</section>
+<h2 id="visual">Runtime visual state</h2>
+<section data-api-symbol="apply_color">
+<h3 id="apply-color">apply_color()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>apply_color(object: RuntimeObject, color: string): void;</code></pre></div>
+<p>Overrides the instance's live visual color with <code>color</code>, for example <code>"#ff0000"</code>. Does not rewrite the declarative JSON representation and is not the color parameter of an immediate primitive.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>color: string</code></dt><dd>Color as a string; for example "#ffffff".</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">apply_color(object, &quot;#ff0000&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#restore-color"><code>restore_color()</code></a>, <a class="link" href="api/drawing.html#draw-text"><code>draw_text()</code></a>.</p>
+</section>
+<section data-api-symbol="restore_color">
+<h3 id="restore-color">restore_color()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>restore_color(object: RuntimeObject): void;</code></pre></div>
+<p>Restores the visual color and color presence declared when the instance was created.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">restore_color(object);</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#apply-color"><code>apply_color()</code></a>.</p>
+</section>
+<h2 id="fade">Global fade</h2>
+<p>Fade belongs to the entire runtime, not to an instance. Its alpha and transition are global; fade_done only indicates the absence of a transition.</p>
+<section data-api-symbol="fade_on">
+<h3 id="fade-on">fade_on()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_on(color?: string): void;</code></pre></div>
+<p>Starts a global transition from the current alpha to 1 (opaque), with a fixed duration of one second. Defaults to black. A new call restarts the transition from the alpha reached; do not call it every frame to initiate a single fade.</p>
+<dl><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function born(object) {
+  fade_on(&quot;black&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-off"><code>fade_off()</code></a>, <a class="link" href="api/drawing.html#fade-set"><code>fade_set()</code></a>, <a class="link" href="api/drawing.html#fade-done"><code>fade_done()</code></a>.</p>
+</section>
+<section data-api-symbol="fade_off">
+<h3 id="fade-off">fade_off()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_off(color?: string): void;</code></pre></div>
+<p>Starts a global transition from the current alpha to 0 (transparent), over one second. Defaults to black. To start with a fully covered screen, set alpha to 1 first.</p>
+<dl><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function born(object) {
+  fade_set(1);
+  fade_off();
+}</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-on"><code>fade_on()</code></a>, <a class="link" href="api/drawing.html#fade-alpha"><code>fade_alpha()</code></a>.</p>
+</section>
+<section data-api-symbol="fade_set">
+<h3 id="fade-set">fade_set()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_set(alpha: number, color?: string): void;</code></pre></div>
+<p>Immediately sets the global alpha clamped to [0, 1], cancels the active transition and sets the color (black by default). 0 leaves the scene visible; 1 covers it completely.</p>
+<dl><dt><code>alpha: number</code></dt><dd>Opacity clamped to [0, 1].</dd><dt><code>color?: string</code></dt><dd>Color as a string; for example "#ffffff".</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">fade_set(0.5, &quot;black&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-active"><code>fade_active()</code></a>, <a class="link" href="api/drawing.html#fade-alpha"><code>fade_alpha()</code></a>.</p>
+</section>
+<section data-api-symbol="fade_active">
+<h3 id="fade-active">fade_active()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_active(): boolean;</code></pre></div>
+<p>Returns true while a global fade transition is active.</p>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (fade_active()) console.log(&quot;Transition in progress&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-done"><code>fade_done()</code></a>.</p>
+</section>
+<section data-api-symbol="fade_done">
+<h3 id="fade-done">fade_done()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_done(): boolean;</code></pre></div>
+<p>Returns true when no transition is active, even before starting a fade or after fade_set. Does not necessarily mean the screen is visible: the final alpha may be 1.</p>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (fade_done()) console.log(&quot;Alpha final:&quot;, fade_alpha());</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-alpha"><code>fade_alpha()</code></a>, <a class="link" href="api/drawing.html#fade-active"><code>fade_active()</code></a>.</p>
+</section>
+<section data-api-symbol="fade_alpha">
+<h3 id="fade-alpha">fade_alpha()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>fade_alpha(): number;</code></pre></div>
+<p>Returns the current global alpha between 0 and 1: transparent/visible at 0, fully covered at 1.</p>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const alpha = fade_alpha();</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#fade-set"><code>fade_set()</code></a>, <a class="link" href="api/drawing.html#fade-done"><code>fade_done()</code></a>.</p>
+</section>
+<hr /><details><summary>Sources for this reference</summary><p>Reference checked against <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> and the runtime on branch feature/audit-public-doc, revision <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

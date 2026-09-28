@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Visual · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html" aria-current="page"><strong>Visual</strong></a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <h2 id="visual">visual</h2>
+            <p>Object or <a class="link" href="json/composition.html#blocks">block reference</a> with a base color, drawing depth and a list of representation elements. Without <code>visual</code>, no visual representation is declared. A block without <code>representation</code> or with an empty array adds no primitives by itself.</p>
+            <ul>
+                <li><code>color</code> — string. <i>Optional.</i> Base color for elements that do not declare their own.</li>
+                <li><code>depth</code> — integer. <i>Default: 0.</i> Lower values are drawn first.</li>
+                <li><code>representation</code> — array of elements. <i>Optional.</i> Each element belongs to exactly one family: primitive, geometry or text.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">Minimal visual</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 24,
+    &quot;height&quot;: 24
+  },
+  &quot;visual&quot;: {
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;ellipse&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h2 id="color">color</h2>
+            <p>The priority is element color → <code>visual.color</code> → white. Hexadecimal strings are supported: <code>#RGB</code> and <code>#RRGGBB</code>, along with the following case-insensitive names:</p>
+            <p><code>lightgray</code>, <code>lightgrey</code>, <code>gray</code>, <code>grey</code>, <code>darkgray</code>, <code>darkgrey</code>, <code>yellow</code>, <code>gold</code>, <code>orange</code>, <code>pink</code>, <code>red</code>, <code>maroon</code>, <code>green</code>, <code>lime</code>, <code>darkgreen</code>, <code>skyblue</code>, <code>blue</code>, <code>darkblue</code>, <code>purple</code>, <code>violet</code>, <code>darkpurple</code>, <code>beige</code>, <code>brown</code>, <code>darkbrown</code>, <code>white</code>, <code>black</code>, <code>blank</code>, <code>magenta</code>, <code>raywhite</code>.</p>
+            <p>An unknown color generates a warning and uses the fallback. JSON strings always require quotes.</p>
+            <div class="code-card">
+                <div class="code-header">Base color and override</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 20,
+    &quot;height&quot;: 20
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;#5fffd2&quot;,
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;rectangle&quot;
+      },
+      {
+        &quot;primitive&quot;: &quot;ellipse&quot;,
+        &quot;color&quot;: &quot;white&quot;,
+        &quot;size&quot;: {
+          &quot;width&quot;: 8,
+          &quot;height&quot;: 8
+        }
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h2 id="depth">depth</h2>
+            <p>Integer within <code>visual</code>, default <code>0</code>. Determines drawing order between Objects: lower values are drawn first, and at equal depth the stable drawing order is preserved. Elements in the same <code>representation</code> array are built in order. Does not define a global layer system.</p>
+            <div class="code-card">
+                <div class="code-header">depth</div>
+<pre><code data-schema="object">{
+  &quot;visual&quot;: {
+    &quot;depth&quot;: 10
+  }
+}</code></pre>
+            </div>
+            <h2 id="representation">representation</h2>
+            <p>Inline array. Two families cannot be mixed within one element. Each family has its own fields; there are no common per-element position or rotation fields. Elements use the Object's position and angle.</p>
+            <h3 id="primitive">primitive</h3>
+            <ul>
+                <li><code>primitive</code> — string: rectangle | triangle | ellipse. <i>Required.</i> Selects the primitive.</li>
+                <li><code>mode</code> — string: fill | outline. <i>Default: fill.</i> Fill or outline.</li>
+                <li><code>size</code> — object. <i>Optional.</i> Own dimensions or dimensions relative to logical size; see below.</li>
+                <li><code>color</code> — string. <i>Optional.</i> Base color override.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">primitive</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 40,
+    &quot;height&quot;: 24
+  },
+  &quot;visual&quot;: {
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;rectangle&quot;,
+        &quot;mode&quot;: &quot;outline&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h3 id="representation-size">Primitive size</h3>
+            <p>Object with optional <code>width</code> and <code>height</code>. Each axis accepts a number or a non-negative percentage such as <code>"50%"</code> or <code>"12.5%"</code>. An omitted axis takes the corresponding axis from <a class="link" href="json/object.html#size">Object.size</a>; a percentage is calculated relative to that logical axis. If an axis is missing from both the primitive and the Object, the primitive is not built. Percentages therefore require a reference <code>Object.size</code>; if the Object declares no size, declare both primitive axes using numeric values.</p>
+            <div class="code-card">
+                <div class="code-header">Percentage size</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 40,
+    &quot;height&quot;: 20
+  },
+  &quot;visual&quot;: {
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;ellipse&quot;,
+        &quot;size&quot;: {
+          &quot;width&quot;: &quot;50%&quot;,
+          &quot;height&quot;: &quot;100%&quot;
+        }
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h3 id="geometry">geometry</h3>
+            <ul>
+                <li><code>geometry</code> — nonempty array of points. <i>Required.</i> Each point is <code>{"x": number, "y": number}</code>; both axes are required by the schema. Local coordinates relative to the object's position.</li>
+                <li><code>mode</code> — string: open | close | fill. <i>Default: open.</i> Open line, closed outline or fill.</li>
+                <li><code>color</code> — string. <i>Optional.</i> Base color override.</li>
+            </ul>
+            <p>Geometry does not support <code>size</code>: the points determine its drawing without resizing the Object's logical size.</p>
+            <div class="code-card">
+                <div class="code-header">geometry</div>
+<pre><code data-schema="object">{
+  &quot;visual&quot;: {
+    &quot;representation&quot;: [
+      {
+        &quot;geometry&quot;: [
+          {
+            &quot;x&quot;: 0,
+            &quot;y&quot;: -12
+          },
+          {
+            &quot;x&quot;: 10,
+            &quot;y&quot;: 10
+          },
+          {
+            &quot;x&quot;: -10,
+            &quot;y&quot;: 10
+          }
+        ],
+        &quot;mode&quot;: &quot;close&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h3 id="text">text</h3>
+            <ul>
+                <li><code>text</code> — string. <i>Required.</i> Displayed content.</li>
+                <li><code>fontSize</code> — integer ≥ 1. <i>Required; no contractual default.</i> Font size.</li>
+                <li><code>color</code> — string. <i>Optional.</i> Base color override.</li>
+            </ul>
+            <p>Text does not support <code>mode</code> or <code>size</code>. Size is explicitly expressed through <code>fontSize</code>; the block does not declare automatic fitting to the logical box.</p>
+            <div class="code-card">
+                <div class="code-header">text</div>
+<pre><code data-schema="object">{
+  &quot;origin&quot;: {
+    &quot;x&quot;: 160,
+    &quot;y&quot;: 30
+  },
+  &quot;visual&quot;: {
+    &quot;representation&quot;: [
+      {
+        &quot;text&quot;: &quot;READY&quot;,
+        &quot;fontSize&quot;: 20,
+        &quot;color&quot;: &quot;white&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>Visual geometry and <a class="link" href="json/collision.html#collisions">colliders</a> are independent declarations.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/visual.schema.json">docs/schemas/visual.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/graphics/RepresentationPrimitiveBuilder.cpp">engine/graphics/RepresentationPrimitiveBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeObjectBuilder.cpp">engine/runtime/RuntimeObjectBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/tools/ColorParser.cpp">engine/tools/ColorParser.cpp</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html" aria-current="page"><strong>Visual</strong></a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

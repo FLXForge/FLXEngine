@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creation · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Creation · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html" aria-current="page"><strong>Creation</strong></a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <p>Creation brings together declarations that determine which children a parent can create, when they are created, and how they relate to it spatially or receive movement and orientation. Creation rules are declared in the parent; <code>spawn</code>, <code>component</code>, <code>offset</code>, <code>attach</code> and <code>inherit</code> describe the child.</p>
+            <h2 id="children">children</h2>
+            <p>Map of child names to inline objects or reference strings. Without this block, no children are declared. Each inline value uses <a class="link" href="json/object.html#object">Object</a>; a string is equivalent to an Object with <code>like</code>. A name identifies the reusable declaration, not a single runtime instance.</p>
+            <div class="code-card">
+                <div class="code-header">children</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;ship&quot;: &quot;objects/ship&quot;,
+    &quot;marker&quot;: {
+      &quot;origin&quot;: {
+        &quot;x&quot;: 80,
+        &quot;y&quot;: 40
+      }
+    },
+    &quot;laser&quot;: {
+      &quot;like&quot;: &quot;objects/laser&quot;,
+      &quot;spawn&quot;: &quot;manual&quot;
+    }
+  }
+}</code></pre>
+            </div>
+            <h2 id="spawn">spawn</h2>
+            <p>String: <code>auto</code> or <code>manual</code>; default <code>auto</code>. In individual mode, an auto child enters with its parent, while a manual child waits for a call to <code>spawn(parent, "child")</code>. The call can also create additional instances of an auto child. Grid and iterator apply their specific rules. This is not a timer or a condition for appearing.</p>
+            <div class="code-card">
+                <div class="code-header">Manual child</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;bullet&quot;: {
+      &quot;spawn&quot;: &quot;manual&quot;,
+      &quot;offset&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: -12
+      }
+    }
+  }
+}</code></pre>
+            </div>
+            <h2 id="component">component</h2>
+            <p>Boolean; default <code>false</code>. Marks a child as part of its parent's logical entity. Ray queries exclude the querying object's logical entity; killing the parent removes descendants joined by a chain of components. A component without its own state machine looks for effective state in that chain. The root Object cannot declare <code>component: true</code>.</p>
+            <p>Component does not automatically enable spatial following: that requires declaring <a class="link" href="json/creation.html#attach">attach</a>.</p>
+            <div class="code-card">
+                <div class="code-header">Component attached to its parent</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;turret&quot;: {
+      &quot;component&quot;: true,
+      &quot;offset&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: -10
+      },
+      &quot;attach&quot;: {
+        &quot;born&quot;: true,
+        &quot;position&quot;: true
+      }
+    }
+  }
+}</code></pre>
+            </div>
+            <h2 id="creation">creation</h2>
+            <p>Object or <a class="link" href="json/composition.html#blocks">block reference</a> of the parent. <code>mode</code> selects <code>individual</code>, <code>grid</code> or <code>iterator</code>. If the block or the individual form's mode is omitted, <code>individual</code> is used. Each mode has a different structure; their fields are not combined.</p>
+            <h3 id="individual">individual</h3>
+            <p>Only supports <code>mode</code>, which is optional. Materializes an initial instance of each auto child. Position follows the rules for <a class="link" href="json/creation.html#offset">offset/origin</a>.</p>
+            <div class="code-card">
+                <div class="code-header">Individual creation</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;marker&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;individual&quot;
+  }
+}</code></pre>
+            </div>
+            <h3 id="grid">grid</h3>
+            <ul>
+                <li><code>mode</code> — string: grid. <i>Required.</i> Selects a grid.</li>
+                <li><code>rules.rows / rules.columns</code> — integer ≥ 1. <i>Both required.</i> Number of rows and columns.</li>
+                <li><code>rules.cellWidth / rules.cellHeight</code> — number > 0. <i>Both required.</i> Spacing between cell origins.</li>
+                <li><code>pattern</code> — array of strings or array of rows of strings. <i>Required.</i> Names of children occupying cells. Use a nonempty pattern; the runtime rejects a grid without an effective pattern.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">grid — linear pattern</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;a&quot;: {
+      &quot;size&quot;: {
+        &quot;width&quot;: 30,
+        &quot;height&quot;: 14
+      }
+    },
+    &quot;b&quot;: {
+      &quot;spawn&quot;: &quot;manual&quot;
+    }
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;grid&quot;,
+    &quot;rules&quot;: {
+      &quot;rows&quot;: 2,
+      &quot;columns&quot;: 3,
+      &quot;cellWidth&quot;: 32,
+      &quot;cellHeight&quot;: 16
+    },
+    &quot;pattern&quot;: [
+      &quot;a&quot;,
+      &quot;b&quot;
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>A linear pattern is traversed by row and repeated. In a row-based pattern, the outer rows repeat, and each row repeats its columns. An empty row produces no child in its cells. Names used must correspond to declared children.</p>
+            <div class="code-card">
+                <div class="code-header">grid — row-based pattern</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;a&quot;: {},
+    &quot;b&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;grid&quot;,
+    &quot;rules&quot;: {
+      &quot;rows&quot;: 2,
+      &quot;columns&quot;: 3,
+      &quot;cellWidth&quot;: 32,
+      &quot;cellHeight&quot;: 16
+    },
+    &quot;pattern&quot;: [
+      [
+        &quot;a&quot;
+      ],
+      [
+        &quot;b&quot;
+      ]
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>The position is <code>parent.position + (column × cellWidth, row × cellHeight) + child.offset</code>. Ignores <code>child.origin</code>; the offset is not rotated with the parent's angle in this mode. Manual children do not appear automatically. <code>spawn(parent, "child")</code> creates all cells assigned to that name, not a free instance.</p>
+            <h3 id="iterator">iterator</h3>
+            <ul>
+                <li><code>mode</code> — string: iterator. <i>Required.</i> Selects sequential creation.</li>
+                <li><code>pattern</code> — nonempty array of strings. <i>Required.</i> Names of existing children with <code>spawn: "auto"</code>. Does not support a row-based pattern.</li>
+                <li><code>rules.concurrent</code> — integer ≥ 1. <i>Default: 1.</i> Maximum number of instances created by this iterator that can coexist.</li>
+                <li><code>rules.repeat</code> — boolean. <i>Default: false.</i> Restarts pattern traversal when the end is reached.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">iterator</div>
+<pre><code data-schema="object">{
+  &quot;children&quot;: {
+    &quot;enemy&quot;: {}
+  },
+  &quot;creation&quot;: {
+    &quot;mode&quot;: &quot;iterator&quot;,
+    &quot;rules&quot;: {
+      &quot;concurrent&quot;: 1,
+      &quot;repeat&quot;: false
+    },
+    &quot;pattern&quot;: [
+      &quot;enemy&quot;,
+      &quot;enemy&quot;
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>The iterator produces entries as slots become available. <code>rules</code> is optional. Does not support manual <code>spawn(parent, "child")</code> on the iterator parent. Its creation uses individual positioning. <code>creation_active(object)</code> lets you query whether it is still active; individual and grid return false.</p>
+            <h2 id="offset">offset</h2>
+            <p>Optional object with numeric <code>x</code> and <code>y</code>; each axis is <code>0</code> when omitted. In individual/iterator, if the block exists, the child is born at the parent's position plus the offset rotated by the parent's current angle, ignoring <code>origin</code>. Without offset, a declared origin is preserved; if origin is also absent, it is born at the parent's position.</p>
+            <div class="code-card">
+                <div class="code-header">offset</div>
+<pre><code data-schema="object">{
+  &quot;offset&quot;: {
+    &quot;x&quot;: 0,
+    &quot;y&quot;: -14
+  }
+}</code></pre>
+            </div>
+            <p>Declaring <code>offset: {}</code> is significant: it applies a zero offset and takes priority over origin. In grid, the governing formula is that of the <a class="link" href="json/creation.html#grid">cell</a>.</p>
+            <h2 id="attach">attach</h2>
+            <p>Optional inline object with boolean flags. Always uses the original parent; it does not reassign parents or declare dynamic hierarchies.</p>
+            <ul>
+                <li><code>born</code> — boolean. <i>Default: false.</i> Born attached if true.</li>
+                <li><code>position</code> — boolean. <i>Default: false.</i> Enables X and Y following.</li>
+                <li><code>x / y</code> — boolean. <i>Default to position.</i> Each explicit axis overrides position for that axis.</li>
+                <li><code>angle</code> — boolean. <i>Default: false.</i> Synchronizes the angle without rotating the following offset.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">attach</div>
+                <pre><code data-schema="object">{
+  &quot;attach&quot;: {
+    &quot;born&quot;: true,
+    &quot;position&quot;: true,
+    &quot;y&quot;: false,
+    &quot;angle&quot;: true
+  }
+}</code></pre>
+            </div>
+            <p>Initial attach preserves the separation established when the child is created. A later attach uses the separation at that moment as the reference for followed axes; detach suspends following without modifying the original parent relationship. See <a class="link" href="json/creation.html#inherit">inherit.live.angle</a> for declarative angle synchronization.</p>
+            <h2 id="inherit">inherit</h2>
+            <p>Object or block reference. Receives live state from the original parent, not its declarative Mechanics rules. When omitted, the three modes are <code>none</code>.</p>
+            <ul>
+                <li><code>creation.angle</code> — string: none | copy. <i>Default: none.</i> Copies the angle when the child is created.</li>
+                <li><code>creation.velocity</code> — string: none | copy | compose. <i>Default: none.</i> copy copies live linear velocity; compose adds the parent's velocity to the child's own velocity at creation, without changing its declared polar speed.</li>
+                <li><code>live.angle</code> — string: none | copy. <i>Default: none.</i> Continuously synchronizes the angle with the original parent.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">inherit</div>
+                <pre><code data-schema="object">{
+  &quot;inherit&quot;: {
+    &quot;creation&quot;: {
+      &quot;angle&quot;: &quot;copy&quot;,
+      &quot;velocity&quot;: &quot;compose&quot;
+    },
+    &quot;live&quot;: {
+      &quot;angle&quot;: &quot;none&quot;
+    }
+  }
+}</code></pre>
+            </div>
+            <p>Static declaration reuse belongs to <a class="link" href="json/composition.html#like">like</a>; velocity and rotation rules belong to <a class="link" href="json/mechanics.html#mechanics">Mechanics</a>.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/creation.schema.json">docs/schemas/creation.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/attach.schema.json">docs/schemas/attach.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/inherit.schema.json">docs/schemas/inherit.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/compiler/ProjectCompiler.cpp">engine/compiler/ProjectCompiler.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/scripting/ScriptEngine.cpp">engine/scripting/ScriptEngine.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/collision/CollisionSystem.cpp">engine/collision/CollisionSystem.cpp</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas"><p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html" aria-current="page"><strong>Creation</strong></a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen machine/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Chip | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+        .machine-reference table { width: 100%; border-collapse: collapse; margin: 24px 0; table-layout: fixed; }
+        .machine-reference caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+        .machine-reference th, .machine-reference td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+        .machine-reference thead { background: var(--panel); }
+        .machine-reference td { color: var(--muted); }
+        .machine-reference th { font-weight: 600; }
+        @media (max-width: 600px) {
+            .machine-reference caption { display: block; width: 100%; }
+            .machine-reference table, .machine-reference tbody, .machine-reference tr, .machine-reference th, .machine-reference td { display: block; width: 100%; }
+            .machine-reference thead { display: none; }
+            .machine-reference tr { margin-bottom: 18px; }
+            .machine-reference th { background: var(--panel); }
+            .machine-reference td { border-top: 0; }
+            .machine-reference td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+        }
+    </style>
+</head>
+<body data-section="machine">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content machine-reference" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Audio Chip</h1>
+            <nav aria-label="Machine areas"><p><a class="link" href="machine/index.html">Index</a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html" aria-current="page"><strong>Audio</strong></a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <nav aria-label="On this page"><p><a class="link" href="machine/audio.html#voices">Voices</a> · <a class="link" href="machine/audio.html#overflow">Overflow</a> · <a class="link" href="machine/audio.html#synthesis">Synthesis</a> · <a class="link" href="machine/audio.html#fidelity">Fidelity</a> · <a class="link" href="machine/audio.html#resources">Resources and fileAudio</a></p></nav>
+<p><strong>Audio Chip defines the capabilities and constraints of the audio system available to Sound and Music.</strong> It is declared in <code>machine.audio</code>. Specific sounds, songs and instruments belong to <a class="link" href="json/audio.html">JSON Audio</a>.</p>
+<div class="code-card">
+    <div class="code-header">Structure</div>
+<pre><code>audio
+├── voices: music, sound, mode, overflow
+├── synthesis: model, texture, movement, noise
+├── fidelity: resolution, dynamics, space
+├── resources: generated, samples, streams
+└── fileAudio: mode</code></pre>
+</div>
+<h2 id="voices">Voices</h2>
+<table>
+<caption>Voice budget</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>voices.music</code></th><td data-label="Type / values">Integer ≥ 0</td><td data-label="Default"><code>8</code></td><td data-label="Behavior in v0.3.0">Limit on music channels used. Channels exceeding the available voices are ignored with a warning.</td></tr>
+<tr><th scope="row"><code>voices.sound</code></th><td data-label="Type / values">Integer ≥ 0</td><td data-label="Default"><code>16</code></td><td data-label="Behavior in v0.3.0">Limit on simultaneous effects in reserved/preferred; in shared, contributes to the total pool size.</td></tr>
+<tr><th scope="row"><code>voices.mode</code></th><td data-label="Type / values">shared · reserved · preferred</td><td data-label="Default"><code>shared</code></td><td data-label="Behavior in v0.3.0">Allocation policy detailed below.</td></tr>
+<tr><th scope="row"><code>voices.overflow</code></th><td data-label="Type / values">ignore · replace_oldest · replace_newest · replace_lowest_priority · steal_from_music</td><td data-label="Default"><code>replace_oldest</code></td><td data-label="Behavior in v0.3.0">Policy when requesting a sound after available voices are exhausted.</td></tr>
+</tbody>
+</table>
+<table>
+<caption>Voice allocation</caption>
+<thead><tr><th scope="col">Mode</th><th scope="col">Effective behavior</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>reserved</code></th><td data-label="Effective behavior">Music and sounds have separate reserves: <code>music</code> limits music channels, and <code>sound</code> limits simultaneous effects.</td></tr>
+<tr><th scope="row"><code>shared</code></th><td data-label="Effective behavior">Pool of <code>music + sound</code> voices. Effects and music compete for it; music also retains its <code>music</code> limit. Sounds can use the shared space, so <code>sound</code> is not an independent effects limit here.</td></tr>
+<tr><th scope="row"><code>preferred</code></th><td data-label="Effective behavior">Accepted value. In v0.3.0 it uses the same functional policy as reserved; it has no distinct preference behavior.</td></tr>
+</tbody>
+</table>
+<p>With <code>music: 0</code>, no music channels are used. In shared mode, <code>sound: 0</code> does not necessarily disable effects: shared capacity contributed by music may remain.</p>
+<h2 id="overflow">Overflow</h2>
+<table>
+<caption>When a new Sound arrives and there is no capacity</caption>
+<thead><tr><th scope="col">Value</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>ignore</code></th><td data-label="Result">Ignores the new request.</td></tr>
+<tr><th scope="row"><code>replace_oldest</code></th><td data-label="Result">Replaces the oldest active sound.</td></tr>
+<tr><th scope="row"><code>replace_newest</code></th><td data-label="Result">Replaces the newest active sound.</td></tr>
+<tr><th scope="row"><code>replace_lowest_priority</code></th><td data-label="Result">Replaces the active sound with the lowest <a class="link" href="json/audio.html#sound">Sound.priority</a>; at equal priority, the oldest. Selects a victim among active sounds: does not guarantee rejection of an incoming request with lower priority.</td></tr>
+<tr><th scope="row"><code>steal_from_music</code></th><td data-label="Result">In shared mode, can suspend active music to admit the sound. If no music can be suspended, ignores the request. In reserved/preferred, a full effects budget does not take music voices.</td></tr>
+</tbody>
+</table>
+<p>The replace policies select active sounds, not music channels. If the shared pool is full and no sound can be replaced, the new request is ignored. The policy applies to Sound requests; it does not promise to evict effects to start Music.</p>
+<p>The implementation of <code>steal_from_music</code> pauses the active music mix, not an isolated channel. Resumes it when no active effects remain, unless music remains paused for another reason. Does not guarantee a permanent reserve for effects or selection of individual music channels.</p>
+<div class="code-card">
+    <div class="code-header">Shared voices</div>
+<pre><code data-example="yaml">machine:
+  audio:
+    voices:
+      music: 3
+      sound: 1
+      mode: shared
+      overflow: steal_from_music</code></pre>
+</div>
+<h2 id="synthesis">Synthesis</h2>
+<table>
+<caption>Declared synthesis and current effect</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>synthesis.model</code></th><td data-label="Type / values">buzzer · pulse · wave · mixed · fm · sample · open</td><td data-label="Default"><code>open</code></td><td data-label="Behavior in v0.3.0">pulse adapts certain waveforms: sine becomes triangle and saw becomes pulse. The other values do not select seven independent synthesizers in the current implementation.</td></tr>
+<tr><th scope="row"><code>synthesis.texture</code></th><td data-label="Type / values">raw · coarse · clean · rough · rich</td><td data-label="Default"><code>rich</code></td><td data-label="Behavior in v0.3.0">Modifies synthesis character and texture. Some values share treatment; they do not represent separate engines.</td></tr>
+<tr><th scope="row"><code>synthesis.movement</code></th><td data-label="Type / values">none · simple · dynamic · expressive</td><td data-label="Default"><code>expressive</code></td><td data-label="Behavior in v0.3.0">Modulates the intensity of movements and modulations. none restricts them; dynamic and expressive do not receive distinct treatment in this current factor.</td></tr>
+<tr><th scope="row"><code>synthesis.noise</code></th><td data-label="Type / values">none · simple · rich</td><td data-label="Default"><code>rich</code></td><td data-label="Behavior in v0.3.0">Modulates noise behavior. none removes noise components and transforms noise sources into an oscillator source; this is not equivalent to silencing the entire resource.</td></tr>
+</tbody>
+</table>
+<div class="code-card">
+    <div class="code-header">Synthesis profile</div>
+<pre><code data-example="yaml">machine:
+  audio:
+    synthesis:
+      model: pulse
+      texture: clean
+      movement: simple
+      noise: simple</code></pre>
+</div>
+<p>The <code>sample</code> model accepted in this field does not imply file playback or an implemented sample synthesizer. The declarations of <a class="link" href="json/audio.html#source">source</a> and <a class="link" href="json/audio.html#tone">tone</a> still describe the sound content on which the chip acts.</p>
+<h2 id="fidelity">Fidelity</h2>
+<table>
+<caption>Fidelity</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>fidelity.resolution</code></th><td data-label="Type / values">very_low · low · medium · high</td><td data-label="Default"><code>high</code></td><td data-label="Behavior in v0.3.0">Limits and quantizes amplitude resolution. high preserves the highest resolution of the current generator.</td></tr>
+<tr><th scope="row"><code>fidelity.dynamics</code></th><td data-label="Type / values">fixed · limited · normal · expressive</td><td data-label="Default"><code>expressive</code></td><td data-label="Behavior in v0.3.0">fixed and limited apply specific dynamics treatment. normal and expressive do not select different algorithms at this stage.</td></tr>
+<tr><th scope="row"><code>fidelity.space</code></th><td data-label="Type / values">mono · stereo</td><td data-label="Default"><code>stereo</code></td><td data-label="Behavior in v0.3.0">Accepted and stored field; current generated synthesis remains mono, even with stereo.</td></tr>
+</tbody>
+</table>
+<div class="code-card">
+    <div class="code-header">Reduced fidelity</div>
+<pre><code data-example="yaml">machine:
+  audio:
+    fidelity:
+      resolution: low
+      dynamics: limited
+      space: mono</code></pre>
+</div>
+<h2 id="resources">Resources and fileAudio</h2>
+<table>
+<caption>Properties without full functional enforcement</caption>
+<thead><tr><th scope="col">Field</th><th scope="col">Type / values</th><th scope="col">Default</th><th scope="col">Behavior in v0.3.0</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>resources.generated</code></th><td data-label="Type / values">Boolean</td><td data-label="Default"><code>true</code></td><td data-label="Behavior in v0.3.0">Declares generated audio capability; AudioSystem does not currently enforce this flag as a complete generation block.</td></tr>
+<tr><th scope="row"><code>resources.samples</code></th><td data-label="Type / values">Boolean</td><td data-label="Default"><code>true</code></td><td data-label="Behavior in v0.3.0">Accepted and stored; does not guarantee effective enabling or restriction of samples.</td></tr>
+<tr><th scope="row"><code>resources.streams</code></th><td data-label="Type / values">Boolean</td><td data-label="Default"><code>true</code></td><td data-label="Behavior in v0.3.0">Accepted and stored; does not guarantee effective enabling or restriction of streams.</td></tr>
+<tr><th scope="row"><code>fileAudio.mode</code></th><td data-label="Type / values">off · sound · music · all</td><td data-label="Default"><code>all</code></td><td data-label="Behavior in v0.3.0">Accepted and stored; does not, by itself, enable file playback or guarantee it is blocked.</td></tr>
+</tbody>
+</table>
+<p>These fields describe accepted format, not constraints guaranteed by AudioSystem v0.3.0. Changing them should not be presented as a functional way to enable or disable WAV, OGG or MP3. This is independent of voice budgets, which do have an effect.</p>
+
+            <hr />
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Verified by direct inspection of feature/audit-public-doc, revision <code>ed9753b20d86</code>.</p>
+                <ul>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineDefinition.h">engine/machine/MachineDefinition.h</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/machine/MachineLoader.cpp">engine/machine/MachineLoader.cpp</a></li>
+    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/ed9753b20d864ab9efbb5f2c9fcd0baca3bfcfaf/engine/audio/AudioSystem.cpp">engine/audio/AudioSystem.cpp</a></li>
+</ul>
+
+            </details>
+            <nav aria-label="Machine areas"><p><a class="link" href="machine/index.html">Index</a> · <a class="link" href="machine/video.html">Video</a> · <a class="link" href="machine/audio.html" aria-current="page"><strong>Audio</strong></a> · <a class="link" href="machine/input.html">Input</a></p></nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

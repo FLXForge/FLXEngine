@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Object · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas"><p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html" aria-current="page"><strong>Object</strong></a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p></nav>
+            <h2 id="object">JSON object</h2>
+            <p>An Object is a declaration of a World element. It can combine representation, movement, collisions, behavior, state, audio and children. No root property is required on its own; an empty object is valid according to the schema.</p>
+            <div class="code-card"><div class="code-header">Minimal visible object</div>
+<pre><code data-schema="object">{
+  &quot;origin&quot;: {
+    &quot;x&quot;: 160,
+    &quot;y&quot;: 90
+  },
+  &quot;size&quot;: {
+    &quot;width&quot;: 18,
+    &quot;height&quot;: 24
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;white&quot;,
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;triangle&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <h2 id="properties">Root properties</h2>
+            <p>The root schema has <code>additionalProperties: false</code>. Only the following properties are allowed; keys in named maps are defined within each block.</p>
+            <ul>
+                <li><a class="link" href="json/object.html#schema"><code>$schema</code></a>: string; validation metadata.</li>
+                <li><a class="link" href="json/composition.html#like"><code>like</code></a>: string; composition from a base.</li>
+                <li><a class="link" href="json/creation.html#spawn"><code>spawn</code></a>: auto or manual.</li>
+                <li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; integrates the child into its parent's logical entity.</li>
+                <li><a class="link" href="json/creation.html#creation"><code>creation</code></a>: object or reference; materialization of children.</li>
+                <li><a class="link" href="json/creation.html#offset"><code>offset</code></a>: object; creation displacement.</li>
+                <li><a class="link" href="json/object.html#visible"><code>visible</code></a>: boolean; initial visibility.</li>
+                <li><a class="link" href="json/creation.html#attach"><code>attach</code></a>: object; parent following.</li>
+                <li><a class="link" href="json/object.html#origin"><code>origin</code></a>: object; initial position.</li>
+                <li><a class="link" href="json/object.html#size"><code>size</code></a>: object; logical size.</li>
+                <li><a class="link" href="json/visual.html#visual"><code>visual</code></a>: object or reference; representation.</li>
+                <li><a class="link" href="json/mechanics.html#mechanics"><code>mechanics</code></a>: object or reference; movement and rotation.</li>
+                <li><a class="link" href="json/creation.html#inherit"><code>inherit</code></a>: object or reference; inheritance of movement and orientation from the parent.</li>
+                <li><a class="link" href="json/object.html#bounds"><code>bounds</code></a>: object or reference; World boundaries.</li>
+                <li><a class="link" href="json/object.html#delimit"><code>delimit</code></a>: boolean; logical World extent.</li>
+                <li><a class="link" href="json/object.html#group"><code>group</code></a>: string; logical group.</li>
+                <li><a class="link" href="json/object.html#control"><code>control</code></a>: object; associated player.</li>
+                <li><a class="link" href="json/object.html#local"><code>local</code></a>: map; initial instance values.</li>
+                <li><a class="link" href="json/collision.html#collisions"><code>collisions</code></a>: map or reference; named colliders.</li>
+                <li><a class="link" href="json/object.html#behavior"><code>behavior</code></a>: object or reference; scripts.</li>
+                <li><a class="link" href="json/object.html#states"><code>states</code></a>: object or reference; states and transitions.</li>
+                <li><a class="link" href="json/audio.html#sounds"><code>sounds</code></a>: map; named sounds.</li>
+                <li><a class="link" href="json/audio.html#music"><code>music</code></a>: map; named music.</li>
+                <li><a class="link" href="json/creation.html#children"><code>children</code></a>: map; child declarations.</li>
+            </ul>
+            <h2 id="schema">$schema</h2>
+            <p>Optional string identifying the schema for validation tools. Does not select the engine version or change object defaults.</p>
+            <div class="code-card">
+                <div class="code-header">$schema</div>
+<pre><code data-schema="object">{
+  &quot;$schema&quot;: &quot;https://flxforge.github.io/FLXEngine/schemas/object.schema.json&quot;
+}</code></pre>
+            </div>
+            <h2 id="origin">origin</h2>
+            <p>Optional object with numeric coordinates <code>x</code> and <code>y</code>; each omitted axis is <code>0</code>. X increases to the right and Y downward. This is the object's position, not the corner of its logical box. For children, the rules of <a class="link" href="json/creation.html">Creation</a> determine how the initial position is obtained from the parent, <code>origin</code>, <code>offset</code> and the creation mode.</p>
+            <div class="code-card">
+                <div class="code-header">origin</div>
+<pre><code data-schema="object">{
+  &quot;origin&quot;: {
+    &quot;x&quot;: 160,
+    &quot;y&quot;: 90
+  }
+}</code></pre>
+            </div>
+            <h2 id="size">size</h2>
+            <p>Optional object with numeric <code>width</code> and <code>height</code>, both required when the object is present. Defines logical size; it is not calculated automatically from the drawing. Without <code>size</code>, no logical size is declared. Visual primitives and colliders can supply their own size. The Object schema imposes no positive minimum, but a collider needs positive effective dimensions.</p>
+            <div class="code-card">
+                <div class="code-header">size</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 32,
+    &quot;height&quot;: 16
+  }
+}</code></pre>
+            </div>
+            <p>See <a class="link" href="json/visual.html#representation-size">representation size</a> and <a class="link" href="json/collision.html#size">collider size</a>.</p>
+            <h2 id="visible">visible</h2>
+            <p>Optional boolean; runtime default: <code>true</code>. Controls initial visual presentation. Hiding an object is not equivalent to removing it and does not, by itself, disable its colliders.</p>
+            <div class="code-card">
+                <div class="code-header">visible</div>
+<pre><code data-schema="object">{
+  &quot;visible&quot;: false
+}</code></pre>
+            </div>
+            <h2 id="group">group</h2>
+            <p>Optional string; by default, no group is assigned (empty string). Classifies the object for collision filters and queries. <a class="link" href="json/collision.html#with">collisions.&lt;id&gt;.with</a> contains the group names that a collider actively queries.</p>
+            <div class="code-card">
+                <div class="code-header">group</div>
+<pre><code data-schema="object">{
+  &quot;group&quot;: &quot;enemy&quot;
+}</code></pre>
+            </div>
+            <h2 id="control">control</h2>
+            <ul>
+                <li><code>player</code> — integer ≥ 1. <i>Optional; no association if omitted.</i> Associates the object with a player for input queries that receive an object. Does not declare actions or Machine capabilities.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">control</div>
+<pre><code data-schema="object">{
+  &quot;control&quot;: {
+    &quot;player&quot;: 1
+  }
+}</code></pre>
+            </div>
+            <h2 id="local">local</h2>
+            <p>Optional map of values of type <code>string</code>, <code>number</code> or <code>boolean</code>. Initializes each instance's own state; without this block, the map is empty. Does not support objects, arrays or <code>null</code>.</p>
+            <div class="code-card">
+                <div class="code-header">local</div>
+<pre><code data-schema="object">{
+  &quot;local&quot;: {
+    &quot;lives&quot;: 3,
+    &quot;ready&quot;: true,
+    &quot;label&quot;: &quot;player&quot;
+  }
+}</code></pre>
+            </div>
+            <h2 id="behavior">behavior</h2>
+            <p>Object or <a class="link" href="json/composition.html#blocks">block reference</a>. If declared inline, <code>scripts</code> is required: an array of strings containing JavaScript script paths. Without <code>behavior</code>, no scripts are associated; <code>scripts: []</code> is valid. Relative paths are resolved from the source file the loader retains for the behavior; <code>.js</code> is optional.</p>
+            <div class="code-card">
+                <div class="code-header">behavior</div>
+<pre><code data-schema="object">{
+  &quot;behavior&quot;: {
+    &quot;scripts&quot;: [
+      &quot;player&quot;
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>The example file is <code>player.js</code>. Callbacks and functions are documented in <a class="link" href="scripting.html">Scripting</a> and <a class="link" href="api/index.html">FLX API</a>.</p>
+            <h2 id="states">states</h2>
+            <p>Object or block reference. Declares a lightweight state machine. <code>initial</code> is a required nonempty string and must name a declared state. Each other key names a state whose value is an object with a single optional field, <code>next</code>: an array of unique nonempty names declared in the same block. Without <code>next</code>, no destinations are declared from that state. Without <code>states</code>, the object does not declare its own state machine.</p>
+            <div class="code-card">
+                <div class="code-header">states</div>
+<pre><code data-schema="object">{
+  &quot;states&quot;: {
+    &quot;initial&quot;: &quot;idle&quot;,
+    &quot;idle&quot;: {
+      &quot;next&quot;: [
+        &quot;active&quot;
+      ]
+    },
+    &quot;active&quot;: {
+      &quot;next&quot;: [
+        &quot;idle&quot;
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+            <p>A <a class="link" href="json/creation.html#component">component</a> without its own machine can use the effective state from its parent chain. The filters in <a class="link" href="json/collision.html#states">collider.states</a> query that effective state.</p>
+            <h2 id="bounds">bounds</h2>
+            <p>Object or block reference. Defines behavior when crossing the logical World extent.</p>
+            <ul>
+                <li><code>mode</code> — string: none | wrap. <i>Default: none.</i> <code>none</code> does not apply wrapping; <code>wrap</code> moves the object to the opposite side.</li>
+                <li><code>overflow</code> — boolean. <i>Default: false.</i> With wrap, controls object presentation when crossing the edges; <code>true</code> enables visual continuity copies.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">bounds</div>
+<pre><code data-schema="object">{
+  &quot;bounds&quot;: {
+    &quot;mode&quot;: &quot;wrap&quot;,
+    &quot;overflow&quot;: true
+  }
+}</code></pre>
+            </div>
+            <p>The boundaries come from <a class="link" href="json/object.html#delimit">delimit</a>, not the screen size.</p>
+            <h2 id="delimit">delimit</h2>
+            <p>Optional boolean; default: <code>false</code>. With <code>true</code>, contributes its position and logical size to the World extent during loading. With size, it contributes the rectangle centered on its position; without size, a point. The final envelope must have positive width and height: a single point is not enough.</p>
+            <div class="code-card">
+                <div class="code-header">delimit</div>
+<pre><code data-schema="object">{
+  &quot;origin&quot;: {
+    &quot;x&quot;: 160,
+    &quot;y&quot;: 90
+  },
+  &quot;size&quot;: {
+    &quot;width&quot;: 320,
+    &quot;height&quot;: 180
+  },
+  &quot;delimit&quot;: true
+}</code></pre>
+            </div>
+            <p>The extent is calculated during loading from the <code>delimit</code> objects materialized in that phase. Once fixed, movement, resize and subsequently created instances do not recalculate it. If there are no contributors, the runtime uses <code>(0, 0), 640 × 480</code>.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/behavior.schema.json">docs/schemas/behavior.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/states.schema.json">docs/schemas/states.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/bounds.schema.json">docs/schemas/bounds.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/ObjectDefinition.h">engine/runtime/ObjectDefinition.h</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeObjectBuilder.cpp">engine/runtime/RuntimeObjectBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/scripting/ScriptEngine.cpp">engine/scripting/ScriptEngine.cpp</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html" aria-current="page"><strong>Object</strong></a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -134,14 +134,19 @@ Runtime -> Conecta ambos
                 en editores compatibles como Visual Studio Code.
             </p>
 
+            <p>
+                <code>flx.d.ts</code> ayuda al editor a conocer el contrato público de FLX; no participa en la ejecución del juego.
+            </p>
+
             <hr />
 
             <h2>Input</h2>
 
             <p>
-                Los scripts leen input mediante controles logicos.
-                Las teclas fisicas y botones de mando se declaran en el archivo
-                <code>input.mapping</code> del proyecto, no directamente en scripts.
+                Los scripts trabajan con controles lógicos, no con teclas o botones físicos. 
+                El Input Mapping conecta esos controles con las entradas físicas. 
+                Si el proyecto no selecciona un mapping mediante <code>input.mapping</code>, 
+                FLX utiliza el mapping predeterminado.
             </p>
 
             <div class="code-card">
@@ -156,6 +161,10 @@ if (input_pressed(player, FIRE)) {
 }</code></pre>
             </div>
 
+            <p>
+                Cuando se utiliza un RuntimeObject como sujeto de input, el objeto debe declarar <code>control.player</code>.
+            </p>
+
             <hr />
 
             <h2>Ciclo de vida</h2>
@@ -167,21 +176,25 @@ if (input_pressed(player, FIRE)) {
 
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
-<pre><code>Runtime Start
-      |
- Object Born
-      |
-   born()
-
- action()
- motion()
- collision()
-
- kill()
-
- dead()
-
- cleanup()
+<pre><code>Objeto entra en el mundo
+        │
+        ▼
+      born()
+        │
+        ▼
+ ┌─────────────────┐
+ │     action()    │
+ │     motion()    │
+ │   collision()   │
+ │      draw()     │
+ └─────────────────┘
+        │
+        │ kill()
+        ▼
+      dead()
+        │
+        ▼
+     eliminado
 </code></pre>
             </div>
 
@@ -195,10 +208,17 @@ if (input_pressed(player, FIRE)) {
                 y finalmente desaparecen.
             </p>
 
+            <p>
+                <code>kill()</code> no es una fase del ciclo de ejecución. 
+                Puede solicitarse durante la vida del objeto y, desde ese momento, 
+                el objeto deja de participar en las fases activas posteriores. 
+                <code>draw()</code> se ejecuta durante el dibujado y solo para objetos vivos y visibles.
+            </p>
+
             <h3>Funciones principales</h3>
 
             <ul>
-                <li><code>born(object)</code>: se ejecuta cuando un objeto entra en el mundo.</li>
+                <li><code>born(object)</code>: se ejecuta una vez cuando una instancia entra en el mundo.</li>
 
                 <li><code>action(object)</code>: lógica principal e interacción.</li>
 
@@ -247,10 +267,8 @@ if (input_pressed(player, FIRE)) {
             <h2>Destrucción</h2>
 
             <p>
-                La destrucción de un objeto se solicita mediante
-                <code>kill(object)</code>.
-                Las escrituras directas sobre <code>object.alive</code> son ignoradas
-                por el runtime.
+                El estado <code>alive</code> de un <code>RuntimeObject</code> es de solo lectura.
+                La muerte de una instancia se solicita mediante <code>kill(object)</code>.
             </p>
 
             <div class="code-card">
@@ -391,10 +409,10 @@ function born(laser) {
                 <li>El estado compartido por todo el runtime se gestiona con <code>read_global()</code> y <code>write_global()</code>.</li>
             </ul>
 
-            <h3>Ámbito global</h3>
+            <h3>Ámbito del runtime</h3>
 
             <p>
-                FLX proporciona un estado global compartido mediante
+                FLX proporciona un estado compartido por todo el runtime mediante
                 <code>read_global()</code> y <code>write_global()</code>.
             </p>
 
@@ -406,7 +424,7 @@ function born(laser) {
             </p>
 
             <div class="code-card">
-                <div class="code-header">Global scope</div>
+                <div class="code-header">Runtime scope</div>
 <pre><code>function born(game) {
     write_global("score", 0);
     write_global("lives", 3);
@@ -462,7 +480,7 @@ function collision(player, asteroid) {
 
                 <li>Utiliza <code>delta()</code> para temporizadores y movimiento dependiente del tiempo.</li>
 
-                <li>Utiliza <code>kill()</code> para destruir objetos de forma segura.</li>
+                <li>Utiliza <code>kill()</code> para destruir objetos.</li>
 
                 <li>Utiliza <code>read_global()</code> y <code>write_global()</code> para estado compartido del runtime.</li>
             </ul>
@@ -477,35 +495,10 @@ function collision(player, asteroid) {
             </p>
 
             <ul>
-                <li><a class="link" href="api.html">FLX API</a></li>
+                <li><a class="link" href="api/index.html">FLX API</a></li>
             </ul>
 
-            <hr />
-
-            <h2>Ruta recomendada</h2>
-
-            <p>
-                La documentación está organizada para introducir los conceptos
-                progresivamente.
-            </p>
-
-            <p>
-                Puedes navegar libremente, pero el recorrido recomendado es:
-            </p>
-
-            <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introducción</a></li>
-                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
-                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
-                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
-                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
-                <li class="current">↓ Scripting ← Estás aquí</li>
-                <li class="recommended"><a class="link" href="json-reference.html">Referencia JSON</a> → Recomendado</li>
-                <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
-                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
-            </ul>
+            <div id="doc-path"></div>
         </article>
     </main>
 

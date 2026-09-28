@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hooks / Utilities · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<h1>Hooks / Utilities</h1>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a aria-current="page" class="link" href="api/scripting.html"><strong>Hooks / Utilities</strong></a></p></nav><p>Hooks are functions you implement that FLX calls during its phases. Utilities are operations your script invokes. <a class="link" href="scripting.html">Scripting</a> explains how to associate scripts with project declarations.</p>
+<p>The canonical reference for the <a class="link" href="api/collision.html#collision"><code>collision()</code></a> hook belongs to Collision. Functions on this page that receive object use a view valid for the current invocation.</p>
+<nav aria-label="On this page"><p><a class="link" href="api/scripting.html#hooks">Hooks</a> · <a class="link" href="api/scripting.html#utilities">Utilities</a></p></nav><h2 id="hooks">Hooks</h2>
+<p>Implement born, action, motion, <a class="link" href="api/collision.html#collision"><code>collision()</code></a>, draw and dead according to the object's needs. FLX calls them; they are not ordinary commands for you to invoke. <a class="link" href="api/world.html#hide"><code>hide()</code></a> does not stop logic or movement hooks.</p>
+<section data-api-symbol="born">
+<h3 id="born">born()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>born(object: RuntimeObject): void;</code></pre></div>
+<p>Hook implemented by the developer. FLX calls it when the instance enters World, both for auto children and for instances requested with spawn. Use it to initialize that instance's state.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> does not return a result to FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function born(object) {
+  write_local(object, &quot;lives&quot;, 3);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#spawn"><code>spawn()</code></a>, <a class="link" href="api/scripting.html#action"><code>action()</code></a>.</p>
+</section>
+<section data-api-symbol="action">
+<h3 id="action">action()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>action(object: RuntimeObject): void;</code></pre></div>
+<p>Optional per-frame logic hook. FLX invokes it in the action phase before motion; you do not need to call action from your script to participate in the cycle.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> does not return a result to FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function action(object) {
+  if (input_pressed(object, button(0))) spawn(object, &quot;laser&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#motion"><code>motion()</code></a>, <a class="link" href="api/scripting.html#born"><code>born()</code></a>.</p>
+</section>
+<section data-api-symbol="motion">
+<h3 id="motion">motion()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>motion(object: RuntimeObject): void;</code></pre></div>
+<p>Optional per-frame movement hook. FLX invokes it in the motion phase. Mechanics operations that integrate movement already include delta.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> does not return a result to FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function motion(object) {
+  move_horizontal(object, input_direction(object, direction(0), HORIZONTAL));
+}</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#action"><code>action()</code></a>, <a class="link" href="api/mechanics.html#advance"><code>advance()</code></a>, <a class="link" href="api/scripting.html#delta"><code>delta()</code></a>.</p>
+</section>
+<section data-api-symbol="draw">
+<h3 id="draw">draw()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>draw(object: RuntimeObject): void;</code></pre></div>
+<p>Optional drawing hook called by FLX. Immediate primitives emitted during this invocation belong to object, even if another view is used as a spatial reference. Emit them again in the frames where they should be visible.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> does not return a result to FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function draw(object) {
+  draw_text(object, 0, -12, object.name);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/drawing.html#draw-text"><code>draw_text()</code></a>, <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>, <a class="link" href="api/world.html#hide"><code>hide()</code></a>.</p>
+</section>
+<section data-api-symbol="dead">
+<h3 id="dead">dead()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>dead(object: RuntimeObject): void;</code></pre></div>
+<p>Final hook called once before instance cleanup. Although alive is false, the received object is deliberately a valid context during this hook for permitted operations, such as spawn, read_local, play_sound, find_parent and find_children. Lookups return only relatives that remain alive. This does not extend the validity of views stored from earlier hooks.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> does not return a result to FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function dead(object) {
+  play_sound(object, &quot;explosion&quot;);
+  spawn(object, &quot;debris&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#kill"><code>kill()</code></a>, <a class="link" href="api/runtime.html#runtime-object"><code>RuntimeObject</code></a>.</p>
+</section>
+<h2 id="utilities">Utilities</h2>
+<section data-api-symbol="delta">
+<h3 id="delta">delta()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>delta(): number;</code></pre></div>
+<p>Returns the effective time between frames in seconds. FLX limits abnormal spikes; this is not an unlimited real-time clock. For move_horizontal, move_vertical, advance, accelerate and rotate, do not multiply intent by delta again.</p>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const elapsed = Number(read_local(object, &quot;elapsed&quot;) ?? 0) + delta();
+write_local(object, &quot;elapsed&quot;, elapsed);</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#motion"><code>motion()</code></a>.</p>
+</section>
+<section data-api-symbol="random">
+<h3 id="random">random()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>random(min: number, max: number): number;</code></pre></div>
+<p>Returns a number between min and max; it may be fractional. Use ordered numeric bounds and do not treat it as an integer-only generator.</p>
+<dl><dt><code>min: number</code></dt><dd>Lower bound.</dd><dt><code>max: number</code></dt><dd>Upper bound.</dd></dl>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">apply_angle(object, random(0, 360));</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#probability"><code>probability()</code></a>.</p>
+</section>
+<section data-api-symbol="probability">
+<h3 id="probability">probability()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>probability(chance: number, base?: number): boolean;</code></pre></div>
+<p>Returns a boolean based on chance out of base, with base=100 by default. Use integer quantities: chance ≤ 0 or base ≤ 0 yields false; chance ≥ base yields true. Does not automatically scale probability by time: repeating the query every frame changes the number of opportunities.</p>
+<dl><dt><code>chance: number</code></dt><dd>Integer number of favorable outcomes.</dd><dt><code>base?: number</code></dt><dd>Total number of outcomes; defaults to 100.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (probability(1, 6)) console.log(&quot;One chance in six&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#random"><code>random()</code></a>.</p>
+</section>
+<section data-api-symbol="console.log">
+<h3 id="console-log">console.log()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>console.log(...values): void;</code></pre></div>
+<p>FLX logging service. Accepts multiple values, converts them to text and joins them with spaces to emit a script message. Console output depends on the run's log configuration; this does not imply a full browser console.</p>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">console.log(&quot;Ship position:&quot;, object.x, object.y);</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#delta"><code>delta()</code></a>.</p>
+</section>
+<section data-api-symbol="exit">
+<h3 id="exit">exit()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>exit(): void;</code></pre></div>
+<p>Requests an orderly shutdown of the current runtime. This is not equivalent to kill, which destroys an instance.</p>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (input_pressed(system(), button(0))) exit();</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#kill"><code>kill()</code></a>, <a class="link" href="api/input.html#system"><code>system()</code></a>.</p>
+</section>
+<hr /><details><summary>Sources for this reference</summary><p>Reference checked against <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> and the runtime on branch feature/audit-public-doc, revision <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a aria-current="page" class="link" href="api/scripting.html"><strong>Hooks / Utilities</strong></a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

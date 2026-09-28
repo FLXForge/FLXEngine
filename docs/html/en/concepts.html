@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Core Concepts | FLX Engine</title>
+    <title>Basic concepts | FLX Engine</title>
     <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
     <link rel="shortcut icon" href="../favicon.ico" />
@@ -19,18 +19,15 @@
 
         <article class="doc-content">
 
-
             <p class="eyebrow">FLX Documentation</p>
-            <h1>Core Concepts</h1>
+            <h1>Basic concepts</h1>
 
             <p>
-                FLX organizes projects through simple data structures,
-                objects, transformations and clearly defined execution rules.
+                FLX organizes projects through simple data structures, objects, behavior and clearly defined execution rules.
             </p>
 
             <p>
-                This section describes the fundamental concepts
-                that are part of every FLX project.
+                This section describes the fundamental concepts that are part of any FLX project.
             </p>
 
             <hr />
@@ -38,8 +35,7 @@
             <h2>Project</h2>
 
             <p>
-                Every FLX project begins with a project file
-                using the <code>.flx</code> extension.
+                Every FLX project starts with a project file with the extension <code>.flx</code>.
             </p>
 
             <p>
@@ -47,46 +43,55 @@
             </p>
 
             <div class="code-card">
-                <div class="code-header">Asteroids.flx</div>
+                <div class="code-header">asteroids.flx</div>
+<pre><code>title=Asteroids
+name=Asteroids
+version=2.0
+engine=0.3.0
 
-
-<pre><code>name=Asteroids
-version=1.0
-engine=0.2.0
 path=asteroids
 root=space
-title=Asteroids
-machine=machines/standard.yml
+machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
 </code></pre>
-
-
             </div>
 
             <p>
-                From this file,
-                the runtime loads the root object,
-                resources and required configuration.
-                If the file declares <code>machine</code>, FLX also loads the
-                referenced YAML Machine and its chips.
+                From this file, the runtime loads the root object, resources and project configuration.
             </p>
 
             <hr />
 
-            <h2>Root Object</h2>
+            <h2>Machine</h2>
 
             <p>
-                The root object is the object selected by the <code>root</code>
-                field in the <code>.flx</code> file.
+                Every project runs on a <em>machine</em>, which defines the characteristics of the environment in which the world operates.
             </p>
 
             <p>
-                It is a normal JSON object that organizes objects,
-                resources and execution logic.
+                A project can select its machine through the
+                <code>machine</code> field in the <code>.flx</code> file. If not declared, FLX uses the default configuration.
             </p>
 
             <p>
-                Depending on the project,
-                it may represent:
+                Machines are described in detail in their own documentation section.
+            </p>
+
+            <hr />
+
+            <h2>Root object</h2>
+
+            <p>
+                The root object is the object selected by the
+                <code>root</code> field in the <code>.flx</code> file.
+            </p>
+
+            <p>
+                It is a regular JSON object that organizes the world's main structure and associated resources.
+            </p>
+
+            <p>
+                Depending on the project, it may represent:
             </p>
 
             <ul>
@@ -95,11 +100,11 @@ machine=machines/standard.yml
                 <li>A loading screen</li>
                 <li>A presentation</li>
                 <li>A narrative sequence</li>
-                <li>A specific application state</li>
+                <li>A particular application state</li>
             </ul>
 
             <p>
-                FLX does not impose a specific interpretation.
+                FLX does not impose a particular interpretation.
             </p>
 
             <hr />
@@ -111,11 +116,11 @@ machine=machines/standard.yml
             </p>
 
             <p>
-                An object may:
+                An object can:
             </p>
 
             <ul>
-                <li>Be rendered</li>
+                <li>Be drawn</li>
                 <li>Move</li>
                 <li>Collide</li>
                 <li>Store data</li>
@@ -123,22 +128,29 @@ machine=machines/standard.yml
             </ul>
 
             <p>
-                Objects are typically described using JSON.
+                Objects are usually described using JSON.
             </p>
 
             <p>
-                A definition may be written entirely
-                or built by reusing another definition through
+                A definition can be written in full or built by reusing another definition through
                 <code>like</code>.
             </p>
 
             <div class="code-card">
                 <div class="code-header">ship.json</div>
-
-
 <pre><code>{
-    "shape": {
-        "type": "triangle"
+    "size": {
+        "width": 18,
+        "height": 24
+    },
+
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
     },
 
     "mechanics": {
@@ -149,31 +161,24 @@ machine=machines/standard.yml
     }
 }
 </code></pre>
-
-
             </div>
 
             <hr />
 
-            <h2>Reuse and Composition</h2>
+            <h2>Reuse and composition</h2>
 
             <p>
-                FLX allows new definitions to be built
-                from existing ones.
+                FLX lets you build new definitions from existing ones.
             </p>
 
             <p>
                 This capability is based on the
-                <code>like</code> system,
-                which allows configurations to be reused
-                while overriding only the required fields.
+                <code>like</code> system, which lets you reuse configurations and override only the fields you need.
             </p>
 
             <div class="code-card">
                 <div class="code-header">DeepSpaceLeft</div>
 <pre><code>{
-    "name": "DeepSpaceLeft",
-
     "like": "asteroid/deep_space",
 
     "origin": {
@@ -185,206 +190,173 @@ machine=machines/standard.yml
             </div>
 
             <p>
-                This feature makes it possible to build entire families
-                of objects from a single base definition.
+                This feature lets you build entire object families by reusing a single base definition.
             </p>
 
             <p>
-                An object does not require a visual representation to exist within the runtime.
+                An object does not need a visual representation to exist within the runtime.
             </p>
 
             <p>
-                If it defines <code>behavior</code>, <code>children</code> or <code>collision</code>,
-                it can act as a logical node, level manager, HUD, spawner, trigger
-                or game controller.
+                If it defines <code>behavior</code>, <code>children</code> or <code>collisions</code>, it can act as a logical node, level manager, HUD, spawner, trigger or game controller.
             </p>
 
             <p>
-                Additionally, <code>name</code> identifies an object logically or conceptually,
-                while <code>id</code> identifies a specific runtime instance.
+                During execution, <code>name</code> retains the object definition's logical name, while <code>id</code> identifies a specific instance within the runtime.
             </p>
 
+
             <p>
-                Full details are described in
-                JSON Reference.
+                Full details are described in JSON Reference.
             </p>
 
             <hr />
 
-            <h2>Children and Spawn Timing</h2>
+            <h2>Children and spawn timing</h2>
 
             <p>
-                FLX uses <code>children</code> to declare what may exist below an object.
-                The child <code>spawn</code> value defines when it enters the runtime.
-                The optional <code>creation</code> block defines how the parent creates
-                those children.
+                <code>children</code> declares which objects a parent object can create. Each child's <code>spawn</code> value determines whether its first instance is born automatically or remains available for manual creation.
+            </p>
+
+            <p>
+                <code>creation</code> defines how the parent organizes the creation of its children. If not declared, the mode used is <code>individual</code>.
             </p>
 
             <ul>
                 <li>
-                    <code>spawn: "auto"</code>:
-                    the child is instantiated when the parent enters the world.
+                    <code>spawn: "auto"</code>: the child is instantiated when its parent enters the world.
                 </li>
 
                 <li>
-                    <code>spawn: "manual"</code>:
-                    the child is registered and can be created later with
+                    <code>spawn: "manual"</code>: the child is registered and can be created later with
                     <code>spawn(parent, "child")</code>.
                 </li>
             </ul>
 
             <p>
-                <code>spawn(parent, "child")</code> can create any declared
-                child. The <code>spawn</code> value only controls whether the
-                first instance is created automatically when the parent enters
-                the world.
-            </p>
-
-            <p>
-                Together with <code>like</code>, this keeps object composition,
-                reuse and dynamic creation under one JSON property.
-            </p>
-
-            <p>
-                When <code>creation</code> is omitted, the parent behaves as
-                <code>creation.mode = "individual"</code>: each child is handled by its
-                own declaration. In <code>grid</code> mode, the parent position becomes
-                the grid origin, the pattern chooses which child belongs to each cell,
-                and <code>spawn(parent, "child")</code> creates the matching
-                cells instead of a free instance.
+                <code>spawn(parent, "child")</code> can create any declared child. The <code>spawn</code> value only controls whether the first instance is born automatically when the parent enters the world.
             </p>
 
             <hr />
 
-            <h2>Shape Types</h2>
+            <h2>Visual representation</h2>
 
             <p>
-                FLX provides several basic visual representation types.
+                An object's appearance is declared through <code>visual</code>.
+            </p>
+
+            <p>
+                An object can contain multiple elements within
+                <code>representation</code>. Each element can be a primitive, geometry defined by points or text.
             </p>
 
             <table>
                 <tr>
-                    <th>Type</th>
-                    <th>Origin</th>
+                    <th>Representation</th>
+                    <th>Usage</th>
                 </tr>
 
                 <tr>
-                    <td><code>block</code></td>
-                    <td>Pivot / center</td>
+                    <td><code>primitive</code></td>
+                    <td>Basic shapes: <code>rectangle</code>, <code>triangle</code> and <code>ellipse</code>.</td>
                 </tr>
 
                 <tr>
-                    <td><code>rectangle</code></td>
-                    <td>Pivot / center</td>
-                </tr>
-
-                <tr>
-                    <td><code>triangle</code></td>
-                    <td>Pivot / center</td>
-                </tr>
-
-                <tr>
-                    <td><code>line</code></td>
-                    <td>Pivot / center</td>
-                </tr>
-
-                <tr>
-                    <td><code>polygon</code></td>
-                    <td>Pivot</td>
+                    <td><code>geometry</code></td>
+                    <td>Geometry defined by a list of points.</td>
                 </tr>
 
                 <tr>
                     <td><code>text</code></td>
-                    <td>Pivot / box center</td>
+                    <td>Text with configurable font size.</td>
                 </tr>
             </table>
 
             <p>
-                Colors can be declared directly from JSON using raylib color
-                names or hexadecimal values in <code>#rgb</code> and
-                <code>#rrggbb</code> format.
+                <code>visual</code> can define a base color, and each element of
+                <code>representation</code> can use its own color.
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape.json</div>
-
-
-<pre><code>"shape": {
-    "type": "triangle",
-    "color": "#2f3a44"
-}
-</code></pre>
-
-
-            </div>
-
-            <p>
-                Polygons allow irregular shapes
-                to be defined through lists of points.
-            </p>
-
-            <div class="code-card">
-                <div class="code-header">polygon</div>
-
-
-<pre><code>"shape": {
-    "type": "polygon",
-
-    "points": [
-        { "x": 0, "y": -16 },
-        { "x": 12, "y": -8 },
-        { "x": 16, "y": 8 },
-        { "x": -8, "y": 14 }
+                <div class="code-header">visual</div>
+<pre><code>"visual": {
+    "color": "white",
+    "representation": [
+        {
+            "primitive": "triangle",
+            "mode": "outline"
+        }
     ]
 }
 </code></pre>
+            </div>
 
+            <p>
+                Geometries let you build representations from points and choose whether they are drawn open, closed or filled.
+            </p>
 
+            <div class="code-card">
+                <div class="code-header">geometry</div>
+<pre><code>"visual": {
+    "representation": [
+        {
+            "geometry": [
+                { "x": 0, "y": -16 },
+                { "x": 12, "y": 8 },
+                { "x": -12, "y": 8 }
+            ],
+            "mode": "close"
+        }
+    ]
+}
+</code></pre>
             </div>
 
             <hr />
 
-            <h2>Shape and Collision</h2>
+            <h2>Visual representation and collisions</h2>
 
             <p>
                 In FLX, visual representation and collision are independent systems.
             </p>
 
             <p>
-                The <code>shape</code> block defines how an object is rendered,
-                while the <code>collisions</code> block defines how it interacts
-                with other objects in the runtime.
+                The <code>visual</code> block defines how an object is represented, while <code>collisions</code> defines its colliders and how they participate in collision detection.
             </p>
 
             <p>
-                In many cases both definitions may be similar,
-                but they are not required to match.
+                In some cases, both definitions may be similar, but they do not have to match.
             </p>
 
             <p>
-                In addition to defining named collider shapes,
-                the <code>collisions</code> block can control whether each collider
-                is enabled and which groups it can actively check.
+                Each collider can be enabled or disabled and declare through
+                <code>with</code> the groups against which it queries collisions.
             </p>
 
             <p>
-                Collision checks are directional:
-                an object only executes <code>collision(object, other, contacts)</code>
-                when one of its enabled colliders includes the other object's group
-                in its <code>with</code> list.
+                Collision checks are directional: an object only executes <code>collision(object, other, contacts)</code>
+                when one of its enabled colliders includes the other object's group in its <code>with</code> list.
             </p>
 
             <div class="code-card">
-                <div class="code-header">shape + collisions</div>
+                <div class="code-header">visual + collisions</div>
 <pre><code>{
-    "shape": {
-        "type": "polygon"
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
     },
 
     "collisions": {
         "body": {
             "type": "ellipse",
-            "size": { "width": 24, "height": 24 }
+            "size": {
+                "width": 24,
+                "height": 24
+            }
         }
     }
 }
@@ -392,123 +364,97 @@ machine=machines/standard.yml
             </div>
 
             <p>
-                This separation allows collision to remain simple and efficient
-                while visual representation can be as detailed as necessary.
+                This separation lets you define representation and collision detection independently.
             </p>
 
             <hr />
 
-            <h2>Coordinate System</h2>
+            <h2>Coordinate system</h2>
 
             <p>
-                FLX uses a 2D coordinate system with its origin
-                in the top-left corner of the screen.
+                FLX uses a 2D coordinate system. In the current machine, the logical origin is at the top-left corner.
             </p>
 
             <ul>
-                <li><code>x</code> grows to the right.</li>
-                <li><code>y</code> grows downward.</li>
-                <li>Moving up decreases <code>y</code>.</li>
-                <li>Moving down increases <code>y</code>.</li>
+                <li><code>x</code> increases to the right.</li>
+                <li><code>y</code> increases downward.</li>
+                <li>Moving up means decreasing <code>y</code>.</li>
+                <li>Moving down means increasing <code>y</code>.</li>
             </ul>
 
             <p>
-                At the moment, FLX uses logical world coordinates
-                in a fixed world without cameras or scrolling.
+                FLX currently works with logical world coordinates in a fixed world without a camera or scrolling.
             </p>
 
             <p>
-                Objects use these coordinates for their position within the runtime.
-                Immediate drawing functions such as <code>draw_text()</code>
-                use logical world coordinates by default, or local coordinates
-                when a <code>RuntimeObject</code> is passed as reference.
-            </p>
-
-            <p>
-                Camera systems, scrolling and richer transformations between
-                world, screen, view and local coordinate spaces
-                remain planned for future versions.
+                Objects use these coordinates for their position within the runtime. Immediate drawing functions, such as <code>draw_text()</code>, use logical world coordinates by default, or local coordinates when a <code>RuntimeObject</code> is passed as a reference.
             </p>
 
             <hr />
 
-            <h2>Angular System</h2>
+            <h2>Angle system</h2>
 
             <p>
                 FLX uses its own angular convention.
             </p>
 
             <ul>
-                <li><code>0°</code> points upward.</li>
+                <li><code>0°</code> points up.</li>
                 <li><code>90°</code> points right.</li>
-                <li><code>180°</code> points downward.</li>
+                <li><code>180°</code> points down.</li>
                 <li><code>270°</code> points left.</li>
                 <li>Positive angles rotate clockwise.</li>
             </ul>
 
             <div class="code-card">
                 <div class="code-header">rotation</div>
-
-
-<pre><code>rotate(ship, RIGHT);
-advance(ship);
+<pre><code>rotate(ship, 1);   // gira en sentido horario
+rotate(ship, -1);  // gira en sentido antihorario
 </code></pre>
-
-
             </div>
+
+            <p>
+                In polar movement, <code>advance()</code> uses the object's current angle to determine the direction of travel.
+            </p>
 
             <hr />
 
             <h2>Movement</h2>
 
             <p>
-                FLX combines a classic speed-based system
-                with an acceleration and inertia-based system.
+                An object's movement is configured through <code>mechanics</code>.
             </p>
 
             <p>
-                Common movement-related properties include:
+                FLX distinguishes two main models:
             </p>
 
             <ul>
-                <li><code>speed</code></li>
-                <li><code>velocityX</code></li>
-                <li><code>velocityY</code></li>
-                <li><code>acceleration</code></li>
-                <li><code>inertia</code></li>
-                <li><code>rotationSpeed</code></li>
+                <li>
+                    <code>direct</code>: movement along the horizontal and vertical axes.
+                </li>
+                <li>
+                    <code>polar</code>: movement defined by speed and angle.
+                </li>
             </ul>
 
             <p>
-                Movement functions automatically follow
-                the FLX angular convention.
-            </p>
-
-            <hr />
-
-            <h2>Recommended Path</h2>
-
-            <p>
-                The documentation is organized to introduce concepts progressively.
+                <code>mechanics</code> can declare speed, acceleration, inertia and other movement and rotation characteristics.
             </p>
 
             <p>
-                You are free to explore any section, but the recommended path is:
+                During execution, the runtime maintains live movement state. Scripts can query values such as <code>speed</code>,
+                <code>angle</code>, <code>velocityX</code>, <code>velocityY</code>
+                and <code>rotationSpeed</code> through the object received by hooks.
             </p>
 
-            <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introduction</a></li>
-                <li>↓ <a class="link" href="mental-model.html">How FLX Thinks</a></li>
-                <li>↓ <a class="link" href="philosophy.html">Philosophy</a></li>
-                <li class="current">↓ Core Concepts ← You are here</li>
-                <li class="recommended"><a class="link" href="getting-started.html">Getting Started</a> → Recommended</li>
-                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
-                <li>↓ <a class="link" href="json-reference.html">JSON Reference</a></li>
-                <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li>↓ <a class="link" href="examples.html">Examples</a></li>
-                <li>↓ <a class="link" href="howdo.html">How Do I...?</a></li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
-            </ul>
+            <p>
+                Movement operations, such as <code>move_horizontal()</code>,
+                <code>move_vertical()</code>, <code>advance()</code>,
+                <code>accelerate()</code> or <code>rotate()</code>, act on that state while respecting the declared mechanics.
+            </p>
+
+            <div id="doc-path"></div>
         </article>
 
     </main>

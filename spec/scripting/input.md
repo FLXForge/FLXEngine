@@ -634,15 +634,15 @@ const ACTION = button(0);
 
 function action(object) {
     if (input_pressed(player(1), ACTION)) {
-        object.local["pressed"] = 1;
+        write_local(object, "pressed", 1);
     }
 
     if (input_down(player(1), ACTION)) {
-        object.local["down"] = 1;
+        write_local(object, "down", 1);
     }
 
     if (input_released(player(1), ACTION)) {
-        object.local["released"] = 1;
+        write_local(object, "released", 1);
     }
 }
 ```
@@ -654,11 +654,11 @@ const MOVE = direction(0);
 
 function action(object) {
     if (input_pressed(player(1), MOVE, UP)) {
-        object.local["upPressed"] = 1;
+        write_local(object, "upPressed", 1);
     }
 
     if (input_down(player(1), MOVE, LEFT)) {
-        object.local["leftDown"] = 1;
+        write_local(object, "leftDown", 1);
     }
 }
 ```

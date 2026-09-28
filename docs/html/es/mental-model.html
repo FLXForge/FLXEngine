@@ -28,11 +28,12 @@
             </p>
 
             <p>
-                FLX no intenta simplificar C++.
+                FLX no intenta trasladar el motor al script.
             </p>
 
             <p>
-                Intenta que el comportamiento del runtime pueda escribirse como script.
+                El runtime mantiene las reglas del mundo; los scripts expresan
+                el comportamiento de los objetos.
             </p>
 
             <div class="code-card">
@@ -45,6 +46,24 @@ Runtime -> Conecta ambos
 </code></pre>
             </div>
 
+            <h2>El mundo existe sobre una machine</h2>
+
+            <p>
+                El runtime no ejecuta el mundo en un entorno indefinido.
+                Cada proyecto utiliza una <em>machine</em> que establece las características
+                del entorno en el que ese mundo puede existir.
+            </p>
+
+            <p>
+                FLX proporciona una machine por defecto, por lo que no es necesario
+                definir una para comenzar.
+            </p>
+
+            <p>
+                Más adelante veremos cómo una machine permite controlar explícitamente
+                esas características.
+            </p>
+
             <h2>Los objetos contienen datos</h2>
 
             <p>
@@ -52,16 +71,16 @@ Runtime -> Conecta ambos
             </p>
 
             <p>
-                Puede tener posición, tamaño, velocidad,
-                apariencia visual o cualquier otra propiedad.
+                Puede tener posición, tamaño, movimiento, representación visual,
+                estado local y otras capacidades declaradas.
             </p>
 
             <p>
-                Los objetos no contienen comportamiento.
+                Los objetos no implementan su comportamiento.
             </p>
 
             <p>
-                Contienen estado.
+                Declaran su estado, sus capacidades y los scripts que pueden actuar sobre ellos.
             </p>
 
             <h2>Los scripts contienen funciones</h2>
@@ -123,11 +142,16 @@ Runtime -> Conecta ambos
             </p>
 
             <ul>
-                <li>Ámbito de función</li>
-                <li>Ámbito de script</li>
-                <li>Ámbito de objeto</li>
-                <li>Ámbito global (futuro)</li>
+                <li>Ámbito de función: variables locales de cada ejecución.</li>
+                <li>Ámbito de script: variables compartidas por las funciones del script.</li>
+                <li>Ámbito de objeto: estado propio mediante <code>read_local()</code> y <code>write_local()</code>.</li>
+                <li>Ámbito global: estado compartido mediante <code>read_global()</code> y <code>write_global()</code>.</li>
             </ul>
+
+            <p>
+                Un mismo script puede actuar sobre muchos objetos, pero cada objeto
+                mantiene su propio estado local.
+            </p>
 
             <p>
                 Comprender esta diferencia es una de las claves para comprender FLX.
@@ -142,19 +166,29 @@ Runtime -> Conecta ambos
 
             <div class="code-card">
                 <div class="code-header">Lifecycle</div>
-<pre><code>born()
-
-action()
-motion()
-collision()
-
-kill()
-
-dead()
-
-cleanup()
+<pre><code>         born()
+           ↓
+    ┌─────────────┐
+    │   action()  │
+    │   motion()  │
+    │ collision() │
+    │    draw()   │
+    └─────────────┘
+           ↓
+         dead()
 </code></pre>
             </div>
+
+            <p>
+                <code>born()</code> se ejecuta cuando el objeto entra en el mundo.
+                Durante su vida, el runtime puede invocar sus distintos hooks de comportamiento.
+                <code>dead()</code> se ejecuta una vez antes de que el objeto sea retirado.
+            </p>
+
+            <p>
+                Un script puede solicitar su destrucción mediante <code>kill()</code>,
+                pero el ciclo de vida pertenece al runtime.
+            </p>
 
             <p>
                 Esta terminología no es accidental.
@@ -181,36 +215,11 @@ Runtime
 </code></pre>
             </div>
 
-            <p class="placeholder">
+            <p>
                 El resto de la documentación explica cómo se implementa esta idea.
             </p>
 
-            <hr />
-
-            <h2>Ruta recomendada</h2>
-
-            <p>
-                La documentación está organizada para introducir los conceptos
-                progresivamente.
-            </p>
-
-            <p>
-                Puedes navegar libremente, pero el recorrido recomendado es:
-            </p>
-
-            <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introducción</a></li>
-                <li class="current">↓ Cómo piensa FLX ← Estás aquí</li>
-                <li class="recommended"><a class="link" href="philosophy.html">Filosofía</a> → Recomendado</li>
-                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
-                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
-                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
-                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
-                <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li>↓ <a class="link" href="examples.html">Ejemplos</a></li>
-                <li>↓ <a class="link" href="howdo.html">¿Cómo hacer...?</a></li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
-            </ul>
+            <div id="doc-path"></div>
         </article>
     </main>
 

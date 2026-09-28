@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collision · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Collision · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html" aria-current="page"><strong>Collision</strong></a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <h2 id="collisions">collisions</h2>
+            <p>Optional map of names to colliders, or a reference to the entire map. Without <code>collisions</code>, no colliders are declared. Each entry can be an inline object or an <a class="link" href="json/composition.html#blocks">FLX reference</a> <code>/archivo:miembro</code>. Collision geometry is independent of <a class="link" href="json/visual.html#visual">visual</a>.</p>
+            <div class="code-card">
+                <div class="code-header">collisions</div>
+<pre><code data-schema="object">{
+  &quot;group&quot;: &quot;player&quot;,
+  &quot;size&quot;: {
+    &quot;width&quot;: 24,
+    &quot;height&quot;: 24
+  },
+  &quot;collisions&quot;: {
+    &quot;body&quot;: {
+      &quot;type&quot;: &quot;ellipse&quot;,
+      &quot;with&quot;: [
+        &quot;enemy&quot;,
+        &quot;wall&quot;
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+            <h2 id="collider">Collider</h2>
+            <p>Object with no required fields in the schema. An empty collider takes the defaults, but is only effective if its resolved dimensions are positive.</p>
+            <ul>
+                <li><code>type</code> — string: box | ellipse. <i>Runtime default: box.</i> Oriented rectangle or ellipse.</li>
+                <li><code>enabled</code> — boolean. <i>Runtime default: true.</i> Initial enabled state.</li>
+                <li><code>size</code> — object. <i>Optional; each omitted axis takes Object.size.</i> width and height, when declared, are numbers > 0.</li>
+                <li><code>offset</code> — object. <i>Default: x 0, y 0.</i> Local displacement; each numeric axis is optional.</li>
+                <li><code>angle</code> — number. <i>Runtime default: 0.</i> Degrees added to the object's angle.</li>
+                <li><code>with</code> — array of unique nonempty strings. <i>Default: empty.</i> Actively queried groups.</li>
+                <li><code>states</code> — nonempty array of unique nonempty strings. <i>Optional; no filter.</i> Effective states in which the collider is available.</li>
+            </ul>
+            <h3 id="size">Collider size</h3>
+            <p>Axes are resolved separately. If a collider axis is missing and the Object has no logical size, that axis is 0 and the collider is ineffective. A visible representation does not automatically supply collider dimensions.</p>
+            <div class="code-card">
+                <div class="code-header">Collider with its own size</div>
+<pre><code data-schema="object">{
+  &quot;collisions&quot;: {
+    &quot;body&quot;: {
+      &quot;type&quot;: &quot;box&quot;,
+      &quot;size&quot;: {
+        &quot;width&quot;: 16,
+        &quot;height&quot;: 24
+      }
+    }
+  }
+}</code></pre>
+            </div>
+            <h3 id="offset">offset and angle</h3>
+            <p>The center is the object's position plus the offset rotated by the object's angle. The effective angle adds <code>object.angle + collider.angle</code>. The collider offset is not the <a class="link" href="json/creation.html#offset">creation offset</a>.</p>
+            <div class="code-card">
+                <div class="code-header">Offset geometry</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 32,
+    &quot;height&quot;: 32
+  },
+  &quot;collisions&quot;: {
+    &quot;sensor&quot;: {
+      &quot;offset&quot;: {
+        &quot;x&quot;: 0,
+        &quot;y&quot;: -20
+      },
+      &quot;size&quot;: {
+        &quot;width&quot;: 12,
+        &quot;height&quot;: 8
+      },
+      &quot;angle&quot;: 45,
+      &quot;with&quot;: [
+        &quot;enemy&quot;
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+            <h3 id="with">with</h3>
+            <p>Each name is compared with the other object's <a class="link" href="json/object.html#group">group</a>. An empty or omitted array does not initiate detection from that collider, although the collider may participate as the target of another that includes it in <code>with</code>. The filter is directional: the target collider does not need to declare the source's group. Belonging to an entity through <code>component</code> does not replace these filters or, by itself, suppress callbacks between its objects.</p>
+            <div class="code-card">
+                <div class="code-header">Passive collider</div>
+<pre><code data-schema="object">{
+  &quot;group&quot;: &quot;wall&quot;,
+  &quot;size&quot;: {
+    &quot;width&quot;: 16,
+    &quot;height&quot;: 64
+  },
+  &quot;collisions&quot;: {
+    &quot;body&quot;: {
+      &quot;type&quot;: &quot;box&quot;
+    }
+  }
+}</code></pre>
+            </div>
+            <h3 id="states">Collider states</h3>
+            <p>Filters by effective state: its own machine or, for a component without one, the machine found in its parent chain. If a filter exists but there is no effective state, the collider is unavailable. The filter combines with <code>enabled</code> and positive dimensions; it does not replace <a class="link" href="json/object.html#states">Object.states</a>.</p>
+            <div class="code-card">
+                <div class="code-header">State-limited collider</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 20,
+    &quot;height&quot;: 20
+  },
+  &quot;states&quot;: {
+    &quot;initial&quot;: &quot;idle&quot;,
+    &quot;idle&quot;: {
+      &quot;next&quot;: [
+        &quot;active&quot;
+      ]
+    },
+    &quot;active&quot;: {
+      &quot;next&quot;: [
+        &quot;idle&quot;
+      ]
+    }
+  },
+  &quot;collisions&quot;: {
+    &quot;hit&quot;: {
+      &quot;with&quot;: [
+        &quot;enemy&quot;
+      ],
+      &quot;states&quot;: [
+        &quot;active&quot;
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+            <p>Detecting a collision does not, by itself, apply a physical response: it does not automatically separate objects, change velocities or produce bounces. Collision callbacks and queries belong to <a class="link" href="api/index.html">FLX API</a>.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/collision.schema.json">docs/schemas/collision.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/ObjectDefinition.h">engine/runtime/ObjectDefinition.h</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/collision/EffectiveColliderBuilder.cpp">engine/collision/EffectiveColliderBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/collision/CollisionSystem.cpp">engine/collision/CollisionSystem.cpp</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html" aria-current="page"><strong>Collision</strong></a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State / Timers · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>State / Timers</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a aria-current="page" class="link" href="api/state.html"><strong>State / Timers</strong></a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>Esta página reúne dos familias independientes: la máquina de estados declarada en JSON y los timers nombrados de cada RuntimeObject. Cambiar de estado no sustituye el script; éste consulta el estado y decide qué operaciones realizar.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/state.html#states">State</a> · <a class="link" href="api/state.html#timers">Timers</a></p></nav><h2 id="states">State</h2>
+<p>Las transiciones se declaran en <a class="link" href="json/object.html#states">JSON · states</a>. Un componente sin máquina propia puede resolver la máquina de su padre; las consultas y transiciones actúan sobre esa máquina efectiva.</p>
+<section data-api-symbol="state_to">
+<h3 id="state-to">state_to()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>state_to(object: RuntimeObject, stateName: string): void;</code></pre></div>
+<p>Solicita una transición al <code>stateName</code> declarado y permitido en next del estado actual. Sin máquina o transición válida, conserva el estado. Cuando se acepta, cambia el nombre actual y reinicia el tiempo a 0; state_entered identifica el primer frame completo posterior. No asigna una propiedad arbitraria ni ejecuta un callback automático por estado.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>stateName: string</code></dt><dd>Nombre declarado de estado.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (state_active(object, &quot;title&quot;) &amp;&amp; input_pressed(object, button(0))) {
+  state_to(object, &quot;playing&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#state-current"><code>state_current()</code></a>, <a class="link" href="api/state.html#state-entered"><code>state_entered()</code></a>.</p>
+</section>
+<section data-api-symbol="state_current">
+<h3 id="state-current">state_current()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>state_current(object: RuntimeObject): string;</code></pre></div>
+<p>Devuelve el nombre del estado actual, o una cadena vacía si no hay máquina de estados.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>string</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const state = state_current(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#state-to"><code>state_to()</code></a>, <a class="link" href="api/state.html#state-active"><code>state_active()</code></a>.</p>
+</section>
+<section data-api-symbol="state_active">
+<h3 id="state-active">state_active()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>state_active(object: RuntimeObject, stateName: string): boolean;</code></pre></div>
+<p>Devuelve true si hay una máquina de estados y el nombre actual coincide con <code>stateName</code>. Sin máquina devuelve false.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>stateName: string</code></dt><dd>Nombre declarado de estado.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (state_active(object, &quot;playing&quot;)) advance(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#state-current"><code>state_current()</code></a>.</p>
+</section>
+<section data-api-symbol="state_entered">
+<h3 id="state-entered">state_entered()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>state_entered(object: RuntimeObject): boolean;</code></pre></div>
+<p>Devuelve true durante el primer frame completo del nuevo estado. Una transición solicitada en el frame actual prepara ese indicador para el siguiente; no es un evento consumible por la primera consulta.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function action(object) {
+  if (state_entered(object)) play_timer(object, &quot;intro&quot;, 1);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#state-to"><code>state_to()</code></a>, <a class="link" href="api/state.html#state-time"><code>state_time()</code></a>.</p>
+</section>
+<section data-api-symbol="state_time">
+<h3 id="state-time">state_time()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>state_time(object: RuntimeObject): number;</code></pre></div>
+<p>Devuelve los segundos acumulados desde la entrada al estado, o 0 sin máquina. En action/motion del primer frame completo devuelve 0. Matiz de v0.3.0: World actualiza el tiempo después de las colisiones y antes de draw; una lectura desde draw puede observar ya el delta de ese frame. No se garantiza 0 durante todas sus fases.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function action(object) {
+  if (state_active(object, &quot;playing&quot;) &amp;&amp; state_time(object) &gt; 5) {
+    state_to(object, &quot;finished&quot;);
+  }
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#state-entered"><code>state_entered()</code></a>.</p>
+</section>
+<h2 id="timers">Timers</h2>
+<p>Un timer pertenece a RuntimeObject + nombre y desaparece con su propietario. World actualiza los Running automáticamente; Paused congela el restante. Done permanece observable hasta reproducir, eliminar o destruir el timer.</p>
+<table><caption>Estados observables</caption><thead><tr><th scope="col">Estado</th><th scope="col">active</th><th scope="col">paused</th><th scope="col">done</th><th scope="col">left</th></tr></thead><tbody><tr><th scope="row">Running</th><td data-label="active">true</td><td data-label="paused">false</td><td data-label="done">false</td><td data-label="left">&gt; 0</td></tr><tr><th scope="row">Paused</th><td data-label="active">true</td><td data-label="paused">true</td><td data-label="done">false</td><td data-label="left">Restante congelado</td></tr><tr><th scope="row">Done</th><td data-label="active">false</td><td data-label="paused">false</td><td data-label="done">true</td><td data-label="left">0</td></tr><tr><th scope="row">Absent</th><td data-label="active">false</td><td data-label="paused">false</td><td data-label="done">false</td><td data-label="left">0</td></tr></tbody></table>
+<section data-api-symbol="play_timer">
+<h3 id="play-timer">play_timer()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>play_timer(object: RuntimeObject, timerName: string, duration?: number): void;</code></pre></div>
+<p>Inicia, reanuda o redefine un timer identificado por object + timerName (cadena no vacía). La duración se expresa en segundos y debe ser finita y mayor que 0. Sin duration: Running no cambia, Paused reanuda, Done vuelve a empezar con su duración conocida y Absent no se crea. Con duration: Absent y Done empiezan con esa duración completa; Running o Paused conservan el tiempo transcurrido y pasan a Running con <code>left = nueva duración total − transcurrido</code>. Si ese restante es ≤ 0, pasan inmediatamente a Done. Duration no es tiempo restante ni una orden universal de reinicio.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd><dt><code>duration?: number</code></dt><dd>Duración total en segundos, finita y mayor que 0; opcional.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">play_timer(object, &quot;gun&quot;, 5);
+// En una llamada posterior: pausa y reanudación.
+pause_timer(object, &quot;gun&quot;);
+play_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#pause-timer"><code>pause_timer()</code></a>, <a class="link" href="api/state.html#stop-timer"><code>stop_timer()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="pause_timer">
+<h3 id="pause-timer">pause_timer()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>pause_timer(object: RuntimeObject, timerName: string): void;</code></pre></div>
+<p>Pausa un timer Running conservando su tiempo restante. No hace toggle: si está Paused, Done o Absent no lo pone en marcha.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">pause_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#timer-paused"><code>timer_paused()</code></a>.</p>
+</section>
+<section data-api-symbol="stop_timer">
+<h3 id="stop-timer">stop_timer()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>stop_timer(object: RuntimeObject, timerName: string): void;</code></pre></div>
+<p>Elimina inmediatamente el timer del objeto. Queda Absent, no Done; para volver a crearlo necesitas una duración.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">stop_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_active">
+<h3 id="timer-active">timer_active()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>timer_active(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Devuelve true tanto para Running como para Paused; false para Done o Absent.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (timer_active(object, &quot;gun&quot;)) console.log(&quot;Timer existente activo&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#timer-paused"><code>timer_paused()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_paused">
+<h3 id="timer-paused">timer_paused()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>timer_paused(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Devuelve true sólo para Paused. No tener timer devuelve false.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (timer_paused(object, &quot;gun&quot;)) play_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#pause-timer"><code>pause_timer()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_done">
+<h3 id="timer-done">timer_done()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>timer_done(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Devuelve true cuando el timer está Done: normalmente por agotarse, también si play_timer redefine la duración total por debajo del tiempo ya transcurrido. Permanece Done hasta reproducirlo, eliminarlo o destruir su propietario. Absent y stop_timer no son Done.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (timer_done(object, &quot;gun&quot;)) {
+  stop_timer(object, &quot;gun&quot;);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#stop-timer"><code>stop_timer()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_left">
+<h3 id="timer-left">timer_left()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>timer_left(object: RuntimeObject, timerName: string): number;</code></pre></div>
+<p>Devuelve los segundos restantes. En Paused conserva ese valor; en Absent, eliminado o Done devuelve 0. No distingue por sí solo ausencia de finalización.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>timerName: string</code></dt><dd>Nombre no vacío del timer del objeto.</dd></dl>
+<p><strong>Retorno:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const remaining = timer_left(object, &quot;gun&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>, <a class="link" href="api/state.html#timer-active"><code>timer_active()</code></a>.</p>
+</section>
+<hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a aria-current="page" class="link" href="api/state.html"><strong>State / Timers</strong></a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

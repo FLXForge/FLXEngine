@@ -23,22 +23,54 @@
             <h1>Ejemplos</h1>
 
             <p>
-                Los ejemplos de FLX no son únicamente demostraciones visuales.
+                Los ejemplos de FLX son juegos completos construidos con las mismas herramientas disponibles para cualquier proyecto.
             </p>
 
             <p>
-                Cada proyecto existe para validar partes concretas del runtime,
-                descubrir problemas reales
-                y ayudar a definir la arquitectura del engine mediante casos prácticos.
+                Cada uno explora una combinación diferente de objetos, mecánicas y comportamientos, desde las reglas fundamentales de Pong hasta la percepción y toma de decisiones de Tank.
             </p>
 
-            <p class="placeholder">
-                Cada ejemplo representa una etapa distinta en la evolución de FLX.
+            <p>
+                Puedes utilizarlos como referencia, desmontarlos para entender cómo funcionan o simplemente ejecutarlos para ver qué puede construirse con FLX.
             </p>
 
             <hr />
 
-            <section class="example-card">
+            <nav class="examples-index" aria-label="Índice de ejemplos">
+                <a href="#pong">
+                    <img src="../assets/examples/pong-cover.png" alt="Pong">
+                    <span>Pong</span>
+                </a>
+
+                <a href="#asteroids">
+                    <img src="../assets/examples/asteroids-cover.png" alt="Asteroids">
+                    <span>Asteroids</span>
+                </a>
+
+                <a href="#arkanoid">
+                    <img src="../assets/examples/arkanoid-cover.png" alt="Arkanoid">
+                    <span>Arkanoid</span>
+                </a>
+
+                <a href="#invaders">
+                    <img src="../assets/examples/invaders-cover.png" alt="Invaders">
+                    <span>Invaders</span>
+                </a>
+
+                <a href="#tank">
+                    <img src="../assets/examples/tank-cover.png" alt="Tank">
+                    <span>Tank</span>
+                </a>
+
+                <a href="#proximamente">
+                    <img src="../assets/proximamente_b.png" alt="Próximamente">
+                    <span>Próximamente</span>
+                </a>
+            </nav>
+
+            <hr />
+
+            <section id="pong" class="example-card">
 
                 <div class="example-header">
                     <div>
@@ -54,24 +86,20 @@
                 <div class="example-gallery">
                     <img class="example-cover" src="../assets/examples/pong-cover.png" alt="Pong cover">
 
-                    <div class="example-screenshots">
-                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-01.png" alt="Pong gameplay">
-                        <img class="example-screenshot" src="../assets/examples/pong-gameplay-02.png" alt="Pong gameplay">
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/pong-gameplay.gif"
+                             alt="Pong ejecutándose en FLX">
                     </div>
                 </div>
 
                 <p>
-                    Pong fue el primer ejemplo utilizado para construir la base del runtime.
+                    Pong es el punto de entrada más sencillo a un proyecto FLX completo.
                 </p>
 
                 <p>
-                    Aunque visualmente sencillo,
-                    permitió validar el ciclo de vida,
-                    movimiento básico,
-                    colisiones,
-                    rebotes,
-                    scripting
-                    y la arquitectura inicial del motor.
+                    Con pocos objetos combina control del jugador,
+                    movimiento directo y polar,
+                    colisiones, rebotes, sonido y una IA básica que sigue la posición de la pelota.
                 </p>
 
                 <section class="example-card">
@@ -82,10 +110,12 @@
                     <div>
                         <ul>
                             <li>Estructura básica de un proyecto FLX</li>
-                            <li>Movimiento clásico basado en speed</li>
-                            <li>Colisiones simples</li>
-                            <li>Input y scripting</li>
-                            <li>IA básica</li>
+                            <li>Input y movimiento directo del jugador</li>
+                            <li>Movimiento polar mediante <code>advance()</code></li>
+                            <li>Colisiones y resolución mediante <code>CollisionContact</code></li>
+                            <li>Rebotes con <code>reflect_x()</code> y <code>reflect_y()</code></li>
+                            <li>Sonido generado desde el propio objeto</li>
+                            <li>IA básica mediante búsqueda y seguimiento de objetos</li>
                         </ul>
                     </div>
 
@@ -99,7 +129,7 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="asteroids" class="example-card">
                 <div class="example-header">
                     <div>
                         <p class="example-status complete">Listo</p>
@@ -115,50 +145,24 @@
 
                 <div class="example-gallery">
                     <img class="example-cover"
-                            src="../assets/examples/asteroids-cover.png"
-                            alt="Asteroids cover">
+                         src="../assets/examples/asteroids-cover.png"
+                         alt="Asteroids cover">
 
-                    <div class="example-screenshots">
-                        <img class="example-screenshot"
-                                src="../assets/examples/asteroids-gameplay-01.png"
-                                alt="Asteroids gameplay">
-
-                        <img class="example-screenshot"
-                                src="../assets/examples/asteroids-gameplay-02.png"
-                                alt="Asteroids gameplay">
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/asteroids-gameplay.gif"
+                             alt="Asteroids ejecutándose en FLX">
                     </div>
                 </div>
 
                 <p>
-                    Asteroids representa la segunda gran fase de evolución de FLX.
+                    Asteroids muestra cómo combinar movimiento polar, aceleración,
+                    inercia y rotación para construir objetos cuyo movimiento conserva su propia dinámica.
                 </p>
 
                 <p>
-                    Mientras que Pong permitió validar la arquitectura básica,
-                    Asteroids está ayudando a definir cómo se construyen,
-                    nacen, interactúan y desaparecen los objetos dentro del runtime.
-                </p>
-
-                <p>
-                    Este ejemplo ha impulsado la creación del lifecycle completo,
-                    las definiciones reutilizables,
-                    los hijos manuales,
-                    la composición JSON mediante <code>like</code>,
-                    los estados locales por objeto
-                    y las primeras formas poligonales del engine.
-                </p>
-
-                <p>
-                    También está ayudando a validar la separación entre
-                    la representación visual y la colisión,
-                    permitiendo que diferentes tipos de colisionadores coexistan
-                    independientemente de la forma renderizada.
-                </p>
-
-                <p>
-                    Más que un simple clon arcade,
-                    Asteroids se ha convertido en el principal entorno de validación
-                    para la arquitectura actual de FLX.
+                    La nave, los asteroides, los disparos, la estela y los fragmentos utilizan el ciclo de vida
+                    y la creación de objetos para construir comportamientos más complejos a partir de elementos sencillos.
+                    El ejemplo también combina estado local y global, temporizadores y dibujo inmediato.
                 </p>
 
                 <section class="example-card">
@@ -169,19 +173,14 @@
 
                     <div>
                         <ul>
-                            <li>Sistema motion avanzado</li>
-                            <li>Aceleración e inercia</li>
-                            <li>Rotación y convención angular FLX</li>
-                            <li>Lifecycle completo del runtime</li>
-                            <li>Estado local mediante <code>read_local()</code> y <code>write_local()</code></li>
-                            <li>Definiciones reutilizables e hijos manuales</li>
-                            <li>Composición JSON mediante <code>like</code></li>
-                            <li>Polígonos definidos por puntos</li>
-                            <li>Spawners reutilizables</li>
-                            <li>Wrap screen y gestión de límites</li>
-                            <li>Separación entre forma visual y collider</li>
-                            <li>Visualización de colisiones para depuración</li>
-                            <li>Colliders <code>ellipse</code> y <code>box</code></li>
+                            <li>Movimiento polar, aceleración e inercia</li>
+                            <li>Rotación y velocidad angular</li>
+                            <li>Creación y ciclo de vida de objetos</li>
+                            <li>Estado local y global</li>
+                            <li>Temporizadores y efectos de duración limitada</li>
+                            <li>Composición y definiciones reutilizables</li>
+                            <li>Dibujo inmediato combinado con objetos del mundo</li>
+                            <li>Efectos visuales construidos mediante objetos simples</li>
                         </ul>
                     </div>
 
@@ -196,12 +195,11 @@
 
             <hr />
 
-            <section class="example-card">
+            <section id="arkanoid" class="example-card">
 
                 <div class="example-header">
                     <div>
-                        <p class="example-status progress">En desarrollo</p>
-                        <!--<p class="example-status planned">Planificado</p>-->
+                        <p class="example-status complete">Listo</p>
                     </div>
                     <div>
                         <h2 class="example-title">Arkanoid</h2>
@@ -215,26 +213,20 @@
                 <div class="example-gallery">
                     <img class="example-cover" src="../assets/examples/arkanoid-cover.png" alt="Arkanoid">
 
-                    <div class="example-screenshots">
-                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
-                        <img class="example-screenshot" src="../assets/working.png" alt="Asteroids gameplay">
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/arkanoid-gameplay.gif"
+                             alt="Arkanoid ejecutándose en FLX">
                     </div>
                 </div>
 
                 <p>
-                    Arkanoid será utilizado para validar
-                    sistemas más complejos relacionados con estado,
-                    niveles
-                    y control del runtime.
+                    Arkanoid muestra cómo construir reglas de juego más complejas combinando objetos,
+                    estados, temporizadores y creación.
                 </p>
 
                 <p>
-                    Este ejemplo permitirá desarrollar:
-                    temporizadores,
-                    power ups,
-                    sonidos,
-                    reglas de spawn
-                    y cambios dinámicos de estado.
+                    Los ladrillos se generan mediante una cuadrícula, la pelota puede permanecer unida
+                    a la pala y los power ups modifican temporalmente su comportamiento y propiedades durante la partida.
                 </p>
 
                 <section class="example-card">
@@ -244,13 +236,14 @@
 
                     <div>
                         <ul>
-                            <li>Sistemas de estado</li>
-                            <li>Niveles y progresión</li>
-                            <li>Colisiones filtradas por grupo</li>
-                            <li>Power ups</li>
-                            <li>Temporizadores</li>
-                            <li>Spawn basado en reglas</li>
-                            <li>Gestión de sonido</li>
+                            <li>Creación de objetos mediante cuadrículas</li>
+                            <li>Composición y reutilización mediante <code>like</code></li>
+                            <li>Estados y ciclo de vida de objetos</li>
+                            <li>Unión y separación mediante <code>attach()</code> y <code>detach()</code></li>
+                            <li>Temporizadores y efectos de duración limitada</li>
+                            <li>Power ups y modificación dinámica de propiedades</li>
+                            <li>Creación probabilística de objetos</li>
+                            <li>Colisiones filtradas por grupos</li>
                         </ul>
                     </div>
 
@@ -264,30 +257,222 @@
 
             <hr />
 
-            <h2>Ruta recomendada</h2>
+            <section id="invaders" class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Listo</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">Invaders</h2>
+                    </div>
+                </div>
 
-            <p>
-                La documentación está organizada para introducir los conceptos
-                progresivamente.
-            </p>
+                <p class="example-tagline">
+                    Muchos enemigos. Una sola formación.
+                </p>
 
-            <p>
-                Puedes navegar libremente, pero el recorrido recomendado es:
-            </p>
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/examples/invaders-cover.png"
+                         alt="Invaders cover">
 
-            <ul class="doc-path">
-                <li>↓ <a class="link" href="index.html">Introducción</a></li>
-                <li>↓ <a class="link" href="mental-model.html">Cómo piensa FLX</a></li>
-                <li>↓ <a class="link" href="philosophy.html">Filosofía</a></li>
-                <li>↓ <a class="link" href="concepts.html">Conceptos básicos</a></li>
-                <li>↓ <a class="link" href="getting-started.html">Primeros pasos</a></li>
-                <li>↓ <a class="link" href="scripting.html">Scripting</a></li>
-                <li>↓ <a class="link" href="json-reference.html">Referencia JSON</a></li>
-                <li>↓ <a class="link" href="api.html">FLX API</a></li>
-                <li class="current">↓ Ejemplos ← Estás aquí</li>
-                <li class="recommended"><a class="link" href="howdo.html">¿Cómo hacer...?</a> → Recomendado</li>
-                <li>↓ <a class="link" href="roadmap.html">Roadmap</a></li>
-            </ul>
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/invaders-gameplay.gif"
+                             alt="Invaders ejecutándose en FLX">
+                    </div>
+                </div>
+
+                <p>
+                    Invaders muestra cómo muchos objetos independientes pueden formar
+                    parte de una estructura mayor y compartir su movimiento.
+                </p>
+
+                <p>
+                    La flota crea los invasores mediante una cuadrícula y desplaza
+                    la formación como un conjunto, mientras cada invasor conserva
+                    su propio comportamiento y puede crear sus propios disparos.
+                    El ejemplo combina además estado global, temporizadores y dibujo
+                    inmediato para construir las reglas y la interfaz de la partida.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>Qué se puede aprender</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Creación de formaciones mediante cuadrículas</li>
+                            <li>Composición de objetos en estructuras mayores</li>
+                            <li>Movimiento coordinado de grupos de objetos</li>
+                            <li>Creación manual de proyectiles mediante <code>spawn()</code></li>
+                            <li>Temporizadores para limitar acciones</li>
+                            <li>Estado global compartido entre objetos</li>
+                            <li>Dibujo inmediato para elementos de interfaz</li>
+                            <li>Comportamientos probabilísticos</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link"
+                           href="https://github.com/FLXForge/FLXEngine/tree/main/examples/invaders">
+                            Ver repositorio del ejemplo
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section id="tank" class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Listo</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">Tank</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Ver, recordar y decidir.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/examples/tank-cover.png"
+                         alt="Tank cover">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/tank-gameplay.gif"
+                             alt="Tank ejecutándose en FLX">
+                    </div>
+                </div>
+
+                <p>
+                    Tank muestra cómo construir comportamientos autónomos a partir
+                    de la información que un objeto puede obtener de su entorno.
+                </p>
+
+                <p>
+                    El tanque enemigo utiliza rayos para detectar al jugador y los
+                    obstáculos, recuerda la última posición observada y combina
+                    estado local y temporizadores para buscar, perseguir, disparar
+                    o evitar una pared.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>Qué se puede aprender</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Movimiento polar y rotación</li>
+                            <li>Percepción del entorno mediante <code>ray()</code></li>
+                            <li>Estado local como memoria del objeto</li>
+                            <li>Temporizadores para mantener decisiones en el tiempo</li>
+                            <li>Comportamientos autónomos basados en percepción</li>
+                            <li>Detección y evasión de obstáculos</li>
+                            <li>Creación y comportamiento de proyectiles</li>
+                            <li>Recreación de objetos mediante iteradores</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link"
+                           href="https://github.com/FLXForge/FLXEngine/tree/main/examples/tank">
+                            Ver repositorio del ejemplo
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section id="proximamente" class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status planned">Próximamente</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">La siguiente generación</h2>
+                    </div>
+                </div>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/proximamente_b.png"
+                         alt="Próximo ejemplo de FLX">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/working.png"
+                             alt="Próximo ejemplo todavía en desarrollo">
+                    </div>
+                </div>
+
+                <p>
+                    Los próximos ejemplos explorarán una nueva etapa de FLX:
+                    construir juegos dentro de las capacidades y restricciones
+                    declaradas por una máquina.
+                </p>
+
+                <p>
+                    Nuevos ejemplos aparecerán aquí a medida que esas capacidades
+                    formen parte del engine.
+                </p>
+            </section>
+
+            <!-- PLANTILLA PARA UN PRÓXIMO EJEMPLO
+            <section id="next-example" class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status progress">En desarrollo</p>
+                        <!-<p class="example-status planned">Planificado</p>->
+                    </div>
+                    <div>
+                        <h2 class="example-title">Proximamente</h2>
+                    </div>
+                </div>
+
+                <div class="example-gallery">
+                    <img class="example-cover" src="../assets/proximamente_b.png" alt="Proximamente cover">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/working.png"
+                             alt="Gameplay todavía no disponible">
+                    </div>
+                </div>
+
+                <p>
+                    Concepto principal del ejemplo.
+                </p>
+
+                <p>
+                    Breve descripción del ejemplo y de lo que demuestra.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>Qué se puede aprender</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Listado de conceptos</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/...">
+                            Ver repositorio del ejemplo
+                        </a>
+                    </p>
+                </section>
+            </section>
+    FIN DE LA PLANTILLA -->
+
+            <div id="doc-path"></div>
         </article>
     </main>
 

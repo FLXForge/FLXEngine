@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collision · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>Collision</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a aria-current="page" class="link" href="api/collision.html"><strong>Collision</strong></a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p><strong>FLX detecta contactos y los comunica al script. No aplica automáticamente una respuesta física.</strong> La detección se configura en <a class="link" href="json/collision.html">JSON · Collision</a>. El script decide qué significa cada contacto y qué hacer con él.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/collision.html#contacts">Contactos</a> · <a class="link" href="api/collision.html#queries">Consultas y colliders</a></p></nav><h2 id="contacts">Contactos</h2>
+<section data-api-symbol="CollisionContact"><h3 id="collision-contact">CollisionContact</h3>
+<p>Dato readonly de un contacto dirigido a object dentro del hook collision. No es el retorno de ray; para éste consulta <a class="link" href="api/collision.html#ray-hit"><code>RayHit</code></a>.</p>
+<table><caption>Campos readonly</caption><thead><tr><th scope="col">Campo</th><th scope="col">Tipo</th><th scope="col">Interpretación</th></tr></thead><tbody><tr><th scope="row"><code>collider</code></th><td data-label="Tipo"><code>string</code></td><td data-label="Interpretación">Nombre del collider del source.</td></tr><tr><th scope="row"><code>otherCollider</code></th><td data-label="Tipo"><code>string</code></td><td data-label="Interpretación">Nombre del collider del target.</td></tr><tr><th scope="row"><code>normalX</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Interpretación">Componente X de la normal dirigida para corregir el source.</td></tr><tr><th scope="row"><code>normalY</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Interpretación">Componente Y de esa normal.</td></tr><tr><th scope="row"><code>pointX</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Interpretación">Coordenada lógica X del punto de contacto.</td></tr><tr><th scope="row"><code>pointY</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Interpretación">Coordenada lógica Y del punto de contacto.</td></tr><tr><th scope="row"><code>penetration</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Interpretación">Profundidad de solapamiento; magnitud de corrección sobre la normal.</td></tr></tbody></table>
+<div class="code-card"><div class="code-header">Normal, punto y penetration: esquema conceptual</div><pre><code>Source A                 Target B
+┌──────────────┐
+│       ┌──────┼──────────────┐
+│       │   •  │              │
+└───────┼──────┘              │
+        └─────────────────────┘
+        |&lt;----&gt;|
+        penetration
+
+• = punto de contacto (pointX, pointY)
+← = normal del contacto para A
+
+corrección de A = normal × penetration
+La normal indica dirección; el punto indica lugar.</code></pre></div>
+<p>El diagrama muestra el concepto, no una fórmula universal para elegir el punto geométrico. La operación relacionada <a class="link" href="api/runtime.html#position"><code>position()</code></a> aplica la corrección del contacto al source; su referencia completa está en Transform.</p>
+</section>
+<div class="code-card"><div class="code-header">Multicollider</div><pre><code>Object A                    Object B
+┌──────────────┐            ┌──────────────┐
+│ body         │ ─────────► │ body         │ contacts[0]
+│              │            │              │
+│ weapon       │ ─────────► │ shield       │ contacts[1]
+└──────────────┘            └──────────────┘
+
+collision(A, B, contacts)
+                  └── [ contact0, contact1 ]</code></pre></div>
+<p>El ejemplo ilustra dos pares en una llamada. No dependas de un orden fijo ni supongas un único contacto por pareja. With es direccional: la notificación a B requiere sus propias reglas, no se deriva automáticamente de la notificación a A.</p>
+<section data-api-symbol="collision">
+<h3 id="collision">collision()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>collision(object: RuntimeObject, other: RuntimeObject, contacts: CollisionContact[]): void;</code></pre></div>
+<p>Hook implementado por el desarrollador y llamado por FLX. <code>object</code> es el source, <code>other</code> el target y <code>contacts</code> reúne sus contactos dirigidos en esta llamada. Cada collider source selecciona los groups target mediante with; el target no necesita reciprocidad para que source reciba el callback. Una pareja de instancias puede generar varios contactos por sus diferentes colliders. El script decide cualquier separación, daño o reflexión.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>other: RuntimeObject</code></dt><dd>Instancia target del contacto.</dd><dt><code>contacts: CollisionContact[]</code></dt><dd>Contactos dirigidos al source en esta llamada.</dd></dl>
+<p><strong>Retorno:</strong> no devuelve un resultado a FLX (<code>void</code>).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function collision(object, other, contacts) {
+  for (const contact of contacts) {
+    console.log(contact.collider, contact.otherCollider);
+  }
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/collision.html#collision-contact"><code>CollisionContact</code></a>, <a class="link" href="api/runtime.html#position"><code>position()</code></a>, <a class="link" href="api/collision.html#collider-off"><code>collider_off()</code></a>.</p>
+</section>
+<h2 id="queries">Consultas y colliders</h2>
+<section data-api-symbol="RayHit"><h3 id="ray-hit">RayHit</h3>
+<p>Resultado readonly de <a class="link" href="api/collision.html#ray"><code>ray()</code></a>. Si no hay impacto, ray devuelve undefined. object sigue siendo una vista temporal del hook actual.</p>
+<table><caption>Campos readonly</caption><thead><tr><th scope="col">Campo</th><th scope="col">Tipo</th><th scope="col">Significado</th></tr></thead><tbody><tr><th scope="row"><code>object</code></th><td data-label="Tipo"><code>RuntimeObject</code></td><td data-label="Significado">Instancia alcanzada.</td></tr><tr><th scope="row"><code>collider</code></th><td data-label="Tipo"><code>string</code></td><td data-label="Significado">Nombre del collider alcanzado.</td></tr><tr><th scope="row"><code>pointX</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Coordenada lógica X del impacto.</td></tr><tr><th scope="row"><code>pointY</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Coordenada lógica Y del impacto.</td></tr><tr><th scope="row"><code>normalX</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Componente X de la normal en el impacto.</td></tr><tr><th scope="row"><code>normalY</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Componente Y de la normal en el impacto.</td></tr><tr><th scope="row"><code>distance</code></th><td data-label="Tipo"><code>number</code></td><td data-label="Significado">Distancia lógica desde el origen del rayo.</td></tr></tbody></table>
+</section>
+<section data-api-symbol="ray">
+<h3 id="ray">ray()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>ray(source: RuntimeObject, angle: number, distance: number): RayHit | undefined;</code></pre></div>
+<p>Lanza una consulta desde la posición lógica de <code>source</code>, con ángulo en grados FLX (0 arriba, 90 derecha) y distancia máxima en unidades lógicas. Devuelve el impacto más cercano con un collider efectivo, o undefined si no hay impacto. Usa ángulo y distancia finitos; una distancia cero no produce impacto. No desplaza ni aplica una respuesta física.</p>
+<dl><dt><code>source: RuntimeObject</code></dt><dd>Instancia origen de la consulta.</dd><dt><code>angle: number</code></dt><dd>Ángulo en grados FLX.</dd><dt><code>distance: number</code></dt><dd>Distancia máxima lógica, finita y no negativa.</dd></dl>
+<p><strong>Retorno:</strong> <code>RayHit | undefined</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const hit = ray(object, object.angle, 100);
+if (hit) console.log(hit.object.id, hit.distance);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/collision.html#ray-hit"><code>RayHit</code></a>, <a class="link" href="api/collision.html#collider-on"><code>collider_on()</code></a>.</p>
+</section>
+<section data-api-symbol="collider_on">
+<h3 id="collider-on">collider_on()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>collider_on(object: RuntimeObject, colliderName: string): void;</code></pre></div>
+<p>Activa el collider ya declarado con nombre <code>colliderName</code> en la instancia. No crea geometría nueva; un nombre desconocido no añade un collider. Su eficacia sigue dependiendo de la declaración de colisión. No modifica visible. </p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>colliderName: string</code></dt><dd>Nombre de un collider declarado.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">collider_on(object, &quot;body&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/collision.html#collision"><code>collision()</code></a>, <a class="link" href="api/collision.html#ray"><code>ray()</code></a>.</p>
+</section>
+<section data-api-symbol="collider_off">
+<h3 id="collider-off">collider_off()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>collider_off(object: RuntimeObject, colliderName: string): void;</code></pre></div>
+<p>Desactiva el collider ya declarado con nombre <code>colliderName</code> en la instancia. No crea geometría nueva; un nombre desconocido no añade un collider. Su eficacia sigue dependiendo de la declaración de colisión. No modifica visible. </p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>colliderName: string</code></dt><dd>Nombre de un collider declarado.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">collider_off(object, &quot;body&quot;);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/collision.html#collision"><code>collision()</code></a>, <a class="link" href="api/collision.html#ray"><code>ray()</code></a>.</p>
+</section>
+<hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a aria-current="page" class="link" href="api/collision.html"><strong>Collision</strong></a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

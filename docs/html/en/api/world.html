@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World / Lifecycle · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<h1>World / Lifecycle</h1>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a aria-current="page" class="link" href="api/world.html"><strong>World / Lifecycle</strong></a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>World manages instances of definitions already declared. Here, objects are created, hidden or removed, and values are retained across runs. Visibility controls only visual output.</p>
+<nav aria-label="On this page"><p><a class="link" href="api/world.html#creation">Creation</a> · <a class="link" href="api/world.html#lifecycle">Lifecycle and visibility</a> · <a class="link" href="api/world.html#persistence">Persistence</a></p></nav><h2 id="creation">Creation</h2>
+<p>Instantiation rules are declared in <a class="link" href="json/creation.html">JSON · Creation</a>. Spawn requests instances of those definitions.</p>
+<section data-api-symbol="spawn">
+<h3 id="spawn">spawn()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>spawn(object: RuntimeObject, childName: string): void;</code></pre></div>
+<p>Requests instantiation of <code>childName</code>, a definition already present in the children map of <code>object</code>. Does not accept an arbitrary definition or return the created instance. Also allows another instance of a child declared with spawn auto. World integrates pending instances and calls born when they enter the world.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>childName: string</code></dt><dd>Key declared in children.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">spawn(object, &quot;laser&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#creation-active"><code>creation_active()</code></a>, <a class="link" href="api/scripting.html#born"><code>born()</code></a>, <a class="link" href="api/runtime.html#find-children"><code>find_children()</code></a>.</p>
+</section>
+<section data-api-symbol="creation_active">
+<h3 id="creation-active">creation_active()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>creation_active(object: RuntimeObject): boolean;</code></pre></div>
+<p>Queries the object's iterator creation. Individual and grid return false. A finite iterator remains active while it has pending entries in its pattern or live instances it produced; a repeating iterator remains active while its owner is alive.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (!creation_active(object)) {
+  console.log(&quot;Creation finished&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#spawn"><code>spawn()</code></a>.</p>
+</section>
+<h2 id="lifecycle">Lifecycle and visibility</h2>
+<section data-api-symbol="kill">
+<h3 id="kill">kill()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>kill(object: RuntimeObject): void;</code></pre></div>
+<p>Marks the instance for destruction. It stops being alive; World executes dead before removing it during cleanup. Do not continue using a normal view after killing its instance.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">kill(object);</code></pre></div>
+<p>Related: <a class="link" href="api/scripting.html#dead"><code>dead()</code></a>, <a class="link" href="api/world.html#keep-only"><code>keep_only()</code></a>, <a class="link" href="api/scripting.html#exit"><code>exit()</code></a>.</p>
+</section>
+<section data-api-symbol="keep_only">
+<h3 id="keep-only">keep_only()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>keep_only(object: RuntimeObject): void;</code></pre></div>
+<p>Marks all live objects for destruction except the exact instance received. Does not automatically preserve its children.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">keep_only(object);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#kill"><code>kill()</code></a>, <a class="link" href="api/runtime.html#find-children"><code>find_children()</code></a>.</p>
+</section>
+<section data-api-symbol="show">
+<h3 id="show">show()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>show(object: RuntimeObject): void;</code></pre></div>
+<p>Enables the object's visual output. Does not create a new instance or reset its state.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">show(object);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#hide"><code>hide()</code></a>.</p>
+</section>
+<section data-api-symbol="hide">
+<h3 id="hide">hide()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>hide(object: RuntimeObject): void;</code></pre></div>
+<p>Disables only visual output. The instance continues participating in action, motion, collision, states and timers. This is not equivalent to pausing or destruction.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">hide(object);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#show"><code>show()</code></a>, <a class="link" href="api/world.html#kill"><code>kill()</code></a>.</p>
+</section>
+<h2 id="persistence">Persistence</h2>
+<p>Persistence stores only boolean, number and string. It is independent of in-memory local/global state. Does not save the entire World.</p>
+<section data-api-symbol="save">
+<h3 id="save">save()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>save(name: string, key: string, value: boolean | number | string): void;</code></pre></div>
+<p>Stores <code>value</code> under <code>key</code> in <code>saves/&lt;name&gt;.flxsave</code>. Only supports boolean, number and string. Does not serialize arrays, objects or RuntimeObjects; does not return confirmation of success.</p>
+<dl><dt><code>name: string</code></dt><dd>Persistence file name, without the .flxsave extension.</dd><dt><code>key: string</code></dt><dd>Value key.</dd><dt><code>value: boolean | number | string</code></dt><dd>Value to assign.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">save(&quot;progress&quot;, &quot;completed&quot;, true);
+save(&quot;progress&quot;, &quot;score&quot;, 100);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#load"><code>load()</code></a>, <a class="link" href="api/runtime.html#script-value"><code>ScriptValue</code></a>.</p>
+</section>
+<section data-api-symbol="load">
+<h3 id="load">load()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>load&lt;T extends boolean | number | string&gt;(name: string, key: string, defaultValue: T): T;</code></pre></div>
+<p>Reads <code>key</code> from <code>saves/&lt;name&gt;.flxsave</code>. <code>defaultValue</code> determines both the fallback and the expected type: boolean, number or string. If the file or key is missing, or the stored value has a different type, returns the fallback without conversion. For example, a stored number is not loaded as a string by passing <code>"0"</code>. The generic signature describes this type selection; in JavaScript it is called without &lt;T&gt;.</p>
+<dl><dt><code>name: string</code></dt><dd>Persistence file name, without the .flxsave extension.</dd><dt><code>key: string</code></dt><dd>Value key.</dd><dt><code>defaultValue: T</code></dt><dd>Fallback and expected type selector.</dd></dl>
+<p><strong>Returns:</strong> <code>T</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const score = load(&quot;progress&quot;, &quot;score&quot;, 0);
+const completed = load(&quot;progress&quot;, &quot;completed&quot;, false);</code></pre></div>
+<p>Related: <a class="link" href="api/world.html#save"><code>save()</code></a>.</p>
+</section>
+<hr /><details><summary>Sources for this reference</summary><p>Reference checked against <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> and the runtime on branch feature/audit-public-doc, revision <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a aria-current="page" class="link" href="api/world.html"><strong>World / Lifecycle</strong></a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

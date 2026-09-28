@@ -123,13 +123,13 @@
                 </div>
 
                 <p>
-                    Asteroids muestra cómo combinar movimiento polar, aceleración, 
+                    Asteroids muestra cómo combinar movimiento polar, aceleración,
                     inercia y rotación para construir objetos cuyo movimiento conserva su propia dinámica.
                 </p>
 
                 <p>
-                    La nave, los asteroides, los disparos, la estela y los fragmentos utilizan el ciclo de vida 
-                    y la creación de objetos para construir comportamientos más complejos a partir de elementos sencillos. 
+                    La nave, los asteroides, los disparos, la estela y los fragmentos utilizan el ciclo de vida
+                    y la creación de objetos para construir comportamientos más complejos a partir de elementos sencillos.
                     El ejemplo también combina estado local y global, temporizadores y dibujo inmediato.
                 </p>
 
@@ -188,12 +188,12 @@
                 </div>
 
                 <p>
-                    Arkanoid muestra cómo construir reglas de juego más complejas combinando objetos, 
+                    Arkanoid muestra cómo construir reglas de juego más complejas combinando objetos,
                     estados, temporizadores y creación.
                 </p>
 
                 <p>
-                    Los ladrillos se generan mediante una cuadrícula, la pelota puede permanecer unida 
+                    Los ladrillos se generan mediante una cuadrícula, la pelota puede permanecer unida
                     a la pala y los power ups modifican temporalmente su comportamiento y propiedades durante la partida.
                 </p>
 
@@ -217,6 +217,139 @@
 
                     <p>
                         <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/main/examples/arkanoid">
+                            Ver repositorio del ejemplo
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Listo</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">Invaders</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Muchos enemigos. Una sola formación.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/examples/invaders-cover.png"
+                         alt="Invaders cover">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/invaders-gameplay.gif"
+                             alt="Invaders ejecutándose en FLX">
+                    </div>
+                </div>
+
+                <p>
+                    Invaders muestra cómo muchos objetos independientes pueden formar
+                    parte de una estructura mayor y compartir su movimiento.
+                </p>
+
+                <p>
+                    La flota crea los invasores mediante una cuadrícula y desplaza
+                    la formación como un conjunto, mientras cada invasor conserva
+                    su propio comportamiento y puede crear sus propios disparos.
+                    El ejemplo combina además estado global, temporizadores y dibujo
+                    inmediato para construir las reglas y la interfaz de la partida.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>Qué se puede aprender</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Creación de formaciones mediante cuadrículas</li>
+                            <li>Composición de objetos en estructuras mayores</li>
+                            <li>Movimiento coordinado de grupos de objetos</li>
+                            <li>Creación manual de proyectiles mediante <code>spawn()</code></li>
+                            <li>Temporizadores para limitar acciones</li>
+                            <li>Estado global compartido entre objetos</li>
+                            <li>Dibujo inmediato para elementos de interfaz</li>
+                            <li>Comportamientos probabilísticos</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link"
+                           href="https://github.com/FLXForge/FLXEngine/tree/main/examples/invaders">
+                            Ver repositorio del ejemplo
+                        </a>
+                    </p>
+                </section>
+            </section>
+
+            <hr />
+
+            <section class="example-card">
+                <div class="example-header">
+                    <div>
+                        <p class="example-status complete">Listo</p>
+                    </div>
+                    <div>
+                        <h2 class="example-title">Tank</h2>
+                    </div>
+                </div>
+
+                <p class="example-tagline">
+                    Ver, recordar y decidir.
+                </p>
+
+                <div class="example-gallery">
+                    <img class="example-cover"
+                         src="../assets/examples/tank-cover.png"
+                         alt="Tank cover">
+
+                    <div class="example-gameplay">
+                        <img src="../assets/examples/tank-gameplay.gif"
+                             alt="Tank ejecutándose en FLX">
+                    </div>
+                </div>
+
+                <p>
+                    Tank muestra cómo construir comportamientos autónomos a partir
+                    de la información que un objeto puede obtener de su entorno.
+                </p>
+
+                <p>
+                    El tanque enemigo utiliza rayos para detectar al jugador y los
+                    obstáculos, recuerda la última posición observada y combina
+                    estado local y temporizadores para buscar, perseguir, disparar
+                    o evitar una pared.
+                </p>
+
+                <section class="example-card">
+                    <div class="example-header">
+                        <h3>Qué se puede aprender</h3>
+                    </div>
+
+                    <div>
+                        <ul>
+                            <li>Movimiento polar y rotación</li>
+                            <li>Percepción del entorno mediante <code>ray()</code></li>
+                            <li>Estado local como memoria del objeto</li>
+                            <li>Temporizadores para mantener decisiones en el tiempo</li>
+                            <li>Comportamientos autónomos basados en percepción</li>
+                            <li>Detección y evasión de obstáculos</li>
+                            <li>Creación y comportamiento de proyectiles</li>
+                            <li>Recreación de objetos mediante iteradores</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        <a class="link"
+                           href="https://github.com/FLXForge/FLXEngine/tree/main/examples/tank">
                             Ver repositorio del ejemplo
                         </a>
                     </p>

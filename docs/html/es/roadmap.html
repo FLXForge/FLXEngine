@@ -90,294 +90,106 @@
 
             <hr />
 
-            <h2>Deuda técnica y mejoras pendientes</h2>
+            <h2>Direcciones futuras</h2>
 
-            <h3>Runtime</h3>
+            <p>
+                A partir de v0.3.0, FLX continuará evolucionando mediante
+                el desarrollo de nuevos juegos y la incorporación progresiva
+                de nuevas capacidades.
+            </p>
 
-            <ul>
-                <li>Normalizar Pong al nuevo esquema <code>shape</code>/<code>motion</code>.</li>
+            <p>
+                Estas líneas representan direcciones de exploración,
+                no compromisos con una versión concreta.
+            </p>
 
-                <li>
-                    Extender <code>read_local()</code> y <code>write_local()</code>.
-                    Actualmente solo soporta valores numéricos;
-                    quedan pendientes tipos como <code>bool</code>,
-                    <code>string</code>
-                    y posiblemente estructuras más complejas.
-                </li>
+            <h3>Máquinas y nuevas generaciones</h3>
 
-                <li>
-                    Definir contextos <code>game</code>/<code>level</code>
-                    y persistencia entre niveles.
-                </li>
+            <p>
+                Las machines permiten expresar las capacidades y restricciones
+                del entorno sobre el que se ejecuta un mundo FLX.
+            </p>
 
-                <li>
-                    Definir relaciones entre objetos del runtime:
-                    <code>parent</code>,
-                    <code>children</code>
-                    y acceso mediante <code>group</code>.
-                </li>
+            <p>
+                Su evolución permitirá explorar progresivamente nuevas formas
+                de construir juegos y representar distintas generaciones de
+                sistemas 2D.
+            </p>
 
-                <li>
-                    Definir propagación configurable de muerte,
-                    permitiendo decidir si
-                    <code>kill(parent)</code>
-                    debe afectar también a sus hijos.
-                </li>
+            <h3>Scroll, espacios y cámara</h3>
 
-                <li>
-                    Implementar correctamente
-                    <code>inherit.live</code>.
-                </li>
+            <p>
+                El movimiento del mundo más allá de una única pantalla
+                abre una nueva etapa para FLX.
+            </p>
 
-                <li>
-                    Definir una identidad única de runtime
-                    (<code>runtimeId</code>)
-                    para cada instancia.
-                </li>
+            <p>
+                El desarrollo de scroll y, cuando sea necesario, de un modelo
+                de cámara permitirá explorar escenarios mayores y nuevas relaciones
+                entre las coordenadas del mundo, la pantalla y la representación.
+            </p>
 
-                <li>
-                    Validar argumentos obligatorios de la API JavaScript
-                    y registrar advertencias cuando sean inválidos.
-                </li>
+            <h3>Representación y animación</h3>
 
-            </ul>
+            <p>
+                La representación visual continuará evolucionando a partir
+                de las primitivas y capacidades actuales.
+            </p>
 
-            <h3>Lifecycle y contextos de script</h3>
+            <p>
+                Entre las áreas de exploración se encuentran nuevas formas
+                declarativas de representar imágenes, animación y transformaciones,
+                manteniendo la separación entre el objeto, su representación
+                y su comportamiento.
+            </p>
 
-            <ul>
-                <li>
-                    Evaluar un ciclo dedicado para scripts de programa a nivel de juego.
-                </li>
+            <h3>Herramientas</h3>
 
-                <li>
-                    Evaluar y formalizar:
-                    <code>start()</code>,
-                    <code>update()</code>,
-                    <code>end()</code>
-                    y
-                    <code>draw()</code>.
-                </li>
+            <p>
+                FLX podrá incorporar herramientas que faciliten la creación
+                y edición de sus declaraciones sin convertirlas en un requisito
+                para desarrollar un proyecto.
+            </p>
 
-                <li>
-                    Definir si los scripts de programa se declaran en el manifiesto
-                    <code>.flx</code> o mediante un futuro contrato runtime del root.
-                </li>
+            <p>
+                Los archivos del proyecto seguirán siendo utilizables
+                directamente y las herramientas deberán trabajar sobre ese mismo
+                modelo declarativo.
+            </p>
 
-            </ul>
+            <hr />
 
-            <h3>Motor y arquitectura</h3>
+            <h2>Deuda técnica conocida</h2>
 
-            <ul>
-                <li>
-                    Centralizar los wrappers JavaScript
-                    para evitar modificar múltiples ubicaciones
-                    cuando se añadan nuevas fases del lifecycle.
-                </li>
-
-                <li>
-                    Refactorizar los wrappers JS mediante
-                    un registro centralizado de funciones.
-                </li>
-
-                <li>
-                    Centralizar completamente la normalización de rutas
-                    para evitar lógica duplicada entre recursos,
-                    definiciones de objeto y scripts.
-                </li>
-
-                <li>
-                    Mejorar las advertencias:
-                    las funciones opcionales del lifecycle
-                    no deberían generar avisos cuando no existan.
-                </li>
-
-                <li>
-                    Explorar una capa semántica de entrada
-                    (<code>Control.*</code>)
-                    sobre <code>Key</code>.
-                </li>
-
-                <li>
-                    Evaluar nuevas opciones de runtime <code>debug.*</code>:
-                    <code>debug.bounds</code>,
-                    <code>debug.origins</code>,
-                    <code>debug.lifecycle</code>,
-                    <code>debug.scripts</code>,
-                    <code>debug.fps</code>
-                    y <code>debug.metrics</code>.
-                </li>
-
-            </ul>
-
-            <h3>Ayudas graficas y audio</h3>
+            <p>
+                La base de v0.3.0 está consolidada, pero existen áreas internas
+                que podrán revisarse a medida que el engine continúe evolucionando.
+            </p>
 
             <ul>
                 <li>
-                    Ampliar <code>fade_on()</code> y <code>fade_off()</code>
-                    con parametros opcionales de duracion e intensidad.
+                    Añadir validación tipada después de resolver referencias,
+                    de forma que los bloques reutilizados puedan comprobarse
+                    contra el tipo de recurso FLX esperado antes de parsearlos.
                 </li>
 
                 <li>
-                    Explorar datos de audio declarativo mas ricos manteniendo
-                    <code>play_sound(object, id)</code> simple.
-                </li>
-
-            </ul>
-
-            <h3>Espacios de coordenadas y sistema de cámara</h3>
-
-            <ul>
-                <li>
-                    Definir y documentar los espacios de coordenadas:
-                    mundo,
-                    pantalla,
-                    local
-                    y cámara/vista.
+                    Revisar la detección de ciclos para que las distintas formas
+                    de composición mediante <code>like</code> ofrezcan una protección
+                    equivalente.
                 </li>
 
                 <li>
-                    Definir cómo afectan estos espacios a:
-                    <code>origin</code>,
-                    <code>offset</code>,
-                    posiciones de spawn,
-                    <code>draw_text()</code>,
-                    límites,
-                    colisiones,
-                    transformaciones padre/hijo
-                    y renderizado de interfaz.
+                    Continuar simplificando y centralizando internamente
+                    la resolución de recursos cuando aparezcan casos que justifiquen
+                    esa refactorización.
                 </li>
 
                 <li>
-                    Diseñar e implementar sistemas de cámara y scroll.
+                    Ampliar diagnostics y las herramientas de inspección del runtime
+                    cuando los nuevos juegos hagan necesarias nuevas formas
+                    de observar su estado.
                 </li>
-
-            </ul>
-
-            <h3>Datos y composición JSON</h3>
-
-            <ul>
-                <li>
-                    Implementar correctamente <code>shape.like</code>
-                    y definir su comportamiento dentro del sistema de composición.
-                </li>
-
-                <li>
-                    Reflejar correctamente el sistema
-                    <code>like</code>
-                    en los esquemas JSON y en la documentación.
-                </li>
-
-                <li>
-                    Documentar formalmente la composición JSON mediante
-                    <code>like</code>,
-                    incluyendo reglas de merge y sobrescritura.
-                </li>
-
-                <li>
-                    Implementar un sistema de constantes.
-                </li>
-
-                <li>
-                    Ejemplo:
-                    <code>constants["INIT_LIVES"]</code>
-                </li>
-
-            </ul>
-
-            <h3>Colisiones y física</h3>
-
-            <ul>
-                <li>
-                    Mejorar las colisiones con soporte de overflow.
-                </li>
-
-                <li>
-                    Futuro:
-                    colisiones conscientes de wrap
-                    utilizando radios y offsets.
-                </li>
-
-                <li>
-                    Permitir múltiples colliders por elemento.
-                </li>
-
-                <li>
-                    Añadir filtros de colisión:
-                    grupos,
-                    máscaras,
-                    prioridades
-                    y reglas relacionadas.
-                </li>
-
-                <li>
-                    Actualmente la colisión de cajas está alineada con los ejes y no rota.
-                    La colisión circular es independiente de la rotación.
-                </li>
-
-            </ul>
-
-            <h3>Audio</h3>
-
-            <ul>
-                <li>
-                    Diseñar e implementar el sistema de audio.
-                </li>
-            </ul>
-
-            <h3>Transformaciones y jerarquías</h3>
-
-            <ul>
-                <li>
-                    Permitir que los objetos hijos sigan
-                    las transformaciones de sus padres.
-                </li>
-            </ul>
-
-            <h3>Herramientas futuras</h3>
-
-            <ul>
-                <li>
-                    Evaluar la incorporación futura de
-                    <code>spawnRandom()</code>
-                    como helper de alto nivel.
-                </li>
-
-                <li>
-                    Explorar una herramienta visual
-                    para crear y editar formas poligonales.
-                </li>
-
-                <li>
-                    Explorar una herramienta visual
-                    para composición JSON y definiciones reutilizables.
-                </li>
-
-                <li>
-                    Añadir validación tipada tras resolver referencias,
-                    para comprobar los bloques reutilizados contra el tipo
-                    de recurso FLX esperado antes de parsearlos.
-                </li>
-
-            </ul>
-
-            <h3>Helpers futuros de API</h3>
-
-            <ul>
-                <li><code>lerp(start, end, factor)</code></li>
-
-                <li><code>scale()</code></li>
-
-                <li><code>bounce(object, other)</code></li>
-
-                <li>
-                    Helpers matemáticos:
-                    <code>sin(angle)</code>,
-                    <code>cos(angle)</code>,
-                    <code>atan2(y, x)</code>,
-                    <code>distance(a, b)</code>,
-                    <code>angle_to(a, b)</code>.
-                </li>
-
             </ul>
 
             <div id="doc-path"></div>

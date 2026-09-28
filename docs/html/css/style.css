@@ -502,3 +502,57 @@ hr {
 .doc-path .recommended::before {
     content: "→ ";
 }
+
+/* Examples game shelf */
+.examples-index {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 22px;
+    margin: 1.5rem 0 2rem;
+    padding: 0 12px 14px;
+    border-bottom: 3px solid var(--border);
+}
+
+    .examples-index a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 7px;
+        min-width: 80px;
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .examples-index img {
+        display: block;
+        width: 80px;
+        height: 100px;
+        object-fit: fill;
+        border: 1px solid var(--border);
+        transition: transform 0.15s ease, filter 0.15s ease;
+        box-shadow: 0 5px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .examples-index span {
+        font-size: 0.8rem;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .examples-index a:hover img {
+        transform: translateY(-5px);
+        filter: brightness(1.15);
+    }
+
+    .examples-index a:hover span {
+        color: var(--accent);
+    }
+
+@media (max-width: 800px) {
+    .examples-index {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 18px;
+    }
+}

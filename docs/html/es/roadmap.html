@@ -27,321 +27,66 @@
             </p>
 
             <p>
-                Cada ejemplo añade nuevas capacidades al runtime,
-                ayuda a validar arquitectura real
-                y permite detectar mejoras necesarias antes de avanzar.
-            </p>
-
-            <p class="placeholder">
-                Esta sección funciona como diario de desarrollo y hoja de dirección general del proyecto.
+                Cada juego permite poner a prueba las capacidades existentes,
+                combinarlas en situaciones reales
+                y descubrir qué necesita evolucionar antes de avanzar.
             </p>
 
             <hr />
 
-            <h2>Principio actual de desarrollo</h2>
+            <h2>Principio de desarrollo</h2>
 
             <p>
-                Durante las primeras fases del proyecto,
-                los ejemplos se utilizaban para definir nuevas capacidades del runtime.
+                FLX evoluciona a partir de necesidades encontradas al construir juegos reales.
             </p>
 
             <p>
-                El enfoque actual es diferente.
-            </p>
-
-            <p>
-                Antes de añadir nuevas funcionalidades,
-                se intenta construir cada ejemplo utilizando únicamente
-                las capacidades ya existentes.
-            </p>
-
-            <p>
-                Cuando una limitación impide continuar de forma razonable,
+                Antes de añadir una nueva capacidad al engine,
+                se intenta resolver el problema combinando las capacidades que ya existen.
+                Cuando una limitación impide hacerlo de forma razonable,
                 esa limitación se convierte en candidata a evolución del runtime.
             </p>
 
             <p>
-                Este enfoque permite que las nuevas funcionalidades
-                nazcan de necesidades reales detectadas durante el desarrollo,
-                en lugar de aparecer como características diseñadas de forma aislada.
+                De esta forma, las nuevas funcionalidades nacen del uso del engine
+                y no de intentar anticipar todas las características que podría necesitar.
             </p>
 
             <hr />
 
-            <h2>Desarrollado</h2>
-
-            <h3>Ejemplo Pong</h3>
+            <h2>FLX v0.3.0 · Consolidación de la base</h2>
 
             <p>
-                Primer ejemplo funcional utilizado para construir y validar
-                la estructura base del engine.
-            </p>
-
-            <h3>Sistemas implementados</h3>
-
-            <ul>
-                <li>Estructura base del engine</li>
-                <li>Ciclo de vida inicial</li>
-                <li>API de movimiento</li>
-                <li>Colisiones básicas</li>
-                <li>Rebote horizontal y vertical</li>
-                <li>Enemigo IA base</li>
-                <li>Helpers de posicionamiento (<code>position_origin()</code>)</li>
-                <li>Consola de logs</li>
-                <li>Soporte JSON y JavaScript</li>
-                <li>JSON Schemas</li>
-                <li>Definiciones TypeScript (<code>.d.ts</code>)</li>
-            </ul>
-
-            <hr />
-
-            <h3>Ejemplo Asteroids</h3>
-
-            <p>
-                Segundo ejemplo del runtime.
+                FLX v0.3.0 consolida la primera base estable del engine.
             </p>
 
             <p>
-                Asteroids representa la primera fase donde FLX empieza a definir su modelo interno.
+                Pong, Asteroids, Arkanoid, Invaders y Tank han servido para desarrollar,
+                revisar y unificar el modelo con el que se construyen los mundos de FLX.
             </p>
 
             <p>
-                Más allá del movimiento y los disparos,
-                este ejemplo está ayudando a establecer cómo nacen,
-                viven,
-                interactúan
-                y desaparecen los objetos dentro del runtime.
-            </p>
-
-            <p>
-                Pong validó el runtime base.
-                Asteroids está validando el lenguaje con el que se construyen los mundos.
-            </p>
-
-            <p>
-                Actualmente utilizado para validar:
+                Esta versión establece una base común para:
             </p>
 
             <ul>
-                <li>Sistema de formas (<code>shape</code>).</li>
-
-                <li>Sistema <code>motion</code> basado en JSON.</li>
-
-                <li>Rotación y convención angular FLX unificada también en Pong.</li>
-
-                <li>Nuevas funciones de API y evolución del runtime scripting.</li>
-
-                <li>Sistema de wrap screen y comportamiento <code>bounds</code>.</li>
-
-                <li>Documentación HTML viva y sincronizada con el desarrollo real.</li>
-
-                <li>Soporte de color real desde JSON.</li>
-
-                <li>Nuevo tipo <code>shape.type = line</code>.</li>
-
-                <li>
-                    Sistema de input escalable:
-                    <code>button(index)</code>,
-                    <code>direction(index)</code>,
-                    <code>player(index)</code> y
-                    <code>system()</code>.
-                </li>
-
-                <li>API logica de consulta de input expuesta a JavaScript.</li>
-
-                <li>
-                    Sistema probabilístico:
-                    <code>probability(chance, base)</code>.
-                </li>
-
-                <li>Hijos manuales declarados directamente en JSON.</li>
-
-                <li>Definiciones reutilizables cargadas sin instanciación inmediata.</li>
-
-                <li>
-                    Instanciación runtime mediante
-                    <code>spawn(object, "laser")</code>.
-                </li>
-
-                <li>Creación dinámica de objetos desde hijos manuales.</li>
-
-                <li>Spawn queue segura mediante <code>pendingObjects</code> y <code>flushSpawnQueue()</code>.</li>
-
-                <li>Entrada al mundo desacoplada: <code>spawn()</code>, cola, <code>born()</code> y runtime.</li>
-
-                <li>Offsets locales rotados según el ángulo del objeto.</li>
-
-                <li>Carga y caché de scripts mediante <code>ScriptEngine</code>.</li>
-
-                <li>Sistema de disparo funcional desde la nave.</li>
-
-                <li>
-                    Lifecycle completo:
-                    <code>born()</code>,
-                    <code>action()</code>,
-                    <code>motion()</code>,
-                    <code>collision()</code>,
-                    <code>kill()</code>,
-                    <code>dead()</code>
-                    y <code>cleanup()</code>.
-                </li>
-
-                <li>Destrucción diferida mediante <code>kill(object)</code>.</li>
-
-                <li>Estado <code>alive</code> para excluir objetos muertos de nuevas fases runtime.</li>
-
-                <li>Fase <code>dead()</code> ejecutada una sola vez antes del cleanup.</li>
-
-                <li>Inicialización por instancia mediante <code>born()</code>.</li>
-
-                <li>Estado local persistente por objeto mediante <code>read_local()</code> y <code>write_local()</code>.</li>
-
-                <li>Tiempo real de frame mediante <code>delta()</code>.</li>
-
-                <li>
-                    Modelo de ámbitos:
-                    función, script, estado local funcional y estado global funcional.
-                </li>
-
-                <li>
-                    Composición de JSON mediante <code>like</code>
-                    con sobrescritura recursiva de propiedades.
-                </li>
-
-                <li>
-                    Reutilización de configuraciones mediante
-                    definiciones reutilizables y derivadas.
-                </li>
-
-                <li>
-                    Resolución de rutas relativas desde el JSON que las declara.
-                </li>
-
-                <li>
-                    Children inline definidos directamente dentro de estructuras JSON.
-                </li>
-
-                <li>
-                    Nodos lógicos sin representación visual.
-                </li>
-
-                <li>
-                    Nuevo tipo <code>shape.type = polygon</code>.
-                </li>
-
-                <li>
-                    Formas poligonales definidas mediante listas de puntos.
-                </li>
-
-                <li>
-                    Generación aleatoria mediante
-                    <code>random(min, max)</code>.
-                </li>
-
-                <li>
-                    Spawners reutilizables construidos mediante
-                    <code>like</code>.
-                </li>
-
-                <li>
-                    Spawn periódico basado en temporizadores mediante
-                    <code>read_local()</code> y <code>write_local()</code>.
-                </li>
-
-                <li>
-                    Limitación local de entidades por spawner.
-                </li>
-
-                <li>
-                    Validación práctica completa del flujo Asteroids:
-                    nave, láseres, spawners, asteroides y colisiones básicas.
-                </li>
-
-                <li>
-                    Refinamiento del sistema de asteroides:
-                    comportamiento y variantes.
-                </li>
-
-                <li>Mejoras en el sistema de colisiones.</li>
-
-                <li>Añadido sistema de visualización de colisiones y tipos de colisiones (circle y box)</li>
-
-                <li>
-                    Refinamiento del sistema de asteroides:
-                    fragmentación.
-                </li>
-
-                <li>Mejoras graficas para mejorar el "juice": estelas, particulas al romperse...</li>
-
-                <li>UI y texto.</li>
-
-                <li>Sistema de puntuación y estado global del juego.</li>
-
-                <li>Contexto <code>game</code> / <code>level</code>.</li>
-
-                <li>Señales y comunicación entre objetos.</li>
+                <li>declaración, composición y creación de objetos;</li>
+                <li>representación visual y dibujo inmediato;</li>
+                <li>movimiento, orientación e inercia;</li>
+                <li>input y controles lógicos;</li>
+                <li>colisiones y consultas espaciales;</li>
+                <li>estado, temporizadores y ciclo de vida;</li>
+                <li>relaciones entre objetos;</li>
+                <li>sonido y música;</li>
+                <li>machines y configuración del entorno;</li>
+                <li>scripting y API JavaScript;</li>
+                <li>CLI, diagnostics y validación del proyecto.</li>
             </ul>
 
-            <hr />
-
-            <h2>En desarrollo</h2>
-
-            <h3>Ejemplo Arkanoid</h3>
-
             <p>
-                Tercer ejemplo principal del runtime.
+                El objetivo de esta versión no es cerrar las posibilidades de FLX,
+                sino disponer de una base coherente sobre la que construir y experimentar.
             </p>
-
-            <p>
-                Actualmente utilizado para validar:
-            </p>
-
-            <ul>
-                <li>
-                    Colliders nombrados activables y filtrados por grupo mediante
-                    <code>collisions</code>.
-                </li>
-            </ul>
-
-            <h3>Actualmente en desarrollo</h3>
-
-            <p>
-                Permitirá validar:
-            </p>
-
-            <ul>
-                <li>Spawn de objetos con reglas</li>
-                <li>Sistema básico de sonido</li>
-                <li>Niveles</li>
-                <li>Power ups</li>
-                <li>Cambios de estado</li>
-                <li>Temporizadores</li>
-            </ul>
-
-            <hr />
-
-            <h2>En planificación</h2>
-
-            <h2>Fase posterior</h2>
-
-            <p>
-                Tras completar los tres ejemplos principales,
-                FLX entrará en una fase de normalización y mejora general.
-            </p>
-
-            <p>
-                El objetivo será:
-            </p>
-
-            <ul>
-                <li>Unificar arquitectura y nomenclatura</li>
-                <li>Refinar APIs</li>
-                <li>Reducir duplicidades</li>
-                <li>Mejorar consistencia de runtime</li>
-                <li>Hacer los ejemplos más completos y atractivos</li>
-            </ul>
-
-            <hr />
 
             <hr />
 

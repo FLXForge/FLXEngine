@@ -87,7 +87,7 @@ API/Input     → consulta lógica</code></pre></div>
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>input_pressed(subject: InputButtonSubject, control: InputButton): boolean;
 input_pressed(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
 <p>Devuelve true en el frame en que el control pasa a activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
-<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible con la sobrecarga utilizada: RuntimeObject o jugador para direcciones; RuntimeObject, jugador o system para botones.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Descriptor lógico compatible con la sobrecarga utilizada.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
 <p><strong>Retorno:</strong> <code>boolean</code>.</p>
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_pressed(object, button(0))) {
   console.log(&quot;Botón 0&quot;);
@@ -102,7 +102,7 @@ if (input_pressed(player(1), direction(0), LEFT)) {
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>input_down(subject: InputButtonSubject, control: InputButton): boolean;
 input_down(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
 <p>Devuelve true mientras el control permanece activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
-<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible con la sobrecarga utilizada: RuntimeObject o jugador para direcciones; RuntimeObject, jugador o system para botones.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Descriptor lógico compatible con la sobrecarga utilizada.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
 <p><strong>Retorno:</strong> <code>boolean</code>.</p>
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_down(object, button(0))) {
   console.log(&quot;Botón 0&quot;);
@@ -117,7 +117,7 @@ if (input_down(player(1), direction(0), LEFT)) {
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>input_released(subject: InputButtonSubject, control: InputButton): boolean;
 input_released(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
 <p>Devuelve true en el frame en que el control deja de estar activo. <code>subject</code> es un jugador explícito o un RuntimeObject con control.player; los botones admiten también system. Con botón basta subject + control; con dirección debes añadir un componente compatible: UP/DOWN/LEFT/RIGHT para 4way o NEGATIVE/POSITIVE para 2way. Un subject o control fuera de las capacidades no produce una consulta activa.</p>
-<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible con la sobrecarga utilizada: RuntimeObject o jugador para direcciones; RuntimeObject, jugador o system para botones.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Descriptor lógico compatible con la sobrecarga utilizada.</dd><dt><code>component: number</code></dt><dd>Constante compatible con el tipo de dirección.</dd></dl>
 <p><strong>Retorno:</strong> <code>boolean</code>.</p>
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (input_released(object, button(0))) {
   console.log(&quot;Botón 0&quot;);

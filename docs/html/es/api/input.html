@@ -131,7 +131,7 @@ if (input_released(player(1), direction(0), LEFT)) {
 <h3 id="input-direction">input_direction()</h3>
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>input_direction(subject: InputDirectionSubject, control: InputDirection, axis: number): number;</code></pre></div>
 <p>Devuelve intención lógica -1, 0 o +1 para el eje indicado por HORIZONTAL o VERTICAL. En 4way, LEFT/RIGHT corresponden a X y UP/DOWN a Y; en 2way, NEGATIVE/POSITIVE se proyectan sobre cualquiera de los dos ejes. LEFT, UP y NEGATIVE producen -1; RIGHT, DOWN y POSITIVE producen +1. El neutro devuelve 0. Son valores del resultado, no los valores numéricos de las constantes. No admite system.</p>
-<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador, sistema cuando procede, o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor button o direction según la firma.</dd><dt><code>axis: number</code></dt><dd>HORIZONTAL o VERTICAL.</dd></dl>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Jugador explícito o instancia con control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Descriptor de dirección lógica.</dd><dt><code>axis: number</code></dt><dd>HORIZONTAL o VERTICAL.</dd></dl>
 <p><strong>Retorno:</strong> <code>number</code>.</p>
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">move_horizontal(object, input_direction(object, direction(0), HORIZONTAL));</code></pre></div>
 <p>Relacionados: <a class="link" href="api/input.html#input-down"><code>input_down()</code></a>, <a class="link" href="api/input.html#horizontal"><code>HORIZONTAL</code></a>, <a class="link" href="api/input.html#vertical"><code>VERTICAL</code></a>.</p>

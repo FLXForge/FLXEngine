@@ -61,17 +61,13 @@
                 </div>
 
                 <p>
-                    Pong fue el primer ejemplo utilizado para construir la base del runtime.
+                    Pong es el punto de entrada más sencillo a un proyecto FLX completo.
                 </p>
 
                 <p>
-                    Aunque visualmente sencillo,
-                    permitió validar el ciclo de vida,
-                    movimiento básico,
-                    colisiones,
-                    rebotes,
-                    scripting
-                    y la arquitectura inicial del motor.
+                    Con pocos objetos combina control del jugador,
+                    movimiento directo y polar,
+                    colisiones, rebotes, sonido y una IA básica que sigue la posición de la pelota.
                 </p>
 
                 <section class="example-card">
@@ -82,10 +78,12 @@
                     <div>
                         <ul>
                             <li>Estructura básica de un proyecto FLX</li>
-                            <li>Movimiento clásico basado en speed</li>
-                            <li>Colisiones simples</li>
-                            <li>Input y scripting</li>
-                            <li>IA básica</li>
+                            <li>Input y movimiento directo del jugador</li>
+                            <li>Movimiento polar mediante <code>advance()</code></li>
+                            <li>Colisiones y resolución mediante <code>CollisionContact</code></li>
+                            <li>Rebotes con <code>reflect_x()</code> y <code>reflect_y()</code></li>
+                            <li>Sonido generado desde el propio objeto</li>
+                            <li>IA básica mediante búsqueda y seguimiento de objetos</li>
                         </ul>
                     </div>
 
@@ -273,7 +271,7 @@
 
                     <div class="example-gameplay">
                         <img src="../assets/working.png"
-                             alt="Pong ejecutándose en FLX">
+                             alt="Gameplay todavía no disponible">
                     </div>
                 </div>
 

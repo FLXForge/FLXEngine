@@ -67,20 +67,10 @@ jobs:
           Remove-Item "dist" -Recurse -Force -ErrorAction SilentlyContinue
 
           New-Item -ItemType Directory -Force -Path $PackageDir | Out-Null
-          New-Item -ItemType Directory -Force -Path "$PackageDir/examples" | Out-Null
 
           Copy-Item "build/Release/flx.exe" "$PackageDir/flx.exe" -Force
 
-          Copy-Item "examples/pong.flx" "$PackageDir/examples/pong.flx" -Force
-          Copy-Item "examples/pong" "$PackageDir/examples/pong" -Recurse -Force
-          Copy-Item "examples/asteroids.flx" "$PackageDir/examples/asteroids.flx" -Force
-          Copy-Item "examples/asteroids" "$PackageDir/examples/asteroids" -Recurse -Force
-          Copy-Item "examples/arkanoid.flx" "$PackageDir/examples/arkanoid.flx" -Force
-          Copy-Item "examples/arkanoid" "$PackageDir/examples/arkanoid" -Recurse -Force
-          Copy-Item "examples/invaders.flx" "$PackageDir/examples/invaders.flx" -Force
-          Copy-Item "examples/invaders" "$PackageDir/examples/invaders" -Recurse -Force
-          Copy-Item "examples/tank.flx" "$PackageDir/examples/tank.flx" -Force
-          Copy-Item "examples/tank" "$PackageDir/examples/tank" -Recurse -Force
+          Copy-Item "examples" "$PackageDir/examples" -Recurse -Force
 
           Copy-Item "docs/schemas" "$PackageDir/schemas" -Recurse -Force
 
@@ -126,4 +116,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            build/Release/flx.exe
             dist/flx-${{ steps.version.outputs.version }}-windows-x64.zip

@@ -20,11 +20,24 @@ jobs:
           git fetch origin main
 
           $ProposedVersion = (Get-Content VERSION -Raw).Trim()
-          $BaseVersion = (git show origin/main:VERSION).Trim()
 
-          if ($ProposedVersion -notmatch '^\d+\.\d+\.\d+$' -or $BaseVersion -notmatch '^\d+\.\d+\.\d+$') {
-            Write-Error "VERSION must use semantic X.Y.Z format."
-            exit 1
+          if ($ProposedVersion -notmatch '^\d+\.\d+\.\d+$') {
+              Write-Error "VERSION must use semantic X.Y.Z format."
+              exit 1
+          }
+
+          $BaseVersionRaw = git show origin/main:VERSION 2>$null
+
+          if ($LASTEXITCODE -ne 0 -or -not $BaseVersionRaw) {
+              Write-Host "VERSION does not exist on main yet. Initial versioned release accepted: $ProposedVersion"
+              exit 0
+          }
+
+          $BaseVersion = $BaseVersionRaw.Trim()
+
+          if ($BaseVersion -notmatch '^\d+\.\d+\.\d+$') {
+              Write-Error "VERSION on main must use semantic X.Y.Z format."
+              exit 1
           }
 
           $ProposedParts = $ProposedVersion.Split('.') | ForEach-Object { [int]$_ }

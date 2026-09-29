@@ -1,0 +1,86 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+  "size": {
+    "width": 640,
+    "height": 320
+  },
+  "delimit": true,
+  "children": {
+    "top_wall": {
+      "origin": {
+        "x": 320,
+        "y": 50
+      },
+      "group": "wall",
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      },
+      "size": {
+        "width": 560,
+        "height": 10
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "left_wall": {
+      "origin": {
+        "x": 45,
+        "y": 170
+      },
+      "group": "wall",
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      },
+      "size": {
+        "width": 10,
+        "height": 250
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "right_wall": {
+      "origin": {
+        "x": 605,
+        "y": 170
+      },
+      "group": "wall",
+      "collisions": {
+        "body": {
+          "type": "box"
+        }
+      },
+      "size": {
+        "width": 10,
+        "height": 250
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

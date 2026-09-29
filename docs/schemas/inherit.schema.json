@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "inherit.schema.json",
+  "title": "FLX Inherit",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "creation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "type": "string",
+          "enum": [ "none", "copy" ],
+          "default": "none"
+        },
+        "velocity": {
+          "type": "string",
+          "enum": [ "none", "copy", "compose" ],
+          "default": "none"
+        }
+      }
+    },
+
+    "live": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "type": "string",
+          "enum": [ "none", "copy" ],
+          "default": "none"
+        }
+      }
+    }
+  }
+}

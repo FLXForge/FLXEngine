@@ -1,0 +1,13 @@
+# Game data
+title=Mechanics Demo
+name=mechanics-demo
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=mechanics-demo
+input.mapping=mechanics-demo.input
+
+# Notes
+notes=Minimal FLX v0.3.0 Mechanics demo

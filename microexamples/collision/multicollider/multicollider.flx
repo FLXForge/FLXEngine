@@ -1,0 +1,12 @@
+# Game data
+title=Collision: multicollider
+name=multicollider
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=multicollider
+
+# Notes
+notes=Named colliders on one RuntimeObject and aggregated CollisionContact data

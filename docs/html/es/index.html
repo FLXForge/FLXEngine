@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducción | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="home">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">Documentación FLX</p>
+            <h1>Introducción</h1>
+
+            <section class="hero">
+                <div class="logo-block">
+                    <img src="../assets/FLX_engine_logo_w.svg" width="400" alt="FLX Engine logo">
+                </div>
+
+                <div class="hero-text">
+                    <h2>Un pequeño motor 2D declarativo</h2>
+                    <p>
+                        Define estructuras mediante JSON, comportamientos mediante JavaScript
+                        y deja que el runtime haga el resto.
+                    </p>
+                </div>
+            </section>
+
+            <h2>La filosofía FLX: datos, funciones y runtime</h2>
+
+            <p>
+                FLX está construido alrededor de una idea muy sencilla:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objetos -> Datos
+
+Scripts -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <p>
+                Los objetos definen qué existe.
+            </p>
+
+            <p>
+                Los scripts definen qué ocurre.
+            </p>
+
+            <p>
+                El runtime conecta ambos durante la ejecución.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "size": {
+    "width": 18,
+    "height": 24
+  },
+
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "triangle",
+        "mode": "outline"
+      }
+    ]
+  },
+
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": { "limit": 180 },
+      "acceleration": 120,
+      "inertia": 0.99
+    },
+    "rotation": {
+      "speed": { "start": 180 }
+    }
+  }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Los datos definen la existencia.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
+
+const MOVE = direction(0);
+
+function action(ship) {
+  const thrust = input_direction(ship, MOVE, VERTICAL);
+
+  if (thrust > 0) {
+    accelerate(ship, thrust);
+  }
+}
+
+function motion(ship) {
+  advance(ship);
+}
+</code></pre>
+            </div>
+
+            <p>
+                Las funciones definen el comportamiento.
+            </p>
+
+            <p>
+                FLX no intenta trasladar el motor al script.
+            </p>
+
+            <p>
+                El runtime mantiene las reglas del mundo; los scripts expresan
+                el comportamiento de los objetos.
+            </p>
+
+            <p>
+                Cada proyecto se ejecuta además sobre una <em>machine</em>,
+                que define las características del entorno en el que existe ese mundo.
+            </p>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

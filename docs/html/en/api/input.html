@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<h1>Input</h1>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a aria-current="page" class="link" href="api/input.html"><strong>Input</strong></a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>An input query combines <strong>Subject + Control + Query</strong>. The subject identifies who receives input, the control identifies which logical capability is queried, and the query determines how its state is observed.</p>
+<div class="code-card"><div class="code-header">Three responsibilities</div><pre><code>Machine/Input → logical capabilities
+Input Mapping → physical devices
+API/Input     → logical query</code></pre></div>
+<p>See <a class="link" href="machine/input.html">Machine · Input</a> for capabilities and mapping. A RuntimeObject acts as a subject through its <a class="link" href="json/object.html#control">control.player</a> declaration; control is not a public property of the JavaScript view. Player indices start at 1; button and direction indices start at 0.</p>
+<nav aria-label="On this page"><p><a class="link" href="api/input.html#subjects">Subjects and controls</a> · <a class="link" href="api/input.html#queries">Queries</a> · <a class="link" href="api/input.html#types">Input types</a> · <a class="link" href="api/input.html#constants">Constants</a></p></nav><h2 id="subjects">Subjects and controls</h2>
+<section data-api-symbol="player">
+<h3 id="player">player()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>player(playerIndex: number): InputPlayerSubject;</code></pre></div>
+<p>Constructs an explicit player subject. <code>playerIndex</code> starts at 1; the player must exist in Machine/Input for its queries to be valid.</p>
+<dl><dt><code>playerIndex: number</code></dt><dd>Player index starting at 1.</dd></dl>
+<p><strong>Returns:</strong> <code>InputPlayerSubject</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const subject = player(1);</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#input-player-subject"><code>InputPlayerSubject</code></a>, <a class="link" href="api/input.html#system"><code>system()</code></a>.</p>
+</section>
+<section data-api-symbol="system">
+<h3 id="system">system()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>system(): InputSystemSubject;</code></pre></div>
+<p>Returns the subject for global system controls. Only supports buttons; it has no directions.</p>
+<p><strong>Returns:</strong> <code>InputSystemSubject</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (input_pressed(system(), button(0))) exit();</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#input-system-subject"><code>InputSystemSubject</code></a>, <a class="link" href="api/input.html#player"><code>player()</code></a>.</p>
+</section>
+<section data-api-symbol="button">
+<h3 id="button">button()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>button(index: number): InputButton;</code></pre></div>
+<p>Returns the logical button descriptor <code>index</code>, starting at 0. Does not represent a physical key or query its state. The index must be within the subject's capabilities in Machine.</p>
+<dl><dt><code>index: number</code></dt><dd>Logical index starting at 0.</dd></dl>
+<p><strong>Returns:</strong> <code>InputButton</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const FIRE = button(0);</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#input-button"><code>InputButton</code></a>, <a class="link" href="api/input.html#input-pressed"><code>input_pressed()</code></a>.</p>
+</section>
+<section data-api-symbol="direction">
+<h3 id="direction">direction()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>direction(index: number): InputDirection;</code></pre></div>
+<p>Returns the logical direction descriptor <code>index</code>, starting at 0. Its valid components depend on the 2way or 4way type declared in Machine.</p>
+<dl><dt><code>index: number</code></dt><dd>Logical index starting at 0.</dd></dl>
+<p><strong>Returns:</strong> <code>InputDirection</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const MOVE = direction(0);</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#input-direction-type"><code>InputDirection</code></a>, <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section>
+<h2 id="queries">Queries</h2>
+<section data-api-symbol="input_pressed">
+<h3 id="input-pressed">input_pressed()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>input_pressed(subject: InputButtonSubject, control: InputButton): boolean;
+input_pressed(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Returns true on the frame when the control becomes active. <code>subject</code> is an explicit player or a RuntimeObject with control.player; buttons also support system. For a button, subject + control is enough; for a direction, you must add a compatible component: UP/DOWN/LEFT/RIGHT for 4way or NEGATIVE/POSITIVE for 2way. A subject or control outside the capabilities does not produce an active query.</p>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible with the overload used: RuntimeObject or player for directions; RuntimeObject, player or system for buttons.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Logical descriptor compatible with the overload used.</dd><dt><code>component: number</code></dt><dd>Constant compatible with the direction type.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (input_pressed(object, button(0))) {
+  console.log(&quot;Button 0&quot;);
+}
+if (input_pressed(player(1), direction(0), LEFT)) {
+  console.log(&quot;Left component, 4way direction&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_down">
+<h3 id="input-down">input_down()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>input_down(subject: InputButtonSubject, control: InputButton): boolean;
+input_down(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Returns true while the control remains active. <code>subject</code> is an explicit player or a RuntimeObject with control.player; buttons also support system. For a button, subject + control is enough; for a direction, you must add a compatible component: UP/DOWN/LEFT/RIGHT for 4way or NEGATIVE/POSITIVE for 2way. A subject or control outside the capabilities does not produce an active query.</p>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible with the overload used: RuntimeObject or player for directions; RuntimeObject, player or system for buttons.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Logical descriptor compatible with the overload used.</dd><dt><code>component: number</code></dt><dd>Constant compatible with the direction type.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (input_down(object, button(0))) {
+  console.log(&quot;Button 0&quot;);
+}
+if (input_down(player(1), direction(0), LEFT)) {
+  console.log(&quot;Left component, 4way direction&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_released">
+<h3 id="input-released">input_released()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>input_released(subject: InputButtonSubject, control: InputButton): boolean;
+input_released(subject: InputDirectionSubject, control: InputDirection, component: number): boolean;</code></pre></div>
+<p>Returns true on the frame when the control stops being active. <code>subject</code> is an explicit player or a RuntimeObject with control.player; buttons also support system. For a button, subject + control is enough; for a direction, you must add a compatible component: UP/DOWN/LEFT/RIGHT for 4way or NEGATIVE/POSITIVE for 2way. A subject or control outside the capabilities does not produce an active query.</p>
+<dl><dt><code>subject: InputButtonSubject | InputDirectionSubject</code></dt><dd>Subject compatible with the overload used: RuntimeObject or player for directions; RuntimeObject, player or system for buttons.</dd><dt><code>control: InputButton | InputDirection</code></dt><dd>Logical descriptor compatible with the overload used.</dd><dt><code>component: number</code></dt><dd>Constant compatible with the direction type.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (input_released(object, button(0))) {
+  console.log(&quot;Button 0&quot;);
+}
+if (input_released(player(1), direction(0), LEFT)) {
+  console.log(&quot;Left component, 4way direction&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#button"><code>button()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<section data-api-symbol="input_direction">
+<h3 id="input-direction">input_direction()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>input_direction(subject: InputDirectionSubject, control: InputDirection, axis: number): number;</code></pre></div>
+<p>Returns logical intent -1, 0 or +1 for the axis specified by HORIZONTAL or VERTICAL. In 4way, LEFT/RIGHT correspond to X and UP/DOWN to Y; in 2way, NEGATIVE/POSITIVE project onto either axis. LEFT, UP and NEGATIVE produce -1; RIGHT, DOWN and POSITIVE produce +1. Neutral returns 0. These are result values, not the numeric values of the constants. Does not support system.</p>
+<dl><dt><code>subject: InputDirectionSubject</code></dt><dd>Explicit player or instance with control.player.</dd><dt><code>control: InputDirection</code></dt><dd>Logical direction descriptor.</dd><dt><code>axis: number</code></dt><dd>HORIZONTAL or VERTICAL.</dd></dl>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">move_horizontal(object, input_direction(object, direction(0), HORIZONTAL));</code></pre></div>
+<p>Related: <a class="link" href="api/input.html#input-down"><code>input_down()</code></a>, <a class="link" href="api/input.html#horizontal"><code>HORIZONTAL</code></a>, <a class="link" href="api/input.html#vertical"><code>VERTICAL</code></a>.</p>
+</section>
+<h2 id="types">Input types</h2>
+<section data-api-symbol="InputButton"><h3 id="input-button">InputButton</h3>
+<p>Logical button descriptor, with a readonly index starting at 0. Obtain the descriptor through <a class="link" href="api/input.html#button"><code>button()</code></a>. The optional markers in the type file distinguish descriptors; you do not need to construct or modify them manually.</p>
+<div class="code-card"><div class="code-header">Usage</div><pre><code data-example="javascript">const control = button(0);</code></pre></div>
+</section>
+<section data-api-symbol="InputDirection"><h3 id="input-direction-type">InputDirection</h3>
+<p>Logical direction descriptor, with a readonly index starting at 0. Obtain the descriptor through <a class="link" href="api/input.html#direction"><code>direction()</code></a>. The optional markers in the type file distinguish descriptors; you do not need to construct or modify them manually.</p>
+<div class="code-card"><div class="code-header">Usage</div><pre><code data-example="javascript">const control = direction(0);</code></pre></div>
+</section>
+<section data-api-symbol="InputPlayerSubject"><h3 id="input-player-subject">InputPlayerSubject</h3>
+<p>Explicit player subject, with a readonly index starting at 1. Obtain the descriptor through <a class="link" href="api/input.html#player"><code>player()</code></a>. The optional markers in the type file distinguish descriptors; you do not need to construct or modify them manually.</p>
+<div class="code-card"><div class="code-header">Usage</div><pre><code data-example="javascript">const subject = player(1);</code></pre></div>
+</section>
+<section data-api-symbol="InputSystemSubject"><h3 id="input-system-subject">InputSystemSubject</h3>
+<p>Unique subject for system buttons. Includes a readonly index; its public use is system(), not selecting players through that index. Obtain the descriptor through <a class="link" href="api/input.html#system"><code>system()</code></a>. The optional markers in the type file distinguish descriptors; you do not need to construct or modify them manually.</p>
+<div class="code-card"><div class="code-header">Usage</div><pre><code data-example="javascript">const subject = system();</code></pre></div>
+</section>
+<section data-api-symbol="InputButtonSubject"><h3 id="input-button-subject">InputButtonSubject</h3>
+<div class="code-card"><div class="code-header">Type</div><pre><code>type InputButtonSubject =
+  RuntimeObject | InputPlayerSubject | InputSystemSubject;</code></pre></div>
+<p>Subjects supported by button queries. RuntimeObject requires control.player. Related: <a class="link" href="api/input.html#input-pressed"><code>input_pressed()</code></a>, <a class="link" href="api/input.html#player"><code>player()</code></a>, <a class="link" href="api/input.html#system"><code>system()</code></a>.</p>
+</section>
+<section data-api-symbol="InputDirectionSubject"><h3 id="input-direction-subject">InputDirectionSubject</h3>
+<div class="code-card"><div class="code-header">Type</div><pre><code>type InputDirectionSubject = RuntimeObject | InputPlayerSubject;</code></pre></div>
+<p>Subjects supported by direction queries. System is excluded. Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>, <a class="link" href="api/input.html#direction"><code>direction()</code></a>.</p>
+</section>
+<h2 id="constants">Constants</h2>
+<p>Use symbolic names; their internal numeric values are not part of the contract. The -1/+1 signs described here belong to the result of input_direction.</p>
+<section data-api-symbol="UP"><h3 id="up">UP</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const UP: number;</code></pre></div>
+<p>Up component of a 4way direction. In a vertical axis query it produces intent -1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="DOWN"><h3 id="down">DOWN</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const DOWN: number;</code></pre></div>
+<p>Down component of a 4way direction. On the vertical axis it produces intent +1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="LEFT"><h3 id="left">LEFT</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const LEFT: number;</code></pre></div>
+<p>Left component of a 4way direction. On the horizontal axis it produces intent -1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="RIGHT"><h3 id="right">RIGHT</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const RIGHT: number;</code></pre></div>
+<p>Right component of a 4way direction. On the horizontal axis it produces intent +1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="STOP"><h3 id="stop">STOP</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const STOP: number;</code></pre></div>
+<p>Neutral/stopped movement. Can express neutral intent in a movement operation; does not replace a button or direction descriptor.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="NEGATIVE"><h3 id="negative">NEGATIVE</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const NEGATIVE: number;</code></pre></div>
+<p>Negative component of a 2way direction. input_direction projects it as -1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="POSITIVE"><h3 id="positive">POSITIVE</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const POSITIVE: number;</code></pre></div>
+<p>Positive component of a 2way direction. input_direction projects it as +1.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="HORIZONTAL"><h3 id="horizontal">HORIZONTAL</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const HORIZONTAL: number;</code></pre></div>
+<p>Horizontal axis selector for input_direction. In 4way it queries LEFT/RIGHT.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><section data-api-symbol="VERTICAL"><h3 id="vertical">VERTICAL</h3><div class="code-card"><div class="code-header">Type</div><pre><code>const VERTICAL: number;</code></pre></div>
+<p>Vertical axis selector for input_direction. In 4way it queries UP/DOWN.</p>
+<p>Related: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>.</p>
+</section><hr /><details><summary>Sources for this reference</summary><p>Reference checked against <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> and the runtime on branch feature/audit-public-doc, revision <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a aria-current="page" class="link" href="api/input.html"><strong>Input</strong></a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

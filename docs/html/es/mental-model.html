@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo piensa FLX | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="mental-model">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Cómo piensa FLX</h1>
+
+            <p>
+                Antes de aprender JSON, APIs o ciclos de vida,
+                merece la pena comprender la idea central sobre la que está construido FLX.
+            </p>
+
+            <p>
+                FLX no intenta trasladar el motor al script.
+            </p>
+
+            <p>
+                El runtime mantiene las reglas del mundo; los scripts expresan
+                el comportamiento de los objetos.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objetos -> Datos
+
+Scripts -> Funciones
+
+Runtime -> Conecta ambos
+</code></pre>
+            </div>
+
+            <h2>El mundo existe sobre una machine</h2>
+
+            <p>
+                El runtime no ejecuta el mundo en un entorno indefinido.
+                Cada proyecto utiliza una <em>machine</em> que establece las características
+                del entorno en el que ese mundo puede existir.
+            </p>
+
+            <p>
+                FLX proporciona una machine por defecto, por lo que no es necesario
+                definir una para comenzar.
+            </p>
+
+            <p>
+                Más adelante veremos cómo una machine permite controlar explícitamente
+                esas características.
+            </p>
+
+            <h2>Los objetos contienen datos</h2>
+
+            <p>
+                Un objeto describe algo que existe dentro del runtime.
+            </p>
+
+            <p>
+                Puede tener posición, tamaño, movimiento, representación visual,
+                estado local y otras capacidades declaradas.
+            </p>
+
+            <p>
+                Los objetos no implementan su comportamiento.
+            </p>
+
+            <p>
+                Declaran su estado, sus capacidades y los scripts que pueden actuar sobre ellos.
+            </p>
+
+            <h2>Los scripts contienen funciones</h2>
+
+            <p>
+                Un script es un conjunto de funciones JavaScript.
+            </p>
+
+            <p>
+                Esas funciones describen qué ocurre con los objetos
+                a lo largo de su vida.
+            </p>
+
+            <p>
+                Los scripts no pertenecen a los objetos.
+            </p>
+
+            <p>
+                Son recursos compartidos que pueden ser utilizados
+                por muchos objetos simultáneamente.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>function action(ship) {
+    accelerate(ship);
+}
+</code></pre>
+            </div>
+
+            <h2>El runtime conecta ambos</h2>
+
+            <p>
+                Durante la ejecución,
+                el runtime invoca funciones y les proporciona los objetos
+                sobre los que deben trabajar.
+            </p>
+
+            <p>
+                Los scripts describen comportamiento.
+            </p>
+
+            <p>
+                Los objetos almacenan estado.
+            </p>
+
+            <p>
+                El runtime coordina la interacción entre ambos.
+            </p>
+
+            <h2>Estado compartido y estado individual</h2>
+
+            <p>
+                Un mismo script puede utilizarse desde cientos de objetos.
+            </p>
+
+            <p>
+                Esto significa que existen distintos ámbitos de información.
+            </p>
+
+            <ul>
+                <li>Ámbito de función: variables locales de cada ejecución.</li>
+                <li>Ámbito de script: variables compartidas por las funciones del script.</li>
+                <li>Ámbito de objeto: estado propio mediante <code>read_local()</code> y <code>write_local()</code>.</li>
+                <li>Ámbito global: estado compartido mediante <code>read_global()</code> y <code>write_global()</code>.</li>
+            </ul>
+
+            <p>
+                Un mismo script puede actuar sobre muchos objetos, pero cada objeto
+                mantiene su propio estado local.
+            </p>
+
+            <p>
+                Comprender esta diferencia es una de las claves para comprender FLX.
+            </p>
+
+            <h2>Objetos vivos</h2>
+
+            <p>
+                FLX entiende los objetos como entidades que nacen,
+                existen y desaparecen.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Lifecycle</div>
+<pre><code>         born()
+           ↓
+    ┌─────────────┐
+    │   action()  │
+    │   motion()  │
+    │ collision() │
+    │    draw()   │
+    └─────────────┘
+           ↓
+         dead()
+</code></pre>
+            </div>
+
+            <p>
+                <code>born()</code> se ejecuta cuando el objeto entra en el mundo.
+                Durante su vida, el runtime puede invocar sus distintos hooks de comportamiento.
+                <code>dead()</code> se ejecuta una vez antes de que el objeto sea retirado.
+            </p>
+
+            <p>
+                Un script puede solicitar su destrucción mediante <code>kill()</code>,
+                pero el ciclo de vida pertenece al runtime.
+            </p>
+
+            <p>
+                Esta terminología no es accidental.
+            </p>
+
+            <p>
+                El ciclo de vida forma parte del modelo mental del runtime.
+            </p>
+
+            <h2>La idea principal</h2>
+
+            <p>
+                Si recuerdas una sola cosa sobre FLX,
+                que sea esta:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">FLX</div>
+<pre><code>Datos
+
+Funciones
+
+Runtime
+</code></pre>
+            </div>
+
+            <p>
+                El resto de la documentación explica cómo se implementa esta idea.
+            </p>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

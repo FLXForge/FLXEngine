@@ -1,0 +1,25 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "offset": {
+    "x": 15,
+    "y": 5
+  },
+  "group": "brick",
+  "collisions": {
+    "body": {
+      "type": "box"
+    }
+  },
+  "size": {
+    "width": 30,
+    "height": 10
+  },
+  "visual": {
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+video:
+  screen:
+    width: 320
+    height: 180
+    color: black
+
+  color:
+    levels:
+      red: 2
+      green: 2
+      blue: 2
+    alpha: false
+
+  planes:
+    enabled: false
+  
+  objects:
+    sprites: false
+
+  output:
+    scale: 3
+    smoothing: false

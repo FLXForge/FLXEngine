@@ -5,11 +5,6 @@
 */
 
 function action(player) {
-    if (Key.down(KEY_UP)) {
-        move_y(player, UP);
-    }
-
-    if (Key.down(KEY_DOWN)) {
-        move_y(player, DOWN);
-    }
+    const MOVE = direction(0);
+    move_vertical(player, input_direction(player, MOVE, VERTICAL));
 }

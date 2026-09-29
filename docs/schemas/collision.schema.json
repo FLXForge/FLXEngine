@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "collision.schema.json",
-  "title": "FLX Collision",
+  "title": "FLX Collider",
   "type": "object",
   "additionalProperties": false,
 
@@ -9,25 +9,54 @@
     "type": {
       "type": "string",
       "enum": [
-        "none",
         "box",
-        "circle"
+        "ellipse"
       ]
     },
 
-    "active": {
+    "enabled": {
       "type": "boolean"
+    },
+
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+
+    "offset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "default": 0 },
+        "y": { "type": "number", "default": 0 }
+      }
+    },
+
+    "angle": {
+      "type": "number"
     },
 
     "with": {
       "type": "array",
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
     },
 
-    "radius": {
-      "type": "number"
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
     }
   }
 }

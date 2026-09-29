@@ -1,11 +1,58 @@
 {
   "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "control": {
+    "player": 1
+  },
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+  "size": {
+    "width": 640,
+    "height": 320
+  },
+  "delimit": true,
   "behavior": {
     "scripts": [
-      "game"
+      "game",
+      "ui"
     ]
   },
   "children": {
-    "level": "space/level"
+    "DeepSpaceLeft": {
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 20,
+        "y": 20
+      }
+    },
+    "DeepSpaceRight": {
+      "like": "asteroid/deep_space",
+      "origin": {
+        "x": 620,
+        "y": 20
+      }
+    },
+    "ship_spawn": {
+      "origin": {
+        "x": 320,
+        "y": 160
+      },
+      "creation": {
+        "mode": "iterator",
+        "rules": {
+          "concurrent": 1,
+          "repeat": true
+        },
+        "pattern": [
+          "ship"
+        ]
+      },
+      "children": {
+        "ship": {
+          "like": "ship/ship"
+        }
+      }
+    }
   }
 }

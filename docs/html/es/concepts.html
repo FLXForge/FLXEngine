@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptos básicos | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="concepts">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">Documentación FLX</p>
+            <h1>Conceptos básicos</h1>
+
+            <p>
+                FLX organiza los proyectos mediante estructuras de datos simples,
+                objetos, comportamiento y reglas de ejecución claramente definidas.
+            </p>
+
+            <p>
+                Esta sección describe los conceptos fundamentales que forman parte
+                de cualquier proyecto FLX.
+            </p>
+
+            <hr />
+
+            <h2>Proyecto</h2>
+
+            <p>
+                Todo proyecto FLX comienza con un archivo de proyecto
+                con extensión <code>.flx</code>.
+            </p>
+
+            <p>
+                Este archivo actúa como punto de entrada del proyecto.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">asteroids.flx</div>
+<pre><code>title=Asteroids
+name=Asteroids
+version=2.0
+engine=0.3.0
+
+path=asteroids
+root=space
+machine=machines/asteroidsMachine.yml
+input.mapping=controllers.input
+</code></pre>
+            </div>
+
+            <p>
+                A partir de este archivo,
+                el runtime carga el objeto raíz,
+                los recursos y la configuración del proyecto.
+            </p>
+
+            <hr />
+
+            <h2>Machine</h2>
+
+            <p>
+                Todo proyecto se ejecuta sobre una <em>machine</em>,
+                que define las características del entorno en el que funciona el mundo.
+            </p>
+
+            <p>
+                Un proyecto puede seleccionar su machine mediante el campo
+                <code>machine</code> del archivo <code>.flx</code>.
+                Si no se declara, FLX utiliza la configuración predeterminada.
+            </p>
+
+            <p>
+                Las machines se describen con detalle en su propia sección de la documentación.
+            </p>
+
+            <hr />
+
+            <h2>Objeto raíz</h2>
+
+            <p>
+                El objeto raíz es el objeto seleccionado por el campo
+                <code>root</code> del archivo <code>.flx</code>.
+            </p>
+
+            <p>
+                Es un objeto JSON normal que organiza la estructura principal
+                del mundo y los recursos asociados.
+            </p>
+
+            <p>
+                Dependiendo del proyecto,
+                puede representar:
+            </p>
+
+            <ul>
+                <li>Un nivel</li>
+                <li>Un menú</li>
+                <li>Una pantalla de carga</li>
+                <li>Una presentación</li>
+                <li>Una secuencia narrativa</li>
+                <li>Un estado concreto de la aplicación</li>
+            </ul>
+
+            <p>
+                FLX no impone una interpretación concreta.
+            </p>
+
+            <hr />
+
+            <h2>Objetos</h2>
+
+            <p>
+                Los objetos representan elementos que existen dentro del runtime.
+            </p>
+
+            <p>
+                Un objeto puede:
+            </p>
+
+            <ul>
+                <li>Dibujarse</li>
+                <li>Moverse</li>
+                <li>Colisionar</li>
+                <li>Almacenar datos</li>
+                <li>Ejecutar comportamiento mediante scripts</li>
+            </ul>
+
+            <p>
+                Normalmente los objetos se describen mediante JSON.
+            </p>
+
+            <p>
+                Una definición puede escribirse completamente
+                o construirse reutilizando otra definición mediante
+                <code>like</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.json</div>
+<pre><code>{
+    "size": {
+        "width": 18,
+        "height": 24
+    },
+
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
+    },
+
+    "mechanics": {
+        "type": "polar",
+        "motion": {
+            "speed": { "limit": 180 }
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Reutilización y composición</h2>
+
+            <p>
+                FLX permite construir nuevas definiciones
+                a partir de otras ya existentes.
+            </p>
+
+            <p>
+                Esta capacidad se basa en el sistema
+                <code>like</code>,
+                que permite reutilizar configuraciones
+                y sobrescribir únicamente los campos necesarios.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">DeepSpaceLeft</div>
+<pre><code>{
+    "like": "asteroid/deep_space",
+
+    "origin": {
+        "x": 5,
+        "y": 5
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta característica permite construir familias completas
+                de objetos reutilizando una única definición base.
+            </p>
+
+            <p>
+                Un objeto no necesita tener representación visual para existir dentro del runtime.
+            </p>
+
+            <p>
+                Si define <code>behavior</code>, <code>children</code> o <code>collisions</code>,
+                puede actuar como nodo lógico, gestor de nivel, HUD, spawner, trigger
+                o controlador de juego.
+            </p>
+
+            <p>
+                Durante la ejecución, <code>name</code> conserva el nombre lógico
+                de la definición del objeto, mientras que <code>id</code> identifica
+                una instancia concreta dentro del runtime.
+            </p>
+
+
+            <p>
+                Los detalles completos se describen en
+                JSON Reference.
+            </p>
+
+            <hr />
+
+            <h2>Children y momento de spawn</h2>
+
+            <p>
+                <code>children</code> declara qué objetos puede crear un objeto padre.
+                El valor <code>spawn</code> de cada hijo determina si su primera instancia
+                nace automáticamente o queda disponible para creación manual.
+            </p>
+
+            <p>
+                <code>creation</code> define cómo organiza el padre la creación de sus hijos.
+                Si no se declara, el modo utilizado es <code>individual</code>.
+            </p>
+
+            <ul>
+                <li>
+                    <code>spawn: "auto"</code>:
+                    el hijo se instancia cuando su padre entra en el mundo.
+                </li>
+
+                <li>
+                    <code>spawn: "manual"</code>:
+                    el hijo queda registrado y puede crearse después con
+                    <code>spawn(parent, "child")</code>.
+                </li>
+            </ul>
+
+            <p>
+                <code>spawn(parent, "child")</code> puede crear cualquier hijo
+                declarado. El valor <code>spawn</code> solo controla si la
+                primera instancia nace automáticamente cuando el padre entra
+                en el mundo.
+            </p>
+
+            <hr />
+
+            <h2>Representación visual</h2>
+
+            <p>
+                La apariencia de un objeto se declara mediante <code>visual</code>.
+            </p>
+
+            <p>
+                Un objeto puede contener varios elementos dentro de
+                <code>representation</code>. Cada elemento puede ser una primitiva,
+                una geometría definida mediante puntos o un texto.
+            </p>
+
+            <table>
+                <tr>
+                    <th>Representación</th>
+                    <th>Uso</th>
+                </tr>
+
+                <tr>
+                    <td><code>primitive</code></td>
+                    <td>Formas básicas: <code>rectangle</code>, <code>triangle</code> y <code>ellipse</code>.</td>
+                </tr>
+
+                <tr>
+                    <td><code>geometry</code></td>
+                    <td>Geometría definida mediante una lista de puntos.</td>
+                </tr>
+
+                <tr>
+                    <td><code>text</code></td>
+                    <td>Texto con tamaño de fuente configurable.</td>
+                </tr>
+            </table>
+
+            <p>
+                <code>visual</code> puede definir un color base y cada elemento de
+                <code>representation</code> puede utilizar su propio color.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">visual</div>
+<pre><code>"visual": {
+    "color": "white",
+    "representation": [
+        {
+            "primitive": "triangle",
+            "mode": "outline"
+        }
+    ]
+}
+</code></pre>
+            </div>
+
+            <p>
+                Las geometrías permiten construir representaciones mediante puntos
+                y elegir si se dibujan abiertas, cerradas o rellenas.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">geometry</div>
+<pre><code>"visual": {
+    "representation": [
+        {
+            "geometry": [
+                { "x": 0, "y": -16 },
+                { "x": 12, "y": 8 },
+                { "x": -12, "y": 8 }
+            ],
+            "mode": "close"
+        }
+    ]
+}
+</code></pre>
+            </div>
+
+            <hr />
+
+            <h2>Representación visual y colisiones</h2>
+
+            <p>
+                En FLX, la representación visual y la colisión son sistemas independientes.
+            </p>
+
+            <p>
+                El bloque <code>visual</code> define cómo se representa un objeto,
+                mientras que <code>collisions</code> define sus colliders y cómo participan
+                en la detección de colisiones.
+            </p>
+
+            <p>
+                En algunos casos ambas definiciones pueden ser similares,
+                pero no tienen por qué coincidir.
+            </p>
+
+            <p>
+                Cada collider puede estar habilitado o deshabilitado y declarar mediante
+                <code>with</code> los grupos con los que consulta colisión.
+            </p>
+
+            <p>
+                Las comprobaciones de colisión son direccionales:
+                un objeto solo ejecuta <code>collision(object, other, contacts)</code>
+                cuando uno de sus colliders habilitados incluye el grupo del otro objeto
+                en su lista <code>with</code>.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">visual + collisions</div>
+<pre><code>{
+    "visual": {
+        "representation": [
+            {
+                "primitive": "triangle",
+                "mode": "outline"
+            }
+        ]
+    },
+
+    "collisions": {
+        "body": {
+            "type": "ellipse",
+            "size": {
+                "width": 24,
+                "height": 24
+            }
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <p>
+                Esta separación permite definir la representación y la detección
+                de colisiones de forma independiente.
+            </p>
+
+            <hr />
+
+            <h2>Sistema de coordenadas</h2>
+
+            <p>
+                FLX utiliza un sistema de coordenadas 2D.
+                En la máquina actual, el origen lógico se encuentra en la esquina
+                superior izquierda.
+            </p>
+
+            <ul>
+                <li><code>x</code> crece hacia la derecha.</li>
+                <li><code>y</code> crece hacia abajo.</li>
+                <li>Subir implica reducir <code>y</code>.</li>
+                <li>Bajar implica aumentar <code>y</code>.</li>
+            </ul>
+
+            <p>
+                Actualmente FLX trabaja con coordenadas lógicas de mundo
+                en un mundo fijo sin cámara ni scroll.
+            </p>
+
+            <p>
+                Los objetos utilizan estas coordenadas para su posición dentro del runtime.
+                Las funciones de dibujo inmediato, como <code>draw_text()</code>,
+                usan coordenadas lógicas de mundo por defecto, o coordenadas
+                locales cuando se pasa un <code>RuntimeObject</code> como
+                referencia.
+            </p>
+
+            <hr />
+
+            <h2>Sistema angular</h2>
+
+            <p>
+                FLX utiliza una convención angular propia.
+            </p>
+
+            <ul>
+                <li><code>0°</code> apunta hacia arriba.</li>
+                <li><code>90°</code> apunta hacia la derecha.</li>
+                <li><code>180°</code> apunta hacia abajo.</li>
+                <li><code>270°</code> apunta hacia la izquierda.</li>
+                <li>Los ángulos positivos giran en sentido horario.</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">rotation</div>
+<pre><code>rotate(ship, 1);   // gira en sentido horario
+rotate(ship, -1);  // gira en sentido antihorario
+</code></pre>
+            </div>
+
+            <p>
+                En movimiento polar, <code>advance()</code> utiliza el ángulo actual
+                del objeto para determinar la dirección de avance.
+            </p>
+
+            <hr />
+
+            <h2>Movimiento</h2>
+
+            <p>
+                El movimiento de un objeto se configura mediante <code>mechanics</code>.
+            </p>
+
+            <p>
+                FLX distingue dos modelos principales:
+            </p>
+
+            <ul>
+                <li>
+                    <code>direct</code>: movimiento sobre los ejes horizontal y vertical.
+                </li>
+                <li>
+                    <code>polar</code>: movimiento definido mediante velocidad y ángulo.
+                </li>
+            </ul>
+
+            <p>
+                <code>mechanics</code> puede declarar velocidad, aceleración, inercia
+                y otras características del movimiento y la rotación.
+            </p>
+
+            <p>
+                Durante la ejecución, el runtime mantiene el estado vivo del movimiento.
+                Los scripts pueden consultar valores como <code>speed</code>,
+                <code>angle</code>, <code>velocityX</code>, <code>velocityY</code>
+                y <code>rotationSpeed</code> a través del objeto recibido por los hooks.
+            </p>
+
+            <p>
+                Las operaciones de movimiento, como <code>move_horizontal()</code>,
+                <code>move_vertical()</code>, <code>advance()</code>,
+                <code>accelerate()</code> o <code>rotate()</code>,
+                actúan sobre ese estado respetando las mechanics declaradas.
+            </p>
+
+            <div id="doc-path"></div>
+        </article>
+
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State / Timers · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<h1>State / Timers</h1>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a aria-current="page" class="link" href="api/state.html"><strong>State / Timers</strong></a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>This page brings together two independent families: the state machine declared in JSON and each RuntimeObject's named timers. Changing state does not replace the script; the script queries state and decides which operations to perform.</p>
+<nav aria-label="On this page"><p><a class="link" href="api/state.html#states">State</a> · <a class="link" href="api/state.html#timers">Timers</a></p></nav><h2 id="states">State</h2>
+<p>Transitions are declared in <a class="link" href="json/object.html#states">JSON · states</a>. A component without its own machine can resolve its parent's machine; queries and transitions act on that effective machine.</p>
+<section data-api-symbol="state_to">
+<h3 id="state-to">state_to()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>state_to(object: RuntimeObject, stateName: string): void;</code></pre></div>
+<p>Requests a transition to the <code>stateName</code> declared and permitted in the current state's next list. Without a valid machine or transition, preserves the state. When accepted, changes the current name and resets time to 0; state_entered identifies the first full frame afterward. Does not assign an arbitrary property or execute an automatic callback per state.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>stateName: string</code></dt><dd>Declared state name.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (state_active(object, &quot;title&quot;) &amp;&amp; input_pressed(object, button(0))) {
+  state_to(object, &quot;playing&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#state-current"><code>state_current()</code></a>, <a class="link" href="api/state.html#state-entered"><code>state_entered()</code></a>.</p>
+</section>
+<section data-api-symbol="state_current">
+<h3 id="state-current">state_current()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>state_current(object: RuntimeObject): string;</code></pre></div>
+<p>Returns the current state name, or an empty string if there is no state machine.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> <code>string</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const state = state_current(object);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#state-to"><code>state_to()</code></a>, <a class="link" href="api/state.html#state-active"><code>state_active()</code></a>.</p>
+</section>
+<section data-api-symbol="state_active">
+<h3 id="state-active">state_active()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>state_active(object: RuntimeObject, stateName: string): boolean;</code></pre></div>
+<p>Returns true if there is a state machine and the current name matches <code>stateName</code>. Without a machine, returns false.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>stateName: string</code></dt><dd>Declared state name.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (state_active(object, &quot;playing&quot;)) advance(object);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#state-current"><code>state_current()</code></a>.</p>
+</section>
+<section data-api-symbol="state_entered">
+<h3 id="state-entered">state_entered()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>state_entered(object: RuntimeObject): boolean;</code></pre></div>
+<p>Returns true during the new state's first full frame. A transition requested in the current frame prepares this flag for the next one; it is not an event consumed by the first query.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function action(object) {
+  if (state_entered(object)) play_timer(object, &quot;intro&quot;, 1);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#state-to"><code>state_to()</code></a>, <a class="link" href="api/state.html#state-time"><code>state_time()</code></a>.</p>
+</section>
+<section data-api-symbol="state_time">
+<h3 id="state-time">state_time()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>state_time(object: RuntimeObject): number;</code></pre></div>
+<p>Returns the seconds accumulated since entering the state, or 0 without a machine. In action/motion of the first full frame, returns 0. A v0.3.0 nuance: World updates time after collisions and before draw; a read from draw may already observe that frame's delta. A value of 0 is not guaranteed throughout all its phases.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd></dl>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">function action(object) {
+  if (state_active(object, &quot;playing&quot;) &amp;&amp; state_time(object) &gt; 5) {
+    state_to(object, &quot;finished&quot;);
+  }
+}</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#state-entered"><code>state_entered()</code></a>.</p>
+</section>
+<h2 id="timers">Timers</h2>
+<p>A timer belongs to RuntimeObject + name and disappears with its owner. World updates Running timers automatically; Paused freezes the remaining time. Done remains observable until the timer is played, removed or destroyed.</p>
+<table><caption>Observable states</caption><thead><tr><th scope="col">State</th><th scope="col">active</th><th scope="col">paused</th><th scope="col">done</th><th scope="col">left</th></tr></thead><tbody><tr><th scope="row">Running</th><td data-label="active">true</td><td data-label="paused">false</td><td data-label="done">false</td><td data-label="left">&gt; 0</td></tr><tr><th scope="row">Paused</th><td data-label="active">true</td><td data-label="paused">true</td><td data-label="done">false</td><td data-label="left">Frozen remaining time</td></tr><tr><th scope="row">Done</th><td data-label="active">false</td><td data-label="paused">false</td><td data-label="done">true</td><td data-label="left">0</td></tr><tr><th scope="row">Absent</th><td data-label="active">false</td><td data-label="paused">false</td><td data-label="done">false</td><td data-label="left">0</td></tr></tbody></table>
+<section data-api-symbol="play_timer">
+<h3 id="play-timer">play_timer()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>play_timer(object: RuntimeObject, timerName: string, duration?: number): void;</code></pre></div>
+<p>Starts, resumes or redefines a timer identified by object + timerName (a nonempty string). Duration is in seconds and must be finite and greater than 0. Without duration: Running is unchanged, Paused resumes, Done restarts with its known duration, and Absent is not created. With duration: Absent and Done start with that full duration; Running or Paused preserve elapsed time and become Running with <code>left = new total duration − elapsed time</code>. If that remainder is ≤ 0, they immediately become Done. Duration is neither remaining time nor a universal restart command.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd><dt><code>duration?: number</code></dt><dd>Total duration in seconds, finite and greater than 0; optional.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">play_timer(object, &quot;gun&quot;, 5);
+// In a later call: pause and resume.
+pause_timer(object, &quot;gun&quot;);
+play_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#pause-timer"><code>pause_timer()</code></a>, <a class="link" href="api/state.html#stop-timer"><code>stop_timer()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="pause_timer">
+<h3 id="pause-timer">pause_timer()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>pause_timer(object: RuntimeObject, timerName: string): void;</code></pre></div>
+<p>Pauses a Running timer, preserving its remaining time. Does not toggle: if Paused, Done or Absent, it does not start it.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">pause_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#timer-paused"><code>timer_paused()</code></a>.</p>
+</section>
+<section data-api-symbol="stop_timer">
+<h3 id="stop-timer">stop_timer()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>stop_timer(object: RuntimeObject, timerName: string): void;</code></pre></div>
+<p>Immediately removes the object's timer. It becomes Absent, not Done; you need a duration to create it again.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> no value (<code>undefined</code> in JavaScript; <code>void</code> in the signature).</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">stop_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_active">
+<h3 id="timer-active">timer_active()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>timer_active(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Returns true for both Running and Paused; false for Done or Absent.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (timer_active(object, &quot;gun&quot;)) console.log(&quot;Timer existente activo&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#timer-paused"><code>timer_paused()</code></a>, <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_paused">
+<h3 id="timer-paused">timer_paused()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>timer_paused(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Returns true only for Paused. Having no timer returns false.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (timer_paused(object, &quot;gun&quot;)) play_timer(object, &quot;gun&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#pause-timer"><code>pause_timer()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_done">
+<h3 id="timer-done">timer_done()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>timer_done(object: RuntimeObject, timerName: string): boolean;</code></pre></div>
+<p>Returns true when the timer is Done: normally after running out, but also if play_timer redefines the total duration below the time already elapsed. Remains Done until played, removed or its owner is destroyed. Absent and stop_timer are not Done.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">if (timer_done(object, &quot;gun&quot;)) {
+  stop_timer(object, &quot;gun&quot;);
+}</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#play-timer"><code>play_timer()</code></a>, <a class="link" href="api/state.html#stop-timer"><code>stop_timer()</code></a>.</p>
+</section>
+<section data-api-symbol="timer_left">
+<h3 id="timer-left">timer_left()</h3>
+<div class="code-card"><div class="code-header">Signatures</div><pre><code>timer_left(object: RuntimeObject, timerName: string): number;</code></pre></div>
+<p>Returns the remaining seconds. In Paused, preserves that value; in Absent, removed or Done, returns 0. By itself, it does not distinguish absence from completion.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instance received or resolved during the current hook.</dd><dt><code>timerName: string</code></dt><dd>Nonempty name of the object's timer.</dd></dl>
+<p><strong>Returns:</strong> <code>number</code>.</p>
+<div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">const remaining = timer_left(object, &quot;gun&quot;);</code></pre></div>
+<p>Related: <a class="link" href="api/state.html#timer-done"><code>timer_done()</code></a>, <a class="link" href="api/state.html#timer-active"><code>timer_active()</code></a>.</p>
+</section>
+<hr /><details><summary>Sources for this reference</summary><p>Reference checked against <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> and the runtime on branch feature/audit-public-doc, revision <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a aria-current="page" class="link" href="api/state.html"><strong>State / Timers</strong></a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

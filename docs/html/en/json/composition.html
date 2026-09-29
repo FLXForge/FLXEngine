@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Composition · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Composition · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html" aria-current="page"><strong>Composition</strong></a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <p>Composition describes how to reuse files and combine declarations before constructing the Object. References are interpreted in fields that support them; an arbitrary string does not become a path.</p>
+            <h2 id="references">References</h2>
+            <ul>
+                <li><code>objects/ship</code> — relative reference. In <code>like</code>, shorthand children, referenceable blocks and complete sound/music resources: a path relative to the file used as context by the loader.</li>
+                <li><code>/objects/ship</code> — FLX reference. Starts at the manifest's content root <code>path</code>, not the operating system root.</li>
+                <li><code>/library:member</code> — FLX member reference. Selects a top-level key in the JSON file. This is not JSON Pointer or a nested path. This syntax is processed in references starting with <code>/</code>; it does not extend to relative references.</li>
+                <li><code>.json</code> — extension. <i>Optional.</i> <code>/objects/ship</code> and <code>/objects/ship.json</code> select the same file.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">References from an Object</div>
+<pre><code data-schema="object">{
+  &quot;like&quot;: &quot;objects/ship&quot;,
+  &quot;visual&quot;: &quot;/visuals/player&quot;,
+  &quot;mechanics&quot;: &quot;/presets:fast&quot;
+}</code></pre>
+            </div>
+            <p>The example requires those resources. FLX references do not allow <code>..</code> segments, even if the resulting path could remain within <code>path</code>. Read errors, invalid JSON or nonexistent members are recorded as resolution errors. Literals such as <code>white</code>, <code>C4</code> or <code>enemy</code> retain their meaning in their respective fields.</p>
+            <h2 id="blocks">Referenceable blocks</h2>
+            <p>The following can be extracted as complete blocks using a relative or FLX string: <code>visual</code>, <code>mechanics</code>, <code>inherit</code>, <code>bounds</code>, <code>collisions</code>, <code>behavior</code>, <code>creation</code> and <code>states</code>. The file can contain the block directly or wrap it under a key of the same name: the loader extracts that key if present.</p>
+            <div class="code-card">
+                <div class="code-header">player.json</div>
+<pre><code data-schema="object">{
+  &quot;visual&quot;: &quot;/visuals/player&quot;
+}</code></pre>
+            </div>
+            <div class="code-card">
+                <div class="code-header">visuals/player.json — direct block</div>
+<pre><code data-schema="visual">{
+  &quot;color&quot;: &quot;white&quot;,
+  &quot;representation&quot;: [
+    {
+      &quot;primitive&quot;: &quot;triangle&quot;,
+      &quot;size&quot;: {
+        &quot;width&quot;: 18,
+        &quot;height&quot;: 24
+      }
+    }
+  ]
+}</code></pre>
+            </div>
+            <p>The entries <code>children.&lt;id&gt;</code>, <code>sounds.&lt;id&gt;</code> and <code>music.&lt;id&gt;</code> also support relative or FLX references. Sound supports a <code>sound</code> wrapper; music supports <code>music</code>. The root maps <code>children</code>, <code>sounds</code> and <code>music</code> remain objects.</p>
+            <p>An individual <code>collisions.&lt;id&gt;</code> entry supports an FLX string with <code>/</code>; its parser does not resolve a relative string. A reference to the entire <code>collisions</code> map does support both types. <code>attach</code>, <code>origin</code>, <code>size</code>, <code>offset</code>, <code>control</code> and <code>local</code> are declared inline according to the schema.</p>
+            <p>In <a class="link" href="json/audio.html#references">Audio</a>, nested references to source, tone, movement, note and instrument are resolved through the FLX form <code>/…</code>. There is no universal recursive substitution of all strings.</p>
+            <h2 id="like">like</h2>
+            <p>String pointing to the base declaration. The base is resolved before local properties are applied. In Object it is a root property; it is also declared in the Sound and Music schemas. A shorthand child such as <code>"ship": "objects/ship"</code> is equivalent to <code>"ship": { "like": "objects/ship" }</code>.</p>
+            <div class="code-card">
+                <div class="code-header">Derived object</div>
+<pre><code data-schema="object">{
+  &quot;like&quot;: &quot;/objects/ship&quot;,
+  &quot;origin&quot;: {
+    &quot;x&quot;: 80,
+    &quot;y&quot;: 90
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;red&quot;
+  }
+}</code></pre>
+            </div>
+            <h2 id="merge">Merge and override</h2>
+            <p>When both the base and local values are objects, their keys are combined recursively. Otherwise, the local value replaces the base value. Arrays are replaced in full: they are not concatenated. <code>like</code> is consumed during resolution. The result must still be valid for the destination block; <code>null</code> is not a deletion instruction.</p>
+            <div class="code-card">
+                <div class="code-header">Base — merge example</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 18,
+    &quot;height&quot;: 24
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;white&quot;,
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;triangle&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <div class="code-card">
+                <div class="code-header">Local override — merged with the base</div>
+<pre><code>{
+  &quot;size&quot;: {
+    &quot;width&quot;: 30
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;red&quot;
+  }
+}</code></pre>
+            </div>
+            <div class="code-card">
+                <div class="code-header">Result of that merge</div>
+<pre><code data-schema="object">{
+  &quot;size&quot;: {
+    &quot;width&quot;: 30,
+    &quot;height&quot;: 24
+  },
+  &quot;visual&quot;: {
+    &quot;color&quot;: &quot;red&quot;,
+    &quot;representation&quot;: [
+      {
+        &quot;primitive&quot;: &quot;triangle&quot;
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+            <p>The override snippet is not a valid standalone Object: its partial <code>size</code> needs the base's <code>height</code>. Schemas validate structures; they do not perform the merge. Likewise, the parser can resolve <code>like</code> in auxiliary resources, but the closed schemas for Visual, Mechanics or representation elements do not allow it to be added arbitrarily to their inline forms.</p>
+            <h2 id="context">Path context</h2>
+            <p>Relative references are interpreted from the context of the resource that declares them. When composition crosses multiple files, FLX references with <code>/</code> let you explicitly express a path from <code>path</code> without depending on the file's physical location.</p>
+            <h2 id="recursive">Recursive composition and cycles</h2>
+            <p>A base can have another base, and children are resolved as Object declarations. Composition through <code>like</code> must terminate: cyclic chains are not valid composition.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/compiler/ProjectCompiler.cpp">engine/compiler/ProjectCompiler.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeWorld.cpp">engine/runtime/RuntimeWorld.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/object.schema.json">docs/schemas/object.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/visual.schema.json">docs/schemas/visual.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/sound.schema.json">docs/schemas/sound.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/music.schema.json">docs/schemas/music.schema.json</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html" aria-current="page"><strong>Composition</strong></a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html">Mechanics</a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "music.schema.json",
+  "title": "FLX Music",
+  "type": "object",
+  "additionalProperties": true,
+
+  "properties": {
+    "like": {
+      "type": "string"
+    },
+
+    "tempo": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 120
+    },
+
+    "loop": {
+      "type": "boolean",
+      "default": false
+    },
+
+    "channels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "wave": {
+            "type": "string",
+            "enum": [
+              "square",
+              "sine",
+              "triangle",
+              "saw",
+              "noise"
+            ],
+            "default": "square"
+          },
+
+          "instrument": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "source": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "$ref": "sound.schema.json#/$defs/source" }
+                    ]
+                  },
+                  "tone": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "$ref": "sound.schema.json#/$defs/tone" }
+                    ]
+                  },
+                  "play": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "legato": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "glide": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                        "default": 0
+                      },
+                      "vibrato": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                        "default": 0
+                      }
+                    }
+                  },
+                  "range": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "min": {
+                        "type": "string",
+                        "default": "C0"
+                      },
+                      "max": {
+                        "type": "string",
+                        "default": "B8"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+
+          "volume": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 1
+          },
+
+          "length": {
+            "type": "string",
+            "enum": [
+              "1/1",
+              "1/2",
+              "1/4",
+              "1/8",
+              "1/16"
+            ],
+            "default": "1/4"
+          },
+
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [ "notes" ]
+      }
+    }
+  },
+
+  "required": [ "channels" ]
+}

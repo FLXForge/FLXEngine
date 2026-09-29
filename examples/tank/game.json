@@ -1,0 +1,166 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+  "origin": {
+    "x": 320,
+    "y": 160
+  },
+
+  "size": {
+    "width": 640,
+    "height": 320
+  },
+
+  "delimit": true,
+
+  "visual": {
+    "color": "#D8B878",
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "mode": "fill"
+      }
+    ]
+  },
+
+  "children": {
+    "player_spawn": {
+      "origin": {
+        "x": 90,
+        "y": 160
+      },
+      "creation": {
+        "mode": "iterator",
+        "rules": {
+          "concurrent": 1,
+          "repeat": true
+        },
+        "pattern": [
+          "tank"
+        ]
+      },
+      "children": {
+        "tank": {
+          "like": "tank/player"
+        }
+      }
+    },
+    "enemy_spawn": {
+      "origin": {
+        "x": 550,
+        "y": 160
+      },
+      "creation": {
+        "mode": "iterator",
+        "rules": {
+          "concurrent": 1,
+          "repeat": true
+        },
+        "pattern": [
+          "tank"
+        ]
+      },
+      "children": {
+        "tank": {
+          "like": "tank/enemy"
+        }
+      }
+    },
+
+    "top_wall": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 320,
+        "y": 5
+      },
+      "size": {
+        "width": 640,
+        "height": 10
+      }
+    },
+
+    "bottom_wall": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 320,
+        "y": 315
+      },
+      "size": {
+        "width": 640,
+        "height": 10
+      }
+    },
+
+    "left_wall": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 5,
+        "y": 160
+      },
+      "size": {
+        "width": 10,
+        "height": 320
+      }
+    },
+
+    "right_wall": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 635,
+        "y": 160
+      },
+      "size": {
+        "width": 10,
+        "height": 320
+      }
+    },
+
+    "center_top": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 320,
+        "y": 90
+      },
+      "size": {
+        "width": 90,
+        "height": 18
+      }
+    },
+
+    "center_bottom": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 320,
+        "y": 230
+      },
+      "size": {
+        "width": 90,
+        "height": 18
+      }
+    },
+
+    "center_left": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 245,
+        "y": 160
+      },
+      "size": {
+        "width": 18,
+        "height": 70
+      }
+    },
+
+    "center_right": {
+      "like": "arena/wall",
+      "origin": {
+        "x": 395,
+        "y": 160
+      },
+      "size": {
+        "width": 18,
+        "height": 70
+      }
+    }
+  }
+}

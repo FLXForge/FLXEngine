@@ -1,0 +1,31 @@
+/// <reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" />
+
+/*
+    The laser moves in its current direction and fades out before disappearing.
+*/
+
+const MAX_LIFE_TIME = 4;
+
+function born(laser) {
+    play_timer(laser, "life", MAX_LIFE_TIME);
+}
+
+function motion(laser) {
+
+    advance(laser);
+
+    const factor = timer_left(laser, "life") / MAX_LIFE_TIME;
+
+    resize(laser, 1 * factor, 10 * factor);
+
+    if (!timer_active(laser, "life")) {
+        kill(laser);
+    }
+}
+
+function collision(laser, asteroid) {
+    write_local(asteroid, "destroyed_by_laser", 1);
+
+    kill(asteroid);
+    kill(laser);
+}

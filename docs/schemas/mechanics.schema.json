@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mechanics.schema.json",
+  "title": "FLX Mechanics",
+  "type": "object",
+  "additionalProperties": false,
+
+  "$defs": {
+    "speed": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": { "type": "number", "default": 0 },
+            "limit": { "type": "number", "minimum": 0, "default": 0 }
+          }
+        }
+      ]
+    },
+
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "speed": { "$ref": "#/$defs/speed" },
+        "acceleration": { "type": "number", "default": 0 },
+        "inertia": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+        "step": { "type": "number", "minimum": 0, "default": 0 }
+      }
+    }
+  },
+
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [ "direct", "polar" ],
+      "default": "direct"
+    },
+
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "speed": { "$ref": "#/$defs/speed" },
+        "acceleration": { "type": "number", "default": 0 },
+        "inertia": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+        "step": { "type": "number", "minimum": 0, "default": 0 },
+        "diagonal": {
+          "type": "string",
+          "enum": [ "independent", "vector" ],
+          "default": "independent"
+        },
+        "horizontal": { "$ref": "#/$defs/axis" },
+        "vertical": { "$ref": "#/$defs/axis" }
+      }
+    },
+
+    "rotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "angle": { "type": "number", "default": 0 },
+        "speed": { "$ref": "#/$defs/speed" },
+        "acceleration": { "type": "number", "default": 0 },
+        "inertia": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+        "step": { "type": "number", "minimum": 0, "default": 0 }
+      }
+    }
+  }
+}

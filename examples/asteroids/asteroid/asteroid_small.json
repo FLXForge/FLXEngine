@@ -1,0 +1,105 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "bounds": {
+    "mode": "wrap",
+    "overflow": false
+  },
+  "mechanics": {
+    "type": "direct",
+    "rotation": {
+      "speed": {
+        "start": 180
+      }
+    }
+  },
+  "sounds": {
+    "pff": {
+      "kind": {
+        "source": {
+          "type": "noise",
+          "wave": "noise"
+        },
+        "note": 600,
+        "slide": -400,
+        "movement": {
+          "type": "fall",
+          "amount": 0.5
+        }
+      },
+      "tone": {
+        "material": {
+          "brightness": 0.45,
+          "roughness": 0.7,
+          "noise": 0.35,
+          "resonance": 0,
+          "metal": 0
+        }
+      },
+      "duration": 0.08,
+      "volume": 0.3
+    }
+  },
+  "group": "asteroid",
+  "behavior": {
+    "scripts": [
+      "asteroid_small",
+      "asteroid_move"
+    ]
+  },
+  "children": {
+    "fragment": {
+      "like": "asteroid_fragment",
+      "spawn": "manual"
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "size": {
+        "width": 16,
+        "height": 16
+      },
+      "with": [
+        "asteroid"
+      ]
+    }
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "geometry": [
+          {
+            "x": 0,
+            "y": -8
+          },
+          {
+            "x": 7,
+            "y": -5
+          },
+          {
+            "x": 8,
+            "y": 2
+          },
+          {
+            "x": 4,
+            "y": 8
+          },
+          {
+            "x": -5,
+            "y": 6
+          },
+          {
+            "x": -8,
+            "y": -1
+          },
+          {
+            "x": -4,
+            "y": -7
+          }
+        ],
+        "mode": "close"
+      }
+    ]
+  }
+}

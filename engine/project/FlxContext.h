@@ -1,23 +1,20 @@
 #pragma once
 
+#include "../input/InputMapping.h"
+#include "../machine/MachineDefinition.h"
+
 #include <string>
 
 struct FlxContext
 {
     std::string name;
     std::string version;
-    std::string engineVersion;
+    std::string engineRequirement;
     std::string notes;
+    std::string inputMappingSourceName;
+    std::string inputMappingContent;
+    InputMapping inputMapping;
+    std::string title;
 
-    std::string rootDirectory;
-    std::string projectPath;
-    std::string root;
-
-    std::string screenTitle;
-    int screenWidth = 320;
-    int screenHeight = 180;
-    int screenScale = 3;
-
-    bool debugCollisions = false;
-    bool debugLogs = false;
+    MachineDefinition machine;
 };

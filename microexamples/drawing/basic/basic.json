@@ -1,0 +1,12 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "origin": {
+    "x": 320,
+    "y": 240
+  },
+  "behavior": {
+    "scripts": [
+      "basic"
+    ]
+  }
+}

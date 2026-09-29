@@ -5,5 +5,9 @@
 */
 
 function motion(enemy) {
-    follow_y(enemy, "ball");
+    const balls = find_name("ball");
+
+    if (balls.length > 0) {
+        follow_y(enemy, balls[0]);
+    }
 }

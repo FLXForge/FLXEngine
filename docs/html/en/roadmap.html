@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadmap | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="roadmap">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Roadmap</h1>
+
+            <p>
+                FLX is developed incrementally and practically.
+            </p>
+
+            <p>
+                Each game lets us test existing capabilities, combine them in real situations and discover what needs to evolve before moving forward.
+            </p>
+
+            <hr />
+
+            <h2>Development principle</h2>
+
+            <p>
+                FLX evolves from needs encountered while building real games.
+            </p>
+
+            <p>
+                Before adding a new engine capability, we try to solve the problem by combining existing capabilities. When a limitation prevents a reasonable solution, that limitation becomes a candidate for runtime evolution.
+            </p>
+
+            <p>
+                This way, new features emerge from using the engine rather than trying to anticipate every feature it might need.
+            </p>
+
+            <hr />
+
+            <h2>FLX v0.3.0 · Consolidating the foundation</h2>
+
+            <p>
+                FLX v0.3.0 consolidates the engine's first stable foundation.
+            </p>
+
+            <p>
+                Pong, Asteroids, Arkanoid, Invaders and Tank have helped develop, review and unify the model used to build FLX worlds.
+            </p>
+
+            <p>
+                This version establishes a common foundation for:
+            </p>
+
+            <ul>
+                <li>object declaration, composition and creation;</li>
+                <li>visual representation and immediate drawing;</li>
+                <li>movement, orientation and inertia;</li>
+                <li>input and logical controls;</li>
+                <li>collisions and spatial queries;</li>
+                <li>state, timers and lifecycle;</li>
+                <li>relationships between objects;</li>
+                <li>sound and music;</li>
+                <li>machines and environment configuration;</li>
+                <li>scripting and the JavaScript API;</li>
+                <li>CLI, diagnostics and project validation.</li>
+            </ul>
+
+            <p>
+                The goal of this version is not to close off FLX's possibilities, but to provide a coherent foundation on which to build and experiment.
+            </p>
+
+            <hr />
+
+            <h2>Future directions</h2>
+
+            <p>
+                From v0.3.0 onward, FLX will continue evolving through the development of new games and the gradual addition of new capabilities.
+            </p>
+
+            <p>
+                These are directions for exploration, not commitments to a specific version.
+            </p>
+
+            <h3>Machines and new generations</h3>
+
+            <p>
+                Machines express the capabilities and constraints of the environment in which an FLX world runs.
+            </p>
+
+            <p>
+                Their evolution will let us progressively explore new ways to build games and represent different generations of 2D systems.
+            </p>
+
+            <h3>Scrolling, spaces and camera</h3>
+
+            <p>
+                Moving the world beyond a single screen opens a new stage for FLX.
+            </p>
+
+            <p>
+                Developing scrolling and, when needed, a camera model will let us explore larger environments and new relationships between world coordinates, the screen and representation.
+            </p>
+
+            <h3>Representation and animation</h3>
+
+            <p>
+                Visual representation will continue evolving from the current primitives and capabilities.
+            </p>
+
+            <p>
+                Areas for exploration include new declarative ways to represent images, animation and transformations, while maintaining the separation between the object, its representation and its behavior.
+            </p>
+
+            <h3>Tools</h3>
+
+            <p>
+                FLX may incorporate tools that make its declarations easier to create and edit without making those tools a requirement for developing a project.
+            </p>
+
+            <p>
+                Project files will remain directly usable, and tools will need to work with that same declarative model.
+            </p>
+
+            <hr />
+
+            <h2>Known technical debt</h2>
+
+            <p>
+                The v0.3.0 foundation is consolidated, but some internal areas may be revisited as the engine continues to evolve.
+            </p>
+
+            <ul>
+                <li>
+                    Add typed validation after reference resolution, so reused blocks can be checked against the expected FLX resource type before parsing them.
+                </li>
+
+                <li>
+                    Review cycle detection so the different forms of composition through <code>like</code> provide equivalent protection.
+                </li>
+
+                <li>
+                    Continue simplifying and centralizing resource resolution internally when cases arise that justify that refactoring.
+                </li>
+
+                <li>
+                    Expand diagnostics and runtime inspection tools when new games require new ways to observe its state.
+                </li>
+            </ul>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

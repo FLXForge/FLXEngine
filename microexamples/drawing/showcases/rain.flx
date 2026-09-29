@@ -1,0 +1,12 @@
+# Game data
+title=Rain Demo
+name=rain
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=rain
+
+# Notes
+notes=Rain effect demo

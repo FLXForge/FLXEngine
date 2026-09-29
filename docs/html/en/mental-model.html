@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How FLX thinks | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="mental-model">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>How FLX thinks</h1>
+
+            <p>
+                Before learning JSON, APIs or lifecycles, it is useful to understand the central idea on which FLX is built.
+            </p>
+
+            <p>
+                FLX does not try to move the engine into the script.
+            </p>
+
+            <p>
+                The runtime maintains the rules of the world; scripts express object behavior.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Mental model</div>
+<pre><code>Objects -> Data
+
+Scripts -> Functions
+
+Runtime -> Connects both
+</code></pre>
+            </div>
+
+            <h2>The world exists on a machine</h2>
+
+            <p>
+                The runtime does not execute the world in an undefined environment. Each project uses a <em>machine</em> that establishes the characteristics of the environment in which that world can exist.
+            </p>
+
+            <p>
+                FLX provides a default machine, so you do not need to define one to get started.
+            </p>
+
+            <p>
+                Later, we will see how a machine lets you explicitly control those characteristics.
+            </p>
+
+            <h2>Objects contain data</h2>
+
+            <p>
+                An object describes something that exists within the runtime.
+            </p>
+
+            <p>
+                It can have position, size, movement, visual representation, local state and other declared capabilities.
+            </p>
+
+            <p>
+                Objects do not implement their behavior.
+            </p>
+
+            <p>
+                They declare their state, capabilities and the scripts that can act on them.
+            </p>
+
+            <h2>Scripts contain functions</h2>
+
+            <p>
+                A script is a collection of JavaScript functions.
+            </p>
+
+            <p>
+                Those functions describe what happens to objects throughout their lives.
+            </p>
+
+            <p>
+                Scripts do not belong to objects.
+            </p>
+
+            <p>
+                They are shared resources that many objects can use simultaneously.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">ship.js</div>
+<pre><code>function action(ship) {
+    accelerate(ship);
+}
+</code></pre>
+            </div>
+
+            <h2>The runtime connects both</h2>
+
+            <p>
+                During execution, the runtime invokes functions and provides them with the objects they should work on.
+            </p>
+
+            <p>
+                Scripts describe behavior.
+            </p>
+
+            <p>
+                Objects store state.
+            </p>
+
+            <p>
+                The runtime coordinates the interaction between both.
+            </p>
+
+            <h2>Shared state and individual state</h2>
+
+            <p>
+                The same script can be used by hundreds of objects.
+            </p>
+
+            <p>
+                This means there are different scopes of information.
+            </p>
+
+            <ul>
+                <li>Function scope: local variables for each execution.</li>
+                <li>Script scope: variables shared by the script's functions.</li>
+                <li>Object scope: its own state through <code>read_local()</code> and <code>write_local()</code>.</li>
+                <li>Global scope: shared state through <code>read_global()</code> and <code>write_global()</code>.</li>
+            </ul>
+
+            <p>
+                The same script can act on many objects, but each object maintains its own local state.
+            </p>
+
+            <p>
+                Understanding this distinction is one of the keys to understanding FLX.
+            </p>
+
+            <h2>Living objects</h2>
+
+            <p>
+                FLX sees objects as entities that are born, exist and disappear.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Lifecycle</div>
+<pre><code>         born()
+           ↓
+    ┌─────────────┐
+    │   action()  │
+    │   motion()  │
+    │ collision() │
+    │    draw()   │
+    └─────────────┘
+           ↓
+         dead()
+</code></pre>
+            </div>
+
+            <p>
+                <code>born()</code> runs when the object enters the world. During its life, the runtime may invoke its various behavior hooks.
+                <code>dead()</code> runs once before the object is removed.
+            </p>
+
+            <p>
+                A script can request its destruction through <code>kill()</code>, but the lifecycle belongs to the runtime.
+            </p>
+
+            <p>
+                This terminology is deliberate.
+            </p>
+
+            <p>
+                The lifecycle is part of the runtime's mental model.
+            </p>
+
+            <h2>The main idea</h2>
+
+            <p>
+                If you remember just one thing about FLX, let it be this:
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">FLX</div>
+<pre><code>Data
+
+Functions
+
+Runtime
+</code></pre>
+            </div>
+
+            <p>
+                The rest of the documentation explains how this idea is implemented.
+            </p>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

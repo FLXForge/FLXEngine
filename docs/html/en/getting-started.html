@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting started | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="getting-started">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Getting started</h1>
+
+            <p>
+                This section shows the minimum structure needed to run an FLX project.
+            </p>
+
+            <p>
+                The goal is to understand how a project is organized, how its files relate to one another, and how to run a first working runtime.
+            </p>
+
+            <h2>Minimum structure</h2>
+
+            <p>
+                An FLX project can start with very few files.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Project structure</div>
+<pre><code>my-first-flx/
+    │
+    ├── first.flx
+    ├── world.json
+    ├── tofu.json
+    └── tofu.js
+</code></pre>
+            </div>
+
+            <p>
+                Each file serves a specific purpose within the runtime.
+            </p>
+
+            <h2>Project file</h2>
+
+            <p>
+                Every project starts with a <code>.flx</code> file.
+            </p>
+
+            <p>
+                This file defines the project's metadata and root object.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">first.flx</div>
+<pre><code>name=My first FLX
+version=1.0
+engine=0.3.0
+root=world
+title=My first FLX
+</code></pre>
+            </div>
+
+            <p>
+                We have not declared <code>machine</code> or <code>input.mapping</code>. FLX will use their default configurations.
+            </p>
+
+            <h2>Root object</h2>
+
+            <p>
+                The root object organizes the runtime's other objects and active logic.
+            </p>
+
+            <p>
+                In this example, the root object represents the world containing a single object: a block of tofu.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">world.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+    "children": {
+        "tofu": "tofu"
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Object</h2>
+
+            <p>
+                Objects define data and properties used during execution.
+            </p>
+
+            <p>
+                An object can contain:
+            </p>
+
+            <ul>
+                <li>Shape</li>
+                <li>Movement</li>
+                <li>Scripts</li>
+                <li>Collisions</li>
+                <li>Custom data</li>
+            </ul>
+
+            <div class="code-card">
+                <div class="code-header">tofu.json</div>
+<pre><code>{
+    "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+
+    "control": {
+        "player": 1
+    },
+
+    "origin": {
+        "x": 311,
+        "y": 228
+    },
+
+    "size": {
+        "width": 18,
+        "height": 24
+    },
+
+    "visual": {
+        "color": "white",
+        "representation": [
+            {
+                "primitive": "rectangle"
+            }
+        ]
+    },
+
+    "mechanics": {
+        "type": "direct",
+        "motion": {
+            "speed": {
+                "start": 120
+            }
+        }
+    },
+
+    "behavior": {
+        "scripts": [ "tofu" ]
+    }
+}
+</code></pre>
+            </div>
+
+            <h2>Scripts</h2>
+
+            <p>
+                Scripts use JavaScript to define behavior.
+            </p>
+
+            <p>
+                During runtime, FLX automatically executes certain lifecycle functions.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">tofu.js</div>
+<pre><code>/// &lt;reference path="https://flxforge.github.io/FLXEngine/scripts/flx.d.ts" /&gt;
+
+const MOVE = direction(0);
+
+function motion(tofu) {
+    move_horizontal(tofu, input_direction(tofu, MOVE, HORIZONTAL));
+    move_vertical(tofu, input_direction(tofu, MOVE, VERTICAL));
+}
+</code></pre>
+            </div>
+
+            <h2>Execution</h2>
+
+            <p>
+                Once the project files are defined, the runtime can be launched by specifying the
+                <code>.flx</code> file.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Terminal</div>
+<pre><code>.\flx validate first.flx
+</code></pre>
+            </div>
+
+            <p>
+                FLX will validate the project's structure and resources.
+            </p>
+
+            <div class="code-card">
+                <div class="code-header">Terminal</div>
+<pre><code>.\flx run first.flx
+</code></pre>
+            </div>
+
+            <p>
+                If everything is configured correctly, the runtime will load the root object, initialize the objects and start the execution cycle.
+            </p>
+
+            <p>
+                FLX will open a window using the default machine. You will see the tofu and be able to move it with WASD, the arrow keys or a joystick.
+            </p>
+
+            <div class="example-screenshots">
+                <img class="example-screenshot" src="../assets/examples/tofu.gif" alt="Tofu gameplay">
+            </div>
+
+            <p>
+                Congratulations! You have created your first FLX project.
+            </p>
+
+            <p>
+                You now have a world, an object and behavior running in FLX.
+            </p>
+
+            <p>
+                Try changing <code>white</code> to another color, modifying <code>width</code> and <code>height</code>, or changing <code>speed.start</code>. Save the files and run the project again.
+            </p>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

@@ -2,16 +2,14 @@
 
 #include <raylib.h>
 
-#include <string>
-
 class FadeSystem
 {
 public:
-    void fadeOn(const std::string& color);
-    void fadeOff(const std::string& color);
+    void fadeOn(Color color);
+    void fadeOff(Color color);
     void set(
         float alpha,
-        const std::string& color
+        Color color
     );
 
     bool isActive() const;
@@ -36,7 +34,7 @@ private:
 
     void begin(
         Direction nextDirection,
-        const std::string& color
+        Color color
     );
 
     bool active = false;

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "linea": {
+      "origin": {
+        "x": 320,
+        "y": 21
+      },
+      "size": {
+        "width": 640,
+        "height": 2
+      },
+      "visual": {
+        "color": "#1b3f8b",
+        "depth": -10,
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "fill"
+          }
+        ]
+      }
+    },
+    "lineb": {
+      "origin": {
+        "x": 320,
+        "y": 25
+      },
+      "size": {
+        "width": 640,
+        "height": 2
+      },
+      "visual": {
+        "color": "#ffcc40",
+        "depth": -10,
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "fill"
+          }
+        ]
+      }
+    },
+    "linec": {
+      "origin": {
+        "x": 320,
+        "y": 29
+      },
+      "size": {
+        "width": 640,
+        "height": 2
+      },
+      "visual": {
+        "color": "#40ccff",
+        "depth": -10,
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "fill"
+          }
+        ]
+      }
+    }
+  }
+}

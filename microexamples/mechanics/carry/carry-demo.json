@@ -1,0 +1,79 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "platform": {
+      "origin": {
+        "x": 0,
+        "y": 150
+      },
+      "group": "platform",
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 65
+          }
+        }
+      },
+      "collisions": {
+        "body": {}
+      },
+      "behavior": {
+        "scripts": [
+          "platform"
+        ]
+      },
+      "size": {
+        "width": 70,
+        "height": 8
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "passenger": {
+      "origin": {
+        "x": 60,
+        "y": 80
+      },
+      "group": "passenger",
+      "mechanics": {
+        "type": "direct",
+        "motion": {
+          "speed": {
+            "start": 45
+          }
+        }
+      },
+      "collisions": {
+        "body": {
+          "with": [
+            "platform"
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "passenger"
+        ]
+      },
+      "size": {
+        "width": 16,
+        "height": 20
+      },
+      "visual": {
+        "color": "yellow",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "tank": {
+      "origin": {
+        "x": 320,
+        "y": 160
+      },
+      "size": {
+        "width": 80,
+        "height": 30
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "mode": "outline"
+          }
+        ]
+      },
+      "behavior": {
+        "scripts": [
+          "tank"
+        ]
+      },
+      "children": {
+        "turret": {
+          "component": true,
+          "offset": {
+            "x": 0,
+            "y": -35
+          },
+          "size": {
+            "width": 40,
+            "height": 20
+          },
+          "visual": {
+            "color": "yellow",
+            "representation": [
+              {
+                "primitive": "rectangle",
+                "mode": "outline"
+              }
+            ]
+          },
+          "behavior": {
+            "scripts": [
+              "part"
+            ]
+          },
+          "children": {
+            "cannon": {
+              "component": true,
+              "offset": {
+                "x": 0,
+                "y": -30
+              },
+              "size": {
+                "width": 12,
+                "height": 30
+              },
+              "visual": {
+                "color": "red",
+                "representation": [
+                  {
+                    "primitive": "rectangle",
+                    "mode": "outline"
+                  }
+                ]
+              },
+              "behavior": {
+                "scripts": [
+                  "part"
+                ]
+              }
+            },
+            "projectile": {
+              "offset": {
+                "x": 70,
+                "y": 0
+              },
+              "size": {
+                "width": 12,
+                "height": 12
+              },
+              "visual": {
+                "color": "blue",
+                "representation": [
+                  {
+                    "primitive": "rectangle",
+                    "mode": "fill"
+                  }
+                ]
+              },
+              "behavior": {
+                "scripts": [
+                  "part"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

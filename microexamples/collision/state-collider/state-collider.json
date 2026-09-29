@@ -1,0 +1,94 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "children": {
+    "attacker": {
+      "origin": {
+        "x": 55,
+        "y": 120
+      },
+      "group": "player",
+      "states": {
+        "initial": "idle",
+        "idle": {
+          "next": [
+            "attack"
+          ]
+        },
+        "attack": {
+          "next": [
+            "idle"
+          ]
+        }
+      },
+      "mechanics": {
+        "type": "polar",
+        "motion": {
+          "speed": {
+            "start": 40
+          }
+        },
+        "rotation": {
+          "angle": 90
+        }
+      },
+      "collisions": {
+        "body": {},
+        "sword": {
+          "size": {
+            "width": 26,
+            "height": 8
+          },
+          "offset": {
+            "x": 20,
+            "y": 0
+          },
+          "with": [
+            "enemy"
+          ],
+          "states": [
+            "attack"
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "state-attacker"
+        ]
+      },
+      "size": {
+        "width": 14,
+        "height": 18
+      },
+      "visual": {
+        "color": "green",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "enemy": {
+      "origin": {
+        "x": 200,
+        "y": 120
+      },
+      "group": "enemy",
+      "collisions": {
+        "body": {}
+      },
+      "size": {
+        "width": 20,
+        "height": 24
+      },
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

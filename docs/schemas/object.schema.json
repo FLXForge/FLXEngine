@@ -3,7 +3,7 @@
   "$id": "object.schema.json",
   "title": "FLX Object",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
 
   "properties": {
     "$schema": {
@@ -18,6 +18,11 @@
       "type": "string",
       "enum": [ "auto", "manual" ],
       "default": "auto"
+    },
+
+    "component": {
+      "type": "boolean",
+      "default": false
     },
 
     "creation": {
@@ -41,25 +46,7 @@
     },
 
     "attach": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "position": {
-          "type": "boolean"
-        },
-        "born": {
-          "type": "boolean"
-        },
-        "x": {
-          "type": "boolean"
-        },
-        "y": {
-          "type": "boolean"
-        },
-        "angle": {
-          "type": "boolean"
-        }
-      }
+      "$ref": "attach.schema.json"
     },
 
     "origin": {
@@ -71,17 +58,34 @@
       }
     },
 
-    "shape": {
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "width", "height" ],
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+
+    "visual": {
       "oneOf": [
         { "type": "string" },
-        { "$ref": "shape.schema.json" }
+        { "$ref": "visual.schema.json" }
       ]
     },
 
-    "motion": {
+    "mechanics": {
       "oneOf": [
         { "type": "string" },
-        { "$ref": "motion.schema.json" }
+        { "$ref": "mechanics.schema.json" }
+      ]
+    },
+
+    "inherit": {
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "inherit.schema.json" }
       ]
     },
 
@@ -92,14 +96,44 @@
       ]
     },
 
+    "delimit": {
+      "type": "boolean"
+    },
+
     "group": {
       "type": "string"
     },
 
-    "collision": {
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "player": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+
+    "local": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [ "string", "number", "boolean" ]
+      }
+    },
+
+    "collisions": {
       "oneOf": [
         { "type": "string" },
-        { "$ref": "collision.schema.json" }
+        {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "collision.schema.json" }
+            ]
+          }
+        }
       ]
     },
 
@@ -127,6 +161,16 @@
       }
     },
 
+    "music": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "$ref": "music.schema.json" }
+        ]
+      }
+    },
+
     "children": {
       "type": "object",
       "additionalProperties": {
@@ -140,11 +184,15 @@
 
   "not": {
     "anyOf": [
-      { "required": [ "size" ] },
       { "required": [ "color" ] },
       { "required": [ "layer" ] },
+      { "required": [ "depth" ] },
+      { "required": [ "shape" ] },
       { "required": [ "speed" ] },
-      { "required": [ "angle" ] }
+      { "required": [ "angle" ] },
+      { "required": [ "motion" ] },
+      { "required": [ "role" ] },
+      { "required": [ "collision" ] }
     ]
   }
 }

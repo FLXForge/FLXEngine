@@ -1,0 +1,12 @@
+# Game data
+title=CRT Demo
+name=crt
+version=1.0
+engine=0.3.0
+
+# Configuration
+path=.
+root=crt
+
+# Notes
+notes=CRT effect demo

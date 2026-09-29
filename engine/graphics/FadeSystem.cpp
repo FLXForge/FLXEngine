@@ -1,27 +1,26 @@
 #include "FadeSystem.h"
-#include "../tools/ColorParser.h"
 #include "../debug/Logger.h"
 
 #include <algorithm>
 
-void FadeSystem::fadeOn(const std::string& colorValue)
+void FadeSystem::fadeOn(Color nextColor)
 {
-    begin(Direction::On, colorValue);
+    begin(Direction::On, nextColor);
 }
 
-void FadeSystem::fadeOff(const std::string& colorValue)
+void FadeSystem::fadeOff(Color nextColor)
 {
-    begin(Direction::Off, colorValue);
+    begin(Direction::Off, nextColor);
 }
 
 void FadeSystem::begin(
     Direction nextDirection,
-    const std::string& colorValue
+    Color nextColor
 )
 {
     direction = nextDirection;
     active = true;
-    color = ColorParser::parse(colorValue, BLACK);
+    color = nextColor;
     startAlpha = alpha;
     elapsed = 0.0f;
 
@@ -39,7 +38,7 @@ void FadeSystem::begin(
 
 void FadeSystem::set(
     float nextAlpha,
-    const std::string& colorValue
+    Color nextColor
 )
 {
     alpha =
@@ -50,7 +49,7 @@ void FadeSystem::set(
     elapsed = 0.0f;
     active = false;
     direction = Direction::None;
-    color = ColorParser::parse(colorValue, BLACK);
+    color = nextColor;
 
     Logger::info(
         "graphics",

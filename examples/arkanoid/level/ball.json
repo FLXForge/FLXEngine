@@ -1,0 +1,109 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "offset": {
+    "x": 0,
+    "y": -9
+  },
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 200
+      }
+    },
+    "rotation": {
+      "angle": 135
+    }
+  },
+  "control": {
+    "player": 1
+  },
+  "attach": {
+    "born": true,
+    "x": true
+  },
+  "children": {
+    "big": {
+      "like": "powerup",
+      "visual": {
+        "color": "red",
+        "representation": [
+          {
+            "text": "B",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "glue": {
+      "like": "powerup",
+      "visual": {
+        "color": "blue",
+        "representation": [
+          {
+            "text": "G",
+            "fontSize": 10
+          }
+        ]
+      }
+    }
+  },
+  "group": "ball",
+  "behavior": {
+    "scripts": [
+      "ball"
+    ]
+  },
+  "sounds": {
+    "bounce": {
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "square"
+        },
+        "note": 440
+      },
+      "duration": 0.08,
+      "volume": 0.8
+    },
+    "lost": {
+      "kind": {
+        "source": {
+          "type": "oscillator",
+          "wave": "triangle"
+        },
+        "note": 700,
+        "slide": 500,
+        "movement": {
+          "type": "rise",
+          "amount": 0.5
+        }
+      },
+      "duration": 0.08,
+      "volume": 0.4
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "ellipse",
+      "with": [
+        "wall",
+        "paddle",
+        "brick"
+      ]
+    }
+  },
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "visual": {
+    "color": "white",
+    "representation": [
+      {
+        "primitive": "ellipse",
+        "mode": "fill"
+      }
+    ]
+  }
+}

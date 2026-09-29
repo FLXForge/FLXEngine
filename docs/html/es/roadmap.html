@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roadmap | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="roadmap">
+    <div id="navbar"></div>
+
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+
+        <article class="doc-content">
+
+            <p class="eyebrow">FLX Documentation</p>
+            <h1>Roadmap</h1>
+
+            <p>
+                FLX se desarrolla de forma incremental y práctica.
+            </p>
+
+            <p>
+                Cada juego permite poner a prueba las capacidades existentes,
+                combinarlas en situaciones reales
+                y descubrir qué necesita evolucionar antes de avanzar.
+            </p>
+
+            <hr />
+
+            <h2>Principio de desarrollo</h2>
+
+            <p>
+                FLX evoluciona a partir de necesidades encontradas al construir juegos reales.
+            </p>
+
+            <p>
+                Antes de añadir una nueva capacidad al engine,
+                se intenta resolver el problema combinando las capacidades que ya existen.
+                Cuando una limitación impide hacerlo de forma razonable,
+                esa limitación se convierte en candidata a evolución del runtime.
+            </p>
+
+            <p>
+                De esta forma, las nuevas funcionalidades nacen del uso del engine
+                y no de intentar anticipar todas las características que podría necesitar.
+            </p>
+
+            <hr />
+
+            <h2>FLX v0.3.0 · Consolidación de la base</h2>
+
+            <p>
+                FLX v0.3.0 consolida la primera base estable del engine.
+            </p>
+
+            <p>
+                Pong, Asteroids, Arkanoid, Invaders y Tank han servido para desarrollar,
+                revisar y unificar el modelo con el que se construyen los mundos de FLX.
+            </p>
+
+            <p>
+                Esta versión establece una base común para:
+            </p>
+
+            <ul>
+                <li>declaración, composición y creación de objetos;</li>
+                <li>representación visual y dibujo inmediato;</li>
+                <li>movimiento, orientación e inercia;</li>
+                <li>input y controles lógicos;</li>
+                <li>colisiones y consultas espaciales;</li>
+                <li>estado, temporizadores y ciclo de vida;</li>
+                <li>relaciones entre objetos;</li>
+                <li>sonido y música;</li>
+                <li>machines y configuración del entorno;</li>
+                <li>scripting y API JavaScript;</li>
+                <li>CLI, diagnostics y validación del proyecto.</li>
+            </ul>
+
+            <p>
+                El objetivo de esta versión no es cerrar las posibilidades de FLX,
+                sino disponer de una base coherente sobre la que construir y experimentar.
+            </p>
+
+            <hr />
+
+            <h2>Direcciones futuras</h2>
+
+            <p>
+                A partir de v0.3.0, FLX continuará evolucionando mediante
+                el desarrollo de nuevos juegos y la incorporación progresiva
+                de nuevas capacidades.
+            </p>
+
+            <p>
+                Estas líneas representan direcciones de exploración,
+                no compromisos con una versión concreta.
+            </p>
+
+            <h3>Máquinas y nuevas generaciones</h3>
+
+            <p>
+                Las machines permiten expresar las capacidades y restricciones
+                del entorno sobre el que se ejecuta un mundo FLX.
+            </p>
+
+            <p>
+                Su evolución permitirá explorar progresivamente nuevas formas
+                de construir juegos y representar distintas generaciones de
+                sistemas 2D.
+            </p>
+
+            <h3>Scroll, espacios y cámara</h3>
+
+            <p>
+                El movimiento del mundo más allá de una única pantalla
+                abre una nueva etapa para FLX.
+            </p>
+
+            <p>
+                El desarrollo de scroll y, cuando sea necesario, de un modelo
+                de cámara permitirá explorar escenarios mayores y nuevas relaciones
+                entre las coordenadas del mundo, la pantalla y la representación.
+            </p>
+
+            <h3>Representación y animación</h3>
+
+            <p>
+                La representación visual continuará evolucionando a partir
+                de las primitivas y capacidades actuales.
+            </p>
+
+            <p>
+                Entre las áreas de exploración se encuentran nuevas formas
+                declarativas de representar imágenes, animación y transformaciones,
+                manteniendo la separación entre el objeto, su representación
+                y su comportamiento.
+            </p>
+
+            <h3>Herramientas</h3>
+
+            <p>
+                FLX podrá incorporar herramientas que faciliten la creación
+                y edición de sus declaraciones sin convertirlas en un requisito
+                para desarrollar un proyecto.
+            </p>
+
+            <p>
+                Los archivos del proyecto seguirán siendo utilizables
+                directamente y las herramientas deberán trabajar sobre ese mismo
+                modelo declarativo.
+            </p>
+
+            <hr />
+
+            <h2>Deuda técnica conocida</h2>
+
+            <p>
+                La base de v0.3.0 está consolidada, pero existen áreas internas
+                que podrán revisarse a medida que el engine continúe evolucionando.
+            </p>
+
+            <ul>
+                <li>
+                    Añadir validación tipada después de resolver referencias,
+                    de forma que los bloques reutilizados puedan comprobarse
+                    contra el tipo de recurso FLX esperado antes de parsearlos.
+                </li>
+
+                <li>
+                    Revisar la detección de ciclos para que las distintas formas
+                    de composición mediante <code>like</code> ofrezcan una protección
+                    equivalente.
+                </li>
+
+                <li>
+                    Continuar simplificando y centralizando internamente
+                    la resolución de recursos cuando aparezcan casos que justifiquen
+                    esa refactorización.
+                </li>
+
+                <li>
+                    Ampliar diagnostics y las herramientas de inspección del runtime
+                    cuando los nuevos juegos hagan necesarias nuevas formas
+                    de observar su estado.
+                </li>
+            </ul>
+
+            <div id="doc-path"></div>
+        </article>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

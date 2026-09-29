@@ -1,0 +1,5 @@
+players.1.directions.0.up=KEY_W,KEY_UP
+players.1.directions.0.down=KEY_S,KEY_DOWN
+players.1.directions.0.left=KEY_A,KEY_LEFT
+players.1.directions.0.right=KEY_D,KEY_RIGHT
+players.1.buttons.0=KEY_SPACE

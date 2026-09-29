@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Base ES: conserva fetch y enlaces de los componentes comunes sin cambiar main.js.
+         Los enlaces de esta área incluyen json/ para resolver desde esa base. -->
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanics · JSON Reference | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-section="json-reference">
+    <div id="navbar"></div>
+    <main class="doc-layout">
+        <div id="sidebar"></div>
+        <article class="doc-content" style="min-width: 0; overflow-wrap: anywhere;">
+            <p class="eyebrow">FLX Documentation · v0.3.0</p>
+            <h1>Mechanics · JSON Reference</h1>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html" aria-current="page"><strong>Mechanics</strong></a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <h2 id="mechanics">mechanics</h2>
+            <p>Object or <a class="link" href="json/composition.html#blocks">block reference</a> with movement and rotation rules. Scripts apply intent through the API; the declaration does not replace behavior. Without this block, defaults are retained: direct, zero speeds and accelerations, zero inertia and unquantized movement.</p>
+            <div class="code-card">
+                <div class="code-header">mechanics</div>
+<pre><code data-schema="object">{
+  &quot;mechanics&quot;: {
+    &quot;type&quot;: &quot;polar&quot;,
+    &quot;motion&quot;: {
+      &quot;speed&quot;: {
+        &quot;start&quot;: 90,
+        &quot;limit&quot;: 150
+      },
+      &quot;acceleration&quot;: 120,
+      &quot;inertia&quot;: 0.99
+    },
+    &quot;rotation&quot;: {
+      &quot;angle&quot;: 45,
+      &quot;speed&quot;: 180
+    }
+  }
+}</code></pre>
+            </div>
+            <h2 id="type">type</h2>
+            <p>String: <code>direct</code> or <code>polar</code>; default <code>direct</code>. Direct uses horizontal/vertical axis rules. Polar uses the object's angle for oriented movement. In the polar vector, 0° points up and 90° points right.</p>
+            <h2 id="motion">motion</h2>
+            <p>Optional object; all its fields are optional.</p>
+            <ul>
+                <li><code>speed</code> — number or start/limit object. <i>Default: start 0, limit 0.</i> Initial speed and limit. The numeric form sets start and leaves limit at 0.</li>
+                <li><code>acceleration</code> — number. <i>Default: 0.</i> Time-based acceleration rate. With <code>0</code>, intent directly applies the live speed; with a positive value, speed evolves progressively.</li>
+                <li><code>inertia</code> — number from 0 to 1. <i>Default: 0.</i> Velocity persistence when movement intent is no longer applied.</li>
+                <li><code>step</code> — number ≥ 0. <i>Default: 0.</i> Quantizes the applied displacement. Zero keeps displacement continuous.</li>
+                <li><code>diagonal</code> — string: independent | vector. <i>Default: independent.</i> independent integrates axes separately; vector normalizes diagonal movement to avoid the magnitude increase from combining axes.</li>
+                <li><code>horizontal / vertical</code> — override object. <i>Optional.</i> Support speed, acceleration, inertia and step, with the same types.</li>
+            </ul>
+            <h3 id="speed">speed</h3>
+            <p>The object form supports numeric <code>start</code> (default 0) and numeric <code>limit</code> ≥ 0 (default 0). A limit of 0 means unlimited. If a positive limit is below start, the parser warns and raises it to start. Linear speed is integrated over time in position units per second; rotation speed is integrated in degrees per second.</p>
+            <div class="code-card">
+                <div class="code-header">Shorthand speed and explicit limit</div>
+<pre><code data-schema="object">{
+  &quot;mechanics&quot;: {
+    &quot;motion&quot;: {
+      &quot;speed&quot;: {
+        &quot;start&quot;: 100,
+        &quot;limit&quot;: 160
+      }
+    },
+    &quot;rotation&quot;: {
+      &quot;speed&quot;: 180
+    }
+  }
+}</code></pre>
+            </div>
+            <h3 id="axes">horizontal / vertical</h3>
+            <p>An undeclared axis field takes the common motion rule. If <code>speed</code> is declared as a partial object, omitted members start from the common rule during parsing; a numeric form resets limit to 0. These overrides describe per-axis rules: they do not declare additional root properties.</p>
+            <div class="code-card">
+                <div class="code-header">Per-axis override</div>
+<pre><code data-schema="object">{
+  &quot;mechanics&quot;: {
+    &quot;type&quot;: &quot;direct&quot;,
+    &quot;motion&quot;: {
+      &quot;speed&quot;: {
+        &quot;start&quot;: 80,
+        &quot;limit&quot;: 120
+      },
+      &quot;acceleration&quot;: 100,
+      &quot;horizontal&quot;: {
+        &quot;speed&quot;: {
+          &quot;limit&quot;: 90
+        }
+      }
+    }
+  }
+}</code></pre>
+            </div>
+            <h3 id="inertia">inertia and step</h3>
+            <p>Time-based retention uses <code>inertia^delta</code> for values between 0 and 1; the endpoints yield 0 and 1. Its application depends on the integration branch and whether movement intent is present. <code>step</code> rounds each integrated displacement to multiples of the step: it does not, by itself, define a grid of absolute positions. For rotation, the step is expressed in degrees.</p>
+            <h2 id="rotation">rotation</h2>
+            <ul>
+                <li><code>angle</code> — number. <i>Default: 0.</i> Initial live angle in degrees.</li>
+                <li><code>speed</code> — number or start/limit object. <i>Default: start 0, limit 0.</i> Angular speed and limit; the shorthand form is equivalent to start with limit 0.</li>
+                <li><code>acceleration</code> — number. <i>Default: 0.</i> Time-based angular acceleration.</li>
+                <li><code>inertia</code> — number from 0 to 1. <i>Default: 0.</i> Angular integration persistence.</li>
+                <li><code>step</code> — number ≥ 0. <i>Default: 0.</i> Angular quantization; 0 is continuous.</li>
+            </ul>
+            <div class="code-card">
+                <div class="code-header">rotation</div>
+<pre><code data-schema="object">{
+  &quot;mechanics&quot;: {
+    &quot;rotation&quot;: {
+      &quot;angle&quot;: 90,
+      &quot;speed&quot;: {
+        &quot;start&quot;: 180,
+        &quot;limit&quot;: 240
+      },
+      &quot;acceleration&quot;: 90,
+      &quot;inertia&quot;: 0.5,
+      &quot;step&quot;: 0
+    }
+  }
+}</code></pre>
+            </div>
+            <p>To receive angle or velocity from the parent, use <a class="link" href="json/creation.html#inherit">inherit</a>. To react to World boundaries, use <a class="link" href="json/object.html#bounds">bounds</a>.</p>
+            <hr>
+            <details>
+                <summary>Sources for this page · v0.3.0</summary>
+                <p>Direct inspection of branch feature/audit-public-doc. The links identify the contract and production files used.</p>
+                <ul>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/docs/schemas/mechanics.schema.json">docs/schemas/mechanics.schema.json</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/loading/JsonLoader.cpp">engine/loading/JsonLoader.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeObjectBuilder.cpp">engine/runtime/RuntimeObjectBuilder.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/RuntimeHelpers.cpp">engine/runtime/RuntimeHelpers.cpp</a></li>
+                    <li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/feature/audit-public-doc/engine/runtime/ObjectDefinition.h">engine/runtime/ObjectDefinition.h</a></li>
+                </ul>
+            </details>
+            <nav aria-label="JSON Reference areas">
+                <p><a class="link" href="json/index.html">Index</a> | <a class="link" href="json/project.html">Project</a> | <a class="link" href="json/object.html">Object</a> | <a class="link" href="json/composition.html">Composition</a> | <a class="link" href="json/visual.html">Visual</a> | <a class="link" href="json/creation.html">Creation</a> | <a class="link" href="json/mechanics.html" aria-current="page"><strong>Mechanics</strong></a> | <a class="link" href="json/collision.html">Collision</a> | <a class="link" href="json/audio.html">Audio</a></p>
+            </nav>
+            <div id="doc-path"></div>
+        </article>
+    </main>
+    <div id="footer"></div>
+    <script src="../js/main.js"></script>
+</body>
+</html>

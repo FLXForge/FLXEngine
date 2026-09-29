@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.reference-page { min-width: 0; overflow-wrap: anywhere; }
+.reference-page table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 24px 0; }
+.reference-page caption { text-align: left; color: var(--accent); margin-bottom: 12px; }
+.reference-page th, .reference-page td { border: 1px solid var(--line); padding: 12px; text-align: left; vertical-align: top; line-height: 1.6; }
+.reference-page thead { background: var(--panel); }
+.reference-page td { color: var(--muted); }
+@media(max-width:600px) {
+.reference-page table, .reference-page caption, .reference-page tbody, .reference-page tr, .reference-page th, .reference-page td { display: block; width: 100%; }
+.reference-page thead { display: none; }
+.reference-page tr { margin-bottom: 18px; }
+.reference-page th { background: var(--panel); }
+.reference-page td { border-top: 0; }
+.reference-page td::before { content: attr(data-label) ": "; color: var(--text); font-weight: 600; }
+}
+</style>
+</head>
+<body data-section="cli">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div><article class="doc-content reference-page">
+<p class="eyebrow">FLX Documentation · v0.3.0</p><h1>CLI</h1>
+<nav aria-label="On this page"><p><a class="link" href="#syntax">Syntax and implicit execution</a> · <a class="link" href="#resolution">Project resolution</a> · <a class="link" href="#commands">v0.3.0 commands</a> · <a class="link" href="#run">run</a> · <a class="link" href="#validate">validate</a> · <a class="link" href="#compile">compile</a> · <a class="link" href="#run-compiled">run-compiled</a> · <a class="link" href="#version">version</a> · <a class="link" href="#help">help</a> · <a class="link" href="#output">Output format</a> · <a class="link" href="#exit-codes">Exit codes</a></p></nav>
+<p><code>flx</code> is the command-line interface for working with FLX projects and individual runtime runs. The CLI operates on the project; its execution options do not redefine the persistent configuration of the manifest, Machine or compiled file.</p>
+<div class="code-card"><div class="code-header">From project to execution</div><pre><code>Proyecto / Machine / JSON / JS
+              │
+              ▼
+           flx CLI
+              │
+    ┌─────────┼──────────┐
+    ▼         ▼         ▼
+ validate   compile    run
+              │         │
+              ▼         ▼
+            .flxc     Engine
+              │
+              ▼
+        run-compiled
+              │
+              ▼
+            Engine</code></pre></div>
+<h2 id="syntax">Syntax and implicit execution</h2>
+<div class="code-card"><div class="code-header">General form</div><pre><code>flx [command] [options...] [target]
+
+flx
+flx .
+flx project.flx</code></pre></div>
+<p>The default command is <code>run</code> and the default target is <code>.</code>, the current directory. The first two forms run the project in the current directory; the third uses the specified manifest. A first argument that exists as a path or ends in <code>.flx</code> is interpreted as the target of <code>run</code>, unless it is a recognized command name.</p>
+<p>The examples place options before the target. Use <code>=</code> for the values of the long options shown here; <code>--output</code> also accepts a separate argument. Paths containing spaces must be quoted. Only one target is supported, and execution, output or format options cannot be repeated.</p>
+<h2 id="resolution">Project resolution</h2>
+<div class="code-card"><div class="code-header">Targets for run, validate and compile</div><pre><code>target
+├── .flx file → use it
+└── directory
+    ├── project.flx → use it with priority
+    └── no project.flx
+        ├── a single *.flx → use it
+        ├── none → error
+        └── multiple → ambiguity error</code></pre></div>
+<p>The candidate search only scans the directory's first level. The <code>.flx</code> extension is compared case-insensitively. A nonexistent target, a file of another type or an ambiguous directory produces a resolution error; a candidate is not chosen arbitrarily. Priority goes to the name <code>project.flx</code> looked up in the filesystem.</p>
+<h2 id="commands">v0.3.0 commands</h2>
+<table><caption>Available operations</caption><thead><tr><th scope="col">Command</th><th scope="col">Result</th></tr></thead><tbody><tr><th scope="row"><a class="link" href="#run"><code>run</code></a></th><td data-label="Result">Compiles the project and runs it with Engine.</td></tr><tr><th scope="row"><a class="link" href="#validate"><code>validate</code></a></th><td data-label="Result">Validates through compilation, without running or writing a .flxc.</td></tr><tr><th scope="row"><a class="link" href="#compile"><code>compile</code></a></th><td data-label="Result">Writes the project's compiled representation.</td></tr><tr><th scope="row"><a class="link" href="#run-compiled"><code>run-compiled</code></a></th><td data-label="Result">Loads and runs a .flxc.</td></tr><tr><th scope="row"><a class="link" href="#version"><code>version</code></a></th><td data-label="Result">Displays the version.</td></tr><tr><th scope="row"><a class="link" href="#help"><code>help</code></a></th><td data-label="Result">Displays general or command-specific help.</td></tr></tbody></table>
+<p><code>build</code> is reserved for future work and is not an operational command in v0.3.0.</p>
+<h2 id="run">run</h2>
+<div class="code-card"><div class="code-header">Running from sources</div><pre><code>flx run --frames=120 --scale=2 .</code></pre></div>
+<p>Resolves the manifest and compiles the project. Runs it with Engine only if compilation succeeds. The following options also apply to <code>run-compiled</code>.</p>
+<table><caption>Execution options</caption><thead><tr><th scope="col">Option</th><th scope="col">Values / default</th><th scope="col">Effect</th></tr></thead><tbody><tr><th scope="row"><code>--frames=&lt;positive-integer&gt;</code></th><td data-label="Values / default">Positive integer. Omitted: no CLI frame limit.</td><td data-label="Effect">Limits frames for this run. Zero, negative numbers, text and values outside the supported integer range are invalid.</td></tr><tr><th scope="row"><code>--window-mode=&lt;window|fullscreen&gt;</code></th><td data-label="Values / default">Omitted: runtime's default window mode.</td><td data-label="Effect">Selects windowed or fullscreen mode for this run.</td></tr><tr><th scope="row"><code>--scale=&lt;positive-integer&gt;</code></th><td data-label="Values / default">Positive integer. Omitted: Machine scale.</td><td data-label="Effect">Overrides <code>video.output.scale</code> for this run. Does not modify Machine or the .flxc.</td></tr><tr><th scope="row"><code>--debug-logs[=&lt;true|false&gt;]</code></th><td data-label="Values / default"><code>false</code> by default.</td><td data-label="Effect">Controls generation of internal debug logs.</td></tr><tr><th scope="row"><code>--debug-console[=&lt;true|false&gt;]</code></th><td data-label="Values / default"><code>false</code> by default.</td><td data-label="Effect">Controls console output of runtime logs.</td></tr><tr><th scope="row"><code>--debug-collisions[=&lt;true|false&gt;]</code></th><td data-label="Values / default"><code>false</code> by default.</td><td data-label="Effect">Controls debug collision drawing.</td></tr></tbody></table>
+<p>The three booleans without a value are equivalent to <code>true</code>; explicit values are exactly <code>true</code> or <code>false</code>. <code>--debug-logs</code> and <code>--debug-console</code> control different aspects: generating logs and sending them to the console. See <a class="link" href="machine/video.html">Machine · Video</a> for persistent output configuration.</p>
+<h2 id="validate">validate</h2>
+<div class="code-card"><div class="code-header">Validation without execution</div><pre><code>flx validate .
+flx validate --format=json project.flx</code></pre></div>
+<p>Resolves the project and performs the compilation/validation available in v0.3.0. Does not start the runtime or generate <code>.flxc</code>. Supports <code>--format=text</code> and <code>--format=json</code>. Successful validation returns 0 and may include warnings; it does not guarantee that every subsequent run will succeed.</p>
+<h2 id="compile">compile</h2>
+<div class="code-card"><div class="code-header">Explicit output required</div><pre><code>flx compile --output=game.flxc .
+flx compile -o game.flxc project.flx
+flx compile --format=json --output=game.flxc .</code></pre></div>
+<p>Generates the compiled representation of the FLX project. <strong>Output is required</strong>: use <code>--output=&lt;path&gt;</code>, <code>--output &lt;path&gt;</code> or <code>-o &lt;path&gt;</code>. There is no automatic output name. The CLI writes to the specified path; use the <code>.flxc</code> extension so it can be run with <code>run-compiled</code>.</p>
+<p>Supports the <code>text</code> or <code>json</code> format. A <code>.flxc</code> is a compiled project; the future distributable product from <code>build</code> is outside this operation's scope.</p>
+<h2 id="run-compiled">run-compiled</h2>
+<div class="code-card"><div class="code-header">Compiled execution</div><pre><code>flx run-compiled --frames=120 game.flxc</code></pre></div>
+<p>Reads an already compiled project and runs it with Engine. The target must have the <code>.flxc</code> extension, compared case-insensitively. Supports the same six <a class="link" href="#run">run execution options</a>. An incorrect extension is an argument error (2); an unreadable or invalid compiled file produces 5.</p>
+<h2 id="version">version</h2>
+<div class="code-card"><div class="code-header">Equivalent forms</div><pre><code>flx version
+flx --version
+flx -v</code></pre></div>
+<p>Writes only the semantic version to <code>stdout</code> and exits with 0, without opening a project or starting Engine. Does not accept a target or format options.</p>
+<h2 id="help">help</h2>
+<div class="code-card"><div class="code-header">General and specific help</div><pre><code>flx help
+flx --help
+flx -h
+flx help run
+flx run --help</code></pre></div>
+<p>Command-specific help supports <code>run</code>, <code>compile</code>, <code>run-compiled</code>, <code>validate</code> and <code>version</code>. It also supports <code>flx &lt;command&gt; --help</code> or <code>-h</code>, with no subsequent arguments; for example, <code>flx compile --help</code>. <code>flx --help run</code> and <code>flx help help</code> are not valid forms.</p>
+<h2 id="output">Output format</h2>
+<p><code>--format=&lt;text|json&gt;</code> is only available for <code>compile</code> and <code>validate</code>; the default value is <code>text</code>. <code>run</code> and <code>run-compiled</code> reject this option, including with the value <code>text</code>. The CLI does not offer JSON runtime output in v0.3.0.</p>
+<p>In text mode, normal output goes to <code>stdout</code> and diagnostics to <code>stderr</code>. In JSON, the structured result combines both in <code>stdout</code>. For automation, place <code>--format=json</code> immediately after <code>compile</code> or <code>validate</code>: an argument error before that option is recognized is still reported as text. See <a class="link" href="diagnostics.html#json">Diagnostics · JSON output</a>.</p>
+<h2 id="exit-codes">Exit codes</h2>
+<table><caption>Defined codes and current usage</caption><thead><tr><th scope="col">Code</th><th scope="col">Name</th><th scope="col">v0.3.0 contract</th></tr></thead><tbody><tr><th scope="row">0</th><td data-label="Name">Success</td><td data-label="v0.3.0 contract">Successful operation; warnings may be present.</td></tr><tr><th scope="row">1</th><td data-label="Name">InternalError</td><td data-label="v0.3.0 contract">Code defined for internal errors; should not be interpreted as the universal destination for any failure.</td></tr><tr><th scope="row">2</th><td data-label="Name">InvalidArguments</td><td data-label="v0.3.0 contract">Invalid command, option or arguments.</td></tr><tr><th scope="row">3</th><td data-label="Name">ProjectResolutionError</td><td data-label="v0.3.0 contract">Cannot resolve the project manifest.</td></tr><tr><th scope="row">4</th><td data-label="Name">CompilationError</td><td data-label="v0.3.0 contract">Compilation/validation failure or failure to write the compiled project.</td></tr><tr><th scope="row">5</th><td data-label="Name">InvalidCompiledProject</td><td data-label="v0.3.0 contract">Failure to read or validate a compiled project.</td></tr><tr><th scope="row">6</th><td data-label="Name">RuntimeInitializationError</td><td data-label="v0.3.0 contract">run and run-compiled currently return this code for any failed EngineResult.</td></tr><tr><th scope="row">7</th><td data-label="Name">RuntimeExecutionError</td><td data-label="v0.3.0 contract">Defined; current commands do not distinguish Engine failures using this code.</td></tr><tr><th scope="row">8</th><td data-label="Name">BuildError</td><td data-label="v0.3.0 contract">Defined; build is not available as an operational command.</td></tr></tbody></table>
+<p>The exit code expresses the overall category. The <a class="link" href="diagnostics.html">diagnostics</a> describe what happened and where. Do not infer the specific cause from the exit number alone.</p>
+<hr /><details><summary>Sources for this reference · v0.3.0</summary><p>Checked against the code and tests on <code>feature/audit-public-doc</code>, revision <code>15817f5dd141</code>. The current implementation takes precedence over future plans.</p>
+<ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/cli/CliParser.cpp">engine/cli/CliParser.cpp</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/cli/ProjectResolver.cpp">engine/cli/ProjectResolver.cpp</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/cli/commands/">engine/cli/commands/</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/engine/cli/CliExitCode.h">engine/cli/CliExitCode.h</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/tests/cli/">tests/cli/</a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/blob/15817f5dd141061b78f7c2af896748a813769c3f/spec/cli.md">spec/cli.md</a></li></ul></details><div id="doc-path"></div></article></main><div id="footer"></div><script src="../js/main.js"></script></body></html>

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://flxforge.github.io/FLXEngine/schemas/object.schema.json",
+  "size": {
+    "width": 22,
+    "height": 28
+  },
+  "mechanics": {
+    "type": "polar",
+    "motion": {
+      "speed": {
+        "start": 45
+      }
+    },
+    "rotation": {
+      "angle": 270,
+      "speed": {
+        "start": 90
+      }
+    }
+  },
+  "group": "enemy",
+  "children": {
+    "missile": {
+      "like": "enemy_missile",
+      "spawn": "manual",
+      "offset": {
+        "x": 0,
+        "y": -18
+      }
+    }
+  },
+  "collisions": {
+    "body": {
+      "type": "box",
+      "with": [
+        "wall",
+        "player"
+      ]
+    }
+  },
+  "behavior": {
+    "scripts": [
+      "enemy"
+    ]
+  },
+  "visual": {
+    "color": "#3A68B8",
+    "representation": [
+      {
+        "geometry": [
+          {
+            "x": -10,
+            "y": -10
+          },
+          {
+            "x": 10,
+            "y": -10
+          },
+          {
+            "x": 10,
+            "y": 10
+          },
+          {
+            "x": -10,
+            "y": 10
+          }
+        ],
+        "mode": "fill"
+      },
+      {
+        "geometry": [
+          {
+            "x": -3,
+            "y": -14
+          },
+          {
+            "x": 3,
+            "y": -14
+          },
+          {
+            "x": 3,
+            "y": 2
+          },
+          {
+            "x": -3,
+            "y": 2
+          }
+        ],
+        "mode": "fill",
+        "color": "#18386C"
+      }
+    ]
+  }
+}

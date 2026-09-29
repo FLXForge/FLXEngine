@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <base href="../">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanics · API | FLX Engine</title>
+    <link rel="icon" type="image/png" href="../assets/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+    <link rel="shortcut icon" href="../favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="stylesheet" href="../css/style.css" />
+<style>
+.api-reference { min-width: 0; overflow-wrap: anywhere; }
+.api-reference section { margin: 32px 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.api-reference table { width:100%; border-collapse:collapse; table-layout:fixed; margin:24px 0; }
+.api-reference caption { text-align:left; color:var(--accent); margin-bottom:12px; }
+.api-reference th, .api-reference td { border:1px solid var(--line); padding:12px; text-align:left; vertical-align:top; line-height:1.6; }
+.api-reference thead { background:var(--panel); }
+.api-reference td, .api-reference dd { color:var(--muted); }
+.api-reference dt { margin-top:12px; }
+.api-reference dd { margin:4px 0 12px 16px; line-height:1.6; }
+.api-reference .symbol-index { columns:2; }
+.api-reference [id] { scroll-margin-top:100px; }
+@media(max-width:600px) {
+.api-reference table, .api-reference caption, .api-reference tbody, .api-reference tr, .api-reference th, .api-reference td { display:block; width:100%; }
+.api-reference thead { display:none; }
+.api-reference tr { margin-bottom:18px; }
+.api-reference th { background:var(--panel); }
+.api-reference td { border-top:0; }
+.api-reference td::before { content:attr(data-label) ": "; color:var(--text); font-weight:600; }
+.api-reference .symbol-index { columns:1; }
+}
+</style>
+</head>
+<body data-section="api">
+<div id="navbar"></div>
+<main class="doc-layout"><div id="sidebar"></div>
+<article class="doc-content api-reference">
+<p class="eyebrow">Documentación FLX · v0.3.0</p>
+<h1>Mechanics</h1>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a aria-current="page" class="link" href="api/mechanics.html"><strong>Mechanics</strong></a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>Las operaciones de movimiento integran el delta del frame. Las operaciones apply cambian estado vivo; follow y carry actúan en la llamada actual, mientras attach activa un seguimiento persistente declarado. Para colocar o redimensionar directamente consulta <a class="link" href="api/runtime.html#transform">Transform</a>.</p>
+<p>Los ángulos FLX se expresan en grados: 0 arriba, 90 derecha, 180 abajo, 270 izquierda. La configuración de límites, aceleración, inercia y pasos está en <a class="link" href="json/mechanics.html">JSON · Mechanics</a>. Elige la operación que representa el movimiento deseado; combinar integradores en el mismo frame puede añadir desplazamientos.</p>
+<nav aria-label="En esta página"><p><a class="link" href="api/mechanics.html#direct">Movimiento directo</a> · <a class="link" href="api/mechanics.html#polar">Movimiento polar</a> · <a class="link" href="api/mechanics.html#live">Estado vivo</a> · <a class="link" href="api/mechanics.html#reflection">Reflexión</a> · <a class="link" href="api/mechanics.html#relations">Relaciones de movimiento</a></p></nav><h2 id="direct">Movimiento directo</h2>
+<section data-api-symbol="move_horizontal">
+<h3 id="move-horizontal">move_horizontal()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>move_horizontal(object: RuntimeObject, intent: number): void;</code></pre></div>
+<p>Mueve sobre el eje X durante este frame y actualiza su velocidad viva. <code>intent</code> se limita a [-1, 1]. Con aceleración de eje acumula velocidad; sin ella utiliza intent × speed. Respeta límite, step y política diagonal declarados en mechanics. Con intención neutra, la aceleración/inercia declaradas determinan la retención de velocidad. Integra el delta internamente.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>intent: number</code></dt><dd>Intención numérica limitada a [-1, 1].</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">move_horizontal(object, input_direction(object, direction(0), HORIZONTAL));</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>, <a class="link" href="api/mechanics.html#apply-velocity"><code>apply_velocity()</code></a>.</p>
+</section>
+<section data-api-symbol="move_vertical">
+<h3 id="move-vertical">move_vertical()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>move_vertical(object: RuntimeObject, intent: number): void;</code></pre></div>
+<p>Mueve sobre el eje Y durante este frame y actualiza su velocidad viva. <code>intent</code> se limita a [-1, 1]. Con aceleración de eje acumula velocidad; sin ella utiliza intent × speed. Respeta límite, step y política diagonal declarados en mechanics. Con intención neutra, la aceleración/inercia declaradas determinan la retención de velocidad. Integra el delta internamente.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>intent: number</code></dt><dd>Intención numérica limitada a [-1, 1].</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">move_vertical(object, input_direction(object, direction(0), VERTICAL));</code></pre></div>
+<p>Relacionados: <a class="link" href="api/input.html#input-direction"><code>input_direction()</code></a>, <a class="link" href="api/mechanics.html#apply-velocity"><code>apply_velocity()</code></a>.</p>
+</section>
+<h2 id="polar">Movimiento polar</h2>
+<section data-api-symbol="advance">
+<h3 id="advance">advance()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>advance(object: RuntimeObject): void;</code></pre></div>
+<p>Avanza este frame con la velocidad lineal viva. En mechanics polar añade también el vector definido por angle y speed; si la speed polar está en cero, recupera la declarada al crear la instancia. Aplica el step de movimiento. No vuelve a aplicar aceleración. Integra el delta internamente.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function motion(object) {
+  advance(object);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#accelerate"><code>accelerate()</code></a>, <a class="link" href="api/mechanics.html#apply-velocity"><code>apply_velocity()</code></a>.</p>
+</section>
+<section data-api-symbol="accelerate">
+<h3 id="accelerate">accelerate()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>accelerate(object: RuntimeObject, intent?: number): void;</code></pre></div>
+<p>Acelera y desplaza en la misma llamada; <code>intent</code> vale 1 si se omite y se limita a [-1, 1]. Con acceleration positiva suma a la velocidad un impulso orientado por angle y limitado por mechanics.motion.speed.limit, y después mueve usando esa velocidad. Con acceleration cero usa speed y angle; si speed es cero, recupera originSpeed × intent. El movimiento respeta step. No añadas advance para representar el mismo desplazamiento ni multipliques otra vez por delta.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>intent?: number</code></dt><dd>Intención numérica limitada a [-1, 1].</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">function motion(object) {
+  accelerate(object, 1);
+}</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#advance"><code>advance()</code></a>, <a class="link" href="api/mechanics.html#apply-speed"><code>apply_speed()</code></a>.</p>
+</section>
+<section data-api-symbol="rotate">
+<h3 id="rotate">rotate()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>rotate(object: RuntimeObject, intent?: number): void;</code></pre></div>
+<p>Integra rotación este frame. Intent por defecto 1, limitado a [-1, 1]. Con aceleración angular acumula velocidad angular; sin ella usa rotationSpeed vivo, o la velocidad inicial declarada cuando éste es cero. Respeta límite y step de rotación. El delta ya está incorporado.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>intent?: number</code></dt><dd>Intención numérica limitada a [-1, 1].</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">rotate(object, -1);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#apply-angle"><code>apply_angle()</code></a>, <a class="link" href="api/mechanics.html#apply-rotation-speed"><code>apply_rotation_speed()</code></a>.</p>
+</section>
+<h2 id="live">Estado vivo</h2>
+<section data-api-symbol="apply_speed">
+<h3 id="apply-speed">apply_speed()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>apply_speed(object: RuntimeObject, value: number): void;</code></pre></div>
+<p>Asigna speed inmediatamente, aplicando el límite de magnitud de mechanics.motion.speed.limit cuando está configurado. En modo direct, si la velocidad lineal actual no es nula, también la reescala con el valor efectivo; en polar cambia speed sin sustituir el vector lineal. No desplaza por sí misma.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>value: number</code></dt><dd>Valor que se asigna.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">apply_speed(object, object.speed + 5);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#restore-speed"><code>restore_speed()</code></a>, <a class="link" href="api/mechanics.html#apply-velocity"><code>apply_velocity()</code></a>.</p>
+</section>
+<section data-api-symbol="restore_speed">
+<h3 id="restore-speed">restore_speed()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>restore_speed(object: RuntimeObject): void;</code></pre></div>
+<p>Restaura speed a su valor declarado al crear la instancia. No restaura por sí sola el vector de velocidad ni otros campos de mechanics.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">restore_speed(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#apply-speed"><code>apply_speed()</code></a>.</p>
+</section>
+<section data-api-symbol="apply_velocity">
+<h3 id="apply-velocity">apply_velocity()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>apply_velocity(object: RuntimeObject, direction: number, speed: number): void;</code></pre></div>
+<p>Reemplaza velocityX/velocityY por un vector de dirección en grados FLX y magnitud <code>speed</code>. Aplica el límite de magnitud declarado. No modifica angle, rotationSpeed, speed, acceleration ni inertia, y no desplaza inmediatamente. En polar, advance puede sumar a este vector el movimiento de angle/speed.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>direction: number</code></dt><dd>Dirección en grados FLX.</dd><dt><code>speed: number</code></dt><dd>Magnitud o velocidad según la operación.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">apply_velocity(object, random(0, 360), random(20, 70));</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#advance"><code>advance()</code></a>, <a class="link" href="api/mechanics.html#apply-speed"><code>apply_speed()</code></a>.</p>
+</section>
+<section data-api-symbol="apply_angle">
+<h3 id="apply-angle">apply_angle()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>apply_angle(object: RuntimeObject, angle: number): void;</code></pre></div>
+<p>Asigna angle vivo en grados: 0 arriba, 90 derecha, 180 abajo y 270 izquierda. No rota el vector lineal de velocidad existente.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>angle: number</code></dt><dd>Ángulo en grados FLX.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">apply_angle(object, 90);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#rotate"><code>rotate()</code></a>, <a class="link" href="api/mechanics.html#apply-velocity"><code>apply_velocity()</code></a>.</p>
+</section>
+<section data-api-symbol="apply_rotation_speed">
+<h3 id="apply-rotation-speed">apply_rotation_speed()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>apply_rotation_speed(object: RuntimeObject, speed: number): void;</code></pre></div>
+<p>Asigna rotationSpeed vivo, en grados por segundo. No cambia angle inmediatamente; la integración de rotate y la configuración de aceleración angular determinan el giro efectivo.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>speed: number</code></dt><dd>Magnitud o velocidad según la operación.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">apply_rotation_speed(object, 180);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#rotate"><code>rotate()</code></a>.</p>
+</section>
+<h2 id="reflection">Reflexión</h2>
+<section data-api-symbol="reflect_x">
+<h3 id="reflect-x">reflect_x()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>reflect_x(object: RuntimeObject): void;</code></pre></div>
+<p>Invierte la componente horizontal de velocity y refleja la dirección polar (<code>angle = -angle</code>). No separa los objetos ni modifica speed. Collision no la llama automáticamente.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">reflect_x(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#reflect-y"><code>reflect_y()</code></a>, <a class="link" href="api/runtime.html#position"><code>position()</code></a>.</p>
+</section>
+<section data-api-symbol="reflect_y">
+<h3 id="reflect-y">reflect_y()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>reflect_y(object: RuntimeObject): void;</code></pre></div>
+<p>Invierte la componente vertical de velocity y refleja la dirección polar (<code>angle = 180 - angle</code>). No separa los objetos ni modifica speed.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">reflect_y(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#reflect-x"><code>reflect_x()</code></a>, <a class="link" href="api/runtime.html#position"><code>position()</code></a>.</p>
+</section>
+<h2 id="relations">Relaciones de movimiento</h2>
+<section data-api-symbol="follow_x">
+<h3 id="follow-x">follow_x()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>follow_x(object: RuntimeObject, target: RuntimeObject): void;</code></pre></div>
+<p>Acerca <code>object</code> a un RuntimeObject vivo <code>target</code> sobre X, como máximo abs(speed) × delta por llamada, sin sobrepasarlo. Conserva el otro eje. No acepta un nombre ni crea una relación persistente: vuelve a consultar y llamar en los frames necesarios.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>target: RuntimeObject</code></dt><dd>Instancia viva hacia la que se sigue.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const target = find_name(&quot;ball&quot;)[0];
+if (target) follow_x(object, target);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#find-name"><code>find_name()</code></a>, <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>.</p>
+</section>
+<section data-api-symbol="follow_y">
+<h3 id="follow-y">follow_y()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>follow_y(object: RuntimeObject, target: RuntimeObject): void;</code></pre></div>
+<p>Acerca <code>object</code> a un RuntimeObject vivo <code>target</code> sobre Y, como máximo abs(speed) × delta por llamada, sin sobrepasarlo. Conserva el otro eje. No acepta un nombre ni crea una relación persistente: vuelve a consultar y llamar en los frames necesarios.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>target: RuntimeObject</code></dt><dd>Instancia viva hacia la que se sigue.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">const target = find_name(&quot;ball&quot;)[0];
+if (target) follow_y(object, target);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/runtime.html#find-name"><code>find_name()</code></a>, <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>.</p>
+</section>
+<section data-api-symbol="attach">
+<h3 id="attach">attach()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>attach(object: RuntimeObject): void;</code></pre></div>
+<p>Activa las reglas attach declaradas respecto al padre original; no elige un nuevo padre. Captura la diferencia de posición actual como nuevo offset vivo para los ejes seguidos. World aplica el seguimiento de X, Y y/o angle según la declaración; angle seguido copia el del padre. No cambia el offset original de creación. Activar el indicador sin reglas de seguimiento no inventa ejes nuevos.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">attach(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#detach"><code>detach()</code></a>, <a class="link" href="api/mechanics.html#attach-active"><code>attach_active()</code></a>.</p>
+</section>
+<section data-api-symbol="detach">
+<h3 id="detach">detach()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>detach(object: RuntimeObject): void;</code></pre></div>
+<p>Desactiva el seguimiento attach, conservando la posición y el ángulo actuales. Mantiene la relación estructural con el padre y el offset original de creación; una regla independiente de inherit.live.angle puede seguir copiando el ángulo.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">detach(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>, <a class="link" href="api/runtime.html#find-parent"><code>find_parent()</code></a>.</p>
+</section>
+<section data-api-symbol="attach_active">
+<h3 id="attach-active">attach_active()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>attach_active(object: RuntimeObject): boolean;</code></pre></div>
+<p>Devuelve el indicador actual de attach del objeto. Este booleano no asegura que exista un padre vivo ni que se haya declarado un eje que seguir.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd></dl>
+<p><strong>Retorno:</strong> <code>boolean</code>.</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">if (attach_active(object)) detach(object);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>, <a class="link" href="api/mechanics.html#detach"><code>detach()</code></a>.</p>
+</section>
+<section data-api-symbol="carry">
+<h3 id="carry">carry()</h3>
+<div class="code-card"><div class="code-header">Firmas</div><pre><code>carry(object: RuntimeObject, carrier: RuntimeObject): void;</code></pre></div>
+<p>Suma al objeto el desplazamiento que lleva realizado <code>carrier</code> en el frame actual (posición actual menos posición anterior). Es puntual; no crea un vínculo persistente. Llamarla repetidamente vuelve a sumar ese desplazamiento.</p>
+<dl><dt><code>object: RuntimeObject</code></dt><dd>Instancia recibida o resuelta durante el hook actual.</dd><dt><code>carrier: RuntimeObject</code></dt><dd>Instancia cuyo desplazamiento de frame se aplica.</dd></dl>
+<p><strong>Retorno:</strong> sin valor (<code>undefined</code> en JavaScript; <code>void</code> en la firma).</p>
+<div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">carry(object, other);</code></pre></div>
+<p>Relacionados: <a class="link" href="api/mechanics.html#attach"><code>attach()</code></a>, <a class="link" href="api/collision.html#collision"><code>collision()</code></a>.</p>
+</section>
+<hr /><details><summary>Fuentes de esta referencia</summary><p>Referencia contrastada con <a class="link" href="https://github.com/FLXForge/FLXEngine/blob/df1cca7e67b9128300d628812bc3bc949b27939e/docs/scripts/flx.d.ts">flx.d.ts</a>, <a class="link" href="https://github.com/FLXForge/FLXEngine/tree/df1cca7e67b9128300d628812bc3bc949b27939e/engine/scripting/bindings">bindings</a> y runtime de la rama feature/audit-public-doc, revisión <code>df1cca7e67b9</code>.</p>
+</details><nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a aria-current="page" class="link" href="api/mechanics.html"><strong>Mechanics</strong></a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><div id="doc-path"></div></article></main>
+<div id="footer"></div><script src="../js/main.js"></script>
+</body></html>

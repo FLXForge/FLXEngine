@@ -143,7 +143,7 @@ This makes Machine part of the model rather than a collection of hidden engine a
 
 ## Examples
 
-FLX v0.3.0 includes five games used during the development and audit of the current engine foundation:
+FLX v0.3.1 includes five games used during the development and audit of the current engine foundation:
 
 **Pong** — fundamental objects, movement, input and collision.  
 **Asteroids** — oriented movement, lifecycle and dynamic objects.  
@@ -157,7 +157,7 @@ They are examples, but also tests of the engine's design: FLX evolves when build
 
 ## Documentation
 
-The public documentation covers the complete FLX v0.3.0 contract:
+The public documentation covers FLX v0.3.1 and the consolidated contracts introduced in v0.3.0:
 
 - Getting Started
 - Mental model and philosophy
@@ -199,9 +199,11 @@ You can use the editor, IDE, version-control system and asset tools you prefer.
 
 ## Current status
 
-**FLX Engine v0.3.0** establishes the first consolidated foundation of the engine.
+**FLX Engine v0.3.1** builds on the consolidated foundation established in v0.3.0.
 
-This version defines the common model for object declaration and composition, creation, visuals, mechanics, input, collisions, lifecycle, object relationships, audio, Machines, scripting, CLI and diagnostics.
+This patch fixes music startup and playback through incremental synthesis and streaming. It also adds characterization tests and documentation for small-text rendering limitations; the text renderer is unchanged.
+
+The foundation defines the common model for object declaration and composition, creation, visuals, mechanics, input, collisions, lifecycle, object relationships, audio, Machines, scripting, CLI and diagnostics.
 
 FLX remains an evolving personal project. Future capabilities will continue to emerge from building games with the engine rather than from trying to predict every feature in advance.
 

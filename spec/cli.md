@@ -390,7 +390,7 @@ flx --version
 La salida estándar DEBE contener únicamente la versión semántica:
 
 ```text
-0.3.0
+0.3.1
 ```
 
 No debe incluir:

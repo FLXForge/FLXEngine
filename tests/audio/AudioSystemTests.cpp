@@ -50,6 +50,105 @@ namespace
         require(priorities == expected, message);
     }
 
+    void testIncrementalSynthesisMatchesLegacy()
+    {
+        for (float tempo : { 73.0f, 137.0f, 300.0f })
+        for (const std::string wave : { "sine", "square", "triangle", "saw", "pulse", "noise" })
+        for (const std::string resolution : { "high", "low" })
+        {
+            MusicDefinition music;
+            music.tempo = tempo;
+            MusicChannelDefinition channel;
+            channel.notes = { "C4", "-", "G4", "A4", "", "D4" };
+            channel.length = "1/16";
+            channel.instrument.source.wave = wave;
+            channel.instrument.source.duty = 0.3f;
+            channel.instrument.play.vibrato = 0.7f;
+            channel.instrument.tone.envelope = { 0.01f, 0.025f, 0.6f, 0.02f };
+            channel.instrument.tone.material = { 0.8f, 0.4f, wave == "noise" ? 0.2f : 0.0f, 0.2f, 0.3f };
+            channel.instrument.tone.space.echo = 0.8f;
+            music.channels.push_back(channel);
+            channel.length = "1/8";
+            channel.notes = { "G3", "F3", "-", "C3" };
+            channel.volume = 0.3f;
+            music.channels.push_back(channel);
+            AudioChipDefinition config;
+            config.fidelityResolution = resolution;
+            AudioSystem audio;
+            audio.configure(config);
+            SetRandomSeed(1234);
+            Wave reference = audio.testCreateMusicWave(music, 2);
+            const std::vector<short> expected(static_cast<short*>(reference.data),
+                static_cast<short*>(reference.data) + reference.frameCount);
+            UnloadWave(reference);
+            for (size_t blockSize : { 1, 127, 1984, 4096, 8191 })
+            {
+                SetRandomSeed(1234);
+                MusicSequencer sequencer(music, 2, config);
+                std::vector<short> actual, block(blockSize);
+                while (!sequencer.finished())
+                {
+                    const size_t count = sequencer.generate(block.data(), block.size(), false);
+                    actual.insert(actual.end(), block.begin(), block.begin() + count);
+                }
+                require(actual == expected, "incremental PCM must exactly match legacy PCM: " + wave);
+                require(sequencer.generate(block.data(), block.size(), false) == 0, "end must be stable");
+                MusicSequencer looping(music, 2, config);
+                if (wave != "noise")
+                {
+                    std::vector<short> repeated(expected.size() * 2 + 17);
+                    require(looping.generate(repeated.data(), repeated.size(), true) == repeated.size(), "loop fills block");
+                    for (size_t i = 0; i < repeated.size(); ++i)
+                        require(repeated[i] == expected[i % expected.size()], "loop restarts score and echo exactly");
+                }
+            }
+        }
+    }
+
+    void testSequencerEdgeCases()
+    {
+        MusicDefinition music;
+        MusicChannelDefinition channel;
+        channel.notes = { "invalid", "C0", "x", "-", "G4" };
+        channel.instrument.range.min = "C4";
+        channel.instrument.range.max = "C5";
+        music.channels.push_back(channel);
+        music.channels.push_back(channel);
+        AudioChipDefinition config;
+        config.synthesisModel = "pulse";
+        config.fidelityDynamics = "limited";
+        config.fidelityResolution = "very_low";
+        AudioSystem audio;
+        audio.configure(config);
+        Wave reference = audio.testCreateMusicWave(music, 1);
+        MusicSequencer sequencer(music, 1, config);
+        std::vector<short> actual(reference.frameCount + 4, 123);
+        require(sequencer.generate(actual.data(), 0, false) == 0, "zero capacity does not advance");
+        require(sequencer.generate(actual.data(), actual.size(), false) == reference.frameCount, "only admitted channels determine duration");
+        require(std::equal(actual.begin(), actual.begin() + reference.frameCount,
+            static_cast<short*>(reference.data)), "invalid notes and range match legacy");
+        require(actual[reference.frameCount] == 123, "partial block never writes beyond produced frames");
+        UnloadWave(reference);
+        MusicSequencer empty(MusicDefinition{}, 10, config);
+        require(empty.frameCount() == 441, "empty score retains minimum duration");
+        MusicSequencer noChannels(music, -1, config);
+        require(noChannels.frameCount() == 441, "negative channel count is bounded");
+    }
+
+    void testRepeatedMusicOperations()
+    {
+        AudioSystem audio;
+        for (int i = 0; i < 3; ++i)
+        {
+            audio.stopMusic();
+            audio.togglePauseMusic();
+            require(!audio.isMusicActive() && !audio.isMusicPaused(), "empty operations are harmless");
+            audio.testStartLogicalMusic(2);
+            audio.togglePauseMusic();
+            audio.stopMusic();
+        }
+    }
+
     void testSoundPriorityLoadsFromJson()
     {
         const std::filesystem::path root =
@@ -371,6 +470,9 @@ namespace
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
+        { "incremental synthesis matches legacy", testIncrementalSynthesisMatchesLegacy },
+        { "sequencer edge cases", testSequencerEdgeCases },
+        { "repeated music operations", testRepeatedMusicOperations },
         { "sound priority loads from JSON", testSoundPriorityLoadsFromJson },
         { "AudioSystem uses SoundDefinition priority", testAudioSystemUsesSoundDefinitionPriority },
         { "ignore keeps existing sounds", testIgnoreKeepsExistingSounds },

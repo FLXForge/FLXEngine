@@ -106,9 +106,15 @@ La presentación se decide desde el snapshot capturado al emitir la primitiva. D
 
 `draw_text(x, y, text, size?, color?)` dibuja texto centrado en `x/y`.
 
+`size` (por defecto `10`) está expresado en unidades lógicas, igual que el
+`fontSize` del texto declarativo. Los dos caminos usan la misma fuente y el mismo
+renderer. No se impone un mínimo de 10 u 11: tamaños 6 y 8 siguen siendo válidos.
+La proyección mundo/raster y el escalado posterior de salida son etapas distintas;
+los bindings no cambian el tamaño en función de `video.output.scale`.
+
 Todas aceptan overload local con `RuntimeObject` como primer argumento.
 
-Los outlines se expresan en unidades lógicas y el renderer los proyecta según `screen.scale`; no quedan limitados accidentalmente a un único píxel físico cuando la escala de salida es mayor que `1`.
+Los outlines se expresan en unidades lógicas y el renderer los proyecta a la resolución del raster de destino. El escalado posterior de salida (`video.output.scale`) no modifica su grosor lógico.
 
 ## 8. Proyección física
 
@@ -136,3 +142,58 @@ Fade no es parte de Immediate Drawing, no tiene `depth` y se dibuja por encima d
 - DRAW-010 Fade es overlay global independiente de Drawing.
 - DRAW-011 Representación declarativa y primitivas locales capturan presentación al emitirse.
 - DRAW-012 Mutaciones posteriores durante el mismo hook no alteran primitivas ya emitidas.
+
+## 11. Caracterización de texto pequeño
+
+En raylib 6.0 la fuente predeterminada es un bitmap con tamaño base de 10 píxeles
+y filtrado por vecino más próximo. Reducirla a 6 u 8 puede omitir filas y columnas
+de sus glifos y perder trazos. Bordes definidos no garantizan legibilidad perfecta.
+Una posición entera tampoco garantiza que todas las posiciones de glifos sean
+enteras: el centrado, sus anchuras y el factor `size / 10` pueden producir fracciones.
+El renderer conserva esas métricas y la rotación; no redondea posiciones para
+intentar compensar la pérdida de información de la fuente.
+
+El mundo se dibuja en el render target lógico de Machine. Con
+`video.output.smoothing=false`, la presentación a escala entera repite sus píxeles
+sin mezclarlos; no puede recuperar trazos ya perdidos en ese raster. Con
+`smoothing=true`, el filtrado bilineal de la pantalla puede suavizar bordes. Este
+filtro es distinto del filtro de la textura de la fuente.
+
+`flx-text-rasterization-tests` requiere una sesión con OpenGL. Compara píxeles
+para tamaños 6, 8, 10, 11 y 12; posiciones enteras y cuartos de píxel; una y varias
+líneas, incluyendo líneas vacías; rotaciones 0, 25 y 90 grados; raster de 240x80 y
+320x80; texto declarativo y local inmediato. Comprueba por separado la fuente,
+el raster lógico y la presentación a escalas 1, 2 y 3, con y sin smoothing.
+`RuntimeDrawingTests` también verifica ambos overloads JavaScript sin dispositivo
+gráfico: tamaño lógico, coordenadas fraccionarias, rotación local y defaults.
+
+La caracterización de v0.3.1 confirma que la fuente default ya equivale a POINT
+y que el texto blanco sobre negro no tiene píxeles grises en el raster lógico.
+La presentación POINT a escala entera reproduce exactamente esos píxeles.
+Para `MWil1 0123456789`, el modelo de muestreo con origen superior entero deja
+sin muestrear 45 filas nativas con tinta a tamaño 6 y 29 a tamaño 8 (sumadas por
+glifo), frente a cero a tamaño 10. Son filas de la fuente omitidas por muestreo,
+no una puntuación de legibilidad ni un recuento de trazos completos desaparecidos.
+
+El origen vertical actual de cada línea es la mitad de `lineHeight = size + 1`
+a escala mundo/raster 1; se conserva el espaciado existente. Para una línea,
+el borde superior nominal está en `y - (size + 1)/2`. Usar alternativamente
+`MeasureTextEx().y/2` desplaza el muestreo medio píxel, pero no recupera las filas
+omitidas por reducir los glifos. La prueba genera esa alternativa como comparación,
+sin cambiar el renderer ni afirmar que mejore consistentemente la nitidez.
+
+No se ha encontrado en esta auditoría un fallo de filtrado que explique la pérdida
+de detalle observada. Los resultados no justifican cambiar filtros ni redondear coordenadas.
+El siguiente paso para buscar una mejora consistente sería evaluar glifos
+diseñados para esos tamaños; sustituir la fuente o introducir un sistema
+tipográfico queda fuera de esta corrección. La legibilidad óptica de cada cadena no queda
+demostrada únicamente por estos recuentos de píxeles.
+
+Para reproducir, compilar el motor y ejecutar `flx-text-rasterization-tests` y
+`flx-runtime-drawing-tests` sin `FLX_TEST_HEADLESS=1`. La primera prueba devuelve
+77 (skip en CTest) si se solicita ejecución headless o no se puede abrir ventana.
+Opcionalmente, definir `FLX_TEXT_ARTIFACT_DIR` con la ruta absoluta de
+`out/text-characterization`: exporta `centering-before-candidate.png`, ampliada
+3x con vecino más próximo, con el renderer actual a la izquierda y el origen
+métrico alternativo a la derecha. La imagen es diagnóstica; no es un antes/después
+de una corrección aplicada. No se necesitan imágenes de referencia versionadas.

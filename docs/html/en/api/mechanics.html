@@ -38,7 +38,7 @@
 <div id="navbar"></div>
 <main class="doc-layout"><div id="sidebar"></div>
 <article class="doc-content api-reference">
-<p class="eyebrow">FLX Documentation · v0.3.0</p>
+<p class="eyebrow">FLX Documentation · v0.3.1</p>
 <h1>Mechanics</h1>
 <nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a aria-current="page" class="link" href="api/mechanics.html"><strong>Mechanics</strong></a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a class="link" href="api/drawing.html">Drawing / Visual</a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><p>Movement operations integrate the frame delta. The apply operations change live state; follow and carry act in the current call, while attach enables declared persistent following. For direct positioning or resizing, see <a class="link" href="api/runtime.html#transform">Transform</a>.</p>
 <p>FLX angles are expressed in degrees: 0 up, 90 right, 180 down, 270 left. Limits, acceleration, inertia and steps are configured in <a class="link" href="json/mechanics.html">JSON · Mechanics</a>. Choose the operation that represents the desired movement; combining integrators in the same frame can add displacements.</p>

@@ -112,23 +112,9 @@ renderer. No se impone un mínimo de 10 u 11: tamaños 6 y 8 siguen siendo váli
 La proyección mundo/raster y el escalado posterior de salida son etapas distintas;
 los bindings no cambian el tamaño en función de `video.output.scale`.
 
-En raylib 6.0 la fuente predeterminada es un bitmap con tamaño base de 10 píxeles
-y filtrado por vecino más próximo. Reducirla a 6 u 8 puede omitir filas y columnas
-de sus glifos y perder trazos. Bordes definidos no garantizan legibilidad perfecta.
-Una posición entera tampoco garantiza que todas las posiciones de glifos sean
-enteras: el centrado, sus anchuras y el factor `size / 10` pueden producir fracciones.
-El renderer conserva esas métricas y la rotación; no redondea posiciones para
-intentar compensar la pérdida de información de la fuente.
-
-El mundo se dibuja en el render target lógico de Machine. Con
-`video.output.smoothing=false`, la presentación a escala entera repite sus píxeles
-sin mezclarlos; no puede recuperar trazos ya perdidos en ese raster. Con
-`smoothing=true`, el filtrado bilineal de la pantalla puede suavizar bordes. Este
-filtro es distinto del filtro de la textura de la fuente.
-
 Todas aceptan overload local con `RuntimeObject` como primer argumento.
 
-Los outlines se expresan en unidades lógicas y el renderer los proyecta según `screen.scale`; no quedan limitados accidentalmente a un único píxel físico cuando la escala de salida es mayor que `1`.
+Los outlines se expresan en unidades lógicas y el renderer los proyecta a la resolución del raster de destino. El escalado posterior de salida (`video.output.scale`) no modifica su grosor lógico.
 
 ## 8. Proyección física
 
@@ -158,6 +144,20 @@ Fade no es parte de Immediate Drawing, no tiene `depth` y se dibuja por encima d
 - DRAW-012 Mutaciones posteriores durante el mismo hook no alteran primitivas ya emitidas.
 
 ## 11. Caracterización de texto pequeño
+
+En raylib 6.0 la fuente predeterminada es un bitmap con tamaño base de 10 píxeles
+y filtrado por vecino más próximo. Reducirla a 6 u 8 puede omitir filas y columnas
+de sus glifos y perder trazos. Bordes definidos no garantizan legibilidad perfecta.
+Una posición entera tampoco garantiza que todas las posiciones de glifos sean
+enteras: el centrado, sus anchuras y el factor `size / 10` pueden producir fracciones.
+El renderer conserva esas métricas y la rotación; no redondea posiciones para
+intentar compensar la pérdida de información de la fuente.
+
+El mundo se dibuja en el render target lógico de Machine. Con
+`video.output.smoothing=false`, la presentación a escala entera repite sus píxeles
+sin mezclarlos; no puede recuperar trazos ya perdidos en ese raster. Con
+`smoothing=true`, el filtrado bilineal de la pantalla puede suavizar bordes. Este
+filtro es distinto del filtro de la textura de la fuente.
 
 `flx-text-rasterization-tests` requiere una sesión con OpenGL. Compara píxeles
 para tamaños 6, 8, 10, 11 y 12; posiciones enteras y cuartos de píxel; una y varias

@@ -444,3 +444,6 @@ add_test(NAME flx-audio-stream-tests COMMAND flx-audio-stream-tests)
 # Explicit opt-in: requires an audio device and briefly plays generated tones.
 add_executable(flx-audio-device-tests tests/audio/AudioDeviceTests.cpp)
 target_link_libraries(flx-audio-device-tests PRIVATE flx-test-engine)
+
+add_flx_test_suite(flx-text-rasterization-tests tests/runtime/TextRasterizationTests.cpp)
+set_tests_properties(flx-text-rasterization-tests PROPERTIES SKIP_RETURN_CODE 77)

@@ -209,6 +209,9 @@ add_executable(flx
     engine/audio/NoteTools.cpp
     engine/audio/AudioSystem.h
     engine/audio/AudioSystem.cpp
+    engine/audio/AudioSynthesis.h
+    engine/audio/MusicSequencer.h
+    engine/audio/MusicSequencer.cpp
     engine/collision/CollisionSystem.h
     engine/collision/CollisionSystem.cpp
     engine/collision/CollisionContact.h
@@ -307,6 +310,7 @@ add_library(
     flx-test-engine
     STATIC
     ${FLX_TEST_SOURCES}
+    tests/audio/LegacyMusicSynthesis.cpp
 )
 
 target_compile_definitions(
@@ -424,3 +428,19 @@ add_test(
         -DFLX_CLI=$<TARGET_FILE:flx>
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunCliInvalidCommandTest.cmake"
 )
+
+# Exercise the real AudioSystem against a deterministic raylib 6.0 buffer model.
+add_executable(flx-audio-stream-tests
+    tests/audio/AudioStreamTests.cpp
+    engine/audio/AudioSystem.cpp
+    engine/audio/MusicSequencer.cpp
+    engine/audio/NoteTools.cpp
+    engine/debug/Logger.cpp
+)
+target_compile_definitions(flx-audio-stream-tests PRIVATE FLX_TESTING)
+target_include_directories(flx-audio-stream-tests PRIVATE ${raylib_SOURCE_DIR}/src)
+add_test(NAME flx-audio-stream-tests COMMAND flx-audio-stream-tests)
+
+# Explicit opt-in: requires an audio device and briefly plays generated tones.
+add_executable(flx-audio-device-tests tests/audio/AudioDeviceTests.cpp)
+target_link_libraries(flx-audio-device-tests PRIVATE flx-test-engine)

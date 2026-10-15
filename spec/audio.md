@@ -240,3 +240,94 @@ No deben documentarse como promesas funcionales completas de v0.3.0.
 Las limitaciones de audio pueden producir comportamiento audible observable, como pérdida temporal de música cuando un efecto roba capacidad sonora.
 
 Este comportamiento representa máquinas con capacidad sonora limitada. Puede inspirarse en hardware histórico, pero FLX no debe convertir esa referencia en un preset nominal ni en una emulación concreta.
+
+## 14. Síntesis musical incremental (v0.3.1)
+
+La partitura sigue siendo la fuente de verdad. `MusicSequencer` prepara solo los
+canales admitidos por Machine, copia instrumentos, resuelve frecuencias y calcula
+la duración. La preparación cuesta O(notas + canales), con almacenamiento
+O(notas + canales). No genera ni almacena PCM completo. Conserva el cursor absoluto
+y el orden de mezcla, material, ADSR, vibrato, eco y fidelidad del algoritmo anterior.
+El historial circular de eco contiene 1984 floats (7936 bytes, aproximadamente
+45 ms a 44100 Hz), guardando la mezcla después de fidelidad.
+
+El formato sigue siendo mono, 44100 Hz, PCM de 16 bits. El bloque interno fijo
+es de 4096 frames (8192 bytes, aproximadamente 92,9 ms). raylib almacena dos mitades
+de 4096 frames (16384 bytes de PCM), además de sus buffers de conversión y del
+dispositivo. No hay caché persistente ni nuevos parámetros de Machine.
+
+`playMusic()` libera la reproducción anterior, prepara la partitura, crea el
+stream y sintetiza como máximo dos bloques antes de retornar. Ese trabajo sigue
+siendo síncrono, pero su coste de síntesis no depende de la duración musical.
+`update()` entrega como máximo dos bloques por frame; no se sintetiza en el
+callback del dispositivo.
+
+En raylib 6.0, `IsAudioStreamProcessed()` indica si alguna mitad está disponible.
+`UpdateAudioStream()` escribe una sola mitad; si ambas están libres selecciona
+la primera y reposiciona el cursor. `PlayAudioStream()` reinicia cursor y marcas
+de ambas mitades: el arranque hace Play, Pause, prepara ambas mitades y Resume.
+Las reanudaciones posteriores usan exclusivamente Resume.
+
+Dos marcas registran bloques musicales pendientes en orden de entrega. Cada mitad
+libre permite retirar una marca y entregar otro bloque. Tras terminar la síntesis
+se entregan marcadores de silencio hasta retirar los bloques musicales pendientes;
+solo entonces se libera el stream. `IsAudioStreamPlaying()` no indica fin natural,
+porque raylib mantiene los streams en bucle. La última mitad se rellena con ceros:
+el estado activo puede durar hasta 92,9 ms adicionales más el intervalo hasta
+el siguiente update. Consumo significa aquí consumo del mezclador de raylib;
+la latencia física adicional depende del dispositivo.
+
+Los bucles cruzan el final de la partitura dentro del mismo bloque, reinician
+cursor e historial de eco y conservan el stream, sin padding entre iteraciones.
+Una discontinuidad propia de la partitura al unir final y principio sigue siendo
+posible, como antes. La copia preparada es independiente del objeto fuente.
+
+Pausa lógica y suspensión por `steal_from_music` pausan físicamente el stream,
+sin generar más bloques ni perder posición. La suspensión sigue afectando a toda
+la música. Liberar voces solo reanuda si no existe pausa lógica. Parada,
+sustitución, fin natural y shutdown liberan stream, partitura e historial.
+
+El ruido conserva `GetRandomValue()`. Con semilla e idéntico orden de llamadas,
+dividir en bloques conserva el PCM. Llamadas aleatorias del juego o efectos
+intercaladas pueden cambiar la realización respecto a la síntesis anticipada;
+no se promete reproducibilidad del ruido durante el juego. Legato, glide y otras
+capacidades futuras conservan sus limitaciones anteriores.
+
+El motor debe actualizar audio regularmente. Bloqueos superiores al audio
+pendiente pueden producir underrun y silencio; el siguiente update recupera
+la alimentación sin reiniciar la composición. raylib puede ampliar una mitad si
+el período interno del dispositivo supera 4096 frames: esos dispositivos
+excepcionales pueden introducir silencio adicional y requieren validación
+específica. La parametrización de buffers queda reservada para v0.4.0.
+
+### Verificación
+
+`flx-audio-system-tests` compara PCM exacto con el algoritmo anterior, compilado
+solo para pruebas: varios tempos, formas de onda, mezcla, ADSR, materiales,
+vibrato, eco y bloques de 1, 127, 1984, 4096 y 8191 frames. Incluye ruido con semilla
+fija y bucles deterministas. `flx-audio-stream-tests` prueba el AudioSystem real
+contra un modelo del doble buffer sin dispositivo: inicio, drenaje, pausa,
+sustitución, bucles, underrun, voces, fallos de carga y liberación.
+
+`flx-audio-device-tests` es una prueba optativa con raylib y dispositivo real;
+no forma parte de CTest porque reproduce tonos. Devuelve 77 sin dispositivo.
+Muestra tiempos de inicio para partituras de 50 y 750 segundos y el coste del
+algoritmo anterior para 50 segundos. Son tiempos locales, no latencia acústica.
+
+Para comprobar manualmente, ejecutar `flx-audio-device-tests` desde la carpeta
+de build y escuchar inicio, pausa y bucle. En un juego con `steal_from_music`,
+lanzar un efecto y alternar `pause_music()` durante la suspensión: al terminar
+el efecto solo debe reanudarse si `music_paused()` es falso. Destruir el objeto
+fuente no debe detener la música. Para medir latencia acústica, registrar
+conjuntamente la llamada y la salida de audio con un dispositivo de captura.
+
+Medición orientativa en este checkout, compilación Debug con MSVC y WASAPI
+(48000 Hz, período de 1440 frames): `playMusic()` tardó 11,30 ms para 50 segundos
+y 11,65 ms para 750 segundos, ambos con 1000 notas. Sintetizar los 50 segundos
+completos con el algoritmo anterior tardó 2057,69 ms. Una ejecución, sin medición
+acústica; no constituye una garantía de rendimiento en otras máquinas.
+
+Para ejecutar CTest manteniendo sus archivos temporales dentro del checkout,
+crear `out/audio-test-temp`, asignar `TMP` y `TEMP` a su ruta absoluta y ejecutar
+`ctest --test-dir out/build/x64-debug --output-on-failure`. Las pruebas gráficas
+pueden ejecutarse sin ventana con `FLX_TEST_HEADLESS=1`.

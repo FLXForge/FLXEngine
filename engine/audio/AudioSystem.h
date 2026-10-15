@@ -1,11 +1,14 @@
 #pragma once
 
 #include "MusicDefinition.h"
+#include "MusicSequencer.h"
 #include "SoundDefinition.h"
 #include "../machine/MachineDefinition.h"
 
 #include <raylib.h>
+#include <array>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 class AudioSystem
@@ -27,6 +30,7 @@ public:
     bool isMusicPaused() const;
 
 #ifdef FLX_TESTING
+    Wave testCreateMusicWave(const MusicDefinition& definition, int channelCount) const;
     bool testPlayLogicalSound(const SoundDefinition& definition);
     bool testPlayLogicalSound(int priority);
     void testStartLogicalMusic(int voiceCount);
@@ -50,9 +54,14 @@ private:
         bool loaded = true;
     };
 
+    static constexpr int musicBlockFrames = 4096;
+
     struct ActiveMusic
     {
-        Sound sound = {};
+        AudioStream stream = {};
+        std::unique_ptr<MusicSequencer> sequencer;
+        std::array<short, musicBlockFrames> block{};
+        std::array<bool, 2> pending{};
         bool loaded = false;
         bool loop = false;
         bool paused = false;
@@ -65,10 +74,7 @@ private:
     };
 
     Wave createWave(const SoundDefinition& definition) const;
-    Wave createMusicWave(
-        const MusicDefinition& definition,
-        int channelCount
-    ) const;
+    void feedMusicStream();
     void cleanupFinished();
     bool reserveSoundVoice();
     bool reserveReservedSoundVoice();

@@ -486,6 +486,47 @@ namespace
         require(primitives.empty(), "inactive drawing context should not collect primitives");
     }
 
+    void testTextBindingsPreserveLogicalSizesAndCoordinates()
+    {
+        for (int outputScale : { 1, 3 })
+        {
+            ScriptEngine scripts;
+            scripts.setScreenScale(outputScale);
+            scripts.loadScript("textSizes",
+                "function draw(o) {"
+                "  for (const size of [6, 8, 10, 11, 12]) {"
+                "    draw_text(1.25, 2.75, 'MWil1 0123456789', size, 'red');"
+                "    draw_text(o, 1.25, 2.75, 'MWil1 0123456789', size, 'red');"
+                "  }"
+                "  draw_text(1, 2, 'default');"
+                "}");
+            RuntimeObject object = runtimeObject("text");
+            object.runtimeId = "text#1";
+            object.position = { 10, 20 };
+            object.angle = 90;
+            DrawingContext context;
+            std::vector<VisualPrimitive> primitives;
+            scripts.setDrawingContext(&context);
+            context.begin(object, primitives);
+            scripts.callScriptFunction("textSizes", "draw", object);
+            context.end();
+            scripts.setDrawingContext(nullptr);
+            require(primitives.size() == 11, "both text overloads and default size should emit");
+            size_t i = 0;
+            for (int size : { 6, 8, 10, 11, 12 })
+            {
+                const auto& world = primitives[i++];
+                const auto& local = primitives[i++];
+                require(world.fontSize == size && local.fontSize == size, "binding must not clamp or physically scale text size");
+                require(nearlyEqual(world.a.x, 1.25f) && nearlyEqual(world.a.y, 2.75f), "world text preserves fractional logical coordinates");
+                require(nearlyEqual(local.a.x, 7.25f) && nearlyEqual(local.a.y, 21.25f), "local text captures reference rotation");
+                require(nearlyEqual(local.angle, 90), "local text retains rotation");
+                require(sameColor(world.color, RED) && sameColor(local.color, RED), "bindings preserve text color");
+            }
+            require(primitives.back().fontSize == 10 && sameColor(primitives.back().color, WHITE), "default size and color remain unchanged");
+        }
+    }
+
     void testWorldAndLocalPrimitivesCaptureOwnerReferenceAndTransform()
     {
         RuntimeObject owner = runtimeObject("owner");
@@ -1247,6 +1288,7 @@ int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "Drawing context rejects calls outside draw turn", testDrawingContextRejectsCallsOutsideDrawTurn },
+        { "Text bindings preserve logical sizes and coordinates", testTextBindingsPreserveLogicalSizesAndCoordinates },
         { "World and local primitives capture owner reference and transform", testWorldAndLocalPrimitivesCaptureOwnerReferenceAndTransform },
         { "Local primitive captures transform at emission", testLocalPrimitiveCapturesTransformAtEmission },
         { "Renderer scales logical pixel to physical pixels", testRendererScalesLogicalPixelToPhysicalPixels },

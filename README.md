@@ -222,3 +222,9 @@ The engine is the foundation. Other tools can grow around it without becoming re
 ## Why FLX?
 
 Because making a small game should not require fighting a large engine.
+
+## Code signing policy
+
+See the [Code signing policy](https://github.com/FLXForge/FLXEngine/blob/main/docs/CODE_SIGNING.md) for release integrity controls,
+single-maintainer governance, security reporting and future SignPath preparation.
+Code signing is not activated; this is not a claim of SignPath approval or signed binaries.

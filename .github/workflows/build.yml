@@ -7,15 +7,18 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-windows:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Build Release
-        uses: threeal/cmake-action@v2.1.0
+        uses: threeal/cmake-action@74db386e1dc69a6ac24d95bd87890d8476d4cd1b # v2.1.0
         with:
           build-dir: build
           build-args: --config Release
@@ -27,16 +30,16 @@ jobs:
           FLX_TEST_HEADLESS: "1"
         run: ctest -C Release --output-on-failure
 
+      - name: Test release validation guards
+        shell: pwsh
+        run: ./.github/scripts/Test-ReleaseValidation.ps1 -ExecutablePath build/Release/flx.exe
+
       - name: Run CLI smoke tests
         shell: pwsh
-        run: |
-          build/Release/flx.exe --version
-          build/Release/flx.exe --help
-          build/Release/flx.exe validate examples/pong.flx
-          build/Release/flx.exe compile --output=build/pong.flxc examples/pong.flx
+        run: ./.github/scripts/Test-ReleaseCli.ps1 -ExecutablePath build/Release/flx.exe
 
       - name: Upload EXE
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flx-exe-windows-x64
           path: build/Release/flx.exe

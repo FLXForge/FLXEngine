@@ -44,7 +44,7 @@ include(FetchContent)
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
-    GIT_TAG 6.0
+    GIT_TAG dbc56a87da87d973a9c5baa4e7438a9d20121d28 # 6.0
 )
 
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -55,7 +55,7 @@ FetchContent_MakeAvailable(raylib)
 FetchContent_Declare(
     json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.12.0
+    GIT_TAG 55f93686c01528224f448c19128836e7df245f72 # v3.12.0
 )
 
 FetchContent_MakeAvailable(json)
@@ -63,7 +63,7 @@ FetchContent_MakeAvailable(json)
 FetchContent_Declare(
     yaml_cpp
     GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0
+    GIT_TAG f7320141120f720aecc4c32be25586e7da9eb978 # 0.8.0
 )
 
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -77,7 +77,7 @@ FetchContent_MakeAvailable(yaml_cpp)
 FetchContent_Declare(
     quickjs
     GIT_REPOSITORY https://github.com/quickjs-ng/quickjs.git
-    GIT_TAG v0.10.1
+    GIT_TAG 3c9afc9943323ee9c7dbd123c0cd991448f4b6c2 # v0.10.1
     SOURCE_SUBDIR flx-no-upstream-cmake
 )
 

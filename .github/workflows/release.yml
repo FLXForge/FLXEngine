@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-
   workflow_dispatch:
     inputs:
       tag:
@@ -13,71 +12,108 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release-windows:
     runs-on: windows-latest
-
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      exe_sha256: ${{ steps.validation.outputs.exe_sha256 }}
+      zip_sha256: ${{ steps.package.outputs.zip_sha256 }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - name: Resolve release tag
         id: release
         shell: pwsh
+        env:
+          RELEASE_EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+          PUSHED_TAG: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $Tag = "${{ inputs.tag }}"
+          $Tag = if ($env:RELEASE_EVENT_NAME -eq 'workflow_dispatch') {
+            $env:REQUESTED_TAG
+          } else {
+            $env:PUSHED_TAG
           }
-          else {
-            $Tag = "${{ github.ref_name }}"
+          if ($Tag -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') {
+            throw "Release tag must use vX.Y.Z format. Received: $Tag"
           }
-
-          if ($Tag -notmatch '^v\d+\.\d+\.\d+$') {
-            Write-Error "Release tag must use vX.Y.Z format. Received: $Tag"
-            exit 1
-          }
-
-          echo "tag=$Tag" >> $env:GITHUB_OUTPUT
+          "tag=$Tag" >> $env:GITHUB_OUTPUT
 
       - name: Checkout release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ steps.release.outputs.tag }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Ensure tag is on main
         shell: pwsh
         run: |
-          git fetch origin main
-
-          $TagCommit = git rev-parse HEAD
-          $MainContains = git branch -r --contains $TagCommit | Select-String "origin/main"
-
-          if (-not $MainContains) {
-            Write-Error "Tag ${{ steps.release.outputs.tag }} is not on main."
-            exit 1
-          }
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch main' }
+          git merge-base --is-ancestor HEAD refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) { throw 'Release tag commit is not on main' }
 
       - name: Ensure tag matches VERSION
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
-          $TagVersion = "${{ steps.release.outputs.tag }}".Substring(1)
-          $FileVersion = (Get-Content VERSION -Raw).Trim()
-
-          if ($TagVersion -ne $FileVersion) {
-            Write-Error "Release tag must match VERSION. Tag: $TagVersion VERSION: $FileVersion"
-            exit 1
+          $TagVersion = $env:RELEASE_TAG.Substring(1)
+          $FileVersion = (Get-Content -LiteralPath VERSION -Raw).Trim()
+          if ($TagVersion -cne $FileVersion) {
+            throw "Release tag must match VERSION. Tag: $TagVersion VERSION: $FileVersion"
           }
 
+      # Manual dispatch can rebuild tags that predate these helper scripts.
+      - name: Checkout validation tools from workflow revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: release-tools
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
       - name: Build Release
-        uses: threeal/cmake-action@v2.1.0
+        uses: threeal/cmake-action@74db386e1dc69a6ac24d95bd87890d8476d4cd1b # v2.1.0
         with:
           build-dir: build
           build-args: --config Release
 
-      - name: Package release
+      - name: Run tests
+        shell: pwsh
+        env:
+          FLX_TEST_HEADLESS: '1'
+        run: |
+          ctest --test-dir build -C Release --output-on-failure --no-tests=error
+          if ($LASTEXITCODE -ne 0) { throw 'Automated tests failed' }
+
+      - name: Test release validation guards
+        shell: pwsh
+        run: ./release-tools/.github/scripts/Test-ReleaseValidation.ps1 -ExecutablePath build/Release/flx.exe
+
+      - name: Run CLI smoke tests and record executable hash
+        id: validation
         shell: pwsh
         run: |
-          $Version = "${{ steps.release.outputs.tag }}"
+          ./release-tools/.github/scripts/Test-ReleaseCli.ps1 -ExecutablePath build/Release/flx.exe
+          $Hash = (Get-FileHash -LiteralPath build/Release/flx.exe -Algorithm SHA256).Hash
+          "exe_sha256=$Hash" >> $env:GITHUB_OUTPUT
+
+      - name: Package release
+        id: package
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          VALIDATED_EXE_SHA256: ${{ steps.validation.outputs.exe_sha256 }}
+        run: |
+          $Version = $env:RELEASE_TAG
           $PackageName = "flx-$Version-windows-x64"
           $PackageDir = "dist/$PackageName"
 
@@ -132,11 +168,72 @@ jobs:
             -DestinationPath "dist/$PackageName.zip" `
             -Force
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v3
+          $ZipPath = "dist/$PackageName.zip"
+          $ZipHash = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
+          ./release-tools/.github/scripts/Test-ReleaseArtifact.ps1 `
+            -ExecutablePath build/Release/flx.exe `
+            -ZipPath $ZipPath `
+            -ExpectedExeSha256 $env:VALIDATED_EXE_SHA256 `
+            -ExpectedZipSha256 $ZipHash
+          "zip_sha256=$ZipHash" >> $env:GITHUB_OUTPUT
+
+      - name: Upload validated release artifacts
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          tag_name: ${{ steps.release.outputs.tag }}
-          overwrite_files: true
-          files: |
+          name: validated-windows-release
+          if-no-files-found: error
+          path: |
             build/Release/flx.exe
             dist/flx-${{ steps.release.outputs.tag }}-windows-x64.zip
+
+  publish:
+    needs: release-windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated artifacts from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.release-windows.outputs.artifact_id }}
+          path: validated
+          merge-multiple: true
+
+      - name: Verify downloaded release artifacts
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ needs.release-windows.outputs.tag }}
+          VALIDATED_EXE_SHA256: ${{ needs.release-windows.outputs.exe_sha256 }}
+          VALIDATED_ZIP_SHA256: ${{ needs.release-windows.outputs.zip_sha256 }}
+        run: |
+          $Exe = 'validated/build/Release/flx.exe'
+          $Zip = "validated/dist/flx-$env:RELEASE_TAG-windows-x64.zip"
+          if ((Get-FileHash -LiteralPath $Exe -Algorithm SHA256).Hash -ne $env:VALIDATED_EXE_SHA256) {
+            throw 'Downloaded executable differs from validated executable'
+          }
+          if ((Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash -ne $env:VALIDATED_ZIP_SHA256) {
+            throw 'Downloaded ZIP differs from validated ZIP'
+          }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $Archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $Zip).Path)
+          try {
+            $Entries = @($Archive.Entries | Where-Object { $_.FullName -eq 'flx.exe' })
+            if ($Entries.Count -ne 1) { throw 'ZIP must contain exactly one root flx.exe' }
+            $Stream = $Entries[0].Open()
+            $Sha = [System.Security.Cryptography.SHA256]::Create()
+            try {
+              $Hash = [BitConverter]::ToString($Sha.ComputeHash($Stream)).Replace('-', '')
+              if ($Hash -ne $env:VALIDATED_EXE_SHA256) { throw 'ZIP executable hash mismatch' }
+            } finally { $Sha.Dispose(); $Stream.Dispose() }
+          } finally { $Archive.Dispose() }
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@5113cdc90fd4d541c801c55356214017bf5ae34b # v3
+        with:
+          tag_name: ${{ needs.release-windows.outputs.tag }}
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            validated/build/Release/flx.exe
+            validated/dist/flx-${{ needs.release-windows.outputs.tag }}-windows-x64.zip

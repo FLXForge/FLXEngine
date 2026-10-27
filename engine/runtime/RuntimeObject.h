@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <cstdint>
+#include <optional>
 
 enum class RuntimeTimerStatus
 {
@@ -85,6 +86,8 @@ public:
     Vector2 previousPosition;
     Vector2 size;
     Vector2 originalOffset;
+    // Live attachment offset belongs to this instance, not its reusable runtimeId.
+    std::optional<Vector2> attachmentOffset;
 
     bool attachFollowX = false;
     bool attachFollowY = false;

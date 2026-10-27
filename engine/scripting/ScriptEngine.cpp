@@ -9,6 +9,7 @@
 #include "ScriptBindings.h"
 
 #include <quickjs.h>
+#include <new>
 #include <fstream>
 #include <sstream>
 #include <cmath>
@@ -371,12 +372,25 @@ namespace
 ScriptEngine::ScriptEngine()
 {
     runtime = JS_NewRuntime();
+    if (!runtime) throw std::bad_alloc();
     context = JS_NewContext(runtime);
+    if (!context)
+    {
+        JS_FreeRuntime(runtime);
+        throw std::bad_alloc();
+    }
 
-    ScriptBindings::registerAll(
-        context,
-        this
-    );
+    try
+    {
+        ScriptBindings::registerAll(context, this);
+    }
+    catch (...)
+    {
+        JS_SetContextOpaque(context, nullptr);
+        JS_FreeContext(context);
+        JS_FreeRuntime(runtime);
+        throw;
+    }
 
 }
 

@@ -8,10 +8,7 @@
 #include <cmath>
 #include <limits>
 
-Engine::Engine()
-    : world(std::make_unique<RuntimeWorld>())
-{
-}
+Engine::Engine() = default;
 
 namespace
 {
@@ -134,16 +131,18 @@ EngineResult Engine::run(
     const int maxFrames =
         options.maxFrames.value_or(-1);
 
-    while (!WindowShouldClose() && !scriptEngine.exitRequested())
+    while (!WindowShouldClose() && !session.finished())
     {
         update();
 
-        if (scriptEngine.exitRequested())
+        if (session.result().exitReason == FlxSessionExitReason::ScriptRequestedExit)
         {
             break;
         }
 
+        if (session.state() == FlxSessionState::Failed) break;
         draw();
+        if (session.state() == FlxSessionState::Failed) break;
 
         ++result.framesExecuted;
 
@@ -156,7 +155,7 @@ EngineResult Engine::run(
         }
     }
 
-    if (scriptEngine.exitRequested())
+    if (session.result().exitReason == FlxSessionExitReason::ScriptRequestedExit)
     {
         result.exitReason =
             EngineExitReason::ScriptRequestedExit;
@@ -167,8 +166,12 @@ EngineResult Engine::run(
             EngineExitReason::WindowClosed;
     }
 
-    result.success =
-        !result.diagnostics.hasErrors();
+    if (session.state() == FlxSessionState::Failed)
+    {
+        result.diagnostics.append(session.result().diagnostics);
+        result.exitReason = EngineExitReason::RuntimeLoadFailed;
+    }
+    result.success = !result.diagnostics.hasErrors();
 
     shutdown();
 
@@ -204,10 +207,9 @@ bool Engine::loadProject(
     context =
         project.context;
 
-    runOptions =
-        options;
-
-    world->setCollisionDebugEnabled(runOptions.debugCollisions);
+    runOptions = options;
+    backgroundColor = VideoColorProcessor::project(
+        ColorParser::parse(context.machine.video.clearColor, BLACK), context.machine.video);
 
     Logger::setConsoleEnabled(runOptions.debugConsole);
     Logger::setDebugEnabled(runOptions.debugLogs);
@@ -238,40 +240,32 @@ bool Engine::loadProject(
         return false;
     }
 
-    if (!initVideoOutput(result))
+    Logger::info(
+        "graphics",
+        "Logical screen: " +
+        std::to_string(context.machine.video.screenWidth) +
+        "x" +
+        std::to_string(context.machine.video.screenHeight) +
+        " scale " +
+        std::to_string(effectiveOutputScale(context, runOptions))
+    );
+
+    InitAudioDevice();
+    audioInitialized = IsAudioDeviceReady();
+    FlxSessionOptions sessionOptions;
+    sessionOptions.enableAudio = audioInitialized;
+    sessionOptions.debugCollisions = runOptions.debugCollisions;
+    if (!session.load(project, sessionOptions))
     {
-        result.exitReason =
-            EngineExitReason::InitializationFailed;
-
-        return false;
-    }
-
-    audioSystem.configure(context.machine.audio);
-    audioSystem.init();
-    audioInitialized = true;
-    inputSystem.configure(context.machine.input);
-    inputSystem.setMapping(context.inputMapping);
-
-    scriptEngine.setScreenScale(1);
-    configureScriptEngine();
-
-    RuntimeLoadResult loadResult =
-        world->load(project, scriptEngine);
-
-    result.diagnostics.append(loadResult.diagnostics);
-
-    if (!loadResult.success)
-    {
-        result.diagnostics.error(
-            DiagnosticCode::RuntimeWorldLoadFailed,
-            "Runtime world could not be loaded",
-            "engine",
-            "runtime"
-        );
-
-        result.exitReason =
-            EngineExitReason::RuntimeLoadFailed;
-
+        result.diagnostics.append(session.result().diagnostics);
+        result.exitReason = EngineExitReason::RuntimeLoadFailed;
+        for (const auto& diagnostic : session.result().diagnostics.all())
+        {
+            if (diagnostic.code == DiagnosticCode::RenderTargetInitializationFailed ||
+                diagnostic.code == DiagnosticCode::WindowInitializationFailed ||
+                diagnostic.code == DiagnosticCode::InvalidVideoOutputConfiguration)
+                result.exitReason = EngineExitReason::InitializationFailed;
+        }
         return false;
     }
 
@@ -420,220 +414,27 @@ bool Engine::initWindow(EngineResult& result)
     return true;
 }
 
-bool Engine::initVideoOutput(EngineResult& result)
-{
-    backgroundColor =
-        ColorParser::parse(
-            context.machine.video.clearColor,
-            BLACK
-        );
-
-    backgroundColor =
-        VideoColorProcessor::project(
-            backgroundColor,
-            context.machine.video
-        );
-
-    Logger::info(
-        "graphics",
-        "Logical screen: " +
-        std::to_string(context.machine.video.screenWidth) +
-        "x" +
-        std::to_string(context.machine.video.screenHeight) +
-        " scale " +
-        std::to_string(effectiveOutputScale(context, runOptions))
-    );
-
-    renderTarget =
-        LoadRenderTexture(
-            context.machine.video.screenWidth,
-            context.machine.video.screenHeight
-        );
-
-    if (renderTarget.id == 0 || renderTarget.texture.id == 0)
-    {
-        result.diagnostics.error(
-            DiagnosticCode::RenderTargetInitializationFailed,
-            "Render target could not be initialized",
-            "engine",
-            "renderTarget"
-        );
-
-        return false;
-    }
-
-    renderTargetLoaded = true;
-
-    SetTextureFilter(
-        renderTarget.texture,
-        context.machine.video.smoothing
-        ? TEXTURE_FILTER_BILINEAR
-        : TEXTURE_FILTER_POINT
-    );
-
-    return true;
-}
-
-void Engine::configureScriptEngine()
-{
-    scriptEngine.setVideoChip(&context.machine.video);
-    scriptEngine.setInputSystem(&inputSystem);
-    scriptEngine.setFadeSystem(&fadeSystem);
-    scriptEngine.setAudioSystem(&audioSystem);
-
-    scriptEngine.setFindObjectFunction(
-        [this](const std::string& name)
-        {
-            return world->findByName(name);
-        }
-    );
-
-    scriptEngine.setFindObjectsByNameFunction(
-        [this](const std::string& name)
-        {
-            return world->findAllLiveByName(name);
-        }
-    );
-
-    scriptEngine.setFindObjectByIdFunction(
-        [this](const std::string& id)
-        {
-            return world->findByRuntimeId(id);
-        }
-    );
-
-    scriptEngine.setFindParentFunction(
-        [this](const std::string& runtimeId)
-        {
-            return world->findLiveParent(runtimeId);
-        }
-    );
-
-    scriptEngine.setFindChildrenFunction(
-        [this](const std::string& runtimeId)
-        {
-            return world->findLiveChildren(runtimeId);
-        }
-    );
-
-    scriptEngine.setSpawnObjectFunction(
-        [this](
-            RuntimeObject& source,
-            const std::string& resourceId
-            )
-        {
-            world->spawn(
-                source,
-                resourceId,
-                scriptEngine
-            );
-        }
-    );
-
-    scriptEngine.setCreationActiveFunction(
-        [this](const RuntimeObject& object)
-        {
-            return world->creationActive(object);
-        }
-    );
-
-    scriptEngine.setRayCastFunction(
-        [this](
-            RuntimeObject& source,
-            ScriptEngine& activeScriptEngine,
-            float angle,
-            float distance
-            )
-        {
-            return world->rayCast(
-                source,
-                activeScriptEngine,
-                angle,
-                distance
-            );
-        }
-    );
-
-    scriptEngine.setKeepOnlyFunction(
-        [this](const std::string& runtimeId)
-        {
-            world->keepOnly(runtimeId);
-        }
-    );
-
-    scriptEngine.setKillObjectFunction(
-        [this](const std::string& runtimeId)
-        {
-            world->kill(runtimeId);
-        }
-    );
-
-    scriptEngine.setShowObjectFunction(
-        [this](const std::string& runtimeId)
-        {
-            world->show(runtimeId);
-        }
-    );
-
-    scriptEngine.setHideObjectFunction(
-        [this](const std::string& runtimeId)
-        {
-            world->hide(runtimeId);
-        }
-    );
-}
-
 void Engine::update()
 {
-    const float delta =
-        safeFrameDelta();
-
-    scriptEngine.setFrameDelta(delta);
-
-    inputSystem.update(delta);
-
-    world->update(
-        scriptEngine,
-        delta
-    );
-
-    fadeSystem.update(delta);
-    audioSystem.update();
+    session.update(safeFrameDelta());
 }
 
 void Engine::draw()
 {
-    BeginTextureMode(renderTarget);
-
-    ClearBackground(backgroundColor);
-
-    world->draw(
-        scriptEngine,
-        1,
-        static_cast<float>(context.machine.video.screenWidth),
-        static_cast<float>(context.machine.video.screenHeight),
-        runOptions.debugCollisions
-    );
-
-    fadeSystem.draw(
-        context.machine.video.screenWidth,
-        context.machine.video.screenHeight,
-        1
-    );
-
-    EndTextureMode();
+    if (!session.render()) return;
+    const Texture2D texture = session.output();
 
     BeginDrawing();
 
     ClearBackground(backgroundColor);
 
     DrawTexturePro(
-        renderTarget.texture,
+        texture,
         Rectangle{
             0.0f,
             0.0f,
-            static_cast<float>(renderTarget.texture.width),
-            static_cast<float>(-renderTarget.texture.height)
+            static_cast<float>(texture.width),
+            static_cast<float>(-texture.height)
         },
         renderDestination(context, runOptions),
         Vector2{ 0.0f, 0.0f },
@@ -646,11 +447,11 @@ void Engine::draw()
 
 void Engine::shutdown()
 {
-    shutdownVideoOutput();
+    session.unload();
 
     if (audioInitialized)
     {
-        audioSystem.shutdown();
+        CloseAudioDevice();
         audioInitialized = false;
     }
 
@@ -663,17 +464,6 @@ void Engine::shutdown()
     Logger::setDebugEnabled(false);
     Logger::setConsoleEnabled(false);
     SetTraceLogLevel(LOG_INFO);
-}
-
-void Engine::shutdownVideoOutput()
-{
-    if (!renderTargetLoaded)
-    {
-        return;
-    }
-
-    UnloadRenderTexture(renderTarget);
-    renderTargetLoaded = false;
 }
 
 float Engine::safeFrameDelta() const

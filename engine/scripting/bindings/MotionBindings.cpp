@@ -422,7 +422,7 @@ namespace
         if (parent != nullptr)
         {
             AttachmentRuntimeState::setOffset(
-                object->runtimeId,
+                *object,
                 Vector2{
                     object->position.x - parent->position.x,
                     object->position.y - parent->position.y

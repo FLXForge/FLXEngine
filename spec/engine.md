@@ -18,11 +18,11 @@ CompiledProject + RunOptions
         ↓
       Engine
         ↓
-Video / Audio / Input
+Ventana / dispositivo de audio
         ↓
- ScriptEngine
+   FlxSession
         ↓
- RuntimeWorld
+ RuntimeWorld / ScriptEngine
         ↓
   Main Loop
         ↓
@@ -34,8 +34,8 @@ Video / Audio / Input
 Engine debe:
 - recibir `CompiledProject` y `RunOptions`;
 - validar la configuración del host;
-- inicializar vídeo, audio e input;
-- conectar `ScriptEngine` con `RuntimeWorld`;
+- inicializar ventana y dispositivo físico de audio;
+- cargar `FlxSession`, que conecta los subsistemas lógicos;
 - ejecutar el bucle principal;
 - finalizar limpiamente los recursos;
 - devolver un `EngineResult`.
@@ -70,11 +70,8 @@ No modifica el proyecto compilado.
 configuración
 → validación de vídeo
 → ventana
-→ render target
-→ audio
-→ input
-→ ScriptEngine
-→ RuntimeWorld
+→ dispositivo de audio
+→ FlxSession (render target, audio prestado, input, ScriptEngine y RuntimeWorld)
 ```
 
 Si una fase falla, no se entra en el bucle principal.
@@ -119,6 +116,10 @@ Después:
 ## 10. Shutdown
 
 Es idempotente. Solo libera recursos realmente inicializados y funciona también tras fallos parciales.
+
+Desde v0.4.0, Engine DEBE descargar `FlxSession` antes de cerrar el dispositivo
+de audio y la ventana. La sesión no configura el logging global; esa configuración
+sigue perteneciendo a este host standalone. Véase [Runtime Session](runtime-session.md).
 
 ## 11. Política
 

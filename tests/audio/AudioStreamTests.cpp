@@ -157,6 +157,22 @@ int main()
         require(!audio.isMusicActive() && streams == 0, "failed allocation leaves no music");
         failLoad = false; audio.playMusic(score(1, true)); audio.shutdown(); audio.shutdown();
         require(streams == 0 && !audio.isMusicActive(), "shutdown releases stream once");
+        require(!IsAudioDeviceReady(), "owning audio closes its device");
+        InitAudioDevice();
+        {
+            AudioSystem borrowed;
+            require(borrowed.attachDevice(), "borrow host device");
+            borrowed.playMusic(score(1, true));
+            borrowed.shutdown();
+            borrowed.shutdown();
+            require(streams == 0 && IsAudioDeviceReady(), "release stream but preserve host device");
+            require(borrowed.attachDevice(), "reuse borrowed audio after shutdown");
+            borrowed.playMusic(score(1, true));
+        }
+        require(streams == 0 && IsAudioDeviceReady(), "destructor preserves borrowed device");
+        CloseAudioDevice();
+        AudioSystem unavailable;
+        require(!unavailable.attachDevice(), "cannot borrow missing device");
         std::cout << "[PASS] stream lifecycle, drain, underrun, loops, voices and failures\n";
         return 0;
     }

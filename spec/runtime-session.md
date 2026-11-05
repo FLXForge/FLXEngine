@@ -101,7 +101,7 @@ estado, vídeo deshabilitado en render o un fallo; el host DEBE consultar estado
 diagnósticos para distinguirlos. La API no descarga automáticamente al finalizar.
 
 `FlxSessionOptions` contiene `enableVideo=true`, `enableAudio=true`,
-`debugCollisions=false` y `inputProvider=nullptr`. Son opciones del host, no
+`debugCollisions=false`, `inputProvider=nullptr` y `savePath=std::nullopt`. Son opciones del host, no
 capacidades nuevas de Machine. Deshabilitar vídeo permite ejecución lógica sin
 superficie ni callbacks `draw`; `render()` devuelve `false`. Deshabilitar audio
 omite la materialización sonora sin modificar sus definiciones. Estas opciones
@@ -258,7 +258,7 @@ QuickJS NO DEBEN dejar recursos parciales propios sin liberar.
 
 Descargar NO DEBE eliminar datos guardados mediante las capacidades de persistencia
 existentes. El contexto temporal nuevo no implica borrar los archivos persistidos.
-No se introduce una nueva política de almacenamiento entre aplicaciones.
+La ubicación por sesión se configura según [persistencia](persistence.md).
 
 ## 9. Finalización y errores
 
@@ -430,3 +430,11 @@ El cierre exige biblioteca enlazable, API de sesión operativa, propiedad de
 recursos/dispositivos verificada, aislamiento/recuperación y compatibilidad CLI.
 La demostración o integración de una aplicación externa concreta sigue siendo
 independiente de esta capacidad general.
+
+## Directorio configurable de persistencia
+El contrato normativo de [persistencia](persistence.md) es aplicable.
+La sesión recibe una ruta opcional en FlxSessionOptions::savePath; el standalone
+la propaga desde RunOptions::savePath. Se resuelve una sola vez al cargar:
+omisión = cwd/saves, relativa = cwd al iniciar esa sesión. No depende de Machine,
+no cambia save()/load() ni el formato .flxsave, y no permite fallback silencioso.
+El CLI expone --save-path=<directory> exclusivamente para run y run-compiled.

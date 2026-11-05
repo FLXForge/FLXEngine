@@ -13,7 +13,7 @@ struct FlxSession::Impl
 {
     explicit Impl(const CompiledProject& source, const FlxSessionOptions& settings)
         : project(source), options(settings), context(project.context),
-          world(std::make_unique<RuntimeWorld>()), scriptEngine(std::make_unique<ScriptEngine>()) {}
+          world(std::make_unique<RuntimeWorld>()), scriptEngine(std::make_unique<ScriptEngine>(settings.savePath)) {}
 
     ~Impl()
     {

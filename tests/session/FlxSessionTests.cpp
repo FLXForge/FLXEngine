@@ -9,10 +9,78 @@
 #include <limits>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 using namespace flx::test;
 namespace
 {
+    void savePaths()
+    {
+        struct Sandbox
+        {
+            std::filesystem::path cwd = std::filesystem::current_path();
+            std::filesystem::path root = testRoot() / "session-save-paths";
+            Sandbox() { std::filesystem::remove_all(root); std::filesystem::create_directories(root); std::filesystem::current_path(root); }
+            ~Sandbox() { std::filesystem::current_path(cwd); std::error_code ec; std::filesystem::remove_all(root, ec); }
+        } sandbox;
+        const auto writer = sessionTestProject("function born(o){save('slot','k',true);write_global('value',load('slot','k',false));}");
+        const auto reader = sessionTestProject("function born(o){write_global('value',load('slot','k',false));}");
+        auto value = [](const FlxSession& s) { return std::get<bool>(*s.testGlobalValue("value")); };
+        auto options = FlxSessionOptions{};
+        options.enableVideo = options.enableAudio = false;
+        FlxSession first, second;
+        require(first.load(writer, options) && value(first), "default save/load");
+        require(std::filesystem::exists(sandbox.root / "saves/slot.flxsave"), "portable default");
+        first.unload();
+        options.savePath = sandbox.root / "absolute/nested";
+        require(first.load(writer, options) && value(first), "absolute directory creation");
+        require(std::filesystem::exists(*options.savePath / "slot.flxsave"), "absolute output");
+        first.unload();
+        options.savePath = "relative";
+        // Resolve at load, before any script action, not at each save/load.
+        require(first.load(sessionTestProject("function action(o){save('slot','k',true);write_global('value',load('slot','k',false));}"), options), "relative load");
+        std::filesystem::create_directory("other");
+        std::filesystem::current_path(sandbox.root / "other");
+        require(first.update(0) && value(first), "cwd changes do not redirect persistence");
+        require(std::filesystem::exists(sandbox.root / "relative/slot.flxsave"), "relative captured once");
+        require(!std::filesystem::exists(sandbox.root / "other/relative"), "no late resolution");
+        first.unload();
+        std::filesystem::current_path(sandbox.root);
+        options.savePath = sandbox.root / "isolated";
+        require(second.load(reader, options) && !value(second), "different sessions isolated");
+        second.unload();
+        options.savePath = sandbox.root / "relative";
+        require(second.load(reader, options) && value(second), "shared directory deliberately shares saves");
+        second.unload();
+        // Fixed legacy v1 bytes: FLXSAVE1, checksum, XOR payload, one boolean key k.
+        writeBinary(sandbox.root / "legacy/slot.flxsave", {70,76,88,83,65,86,69,49,87,238,226,67,91,90,90,90,91,90,90,90,91,90,90,90,49,91,90,90,90,91,90,90,90});
+        options.savePath = sandbox.root / "legacy";
+        require(first.load(reader, options) && value(first), "legacy format readable");
+        first.unload();
+        writeFile(sandbox.root / "blocked", "regular file");
+        options.savePath = sandbox.root / "blocked/child";
+        require(first.load(sessionTestProject("function born(o){save('nofallback','k',true);write_global('value',load('nofallback','k',false));}"), options) && !value(first), "write failure preserves JS default semantics");
+        require(!std::filesystem::exists(sandbox.root / "blocked/child"), "failed write has no alternate directory");
+        require(!std::filesystem::exists(sandbox.root / "saves/nofallback.flxsave"), "no default fallback file");
+        first.unload();
+        options.savePath = sandbox.root / "readonly";
+        require(first.load(writer, options), "create save before denying writes");
+        first.unload();
+        const auto lockedFile = *options.savePath / "slot.flxsave";
+        struct RestorePermissions
+        {
+            std::filesystem::path path;
+            ~RestorePermissions() { std::error_code ec; std::filesystem::permissions(path, std::filesystem::perms::owner_write, std::filesystem::perm_options::add, ec); }
+        } restore{lockedFile};
+        std::filesystem::permissions(lockedFile, std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write, std::filesystem::perm_options::remove);
+        require(first.load(sessionTestProject("function born(o){save('slot','k',false);write_global('value',load('slot','k',false));}"), options) && value(first), "read-only file rejects write and preserves saved value");
+        first.unload();
+        options.savePath = std::filesystem::path{};
+        require(!first.load(writer, options) && first.result().diagnostics.hasErrors(), "explicit empty host path rejected");
+        first.unload();
+        options.savePath = std::filesystem::path(std::string("bad\0path", 8));
+        require(!first.load(writer, options), "embedded NUL host path rejected");
+    }
     class Input : public PhysicalInputProvider
     {
     public:
@@ -155,7 +223,7 @@ int main()
 {
     try
     {
-        lifecycleAndOwnership(); errorsAndRecovery(); exitsAndScriptErrors();
+        savePaths(); lifecycleAndOwnership(); errorsAndRecovery(); exitsAndScriptErrors();
         inputAndAttachmentIsolation(); binaryExecutionWithoutSources();
         std::cout << "[PASS] session lifecycle, ownership, recovery, JS, input and binary execution\n";
     }

@@ -255,6 +255,7 @@ bool Engine::loadProject(
     FlxSessionOptions sessionOptions;
     sessionOptions.enableAudio = audioInitialized;
     sessionOptions.debugCollisions = runOptions.debugCollisions;
+    sessionOptions.savePath = runOptions.savePath;
     if (!session.load(project, sessionOptions))
     {
         result.diagnostics.append(session.result().diagnostics);

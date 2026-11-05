@@ -369,7 +369,8 @@ namespace
 
 }
 
-ScriptEngine::ScriptEngine()
+ScriptEngine::ScriptEngine(const std::optional<std::filesystem::path>& savePath)
+    : persistenceSystem(savePath)
 {
     runtime = JS_NewRuntime();
     if (!runtime) throw std::bad_alloc();

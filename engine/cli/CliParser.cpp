@@ -169,6 +169,7 @@ namespace
     )
     {
         if (
+            option == "--save-path" ||
             option == "--frames" ||
             option == "--window-mode" ||
             option == "--scale" ||
@@ -391,6 +392,24 @@ CliParseResult CliParser::parse(int argc, char* argv[]) const
                 DiagnosticCode::CliErrorUnclassified,
                 "--version is only valid without additional arguments");
             return result;
+        }
+
+        if (token.rfind("--save-path=", 0) == 0)
+        {
+            const auto value = token.substr(12);
+            if (!optionAllowed(result.arguments.command, "--save-path") ||
+                result.arguments.runOptions.savePath.has_value() || value.empty() ||
+                value.find('\0') != std::string::npos)
+            {
+                result.success = false;
+                result.exitCode = CliExitCode::InvalidArguments;
+                result.diagnostics.error(DiagnosticCode::CliErrorUnclassified,
+                    "--save-path requires one nonempty directory, only for run and run-compiled");
+                return result;
+            }
+            result.arguments.runOptions.savePath = std::filesystem::path(value);
+            ++index;
+            continue;
         }
 
         if (token.rfind("--frames=", 0) == 0)

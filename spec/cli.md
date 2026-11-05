@@ -457,6 +457,7 @@ Commands:
 Options:
   --help, -h
   --version, -v
+  --save-path=<directory>        Save directory (default: cwd/saves)
   --frames=<number>              Only for run and run-compiled
   --window-mode=<window|fullscreen>
                                  Only for run and run-compiled
@@ -1131,3 +1132,11 @@ Toda modificación del contrato del CLI debe:
 -   `--scale` y `--window-mode` no modifican `project.flx`, la Machine
     ni `.flxc`.
 -   Los diagnósticos usan el formato `FLX-DOMAIN-NNNNN`.
+
+## Directorio configurable de persistencia
+El contrato normativo de [persistencia](persistence.md) es aplicable.
+La sesión recibe una ruta opcional en FlxSessionOptions::savePath; el standalone
+la propaga desde RunOptions::savePath. Se resuelve una sola vez al cargar:
+omisión = cwd/saves, relativa = cwd al iniciar esa sesión. No depende de Machine,
+no cambia save()/load() ni el formato .flxsave, y no permite fallback silencioso.
+El CLI expone --save-path=<directory> exclusivamente para run y run-compiled.

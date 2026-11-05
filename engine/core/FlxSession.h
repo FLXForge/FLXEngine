@@ -2,6 +2,8 @@
 
 #include "../compiler/CompiledProject.h"
 #include <memory>
+#include <filesystem>
+#include <optional>
 #include <raylib.h>
 #ifdef FLX_TESTING
 #include "../runtime/ScriptValue.h"
@@ -31,6 +33,8 @@ struct FlxSessionOptions
     bool debugCollisions = false;
     // Borrowed: must outlive the loaded session. nullptr selects raylib input.
     PhysicalInputProvider* inputProvider = nullptr;
+    // Omitted: cwd/saves. Relative paths resolve once during load().
+    std::optional<std::filesystem::path> savePath;
 };
 
 // Single-threaded, non-reentrant host API. Owns execution, never physical devices.

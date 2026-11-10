@@ -166,9 +166,9 @@ EngineResult Engine::run(
             EngineExitReason::WindowClosed;
     }
 
+    result.diagnostics.append(session.result().diagnostics);
     if (session.state() == FlxSessionState::Failed)
     {
-        result.diagnostics.append(session.result().diagnostics);
         result.exitReason = EngineExitReason::RuntimeLoadFailed;
     }
     result.success = !result.diagnostics.hasErrors();
@@ -253,10 +253,10 @@ bool Engine::loadProject(
     InitAudioDevice();
     audioInitialized = IsAudioDeviceReady();
     FlxSessionOptions sessionOptions;
-    sessionOptions.enableAudio = audioInitialized;
     sessionOptions.debugCollisions = runOptions.debugCollisions;
     sessionOptions.savePath = runOptions.savePath;
-    if (!session.load(project, sessionOptions))
+    const bool loaded = session.load(project, sessionOptions);
+    if (!loaded)
     {
         result.diagnostics.append(session.result().diagnostics);
         result.exitReason = EngineExitReason::RuntimeLoadFailed;

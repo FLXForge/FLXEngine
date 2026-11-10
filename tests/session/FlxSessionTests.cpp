@@ -76,7 +76,9 @@ namespace
         require(first.load(sessionTestProject("function born(o){save('slot','k',false);write_global('value',load('slot','k',false));}"), options) && value(first), "read-only file rejects write and preserves saved value");
         first.unload();
         options.savePath = std::filesystem::path{};
-        require(!first.load(writer, options) && first.result().diagnostics.hasErrors(), "explicit empty host path rejected");
+        require(!first.load(writer, options), "explicit empty host path rejected");
+        require(first.result().diagnostics.all().front().code == DiagnosticCode::InvalidSessionConfiguration,
+            "initialization exception is attributed to configuration");
         first.unload();
         options.savePath = std::filesystem::path(std::string("bad\0path", 8));
         require(!first.load(writer, options), "embedded NUL host path rejected");
@@ -122,6 +124,9 @@ namespace
         }
         require(session.state() == FlxSessionState::Ready, "loaded state");
         require(!session.load(sessionTestProject(), logical()), "loaded project cannot be replaced");
+        require(session.result().success && !session.result().diagnostics.hasErrors() &&
+            session.result().diagnostics.all().back().code == DiagnosticCode::SessionLoadInvalidState,
+            "rejected load keeps the running project's result successful");
         require(session.update(0.25f), "host delta update");
         require(session.state() == FlxSessionState::Running, "running state");
         require(session.testObject("root")->position.x == 32.25f, "embedded delta is not standalone-clamped");
@@ -142,9 +147,16 @@ namespace
         auto invalid = sessionTestProject(); invalid.rootId = "absent";
         require(!session.load(invalid, logical()), "bad root rejected");
         require(session.state() == FlxSessionState::Failed && session.result().diagnostics.hasErrors(), "failed load diagnostics");
+        require(session.result().diagnostics.size() == 1 &&
+            session.result().diagnostics.all().front().code == DiagnosticCode::CompiledProjectMissingRoot,
+            "original world diagnostic is preserved without a generic duplicate");
         require(!session.load(sessionTestProject(), logical()), "failed session needs explicit unload");
+        require(session.result().diagnostics.all().back().code == DiagnosticCode::SessionLoadInvalidState,
+            "rejected load has its own diagnostic");
         session.unload();
+        require(session.result().diagnostics.size() == 2, "diagnostics survive unload");
         require(session.load(sessionTestProject(), logical()), "recovery after invalid project");
+        require(session.result().diagnostics.empty(), "disabled audio does not warn");
         require(!session.update(std::numeric_limits<float>::quiet_NaN()), "invalid delta rejected");
         require(session.state() == FlxSessionState::Failed && session.output().id == 0, "failed execution releases resources");
         require(session.result().exitReason == FlxSessionExitReason::RuntimeFailed, "runtime failure differs from load failure");
@@ -158,13 +170,24 @@ namespace
         session.unload();
         auto options = logical(); options.enableVideo = true;
         require(!session.load(sessionTestProject(), options), "video needs host graphics context");
+        require(session.result().diagnostics.all().front().code == DiagnosticCode::WindowInitializationFailed,
+            "missing graphics context is fatal");
         require(!IsWindowReady(), "session must never initialize window");
         session.unload(); options = logical(); options.enableAudio = true;
-        require(!session.load(sessionTestProject(), options), "audio needs host device");
+        require(session.load(sessionTestProject(), options), "audio device is optional");
         require(!IsAudioDeviceReady(), "session must never initialize audio device");
+        require(session.result().success && !session.result().diagnostics.hasErrors(), "missing audio does not fail load");
+        require(session.result().diagnostics.all().front().code == DiagnosticCode::SessionAudioUnavailable &&
+            session.result().diagnostics.all().front().severity == DiagnosticSeverity::Warning, "structured audio warning");
+        require(session.update(0), "silent session updates");
+        session.requestStop();
         session.unload();
+        require(session.result().success && session.result().diagnostics.size() == 1, "silent session warning survives unload");
         auto videoInvalid = sessionTestProject(); videoInvalid.context.machine.video.screenHeight = 0;
         require(!session.load(videoInvalid, logical()), "invalid logical size rejected");
+        require(session.result().diagnostics.size() == 1 &&
+            session.result().diagnostics.all().front().code == DiagnosticCode::InvalidVideoOutputConfiguration,
+            "new load replaces diagnostics and identifies invalid video configuration");
     }
     void exitsAndScriptErrors()
     {

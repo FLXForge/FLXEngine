@@ -71,6 +71,26 @@ int main()
     SetConfigFlags(FLAG_WINDOW_HIDDEN);
     InitWindow(96, 96, "FLX persistent host test");
     if (!IsWindowReady()) return 77;
+    try
+    {
+        FlxSession silent;
+        require(!IsAudioDeviceReady(), "silent test does not open an audio device");
+        require(silent.load(deviceProject("red", 32)), "born can request sound and music without audio");
+        require(!silent.testAudioSystem()->isMusicActive() &&
+            silent.testAudioSystem()->testActiveSoundCount() == 0, "no device resources were created");
+        require(silent.update(0.01f) && silent.render() && silent.output().id, "silent session renders");
+        require(silent.update(0.01f) && silent.update(0.01f) && silent.finished(), "silent session exits normally");
+        silent.unload();
+        require(silent.result().success && silent.result().diagnostics.size() == 1 &&
+            silent.result().diagnostics.all().front().code == DiagnosticCode::SessionAudioUnavailable,
+            "audio warning survives completion and unload");
+    }
+    catch (const std::exception& error)
+    {
+        std::cerr << error.what() << '\n';
+        CloseWindow();
+        return 1;
+    }
     InitAudioDevice();
     if (!IsAudioDeviceReady()) { CloseWindow(); return 77; }
     const auto handle = GetWindowHandle();
@@ -89,6 +109,7 @@ int main()
             {
                 auto source = deviceProject(entry.first, width);
                 require(session.load(source), "load in persistent host");
+                require(session.result().diagnostics.empty(), "no warning with a ready audio device");
             }
             require(session.output().width == width, "Machine logical resolution");
             require(session.testAudioSystem()->isMusicActive(), "session music plays on host device");

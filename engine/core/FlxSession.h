@@ -66,7 +66,9 @@ public:
 private:
     struct Impl;
     void finish(FlxSessionExitReason reason);
-    bool fail(DiagnosticCode code, const std::string& message, FlxSessionExitReason reason);
+    bool markFailed(FlxSessionExitReason reason);
+    bool fail(DiagnosticCode code, const std::string& message, FlxSessionExitReason reason,
+        const char* stage = "");
     std::unique_ptr<Impl> impl;
     FlxSessionState currentState = FlxSessionState::Empty;
     FlxSessionResult lastResult;

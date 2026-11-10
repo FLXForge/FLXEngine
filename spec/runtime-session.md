@@ -22,7 +22,8 @@ desde JavaScript.
 
 ### RS-001 — Host y sesión
 
-El host DEBE crear y destruir ventana, contexto gráfico y dispositivo de audio.
+El host es responsable de crear y destruir la ventana, el contexto gráfico y
+el dispositivo de audio que ofrezca a la sesión.
 DEBE controlar el loop, el delta, el frame físico, la presentación y la
 configuración global de logging/raylib. La sesión NO DEBE llamar a `InitWindow`,
 `CloseWindow`, `InitAudioDevice`, `CloseAudioDevice`, `BeginDrawing` ni `EndDrawing`.
@@ -40,8 +41,9 @@ detención o descarga desde callbacks del proveedor físico ni concurrentemente.
 El proveedor NO DEBE destruir la sesión que lo está consultando.
 
 Una carga solo se admite en `Empty`. Cargar en cualquier otro estado DEBE devolver
-`false` sin sustituir el proyecto ni alterar su estado o resultado. El host DEBE
-usar `unload()` antes de cargar de nuevo.
+`false` y añadir el warning `FLX-RUNTIME-00017` al resultado existente. DEBE
+preservar el proyecto, estado, éxito, motivo y contador de la ejecución. El host
+DEBE usar `unload()` antes de cargar de nuevo.
 
 ### RS-003 — Targets CMake
 
@@ -135,7 +137,8 @@ La ausencia de objetos vivos NO constituye por sí sola una condición nueva de 
 `update()` y `render()` NO DEBEN ejecutar callbacks en `Empty`, `Finished` o
 `Failed`; devuelven `false`. `render()` PUEDE ejecutarse en `Ready`, sin cambiarlo
 a `Running`. Una ejecución finalizada solo puede reiniciarse mediante descarga y
-nueva carga. Una operación rechazada por estado no añade un error al resultado.
+nueva carga. El rechazo de `load()` se diagnostica según RS-002. Los rechazos de
+`update()` y `render()` por estado no modifican el resultado.
 
 ### RS-009 — Descarga
 
@@ -150,9 +153,10 @@ El contexto y callbacks JS DEBEN destruirse antes del mundo al que referencian;
 el mundo DEBE desaparecer antes del proyecto propio. Sonidos/streams y render
 target DEBEN liberarse mientras sus dispositivos sigan disponibles.
 
-El host DEBE conservar contexto gráfico, dispositivo de audio y proveedor prestado
-hasta terminar `unload()` o destruir la sesión. Cerrar dispositivos antes viola
-la precondición; la sesión no recupera un contexto externo destruido.
+El host DEBE conservar el contexto gráfico, el dispositivo de audio adjuntado y
+el proveedor prestado que utilice la sesión hasta terminar `unload()` o destruirla.
+Cerrar dispositivos en uso antes viola la precondición; la sesión no recupera
+un contexto externo destruido.
 
 ### RS-011 — Finalización diferida
 
@@ -207,10 +211,14 @@ la presentación standalone, no a los argumentos de los bindings.
 
 ### RS-015 — Dispositivo prestado
 
-Con audio habilitado, el host DEBE inicializar el dispositivo antes de `load()`.
-Sin él, la carga DEBE fallar con diagnóstico. La sesión utiliza `attachDevice()`;
-NO DEBE inicializar ni cerrar el dispositivo. La modalidad propietaria de
-`AudioSystem::init()` conserva su comportamiento para consumidores existentes.
+Para reproducir audio, el host DEBE ofrecer un dispositivo inicializado al
+llamar a `load()`. Si `enableAudio=true` y `attachDevice()` falla, la sesión
+DEBE continuar sin sonido y conservar el warning `FLX-RUNTIME-00016`. Las
+operaciones de sonido y música DEBEN ser seguras sin dispositivo. La sesión
+no vuelve a intentar adjuntar audio durante la ejecución. Con
+`enableAudio=false` el silencio es deliberado y no produce ese aviso.
+La sesión NO DEBE inicializar ni cerrar el dispositivo. La modalidad propietaria
+de `AudioSystem::init()` conserva su comportamiento para consumidores existentes.
 
 ### RS-016 — Recursos de ejecución
 
@@ -280,16 +288,24 @@ del host, no un error nuevo de mundo.
 `result()` DEBE permitir consultar `success`, `exitReason`, `diagnostics` y
 `framesExecuted`; `state()` proporciona el estado actual. Los motivos son `None`,
 `ScriptRequestedExit`, `HostRequestedStop`, `LoadFailed` y `RuntimeFailed`.
-La carga correcta y la terminación solicitada son exitosas. Los fallos DEBEN
-conservar los diagnósticos de carga y añadir el diagnóstico de sesión pertinente.
+La carga correcta y la terminación solicitada son exitosas y PUEDEN contener
+advertencias. Un fallo fatal DEBE tener al menos un diagnóstico de error.
+La sesión DEBE conservar los diagnósticos originales del mundo, sin añadir un
+error genérico si ya hay uno específico. Véase el [catálogo](diagnostics.md).
 
 El contador de sesión cuenta actualizaciones completadas sin solicitar `exit()`.
 Renderizar varias veces sin actualizar NO incrementa ese contador. `EngineResult`
 conserva su contador histórico de frames presentados; un exit antes de draw no
 suma un frame. Los resultados de sesión se conservan tras unload hasta la
-siguiente carga, que DEBE comenzar con un resultado nuevo.
+siguiente carga admitida en `Empty`, que DEBE comenzar con un resultado nuevo.
 
 ### RS-025 — Fallo y recuperación
+
+La falta de un servicio opcional puede ser recuperable según su contrato
+(RS-015). Dimensiones inválidas, falta de contexto gráfico con vídeo
+habilitado, fallo de la superficie, configuración inválida o errores al
+preparar input, scripting o mundo son fatales. La sesión libera sus recursos,
+devuelve `false` y queda en `Failed` con motivo `LoadFailed`.
 
 Una excepción C++ estándar durante carga, input, actualización o renderizado DEBE
 convertirse en fallo diagnosticado y liberar recursos propios. Un fallo NO DEBE
@@ -348,6 +364,9 @@ presentación efectivos. DEBE comprobar colores/superficie, reproducción, fin,
 fallo parcial, nueva sesión y destrucción conservando los dispositivos. Requiere
 ventana/contexto y audio reales; devuelve 77 si se solicita headless o no están
 disponibles. Ese caso es omitido, no superado.
+Con contexto gráfico y antes de inicializar audio, DEBE comprobar también que
+un proyecto puede solicitar sonidos, actualizarse, renderizar y finalizar sin
+dispositivo de audio, conservando el aviso tras descargar.
 
 ### RS-032 — CLI y equivalencia
 

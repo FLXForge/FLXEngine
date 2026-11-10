@@ -41,7 +41,7 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 96, "registry should include generic codes and implemented project/resource/input/binary/runtime codes");
+        require(codes.size() == 100, "registry should include the session diagnostic codes");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;

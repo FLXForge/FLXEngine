@@ -130,7 +130,12 @@ enum class DiagnosticCode
     BuildWarningUnclassified,
     BuildErrorUnclassified,
     BuildUnexpectedInternalError,
-    BuildDeprecatedFunctionality
+    BuildDeprecatedFunctionality,
+
+    SessionAudioUnavailable,
+    SessionLoadInvalidState,
+    InvalidSessionConfiguration,
+    InvalidSessionDelta
 };
 
 struct SourcePosition

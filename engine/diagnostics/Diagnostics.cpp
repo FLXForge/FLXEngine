@@ -106,6 +106,10 @@ namespace
             { DiagnosticCode::RenderTargetInitializationFailed, "FLX-RUNTIME-00013", "RenderTargetInitializationFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Render target could not be initialized." },
             { DiagnosticCode::RuntimeWorldLoadFailed, "FLX-RUNTIME-00014", "RuntimeWorldLoadFailed", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime world could not be loaded." },
             { DiagnosticCode::RuntimeLoadSpawnLimitExceeded, "FLX-RUNTIME-00015", "RuntimeLoadSpawnLimitExceeded", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Runtime load spawn limit was exceeded." },
+            { DiagnosticCode::SessionAudioUnavailable, "FLX-RUNTIME-00016", "SessionAudioUnavailable", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Audio device unavailable. The project will run without sound." },
+            { DiagnosticCode::SessionLoadInvalidState, "FLX-RUNTIME-00017", "SessionLoadInvalidState", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Unload the session before loading another project." },
+            { DiagnosticCode::InvalidSessionConfiguration, "FLX-RUNTIME-00018", "InvalidSessionConfiguration", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Invalid session configuration." },
+            { DiagnosticCode::InvalidSessionDelta, "FLX-RUNTIME-00019", "InvalidSessionDelta", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Session frame delta must be finite and non-negative." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

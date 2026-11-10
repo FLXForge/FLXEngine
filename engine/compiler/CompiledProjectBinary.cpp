@@ -7,6 +7,7 @@
 #include "binary/CompiledProjectCodec.h"
 
 #include <filesystem>
+#include <exception>
 #include <fstream>
 
 namespace
@@ -270,7 +271,7 @@ bool CompiledProjectWriter::write(
 
 CompiledProjectBinaryResult CompiledProjectReader::read(
     const std::string& path
-)
+) try
 {
     CompiledProjectBinaryResult result;
 
@@ -345,5 +346,12 @@ CompiledProjectBinaryResult CompiledProjectReader::read(
     result.success =
         !result.diagnostics.hasErrors();
 
+    return result;
+}
+catch (const std::exception& error)
+{
+    CompiledProjectBinaryResult result;
+    result.diagnostics.error(DiagnosticCode::BinaryUnexpectedInternalError,
+        std::string("Could not read compiled project: ") + error.what(), path, "file");
     return result;
 }

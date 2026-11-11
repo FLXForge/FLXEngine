@@ -50,7 +50,7 @@ jobs:
 
       - name: Install development and virtual display dependencies
         id: setup
-        timeout-minutes: 14
+        timeout-minutes: 45
         run: |
           mkdir -p diagnostics
           # Ubuntu 24.04 uses deb822 .sources and mirror+file, not just sources.list.

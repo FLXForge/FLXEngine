@@ -108,6 +108,19 @@ jobs:
               updated, count = re.subn(r'https?://azure\.archive\.ubuntu\.com/ubuntu(?=[/\s]|$)',
                                        'https://archive.ubuntu.com/ubuntu', original)
               if count:
+                  if path == pathlib.Path('/etc/apt/apt-mirrors.txt'):
+                      # Azure's replacement already exists at priority 2 in this image.
+                      # Keep the first archive entry and preserve every other mirror.
+                      kept = []
+                      archive_seen = False
+                      for line in updated.splitlines(keepends=True):
+                          fields = line.split()
+                          if fields and fields[0].rstrip('/') == 'https://archive.ubuntu.com/ubuntu':
+                              if archive_seen:
+                                  continue
+                              archive_seen = True
+                          kept.append(line)
+                      updated = ''.join(kept)
                   path.write_text(updated)
                   print(f'Updated {path}: {count} Azure URI(s)')
                   changed += count
@@ -115,8 +128,40 @@ jobs:
               raise SystemExit('No supported Azure APT URI found; refusing an unrelated fallback')
           PY
               log_apt_sources > diagnostics/apt-sources-after.log
+              # Probe both configured Ubuntu hosts before retrying APT. Do not force an
+              # address family, bypass DNS, follow redirects or relax certificate checks.
+              probe_ubuntu_repositories() {
+                local host suite dns_status https_status failed=0
+                for host in archive.ubuntu.com security.ubuntu.com; do
+                  suite=noble
+                  if [ "$host" = security.ubuntu.com ]; then suite=noble-security; fi
+                  printf '\nHost: %s; suite: %s\n' "$host" "$suite"
+                  dns_status=0
+                  timeout --kill-after=2s 10s getent ahosts "$host" || dns_status=$?
+                  printf 'DNS exit code: %s\n' "$dns_status"
+                  https_status=0
+                  timeout --kill-after=2s 20s curl --silent --show-error --fail \
+                    --proto '=https' --connect-timeout 5 --max-time 15 \
+                    --output /dev/null \
+                    --write-out 'HTTP=%{http_code} DNS=%{time_namelookup}s CONNECT=%{time_connect}s TLS=%{time_appconnect}s TOTAL=%{time_total}s\n' \
+                    "https://$host/ubuntu/dists/$suite/InRelease" || https_status=$?
+                  printf 'HTTPS exit code: %s\n' "$https_status"
+                  if [ "$dns_status" -ne 0 ] || [ "$https_status" -ne 0 ]; then
+                    echo "::error::Ubuntu repository probe failed for $host (DNS=$dns_status, HTTPS=$https_status)."
+                    failed=1
+                  fi
+                done
+                return "$failed"
+              }
+              probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes.log
               # A failed fallback remains fatal, including any third-party repository failure.
-              apt_attempt fallback
+              if apt_attempt fallback; then
+                :
+              else
+                status=$?
+                echo "::error::APT fallback failed (exit=$status); inspect apt-update-fallback.log and apt-install-fallback.log if present. Exit 124 indicates the command watchdog expired."
+                exit "$status"
+              fi
             else
               exit "$status"
             fi

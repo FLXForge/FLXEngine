@@ -182,64 +182,28 @@ jobs:
                 :
               else
                 diagnose_resolver 2>&1 | tee diagnostics/apt-resolver.log
-                # A fresh runner has also failed after a cache reset. Test the
-                # configured upstream directly before trying one named public resolver.
                 {
+                  # Query the runner's configured upstream directly, over both transports.
+                  # Do not replace DNS servers or pin repository addresses.
                   while read -r upstream; do
                     for host in archive.ubuntu.com security.ubuntu.com; do
                       dig +time=2 +tries=1 "@$upstream" "$host" A || echo "upstream UDP exit=$?"
                       dig +tcp +time=2 +tries=1 "@$upstream" "$host" A || echo "upstream TCP exit=$?"
                     done
                   done < <(awk '$1 == "nameserver" { print $2 }' /run/systemd/resolve/resolv.conf)
-                } 2>&1 | tee diagnostics/apt-upstream-dns.log
-                recovered=0
-                # Bootstrap by hostname, never by a hardcoded resolver or repository IP.
-                # Only a confirmed DNS failure permits this ephemeral DNS change.
-                if grep -Eq 'DNS exit code: [1-9]' diagnostics/apt-fallback-probes.log; then
-                  candidates=$(timeout --kill-after=2s 5s getent ahostsv4 dns.google |
-                    awk '$2 == "STREAM" { print $1 }' | sort -u | sed -n '1,2p') || candidates=''
-                  interface=$(ip -4 route show default | awk 'NR == 1 { print $5 }')
-                  if [ -n "$interface" ]; then
-                    read -r -a saved_dns <<< "$(resolvectl dns "$interface" | sed 's/^[^:]*: //')"
-                    for resolver in $candidates; do
-                      for transport in udp tcp; do
-                        dns_transport=()
-                        if [ "$transport" = tcp ]; then dns_transport=(+tcp); fi
-                        usable=1
-                        for host in archive.ubuntu.com security.ubuntu.com; do
-                          answers=$(dig "${dns_transport[@]}" +time=2 +tries=1 "@$resolver" "$host" A +noall +answer |
-                            awk '$4 == "A" { print $5 }') || answers=''
-                          printf 'Resolver %s; transport %s; host %s; A answers: %s\n' "$resolver" "$transport" "$host" "$answers" |
-                            tee -a diagnostics/apt-alternate-dns.log
-                          if [ -z "$answers" ]; then usable=0; fi
-                        done
-                        if [ "$usable" -eq 1 ]; then
-                          if [ "$transport" = tcp ]; then
-                            # glibc use-vc queries the verified resolver via TCP. Preserve
-                            # the original resolv.conf symlink/file and restore it on exit.
-                            dns_backup=$(mktemp "$RUNNER_TEMP/flx-resolv.XXXXXXXX")
-                            sudo cp -P --remove-destination /etc/resolv.conf "$dns_backup"
-                            trap 'sudo cp -P --remove-destination "$dns_backup" /etc/resolv.conf && rm -f -- "$dns_backup" "$dns_backup.tcp"' EXIT
-                            printf 'nameserver %s\noptions use-vc timeout:5 attempts:1\n' "$resolver" > "$dns_backup.tcp"
-                            sudo cp --remove-destination "$dns_backup.tcp" /etc/resolv.conf
-                          else
-                            trap 'timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "${saved_dns[@]}"' EXIT
-                            timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "$resolver"
-                            timeout --kill-after=2s 10s sudo resolvectl flush-caches
-                          fi
-                          if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes-after-dns.log; then
-                            recovered=1
-                          fi
-                          break 2
-                        fi
-                      done
+                  for host in archive.ubuntu.com security.ubuntu.com; do
+                    for family in --ipv4 --ipv6; do
+                      printf '\nHTTPS diagnostic: %s %s\n' "$host" "$family"
+                      timeout --kill-after=2s 20s curl "$family" --silent --show-error --fail \
+                        --proto '=https' --connect-timeout 5 --max-time 15 \
+                        --output /dev/null \
+                        --write-out 'HTTP=%{http_code} DNS=%{time_namelookup}s CONNECT=%{time_connect}s TLS=%{time_appconnect}s TOTAL=%{time_total}s\n' \
+                        "https://$host/ubuntu/dists/noble/InRelease" || echo "curl exit=$?"
                     done
-                  fi
-                fi
-                if [ "$recovered" -ne 1 ]; then
-                  echo '::error::Ubuntu DNS/HTTPS could not be recovered; see resolver diagnostics. Dependencies were not installed.'
-                  exit 1
-                fi
+                  done
+                } 2>&1 | tee diagnostics/apt-network.log
+                echo '::error::Runner cannot reach the official Ubuntu repositories; inspect apt-resolver.log, apt-network.log and apt-fallback-probes.log. Refusing incomplete dependencies.'
+                exit 1
               fi
               # A failed fallback remains fatal, including any third-party repository failure.
               if apt_attempt fallback; then

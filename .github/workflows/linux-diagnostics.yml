@@ -153,7 +153,50 @@ jobs:
                 done
                 return "$failed"
               }
-              probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes.log
+              diagnose_resolver() {
+                local host family result
+                echo '--- Resolver configuration ---'
+                cat /etc/resolv.conf
+                grep '^hosts:' /etc/nsswitch.conf
+                if command -v resolvectl >/dev/null; then
+                  timeout --kill-after=2s 10s resolvectl status || echo "resolvectl status exit=$?"
+                fi
+                for host in azure.archive.ubuntu.com archive.ubuntu.com security.ubuntu.com packages.microsoft.com; do
+                  for family in ahostsv4 ahostsv6; do
+                    printf '\nDNS query: %s %s\n' "$host" "$family"
+                    result=0
+                    timeout --kill-after=2s 5s getent "$family" "$host" || result=$?
+                    printf 'getent exit=%s\n' "$result"
+                  done
+                  if command -v resolvectl >/dev/null; then
+                    timeout --kill-after=2s 5s resolvectl query "$host" || echo "resolvectl query exit=$?"
+                  fi
+                  if command -v dig >/dev/null; then
+                    # Use the runner's existing resolver; never hardcode a DNS server.
+                    dig +time=2 +tries=1 "$host" A || echo "dig A exit=$?"
+                    dig +time=2 +tries=1 "$host" AAAA || echo "dig AAAA exit=$?"
+                  fi
+                done
+              }
+              if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes.log; then
+                :
+              else
+                diagnose_resolver 2>&1 | tee diagnostics/apt-resolver.log
+                # One cache reset on the existing resolver, not a DNS configuration change.
+                # Retest HTTPS with normal certificate verification before allowing APT.
+                if command -v resolvectl >/dev/null; then
+                  {
+                    timeout --kill-after=2s 10s sudo resolvectl flush-caches || echo "flush-caches exit=$?"
+                    timeout --kill-after=2s 10s sudo resolvectl reset-server-features || echo "reset-server-features exit=$?"
+                  } 2>&1 | tee diagnostics/apt-resolver-reset.log
+                fi
+                if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes-after-reset.log; then
+                  echo 'Resolver recovered; proceeding with the single APT fallback.'
+                else
+                  echo '::error::Ubuntu DNS/HTTPS remains unavailable after one resolver cache reset; see apt-resolver.log and probe logs. Dependencies were not installed.'
+                  exit 1
+                fi
+              fi
               # A failed fallback remains fatal, including any third-party repository failure.
               if apt_attempt fallback; then
                 :

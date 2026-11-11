@@ -50,7 +50,7 @@ jobs:
 
       - name: Install development and virtual display dependencies
         id: setup
-        timeout-minutes: 45
+        timeout-minutes: 15
         run: |
           mkdir -p diagnostics
           # Ubuntu 24.04 uses deb822 .sources and mirror+file, not just sources.list.
@@ -128,89 +128,32 @@ jobs:
               raise SystemExit('No supported Azure APT URI found; refusing an unrelated fallback')
           PY
               log_apt_sources > diagnostics/apt-sources-after.log
-              # Probe both configured Ubuntu hosts before retrying APT. Do not force an
-              # address family, bypass DNS, follow redirects or relax certificate checks.
-              probe_ubuntu_repositories() {
-                local host suite dns_status https_status failed=0
-                for host in archive.ubuntu.com security.ubuntu.com; do
-                  suite=noble
-                  if [ "$host" = security.ubuntu.com ]; then suite=noble-security; fi
-                  printf '\nHost: %s; suite: %s\n' "$host" "$suite"
-                  dns_status=0
-                  timeout --kill-after=2s 10s getent ahosts "$host" || dns_status=$?
-                  printf 'DNS exit code: %s\n' "$dns_status"
-                  https_status=0
-                  timeout --kill-after=2s 20s curl --silent --show-error --fail \
-                    --proto '=https' --connect-timeout 5 --max-time 15 \
-                    --output /dev/null \
-                    --write-out 'HTTP=%{http_code} DNS=%{time_namelookup}s CONNECT=%{time_connect}s TLS=%{time_appconnect}s TOTAL=%{time_total}s\n' \
-                    "https://$host/ubuntu/dists/$suite/InRelease" || https_status=$?
-                  printf 'HTTPS exit code: %s\n' "$https_status"
-                  if [ "$dns_status" -ne 0 ] || [ "$https_status" -ne 0 ]; then
-                    echo "::error::Ubuntu repository probe failed for $host (DNS=$dns_status, HTTPS=$https_status)."
-                    failed=1
-                  fi
-                done
-                return "$failed"
-              }
-              diagnose_resolver() {
-                local host family result
-                echo '--- Resolver configuration ---'
-                cat /etc/resolv.conf
-                grep '^hosts:' /etc/nsswitch.conf
-                if command -v resolvectl >/dev/null; then
-                  timeout --kill-after=2s 10s resolvectl status || echo "resolvectl status exit=$?"
-                fi
-                for host in azure.archive.ubuntu.com archive.ubuntu.com security.ubuntu.com packages.microsoft.com; do
-                  for family in ahostsv4 ahostsv6; do
-                    printf '\nDNS query: %s %s\n' "$host" "$family"
-                    result=0
-                    timeout --kill-after=2s 5s getent "$family" "$host" || result=$?
-                    printf 'getent exit=%s\n' "$result"
-                  done
-                  if command -v resolvectl >/dev/null; then
-                    timeout --kill-after=2s 5s resolvectl query "$host" || echo "resolvectl query exit=$?"
-                  fi
-                  if command -v dig >/dev/null; then
-                    # Use the runner's existing resolver; never hardcode a DNS server.
-                    dig +time=2 +tries=1 "$host" A || echo "dig A exit=$?"
-                    dig +time=2 +tries=1 "$host" AAAA || echo "dig AAAA exit=$?"
-                  fi
-                done
-              }
-              if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes.log; then
-                :
-              else
-                diagnose_resolver 2>&1 | tee diagnostics/apt-resolver.log
-                {
-                  # Query the runner's configured upstream directly, over both transports.
-                  # Do not replace DNS servers or pin repository addresses.
-                  while read -r upstream; do
-                    for host in archive.ubuntu.com security.ubuntu.com; do
-                      dig +time=2 +tries=1 "@$upstream" "$host" A || echo "upstream UDP exit=$?"
-                      dig +tcp +time=2 +tries=1 "@$upstream" "$host" A || echo "upstream TCP exit=$?"
-                    done
-                  done < <(awk '$1 == "nameserver" { print $2 }' /run/systemd/resolve/resolv.conf)
-                  for host in archive.ubuntu.com security.ubuntu.com; do
-                    for family in --ipv4 --ipv6; do
-                      printf '\nHTTPS diagnostic: %s %s\n' "$host" "$family"
-                      timeout --kill-after=2s 20s curl "$family" --silent --show-error --fail \
-                        --proto '=https' --connect-timeout 5 --max-time 15 \
-                        --output /dev/null \
-                        --write-out 'HTTP=%{http_code} DNS=%{time_namelookup}s CONNECT=%{time_connect}s TLS=%{time_appconnect}s TOTAL=%{time_total}s\n' \
-                        "https://$host/ubuntu/dists/noble/InRelease" || echo "curl exit=$?"
-                    done
-                  done
-                } 2>&1 | tee diagnostics/apt-network.log
-                echo '::error::Runner cannot reach the official Ubuntu repositories; inspect apt-resolver.log, apt-network.log and apt-fallback-probes.log. Refusing incomplete dependencies.'
-                exit 1
-              fi
-              # A failed fallback remains fatal, including any third-party repository failure.
+              # APT itself validates the required repositories and signed indexes.
+              # Optional mirror probes must not block an otherwise successful install.
               if apt_attempt fallback; then
                 :
               else
                 status=$?
-                echo "::error::APT fallback failed (exit=$status); inspect apt-update-fallback.log and apt-install-fallback.log if present. Exit 124 indicates the command watchdog expired."
+                {
+                  echo '--- Resolver configuration ---'
+                  cat /etc/resolv.conf
+                  timeout --kill-after=2s 10s resolvectl status || echo "resolvectl exit=$?"
+                  for host in archive.ubuntu.com security.ubuntu.com packages.microsoft.com; do
+                    printf '\nDNS diagnostic: %s\n' "$host"
+                    timeout --kill-after=2s 5s getent ahosts "$host" || echo "getent exit=$?"
+                  done
+                  for host in archive.ubuntu.com security.ubuntu.com; do
+                    suite=noble
+                    if [ "$host" = security.ubuntu.com ]; then suite=noble-security; fi
+                    printf '\nHTTPS diagnostic: %s\n' "$host"
+                    timeout --kill-after=2s 20s curl --silent --show-error --fail \
+                      --proto '=https' --connect-timeout 5 --max-time 15 \
+                      --output /dev/null \
+                      --write-out 'HTTP=%{http_code} DNS=%{time_namelookup}s CONNECT=%{time_connect}s TLS=%{time_appconnect}s TOTAL=%{time_total}s\n' \
+                      "https://$host/ubuntu/dists/$suite/InRelease" || echo "curl exit=$?"
+                  done
+                } 2>&1 | tee diagnostics/apt-network.log
+                echo "::error::APT fallback failed (exit=$status). Exit 124 means the command watchdog expired; inspect APT and network diagnostic logs."
                 exit "$status"
               fi
             else

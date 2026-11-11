@@ -50,14 +50,77 @@ jobs:
 
       - name: Install development and virtual display dependencies
         id: setup
+        timeout-minutes: 14
         run: |
           mkdir -p diagnostics
-          sudo apt-get update 2>&1 | tee diagnostics/apt-update.log
-          sudo apt-get install --no-install-recommends \
-            build-essential clang cmake ninja-build git ca-certificates pkg-config \
-            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev \
-            libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri \
-            2>&1 | tee diagnostics/apt-install.log
+          # Ubuntu 24.04 uses deb822 .sources and mirror+file, not just sources.list.
+          # https://github.com/actions/runner-images/issues/14594
+          apt_sources=(/etc/apt/apt-mirrors.txt /etc/apt/sources.list)
+          shopt -s nullglob
+          apt_sources+=(/etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list)
+          log_apt_sources() {
+            local source
+            for source in "${apt_sources[@]}"; do
+              if [ -f "$source" ]; then
+                printf '\n--- %s ---\n' "$source"
+                cat "$source"
+              fi
+            done
+          }
+          log_apt_sources > diagnostics/apt-sources-before.log
+          # Command-line options override image defaults. Never accept partial indexes.
+          apt_options=(-o Acquire::Retries=1 -o Acquire::http::Timeout=15
+            -o Acquire::https::Timeout=15 -o DPkg::Lock::Timeout=60
+            -o APT::Update::Error-Mode=any)
+          packages=(build-essential clang cmake ninja-build git ca-certificates pkg-config
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+            libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri)
+          apt_attempt() {
+            local attempt=$1
+            timeout --kill-after=10s 120s sudo apt-get "${apt_options[@]}" update 2>&1 |
+              tee "diagnostics/apt-update-$attempt.log" || return $?
+            timeout --kill-after=10s 240s sudo apt-get "${apt_options[@]}" install \
+              --yes --no-install-recommends "${packages[@]}" 2>&1 |
+              tee "diagnostics/apt-install-$attempt.log"
+          }
+          if apt_attempt initial; then
+            :
+          else
+            status=$?
+            # Retry only an Azure acquisition failure (or a timeout with Azure configured).
+            if grep -Eq '(Err:|Ign:|Failed to fetch|Temporary failure resolving).*azure\.archive\.ubuntu\.com' \
+                diagnostics/apt-*-initial.log ||
+                { [ "$status" -eq 124 ] && grep -q 'azure.archive.ubuntu.com' diagnostics/apt-sources-before.log; }; then
+              echo '::warning::Azure APT mirror unavailable; retrying once with the official Ubuntu archive.'
+              sudo python3 - <<'PY'
+          import pathlib
+          import re
+          paths = [pathlib.Path('/etc/apt/apt-mirrors.txt'), pathlib.Path('/etc/apt/sources.list')]
+          paths += sorted(pathlib.Path('/etc/apt/sources.list.d').glob('*.sources'))
+          paths += sorted(pathlib.Path('/etc/apt/sources.list.d').glob('*.list'))
+          changed = 0
+          for path in paths:
+              if not path.is_file():
+                  continue
+              original = path.read_text()
+              # Change only this exact host/path; preserve suites, security, Signed-By,
+              # mirror priorities and all other repositories. HTTPS keeps TLS verification.
+              updated, count = re.subn(r'https?://azure\.archive\.ubuntu\.com/ubuntu(?=[/\s]|$)',
+                                       'https://archive.ubuntu.com/ubuntu', original)
+              if count:
+                  path.write_text(updated)
+                  print(f'Updated {path}: {count} Azure URI(s)')
+                  changed += count
+          if not changed:
+              raise SystemExit('No supported Azure APT URI found; refusing an unrelated fallback')
+          PY
+              log_apt_sources > diagnostics/apt-sources-after.log
+              # A failed fallback remains fatal, including any third-party repository failure.
+              apt_attempt fallback
+            else
+              exit "$status"
+            fi
+          fi
           {
             uname -a
             git rev-parse HEAD

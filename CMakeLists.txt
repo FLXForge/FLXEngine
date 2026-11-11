@@ -433,3 +433,16 @@ add_test(NAME flx-core-consumer-tests COMMAND flx-core-consumer-tests)
 
 add_flx_test_suite(flx-session-device-tests tests/session/FlxSessionDeviceTests.cpp)
 set_tests_properties(flx-session-device-tests PROPERTIES SKIP_RETURN_CODE 77)
+
+# The silent graphics case can run under Xvfb without requiring physical audio.
+add_test(NAME flx-session-silent-graphics-tests COMMAND flx-session-device-tests --silent-only)
+set_tests_properties(flx-session-silent-graphics-tests PROPERTIES SKIP_RETURN_CODE 77)
+
+add_flx_test_suite(flx-path-portability-tests tests/portability/PathPortabilityTests.cpp)
+
+# A production flx-core consumer and reproducible cross-platform fixture tool.
+add_executable(flx-format12-portability-tests tests/portability/Format12PortabilityTests.cpp)
+target_link_libraries(flx-format12-portability-tests PRIVATE flx-core)
+target_compile_definitions(flx-format12-portability-tests PRIVATE
+    FLX_WINDOWS_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/format12-windows.flxc")
+add_test(NAME flx-format12-portability-tests COMMAND flx-format12-portability-tests)

@@ -63,14 +63,21 @@ namespace
         EndDrawing();
     }
 }
-int main()
+int main(int argc, char** argv)
 {
-    if (isHeadlessTestEnvironment()) { std::cout << "[SKIP] persistent host test requires graphics and audio\n"; return 77; }
+    const bool silentOnly = argc == 2 && std::strcmp(argv[1], "--silent-only") == 0;
+    if (argc != 1 && !silentOnly) return 1;
+    if (isHeadlessTestEnvironment())
+    {
+        std::cout << (silentOnly ? "[SKIP] silent session test requires graphics\n"
+            : "[SKIP] persistent host test requires graphics and audio\n");
+        return 77;
+    }
     SetTraceLogLevel(LOG_WARNING);
     SetTraceLogCallback(hostLog);
     SetConfigFlags(FLAG_WINDOW_HIDDEN);
     InitWindow(96, 96, "FLX persistent host test");
-    if (!IsWindowReady()) return 77;
+    if (!IsWindowReady()) { std::cout << "[SKIP] host graphics context unavailable\n"; return 77; }
     try
     {
         FlxSession silent;
@@ -91,8 +98,20 @@ int main()
         CloseWindow();
         return 1;
     }
+    if (silentOnly)
+    {
+        CloseWindow();
+        SetTraceLogCallback(nullptr);
+        std::cout << "[PASS] graphical session without an audio device\n";
+        return 0;
+    }
     InitAudioDevice();
-    if (!IsAudioDeviceReady()) { CloseWindow(); return 77; }
+    if (!IsAudioDeviceReady())
+    {
+        std::cout << "[SKIP] persistent host test has no usable audio device\n";
+        CloseWindow();
+        return 77;
+    }
     const auto handle = GetWindowHandle();
     auto hostTarget = LoadRenderTexture(96, 96);
     try

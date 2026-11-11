@@ -1,0 +1,180 @@
+name: Linux diagnostics
+
+on:
+  push:
+    branches: [feature/v0.4.0]
+  pull_request:
+    branches: [main, develop, feature/v0.4.0]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A push and its PR share a group. Keep only the newest relevant run.
+concurrency:
+  group: linux-diagnostics-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.head_ref == 'feature/v0.4.0' ||
+      github.base_ref == 'feature/v0.4.0'
+    name: Ubuntu 24.04 / ${{ matrix.compiler }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - compiler: GCC
+            cc: gcc
+            cxx: g++
+          - compiler: Clang
+            cc: clang
+            cxx: clang++
+    defaults:
+      run:
+        shell: bash
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+      LC_ALL: C.UTF-8
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install development and virtual display dependencies
+        id: setup
+        run: |
+          mkdir -p diagnostics
+          sudo apt-get update 2>&1 | tee diagnostics/apt-update.log
+          sudo apt-get install --no-install-recommends +            build-essential clang cmake ninja-build git ca-certificates pkg-config +            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev +            libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri +            2>&1 | tee diagnostics/apt-install.log
+          {
+            uname -a
+            git rev-parse HEAD
+            cat VERSION
+            cmake --version
+            "$CC" --version
+            "$CXX" --version
+            dpkg-query -W build-essential clang cmake ninja-build git ca-certificates pkg-config +              libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev +              libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri
+          } > diagnostics/environment.log
+          test "$(id -u)" != 0
+          sha256sum --check tests/fixtures/format12-windows.sha256
+
+      - name: Configure Release
+        id: configure
+        run: |
+          cmake -S . -B build -G Ninja +            -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON +            -DBUILD_SHARED_LIBS=OFF -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF +            2>&1 | tee diagnostics/configure.log
+
+      - name: Build core, CLI and all test consumers
+        id: build
+        run: cmake --build build --parallel 2 2>&1 | tee diagnostics/build.log
+
+      - name: Headless CTest
+        id: headless
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          mkdir -p diagnostics/headless
+          set +e
+          env -u DISPLAY -u WAYLAND_DISPLAY FLX_TEST_HEADLESS=1 +            ctest --test-dir build --no-tests=error --output-on-failure -j 1 +              --output-junit "$PWD/diagnostics/headless/results.xml" +              --output-log "$PWD/diagnostics/headless/ctest.log"
+          status=$?
+          cp build/Testing/Temporary/LastTest*.log diagnostics/headless/ 2>/dev/null
+          exit "$status"
+
+      - name: Xvfb graphics without physical audio
+        id: graphics
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          mkdir -p diagnostics/graphics
+          set +e
+          env -u FLX_TEST_HEADLESS xvfb-run -a -s "-screen 0 1280x720x24" +            env LIBGL_ALWAYS_SOFTWARE=1 +            ctest --test-dir build --no-tests=error --output-on-failure -j 1 +              -R '^flx-(runtime-(drawing|lifecycle)|engine-host|text-rasterization|session-silent-graphics)-tests$' +              --output-junit "$PWD/diagnostics/graphics/results.xml" +              --output-log "$PWD/diagnostics/graphics/ctest.log"
+          status=$?
+          cp build/Testing/Temporary/LastTest*.log diagnostics/graphics/ 2>/dev/null
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          # These five cases are required. A skipped graphics test is incomplete coverage.
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          cases = ET.parse("diagnostics/graphics/results.xml").findall(".//testcase")
+          if len(cases) != 5 or any(case.find("skipped") is not None for case in cases):
+              raise SystemExit("Xvfb coverage incomplete: inspect skipped or missing graphics tests")
+          PY
+
+      - name: CLI smoke and format-12 exchange fixture
+        id: smoke
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          {
+            test "$(build/flx --version)" = "$(tr -d '\r\n' < VERSION)"
+            build/flx --help
+            for project in pong asteroids arkanoid invaders tank; do
+              build/flx validate "examples/$project.flx"
+              build/flx compile "--output=diagnostics/$project.flxc" "examples/$project.flx"
+            done
+            build/flx-format12-portability-tests
+            build/flx-format12-portability-tests --write-fixture +              "diagnostics/format12-linux-${{ matrix.compiler }}.flxc"
+            ldd build/flx
+          } 2>&1 | tee diagnostics/smoke.log
+
+      - name: Summarize results and omissions
+        if: ${{ !cancelled() }}
+        env:
+          SETUP: ${{ steps.setup.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          HEADLESS: ${{ steps.headless.outcome }}
+          GRAPHICS: ${{ steps.graphics.outcome }}
+          SMOKE: ${{ steps.smoke.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import xml.etree.ElementTree as ET
+          lines = ["## Linux diagnostic results", ""]
+          lines += [f"- {stage}: {os.environ[stage]}" for stage in
+                    ("SETUP", "CONFIGURE", "BUILD", "HEADLESS", "GRAPHICS", "SMOKE")]
+          for phase in ("headless", "graphics"):
+              directory = pathlib.Path("diagnostics") / phase
+              xml = directory / "results.xml"
+              lines += ["", f"### {phase}"]
+              if not xml.exists():
+                  lines += ["Not executed: no CTest report was generated."]
+                  continue
+              cases = ET.parse(xml).findall(".//testcase")
+              skipped = [c for c in cases if c.find("skipped") is not None]
+              failed = [c for c in cases if c.find("failure") is not None or c.find("error") is not None]
+              passed = len(cases) - len(skipped) - len(failed)
+              lines += [f"Passed {passed}; failed {len(failed)}; skipped {len(skipped)}."]
+              lines += [f"- SKIPPED {c.attrib['name']}" for c in skipped]
+              lines += [f"- FAILED {c.attrib['name']}" for c in failed]
+              internal = sorted({line.strip() for case in cases
+                                 if case.find("skipped") is None
+                                 for line in case.findtext("system-out", "").splitlines()
+                                 if line.startswith("[SKIP]")})
+              if internal:
+                  lines += ["Internal cases omitted by a suite:"] + [f"- {s}" for s in internal]
+          lines += ["", "Manual validation remains required for audible audio, physical input, "
+                    "fullscreen/focus and native Wayland. Xvfb supplies no physical audio device."]
+          output = "\n".join(lines) + "\n"
+          pathlib.Path("diagnostics").mkdir(exist_ok=True)
+          pathlib.Path("diagnostics/summary.md").write_text(output)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(output)
+          PY
+
+      - name: Upload diagnostic logs and fixtures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: linux-diagnostics-${{ matrix.compiler }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            diagnostics/
+            build/CMakeCache.txt
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/compile_commands.json

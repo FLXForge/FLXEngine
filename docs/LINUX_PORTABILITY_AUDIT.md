@@ -287,6 +287,149 @@ Secuencia propuesta:
 - La compilación y ejecución Linux, el ELF final y un tarball Linux real
   quedan pendientes de la siguiente fase.
 
+## 11. Preparación del primer runner Linux
+
+Esta sección registra el encargo posterior sobre la base `fc02ab8`.
+Los apartados anteriores conservan los resultados de la auditoría estática.
+El workflow nuevo y las pruebas están preparados localmente. Aún no existen
+resultados de GCC, Clang o Xvfb en Ubuntu para estos cambios.
+
+### Workflow entregado
+
+`.github/workflows/linux-diagnostics.yml` define un job Ubuntu 24.04,
+con matriz GCC/Clang, Release y X11 explícito. La matriz enumera GCC primero,
+limita la concurrencia a un compilador y conserva el segundo resultado aunque
+el primero falle. Las dependencias de FLX siguen siendo las de CMake.
+
+Se activa con push a feature/v0.4.0, PR de esa rama hacia main/develop y PR
+hacia feature/v0.4.0. Un grupo de concurrencia compartido entre push y PR del
+mismo repositorio/rama cancela ejecuciones anteriores que sigan pendientes
+o en curso. Un PR prueba el commit de integración que prepara GitHub,
+mientras que push prueba el commit de la rama.
+
+Incluye workflow_dispatch. GitHub exige que la definición exista en la
+rama predeterminada para habilitar ese evento. La primera ejecución de este
+archivo nuevo puede iniciarse automáticamente al publicar el push de la rama.
+El botón manual queda sujeto a ese requisito de la plataforma.
+[Documentación de GitHub](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
+
+Pasos preparados:
+
+1. Instalar herramientas y requisitos X11, OpenGL y ALSA. Registrar versiones
+   de paquetes, compiladores, CMake, sistema, commit y VERSION.
+2. Verificar el SHA-256 del fixture Windows.
+3. Configurar CMake y compilar el árbol completo, incluidos flx, flx-core,
+   consumidores de producción y variantes de pruebas.
+4. Ejecutar CTest headless en serie, retirando DISPLAY/WAYLAND_DISPLAY.
+5. Ejecutar cinco suites gráficas bajo Xvfb/Mesa sin FLX_TEST_HEADLESS.
+   Un fallo headless no impide recoger el diagnóstico gráfico si la
+   compilación terminó correctamente.
+6. Ejecutar smoke CLI, compilar los cinco ejemplos y exportar un fixture
+   nativo por compilador.
+7. Generar un resumen de aprobadas, fallidas y omitidas, con los casos
+   internos omitidos. Guardar JUnit, logs, fixtures, configuración CMake y
+   comandos de compilación en artefactos linux-diagnostics-GCC/Clang
+   durante siete días, incluidos los resultados de ejecuciones fallidas.
+
+La lista de paquetes declarada para el runner es:
+
+```text
+build-essential clang cmake ninja-build git ca-certificates pkg-config
+libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri
+```
+
+Su instalación real y versiones se comprobarán en apt-install.log y
+environment.log de cada job. Se exige UID distinto de cero para que las
+pruebas de permisos tengan sentido.
+
+### Cobertura añadida
+
+| Archivos | Cobertura |
+| --- | --- |
+| `tests/portability/PathPortabilityTests.cpp` y `TemporaryDirectory.h` | Directorio temporal propio, manifiesto absoluto/relativo desde otro CWD, espacios, CRLF, machine/mapping externos, barras inversas en referencias JSON/JS, referencia FLX desde /, archivo/directorio/recurso ausente y ejecución del script resuelto con savePath. |
+| La misma suite de rutas | Extensión .FLX existente y referencia JSON con caso incorrecto. Comprueba la política observada del filesystem, que se imprime en el log. El filesystem Windows local fue insensible al caso. El resultado Linux está pendiente. |
+| `tests/session/FlxSessionTests.cpp`, existente | Mantiene cobertura de savePath absoluto/relativo/predeterminado, captura de CWD, creación, aislamiento/compartición, archivo de solo lectura y ausencia de fallback. |
+| `tests/portability/Format12PortabilityTests.cpp` | Consumidor de flx-core de producción. Lee el fixture Windows, verifica formato y recursos, ejecuta el JS embebido sin fuentes y comprueba persistencia numérica, booleana y UTF-8, además de un roundtrip del escritor nativo. |
+| `tests/session/FlxSessionDeviceTests.cpp` y CMake | Añade el modo --silent-only como prueba independiente flx-session-silent-graphics-tests. Termina tras comprobar carga, update, render, exit y warning sin inicializar audio. |
+| `tests/fixtures/` y `.gitattributes` | Fixture Windows binario, hash y procedencia documentada. El atributo binary protege sus bytes frente a normalización de finales de línea. |
+
+Las rutas de manifiesto continúan usando las reglas del filesystem.
+La normalización de referencias JSON/JS conserva su contrato. No se detectó
+una incompatibilidad Linux ejecutando el código en este entorno Windows,
+por lo que no se aplicaron cambios de portabilidad al motor.
+
+### Estado real de validación
+
+| Comprobación | Resultado disponible |
+| --- | --- |
+| GCC / Ubuntu 24.04 | Pendiente del primer runner. |
+| Clang / Ubuntu 24.04 | Pendiente del primer runner. |
+| Xvfb / Mesa / Ubuntu | Pendiente del primer runner. |
+| Configuración y compilación MSVC x64 Release | Correctas con los targets nuevos. |
+| CTest Windows completo | 33 aprobadas, 0 fallidas, 0 omitidas, 7,93 s. |
+| CTest Windows headless | 30 aprobadas, 0 fallidas, 3 suites omitidas, 3,82 s. También omite casos internos de tres suites mixtas. |
+| Selección gráfica del workflow ejecutada en Windows | 5 aprobadas, 0 fallidas, 0 omitidas, 3,67 s. Esta ejecución no usa Xvfb. |
+| YAML y expresiones del workflow | actionlint 1.7.12 sin errores. SHA de checkout v4.2.2 y upload-artifact v4.6.2 contrastados con los tags oficiales. |
+| Scripts del workflow | Seis bloques Bash revisados con bash -n. Dos fragmentos Python compilados y ejecutados sobre los JUnit reales de Windows. Comprobado también el rechazo de cobertura gráfica omitida. |
+| Fixture Windows | Generado y ejecutado en Windows con MSVC 19.51, formato 12, producerVersion 0.4.0, 1.563 bytes. |
+
+Las tres omisiones completas headless son text-rasterization, session-device
+y session-silent-graphics. RuntimeLifecycle, RuntimeDrawing y EngineHost
+omiten casos internos que necesitan OpenGL. El resumen de Actions enumera
+esos casos mediante los resultados JUnit, además de las omisiones de suites.
+
+La ejecución Xvfb selecciona RuntimeLifecycle, RuntimeDrawing, EngineHost,
+TextRasterization y SessionSilentGraphics. Exige cinco resultados y rechaza
+omisiones completas para esa selección. SessionDevice, que requiere
+dispositivo de audio, queda fuera de esa pasada. AudioDevice sigue siendo
+una prueba optativa fuera de CTest. El audio audible, mandos, teclado físico,
+fullscreen/foco y Wayland nativo requieren validación adicional.
+
+### Intercambio de formato 12
+
+El fixture `tests/fixtures/format12-windows.flxc` se generó aquí en Windows
+con el escritor de producción. Su SHA-256 es:
+
+```text
+4d649a60b651ab199bd2d0cf3ad9d5295c3657e981253976104982f1c7268447
+```
+
+La prueba no depende de fuentes JS o JSON externas. La identidad esperada
+es Format12CrossPlatform, con dos recursos objeto y un script. El resultado
+de ejecución esperado es frames=2, número=3.5, texto UTF-8 café y booleano
+true. Las instrucciones reproducibles están en tests/fixtures/README.md.
+
+Windows ya puede leerlo y ejecutarlo. Linux debe hacerlo en ambos jobs.
+Los artefactos de diagnóstico contendrán format12-linux-GCC.flxc y
+format12-linux-Clang.flxc, que podrán verificarse en Windows con
+`flx-format12-portability-tests --read-fixture <archivo>`.
+La dirección Linux a Windows está preparada y pendiente de esos artefactos.
+
+### Comprobaciones después de publicar la rama
+
+1. Abrir la ejecución Linux diagnostics del push y conservar el enlace y SHA.
+2. Revisar configuración y compilación de ambos compiladores. Si fallan,
+   usar configure.log, build.log y CMakeConfigureLog.yaml para localizar el
+   bloqueo antes de proponer una corrección.
+3. Revisar cada resumen y JUnit. La pasada headless puede omitir gráficos.
+   La pasada Xvfb debe ejecutar las cinco suites seleccionadas.
+4. Confirmar en el log de rutas que el filesystem del runner es sensible al
+   caso, y que ambas pruebas de portabilidad terminan correctamente.
+5. Descargar los artefactos de GCC y Clang y comprobar sus fixtures en
+   Windows. Registrar los resultados de ambas direcciones.
+6. Incorporar esos resultados y enlaces a este informe antes de afirmar
+   compatibilidad funcional Linux.
+
+La preparación local no produjo fallos de compilación o pruebas del motor
+que justifiquen una corrección Linux. Los posibles bloqueos de GCC/Clang
+siguen abiertos hasta disponer de los resultados reales.
+
+La recomendación de distribución sigue siendo un tar.gz x86-64 que conserve
+permisos y contenga el ejecutable ya validado. La creación de ese artefacto
+descargable debe seguir a GCC/Clang, Xvfb, comprobación de dependencias ELF e
+intercambio .flxc. Los artefactos de este workflow son diagnósticos.
+
 ## Fuentes externas contrastadas
 
 - [Opciones de raylib 6.0](https://github.com/raysan5/raylib/blob/6.0/CMakeOptions.txt)

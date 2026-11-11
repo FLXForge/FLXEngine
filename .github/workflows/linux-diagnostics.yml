@@ -53,7 +53,11 @@ jobs:
         run: |
           mkdir -p diagnostics
           sudo apt-get update 2>&1 | tee diagnostics/apt-update.log
-          sudo apt-get install --no-install-recommends +            build-essential clang cmake ninja-build git ca-certificates pkg-config +            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev +            libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri +            2>&1 | tee diagnostics/apt-install.log
+          sudo apt-get install --no-install-recommends \
+            build-essential clang cmake ninja-build git ca-certificates pkg-config \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev \
+            libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri \
+            2>&1 | tee diagnostics/apt-install.log
           {
             uname -a
             git rev-parse HEAD
@@ -61,7 +65,9 @@ jobs:
             cmake --version
             "$CC" --version
             "$CXX" --version
-            dpkg-query -W build-essential clang cmake ninja-build git ca-certificates pkg-config +              libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev +              libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri
+            dpkg-query -W build-essential clang cmake ninja-build git ca-certificates pkg-config \
+              libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev \
+              libgl1-mesa-dev libasound2-dev xvfb xauth libgl1-mesa-dri
           } > diagnostics/environment.log
           test "$(id -u)" != 0
           sha256sum --check tests/fixtures/format12-windows.sha256
@@ -69,7 +75,10 @@ jobs:
       - name: Configure Release
         id: configure
         run: |
-          cmake -S . -B build -G Ninja +            -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON +            -DBUILD_SHARED_LIBS=OFF -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF +            2>&1 | tee diagnostics/configure.log
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DBUILD_SHARED_LIBS=OFF -DGLFW_BUILD_X11=ON -DGLFW_BUILD_WAYLAND=OFF \
+            2>&1 | tee diagnostics/configure.log
 
       - name: Build core, CLI and all test consumers
         id: build
@@ -81,7 +90,10 @@ jobs:
         run: |
           mkdir -p diagnostics/headless
           set +e
-          env -u DISPLAY -u WAYLAND_DISPLAY FLX_TEST_HEADLESS=1 +            ctest --test-dir build --no-tests=error --output-on-failure -j 1 +              --output-junit "$PWD/diagnostics/headless/results.xml" +              --output-log "$PWD/diagnostics/headless/ctest.log"
+          env -u DISPLAY -u WAYLAND_DISPLAY FLX_TEST_HEADLESS=1 \
+            ctest --test-dir build --no-tests=error --output-on-failure -j 1 \
+              --output-junit "$PWD/diagnostics/headless/results.xml" \
+              --output-log "$PWD/diagnostics/headless/ctest.log"
           status=$?
           cp build/Testing/Temporary/LastTest*.log diagnostics/headless/ 2>/dev/null
           exit "$status"
@@ -92,7 +104,12 @@ jobs:
         run: |
           mkdir -p diagnostics/graphics
           set +e
-          env -u FLX_TEST_HEADLESS xvfb-run -a -s "-screen 0 1280x720x24" +            env LIBGL_ALWAYS_SOFTWARE=1 +            ctest --test-dir build --no-tests=error --output-on-failure -j 1 +              -R '^flx-(runtime-(drawing|lifecycle)|engine-host|text-rasterization|session-silent-graphics)-tests$' +              --output-junit "$PWD/diagnostics/graphics/results.xml" +              --output-log "$PWD/diagnostics/graphics/ctest.log"
+          env -u FLX_TEST_HEADLESS xvfb-run -a -s "-screen 0 1280x720x24" \
+            env LIBGL_ALWAYS_SOFTWARE=1 \
+            ctest --test-dir build --no-tests=error --output-on-failure -j 1 \
+              -R '^flx-(runtime-(drawing|lifecycle)|engine-host|text-rasterization|session-silent-graphics)-tests$' \
+              --output-junit "$PWD/diagnostics/graphics/results.xml" \
+              --output-log "$PWD/diagnostics/graphics/ctest.log"
           status=$?
           cp build/Testing/Temporary/LastTest*.log diagnostics/graphics/ 2>/dev/null
           if [ "$status" -ne 0 ]; then exit "$status"; fi
@@ -116,7 +133,8 @@ jobs:
               build/flx compile "--output=diagnostics/$project.flxc" "examples/$project.flx"
             done
             build/flx-format12-portability-tests
-            build/flx-format12-portability-tests --write-fixture +              "diagnostics/format12-linux-${{ matrix.compiler }}.flxc"
+            build/flx-format12-portability-tests --write-fixture \
+              "diagnostics/format12-linux-${{ matrix.compiler }}.flxc"
             ldd build/flx
           } 2>&1 | tee diagnostics/smoke.log
 

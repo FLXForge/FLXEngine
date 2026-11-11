@@ -2,6 +2,7 @@
 # Set default behavior to automatically normalize line endings.
 ###############################################################################
 * text=auto
+cmake/PackageLinuxDiagnostic.sh text eol=lf
 tests/fixtures/format12-windows.flxc binary
 
 ###############################################################################

@@ -138,6 +138,20 @@ jobs:
             ldd build/flx
           } 2>&1 | tee diagnostics/smoke.log
 
+      - name: Package the validated GCC runtime
+        id: package
+        if: ${{ success() && matrix.compiler == 'GCC' && steps.headless.outcome == 'success' && steps.graphics.outcome == 'success' && steps.smoke.outcome == 'success' }}
+        run: bash cmake/PackageLinuxDiagnostic.sh "$PWD" "$PWD/build" "$PWD/dist" 2>&1 | tee diagnostics/package.log
+
+      - name: Upload Linux integration runtime
+        if: ${{ success() && matrix.compiler == 'GCC' && steps.package.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: flx-${{ steps.package.outputs.version }}-linux-x86_64
+          path: ${{ steps.package.outputs.archive }}
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Summarize results and omissions
         if: ${{ !cancelled() }}
         env:
@@ -147,6 +161,7 @@ jobs:
           HEADLESS: ${{ steps.headless.outcome }}
           GRAPHICS: ${{ steps.graphics.outcome }}
           SMOKE: ${{ steps.smoke.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
         run: |
           python3 - <<'PY'
           import os
@@ -154,7 +169,7 @@ jobs:
           import xml.etree.ElementTree as ET
           lines = ["## Linux diagnostic results", ""]
           lines += [f"- {stage}: {os.environ[stage]}" for stage in
-                    ("SETUP", "CONFIGURE", "BUILD", "HEADLESS", "GRAPHICS", "SMOKE")]
+                    ("SETUP", "CONFIGURE", "BUILD", "HEADLESS", "GRAPHICS", "SMOKE", "PACKAGE")]
           for phase in ("headless", "graphics"):
               directory = pathlib.Path("diagnostics") / phase
               xml = directory / "results.xml"

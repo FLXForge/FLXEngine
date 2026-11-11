@@ -561,6 +561,96 @@ La confirmación Linux requiere revisar una ejecución del workflow sobre el
 commit corregido. El run 43012929342 corresponde al código anterior y no
 demuestra que sus fallos estén resueltos en Linux.
 
+## 13. Paquete de integración Linux x86-64
+
+El mantenedor comunica que GCC y Clang superaron el diagnóstico sobre
+469375a. El procedimiento siguiente prepara un nuevo artefacto; su ejecución
+real y el paquete resultante deben verificarse en un nuevo run del runner.
+Las verificaciones locales descritas aquí se realizaron en Windows.
+
+### 13.1 Recursos y alcance
+
+Se revisaron RuntimeWorld, ScriptEngine, DrawingRenderer, AudioSystem,
+MachineLoader e InputMappingLoader antes de definir el contenido. El runtime
+compilado carga el JavaScript desde los recursos de CompiledProject; la fuente
+predeterminada de raylib, Machine y mapping predeterminados y la síntesis de
+audio están incorporados. No se identificó un directorio de assets del motor
+que deba instalarse junto al ejecutable. Ejecutar proyectos fuente sí requiere
+sus archivos originales y su estructura de referencias.
+
+El archivo flx-0.4.0-linux-x86_64.tar.gz contiene un directorio del mismo nombre
+sin la extensión, con flx, README.txt, LICENSE, BUILD_INFO.txt,
+DEPENDENCIES.txt y seis avisos en licenses/: raylib, GLFW, nlohmann/json,
+yaml-cpp, QuickJS-NG y xsum. No incluye fuentes, fixtures, ejemplos, cabeceras
+ni bibliotecas de desarrollo. Esta selección sustituye la propuesta preliminar
+de distribución de las secciones anteriores para este diagnóstico.
+
+80's Like Collection integra flx-core mediante CMake y aporta sus propios
+proyectos y assets del Hub. Este paquete permite pruebas de sus proyectos a
+través del CLI; no es un SDK ni sustituye la compilación del runtime embebido.
+
+### 13.2 Procedimiento y controles
+
+El workflow linux-diagnostics conserva GCC y Clang. Solo GCC empaqueta, una
+vez aprobados CTest headless, las cinco suites Xvfb y el smoke del CLI y del
+formato 12. cmake/PackageLinuxDiagnostic.sh exige Linux x86-64, Release y
+BUILD_SHARED_LIBS=OFF, y copia directamente build/flx sin recompilar ni strip.
+Se registran commit, compilador y SHA-256 del ejecutable.
+
+Se ejecuta ldd sin LD_LIBRARY_PATH y se rechazan errores, bibliotecas
+«not found» y dependencias resueltas dentro del build. Después se crea el tar,
+se extrae en un directorio temporal, se comprueban el permiso ejecutable y la
+identidad byte a byte con build/flx, se repite ldd y se ejecuta ./flx --version
+desde el directorio extraído. La salida debe coincidir con VERSION.
+El archivo solo se publica como artefacto si esas comprobaciones pasan.
+
+actions/upload-artifact conserva el artefacto flx-0.4.0-linux-x86_64 siete
+días. El contenedor descargado de Actions incluye el tar.gz, que conserva los
+permisos Unix. Los logs de empaquetado quedan en el artefacto de diagnóstico
+GCC, también cuando falla el empaquetado. Clang mantiene su validación y sus
+logs independientes, sin generar otro paquete. No cambia el workflow oficial
+de releases ni se crea una release pública.
+
+### 13.3 Validación y límites
+
+En Windows pasan actionlint, bash -n del script y de los ocho bloques Bash
+del workflow, y la compilación sintáctica de sus fragmentos Python. Las
+pruebas locales con dobles de uname, ldd, compilador y ejecutable verifican
+el caso correcto y seis rechazos: dependencia ausente antes o después de
+extraer, error de ldd, dependencia del build, versión incorrecta y build Debug.
+Estas pruebas no ejecutan un binario Linux ni verifican bibliotecas reales.
+El tar de prueba se inspecciona para comprobar contenido, permisos, identidad
+del ejecutable, hash y limpieza temporal. No es un paquete distribuible.
+
+El destino sigue siendo Ubuntu 24.04 x86-64 con X11/XWayland y OpenGL; no se
+promete compatibilidad con distribuciones más antiguas. Las bibliotecas del
+sistema no se incluyen. ldd no cubre todos los backends de audio ni drivers
+cargados dinámicamente. --version comprueba arranque, no renderizado, audio,
+input físico ni integración completa del Hub. Estas pruebas siguen pendientes
+en el equipo de integración. Los proyectos se proporcionan por separado;
+--save-path debe señalar una ubicación escribible cuando el cwd no lo sea.
+
+### 13.4 Lanzamiento y descarga
+
+Después de revisar y publicar estos cambios en feature/v0.4.0, el push dispara
+el diagnóstico. También puede usarse workflow_dispatch seleccionando esa rama
+si GitHub ya ofrece el workflow manual; véanse las limitaciones de dispatch
+indicadas anteriormente. Debe ejecutarse el nuevo commit con el empaquetado,
+no simplemente repetirse el run antiguo de 469375a.
+
+Comprobar que ambos jobs pasan y descargar flx-0.4.0-linux-x86_64 desde
+Artifacts. Extraer primero el contenedor de Actions y después el tar.gz:
+
+```bash
+tar -xzf flx-0.4.0-linux-x86_64.tar.gz
+cd flx-0.4.0-linux-x86_64
+./flx --version
+./flx run-compiled /ruta/absoluta/al/juego.flxc --save-path=/ruta/escribible/saves
+```
+
+Conservar BUILD_INFO.txt y los logs al comunicar resultados de integración.
+La validación del nuevo paquete Linux permanece pendiente de ese run real.
+
 ## Fuentes externas contrastadas
 
 - [Opciones de raylib 6.0](https://github.com/raysan5/raylib/blob/6.0/CMakeOptions.txt)

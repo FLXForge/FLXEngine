@@ -784,6 +784,13 @@ namespace
     {
         RuntimeHarness harness;
         harness.addScript(
+            "createInOrder",
+            // Equal depth preserves world entry order, not dictionary insertion.
+            "function born(o) {"
+            "  spawn(o, 'sameA'); spawn(o, 'low'); spawn(o, 'sameB'); spawn(o, 'high');"
+            "}"
+        );
+        harness.addScript(
             "orderProbe",
             "function draw(o) {"
             "  if (read_global('drawOrder') == null) write_global('drawOrder', 0);"
@@ -792,17 +799,21 @@ namespace
             "}"
         );
 
-        ObjectDefinition root = objectDefinition("root");
+        ObjectDefinition root = objectDefinition("root", "createInOrder");
         root.childResources["sameA"] = "sameA";
         root.childResources["low"] = "low";
         root.childResources["sameB"] = "sameB";
         root.childResources["high"] = "high";
 
         ObjectDefinition sameA = objectDefinition("sameA", "orderProbe");
+        sameA.spawnMode = "manual";
         ObjectDefinition low = objectDefinition("low", "orderProbe");
+        low.spawnMode = "manual";
         setVisualDepth(low, -10);
         ObjectDefinition sameB = objectDefinition("sameB", "orderProbe");
+        sameB.spawnMode = "manual";
         ObjectDefinition high = objectDefinition("high", "orderProbe");
+        high.spawnMode = "manual";
         setVisualDepth(high, 10);
 
         harness.addObject(root);

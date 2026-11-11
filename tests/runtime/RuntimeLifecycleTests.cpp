@@ -1370,6 +1370,8 @@ namespace
 
         harness.addScript(
             "findContract",
+            // Fix entry order through spawn requests, not unordered_map insertion.
+            "function born(o) { spawn(o, 'parentA'); spawn(o, 'parentB'); }"
             "function action(o) {"
             "  if (read_local(o, 'done') == 1) return;"
             "  write_local(o, 'done', 1);"
@@ -1398,10 +1400,12 @@ namespace
 
         ObjectDefinition parentA =
             objectDefinition("parentA");
+        parentA.spawnMode = "manual";
         parentA.childResources["shared"] = "shared";
 
         ObjectDefinition parentB =
             objectDefinition("parentB");
+        parentB.spawnMode = "manual";
         parentB.childResources["shared"] = "shared";
         parentB.childResources["grand"] = "grand";
 
@@ -1501,6 +1505,8 @@ namespace
 
         harness.addScript(
             "parentDeadNavigation",
+            // The dead-hook assertions below require a defined entry sequence.
+            "function born(o) { spawn(o, 'childA'); spawn(o, 'childB'); }"
             "function action(o) { kill(o); }"
             "function dead(o) {"
             "  const children = find_children(o);"
@@ -1523,9 +1529,11 @@ namespace
 
         ObjectDefinition childA =
             objectDefinition("childA");
+        childA.spawnMode = "manual";
 
         ObjectDefinition childB =
             objectDefinition("childB");
+        childB.spawnMode = "manual";
 
         harness.addObject(root);
         harness.addObject(parent);

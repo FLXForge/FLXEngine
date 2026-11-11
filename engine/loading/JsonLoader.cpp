@@ -531,6 +531,11 @@ namespace
             {
                 object[key] =
                     resolvedReference.data;
+                // Bare file contents include loader provenance alongside the
+                // block entries. Wrapped blocks keep their own entries intact.
+                object[key].erase("__sourceFile");
+                object[key].erase("__behaviorSourceFile");
+                object[key].erase("__childSourceFiles");
             }
 
             return true;
@@ -563,6 +568,9 @@ namespace
         else
         {
             object[key] = resolvedBlock;
+            object[key].erase("__sourceFile");
+            object[key].erase("__behaviorSourceFile");
+            object[key].erase("__childSourceFiles");
         }
 
         return true;

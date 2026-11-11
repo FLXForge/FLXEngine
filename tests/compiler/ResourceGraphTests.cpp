@@ -783,6 +783,58 @@ namespace
         require(child->collisions.at("body").type == "ellipse", "child collider reference should keep collider data");
     }
 
+    void testCollisionMapIgnoresResolverMetadata()
+    {
+        const auto root = testRoot() / "collision_resolver_metadata";
+        std::filesystem::remove_all(root);
+        writeFile(root / "game.flx", "name=CollisionMetadata\npath=game\nroot=root\n");
+        // These are collider names. Resolving this bare block also creates all
+        // three provenance fields, which must not become additional colliders.
+        const nlohmann::json box = {
+            {"type", "box"}, {"size", {{"width", 8}, {"height", 8}}}
+        };
+        const nlohmann::json ellipse = {
+            {"type", "ellipse"}, {"size", {{"width", 4}, {"height", 4}}}
+        };
+        const nlohmann::json colliders = {
+            {"body", box}, {"__sensor", ellipse},
+            {"behavior", box}, {"children", ellipse}
+        };
+        writeFile(root / "game/blocks/bare.json", colliders.dump());
+        writeFile(root / "game/blocks/inherited.json", R"({"like":"bare"})");
+
+        // An explicitly wrapped block can legitimately use a provenance-like
+        // name for a collider. Only the enclosing loader metadata is excluded.
+        auto wrapped = colliders;
+        wrapped["__sourceFile"] = "/blocks/collider:body";
+        writeFile(root / "game/blocks/wrapped.json",
+            nlohmann::json{{"collisions", wrapped}}.dump());
+        writeFile(root / "game/blocks/collider.json", nlohmann::json{{"body", ellipse}}.dump());
+
+        for (const auto* reference : {"/blocks/bare", "blocks/bare",
+                "/blocks/inherited", "blocks/inherited",
+                "/blocks/wrapped", "blocks/wrapped"})
+        {
+            writeFile(root / "game/root.json",
+                nlohmann::json{{"collisions", reference}}.dump());
+            const auto result = compile(root / "game.flx");
+            require(result.success && !result.diagnostics.hasErrors(),
+                "referenced collision maps must not expose resolver metadata: " + std::string(reference));
+            const auto& collisions = rootObject(result.project).collisions;
+            const bool isWrapped = std::string(reference).find("wrapped") != std::string::npos;
+            require(collisions.size() == (isWrapped ? 5u : 4u),
+                "only declared colliders must be compiled");
+            require(collisions.at("body").type == "box" &&
+                collisions.at("__sensor").type == "ellipse" &&
+                collisions.at("behavior").type == "box" &&
+                collisions.at("children").type == "ellipse",
+                "collider names and definitions must survive block resolution");
+            if (isWrapped)
+                require(collisions.at("__sourceFile").type == "ellipse",
+                    "user collider names must not be filtered as loader metadata");
+        }
+    }
+
     void testAutoChildCycleFailsCompilation()
     {
         const std::filesystem::path root =
@@ -956,6 +1008,7 @@ int main()
         { "closed object root validation", testClosedObjectRootValidation },
         { "closed object root validation after like", testClosedObjectRootValidationAfterLike },
         { "collision reference granularities compile", testCollisionReferenceGranularitiesCompile },
+        { "collision map ignores resolver metadata", testCollisionMapIgnoresResolverMetadata },
         { "automatic instantiation cycle fails compiled project validation", testAutomaticInstantiationCycleFailsCompiledProjectValidation },
         { "auto child cycle fails compilation", testAutoChildCycleFailsCompilation },
         { "manual child cycle compiles", testManualChildCycleCompiles },

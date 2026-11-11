@@ -4,6 +4,10 @@ Fecha de revisión: 11 de noviembre de 2026.
 Checkout auditado: `feature/v0.4.0`, base `37367bd`.
 Objetivo de la siguiente fase: Ubuntu 24.04 x86-64.
 
+La sección 12 incorpora el primer resultado real de GitHub Actions y las
+correcciones locales posteriores. Las secciones 1–11 conservan la evidencia
+y las limitaciones que existían al preparar aquella ejecución.
+
 ## 1. Alcance y evidencia
 
 Se revisaron CMake, todos los workflows, el punto de entrada, CLI,
@@ -429,6 +433,133 @@ La recomendación de distribución sigue siendo un tar.gz x86-64 que conserve
 permisos y contenga el ejecutable ya validado. La creación de ese artefacto
 descargable debe seguir a GCC/Clang, Xvfb, comprobación de dependencias ELF e
 intercambio .flxc. Los artefactos de este workflow son diagnósticos.
+
+## 12. Primer runner y correcciones de regresión
+
+Ejecución revisada:
+[43012929342](https://github.com/FLXForge/FLXEngine/actions/runs/43012929342),
+commit `170896e7e7b4a1fe491add2ca7aca433425756d2`.
+Se consultaron los estados y los logs completos de los jobs GCC y Clang.
+
+### Resultados observados en Ubuntu 24.04
+
+| Compilador | Configuración y compilación | CTest headless | CTest Xvfb | Smoke CLI y fixture |
+| --- | --- | --- | --- | --- |
+| GCC 13.3.0 | Correctas | 27 aprobadas, 3 fallidas, 3 omitidas | 3 aprobadas, 2 fallidas | Correctos |
+| Clang 18.1.3 | Correctas | 27 aprobadas, 3 fallidas, 3 omitidas | 3 aprobadas, 2 fallidas | Correctos |
+
+Las tres suites fallidas fueron compiler-resource-graph, runtime-lifecycle
+y runtime-drawing. Las dos últimas también fallaron en Xvfb. Las omisiones
+headless completas fueron las tres suites gráficas ya descritas, además de
+los casos internos omitidos en suites mixtas.
+
+Los logs confirman validación y compilación de Pong, Asteroids, Arkanoid,
+Invaders y Tank. El consumidor de formato 12 leyó y ejecutó el fixture
+Windows y el roundtrip nativo y produjo su fixture Linux en ambos jobs.
+Esto verifica Windows a Linux para ese proyecto de prueba. La comprobación
+inversa con los artefactos descargados y la validación funcional completa
+siguen pendientes.
+
+### 12.1 Colisiones — metadatos reinterpretados como referencias
+
+En testCollisionReferenceGranularitiesCompile, la referencia fuente válida
+`/blocks/collisions` identifica un archivo desde la raíz lógica World.
+`resolveJsonReference()` carga ese archivo y `resolveLike()` incorpora
+procedencia interna como `__sourceFile`.
+
+Cuando el archivo contiene directamente el mapa de colisiones, en lugar de
+un objeto que lo envuelve bajo `collisions`, resolveBlockReference copiaba
+también esos campos internos al mapa. parseCollisions recorría todas sus
+entradas e intentaba interpretar __sourceFile como otro colisionador.
+
+En Linux, el valor físico de procedencia comienza por /tmp y se confundía
+con una referencia absoluta lógica. Por ello aparecía la ruta duplicada
+`.../game/tmp/.../game/blocks/collisions.json`. En Windows, la procedencia
+comienza por C:/ y ese valor no entra en el reconocedor de referencias FLX.
+
+La referencia original y el fixture de granularidades eran correctos.
+El defecto estaba en la frontera de extracción del bloque de producción.
+Las secciones 7–8 de references_v1 y REF-003/004/005 de references_v2
+establecen las raíces de resolución y exigen resolver referencias antes del
+runtime. La procedencia del loader no es una nueva referencia del juego.
+
+Cambio en `engine/loading/JsonLoader.cpp`: al extraer un bloque sin envoltorio,
+retirar __sourceFile, __behaviorSourceFile y __childSourceFiles del nivel
+introducido por el resolver. Se aplica tanto a archivos relativos como a
+referencias lógicas. Los bloques con envoltorio conservan sus propias entradas.
+No se cambia el significado de la barra inicial ni se acepta una ruta física
+POSIX como nueva sintaxis de referencia.
+
+Regresión añadida en ResourceGraphTests:
+
+- Bloques sin envoltorio, relativos y absolutos lógicos.
+- Bloques heredados con like, en ambas formas.
+- Colisionadores llamados behavior y children, que hacen que el resolver
+  incorpore los tres metadatos internos. Solo deben compilarse los colisionadores.
+- Nombres válidos como __sensor y un colisionador llamado __sourceFile dentro
+  de un bloque explícito. Se conservan sus datos y referencias.
+
+La nueva regresión se ejecutó en Windows antes de aplicar el cambio de
+producción y falló. Con la corrección, pasó. No se filtran de forma general
+nombres de colisionadores que empiecen por guiones bajos.
+
+### 12.2 Lifecycle — fixture con orden no especificado
+
+testFindFunctionsUseLiveWorldAndCreationOrder insertaba parentA y parentB en
+ObjectDefinition::childResources, que es un unordered_map, y suponía que
+parentA entraría antes al mundo. La secuencia de iteración de ese contenedor
+no conserva el orden de inserción y difiere entre las bibliotecas estándar
+usadas por MSVC y GCC/Clang.
+
+RuntimeWorld::findLiveChildren y findAllLiveByName recorren el vector vivo
+en orden de entrada, conforme a la sección 3 de scripting/references.md.
+El contrato no convierte la inserción de claves de un diccionario en un
+orden automático de creación.
+
+Se corrigió exclusivamente el fixture. El born de la raíz solicita spawn
+de parentA y luego parentB, declarados manuales. Se mantienen las aserciones
+de nombres, orden, jerarquía, exclusión de pending y búsqueda de vivos.
+
+Se corrigió también testDeadHookCanFindAndKillLiveDirectChildren, que tenía
+la misma suposición para childA y childB. El born del parent los crea mediante
+dos solicitudes explícitas. El caso sigue comprobando navegación desde dead,
+orden de los hijos vivos y muerte de esos hijos.
+
+### 12.3 Drawing — estabilidad correcta, fixture no portable
+
+testDepthControlsStableObjectVisualTurnOrder suponía que sameA se crearía antes
+que sameB por el orden de asignaciones al mismo unordered_map. El comparador
+de dibujo ya compara depth y usa std::stable_sort sobre el vector del mundo.
+Para igual profundidad conserva correctamente la entrada al mundo.
+
+Runtime sección 12 y DRAW-003/004/005 exigen estabilidad por profundidad y
+orden de creación/carga, con snapshot del pass. No exigen ordenar por nombre
+los hijos automáticos de un diccionario.
+
+Se modificó el fixture para solicitar explícitamente los spawns en born.
+Las aserciones de profundidad menor, empate estable y profundidad mayor
+se mantienen. No se añadió ordenación al runtime ni se cambió el comparador.
+
+### 12.4 Validación local posterior
+
+| Comprobación Windows Release x64 | Resultado |
+| --- | --- |
+| Configuración y compilación MSVC | Correctas |
+| Tres suites afectadas después de la corrección final | 3 aprobadas, 0 fallidas, 1,56 s |
+| CTest completo posterior | 33 aprobadas, 0 fallidas, 0 omitidas, 9,12 s |
+| Cinco ejemplos, validate y compile | Todos correctos |
+| Cinco ejemplos, run y run-compiled con --frames=4 | Diez ejecuciones correctas, código 0 |
+| Pong compilado frente al binario Windows v0.4.0 guardado antes de estos cambios | SHA-256 idéntico |
+
+La ejecución breve de ejemplos comprueba arranque y primeros frames. No
+sustituye una partida completa ni una revisión visual o sonora manual.
+
+Al cerrar esta revisión, los cuatro archivos de código y pruebas corregidos
+ya estaban incorporados al commit local 469375a (fix linux). La actualización
+de este informe permanece como cambio local.
+La confirmación Linux requiere revisar una ejecución del workflow sobre el
+commit corregido. El run 43012929342 corresponde al código anterior y no
+demuestra que sus fallos estén resueltos en Linux.
 
 ## Fuentes externas contrastadas
 

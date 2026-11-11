@@ -101,6 +101,13 @@
 <p>Relacionados: <a class="link" href="api/world.html#show"><code>show()</code></a>, <a class="link" href="api/world.html#kill"><code>kill()</code></a>.</p>
 </section>
 <h2 id="persistence">Persistence</h2>
+<h3>Directorio de guardado</h3>
+<p>El modo portable predeterminado utiliza <code>saves/</code> relativo al directorio de trabajo al iniciar la sesión. La aplicación anfitriona puede proporcionar otra ubicación, por ejemplo para una aplicación instalada o empaquetada. Cada sesión resuelve su ruta una sola vez; cambiar después el directorio de trabajo no la modifica.</p>
+<p>En el CLI, <code>run</code> y <code>run-compiled</code> aceptan <code>--save-path=&lt;directory&gt;</code>. No se admite en <code>compile</code> ni <code>build</code>. Una ruta explícita vacía se rechaza. El directorio se crea al guardar; los errores de acceso se diagnostican sin recurrir a otra ubicación. <code>load()</code> conserva su valor predeterminado cuando no puede recuperar el dato.</p>
+<pre><code>flx run juego.flx --save-path="./qa/partida1"
+flx run juego.flx --save-path="./qa/partida2"
+flx run-compiled juego.flxc --save-path="C:/Games/MyGame/saves"</code></pre>
+<p>La extensión y el formato binario <code>.flxsave</code> no cambian. Varias ejecuciones o sesiones que compartan directorio también pueden compartir archivos de guardado con el mismo nombre. No se añaden subdirectorios automáticos por juego.</p>
 <p>Persistence guarda sólo boolean, number y string. Es independiente del estado local/global en memoria. No guarda el World completo.</p>
 <section data-api-symbol="save">
 <h3 id="save">save()</h3>

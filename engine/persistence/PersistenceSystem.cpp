@@ -7,17 +7,13 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <stdexcept>
 
 namespace
 {
     constexpr uint8_t ObfuscationKey = 0x5Au;
     constexpr uint32_t FormatVersion = 1u;
     constexpr char Magic[] = { 'F', 'L', 'X', 'S', 'A', 'V', 'E', '1' };
-
-    std::filesystem::path saveDirectory()
-    {
-        return std::filesystem::current_path() / "saves";
-    }
 
     bool isSafeName(
         const std::string& value
@@ -36,13 +32,6 @@ namespace
                 return std::isalnum(c) || c == '_' || c == '-';
             }
         );
-    }
-
-    std::filesystem::path savePath(
-        const std::string& name
-    )
-    {
-        return saveDirectory() / (name + ".flxsave");
     }
 
     uint32_t checksum(
@@ -176,6 +165,27 @@ namespace
     }
 }
 
+PersistenceSystem::PersistenceSystem(const std::optional<std::filesystem::path>& configured)
+{
+    if (configured && (configured->empty() || configured->native().find(std::filesystem::path::value_type{}) != std::filesystem::path::string_type::npos))
+        throw std::invalid_argument("Save path must be nonempty and contain no NUL characters");
+    directory = std::filesystem::absolute(configured.value_or(std::filesystem::path("saves"))).lexically_normal();
+    Logger::debug("save", "Save directory: " + directory.string());
+}
+
+std::filesystem::path PersistenceSystem::savePath(const std::string& name) const
+{
+    return directory / (name + ".flxsave");
+}
+
+bool PersistenceSystem::exists(const std::string& name) const
+{
+    std::error_code error;
+    const bool found = std::filesystem::exists(savePath(name), error);
+    if (error) Logger::warning("save", "Save file could not be inspected: " + savePath(name).string() + ": " + error.message());
+    return found;
+}
+
 bool PersistenceSystem::save(
     const std::string& name,
     const std::string& key,
@@ -194,7 +204,7 @@ bool PersistenceSystem::save(
 
     SaveMap values;
 
-    if (std::filesystem::exists(savePath(name)))
+    if (exists(name))
     {
         std::optional<SaveMap> loaded =
             readFile(name);
@@ -234,7 +244,7 @@ std::optional<PersistedValue> PersistenceSystem::load(
         return std::nullopt;
     }
 
-    if (!std::filesystem::exists(savePath(name)))
+    if (!exists(name))
     {
         return std::nullopt;
     }
@@ -398,13 +408,13 @@ bool PersistenceSystem::writeFile(
 )
 {
     std::error_code error;
-    std::filesystem::create_directories(saveDirectory(), error);
+    std::filesystem::create_directories(directory, error);
 
     if (error)
     {
         Logger::warning(
             "save",
-            "Save directory could not be created: " + error.message()
+            "Save directory could not be created: " + directory.string() + ": " + error.message()
         );
 
         return false;
@@ -460,5 +470,7 @@ bool PersistenceSystem::writeFile(
         static_cast<std::streamsize>(bytes.size())
     );
 
+    file.flush();
+    if (!file.good()) Logger::warning("save", "Save file could not be written completely: " + path.string());
     return file.good();
 }

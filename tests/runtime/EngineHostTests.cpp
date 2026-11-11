@@ -91,7 +91,10 @@ namespace
         require(!result.success, "engine should fail when runtime world cannot load");
         require(result.exitReason == EngineExitReason::RuntimeLoadFailed, "engine should report runtime load failure");
         require(result.framesExecuted == 0, "engine should not enter loop after runtime load failure");
-        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::RuntimeWorldLoadFailed), "engine should report runtime world load failure diagnostic");
+        require(hasDiagnosticCode(result.diagnostics, DiagnosticCode::CompiledProjectMissingRoot),
+            "engine preserves the specific world load diagnostic");
+        require(!hasDiagnosticCode(result.diagnostics, DiagnosticCode::RuntimeWorldLoadFailed),
+            "engine does not add a redundant world load error");
     }
 
     void testFrameLimitExitReason()

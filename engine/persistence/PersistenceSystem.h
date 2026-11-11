@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -22,6 +23,7 @@ struct PersistedValue
 class PersistenceSystem
 {
 public:
+    explicit PersistenceSystem(const std::optional<std::filesystem::path>& directory = std::nullopt);
     bool save(
         const std::string& name,
         const std::string& key,
@@ -34,6 +36,9 @@ public:
     );
 
 private:
+    std::filesystem::path directory;
+    std::filesystem::path savePath(const std::string& name) const;
+    bool exists(const std::string& name) const;
     using SaveMap =
         std::unordered_map<std::string, PersistedValue>;
 

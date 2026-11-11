@@ -427,7 +427,6 @@ RuntimeLoadResult RuntimeWorld::load(
     worldExtentContributions.clear();
     collectingWorldExtentContributions =
         false;
-    AttachmentRuntimeState::clear();
     automaticInstantiationFailed = false;
     automaticInstantiationFailure.clear();
 
@@ -497,7 +496,6 @@ RuntimeLoadResult RuntimeWorld::load(
     objects.push_back(
         std::move(root)
     );
-    AttachmentRuntimeState::registerObject(objects.back());
 
     std::vector<RuntimeObject> initialObjects;
 
@@ -510,10 +508,6 @@ RuntimeLoadResult RuntimeWorld::load(
         std::make_move_iterator(initialObjects.begin()),
         std::make_move_iterator(initialObjects.end())
     );
-    for (const auto& object : objects)
-    {
-        AttachmentRuntimeState::registerObject(object);
-    }
 
     if (automaticInstantiationFailed)
     {
@@ -1929,7 +1923,6 @@ void RuntimeWorld::flushSpawnQueue(ScriptEngine& scriptEngine)
         objects.push_back(
             std::move(object)
         );
-        AttachmentRuntimeState::registerObject(objects.back());
 
         bornObject(
             objects.back(),
@@ -2186,7 +2179,6 @@ void RuntimeWorld::cleanupDeadObjects()
         objects.end()
     );
 
-    AttachmentRuntimeState::pruneMissing(objects);
 }
 
 void RuntimeWorld::maintainIteratorCreation(ScriptEngine& scriptEngine)

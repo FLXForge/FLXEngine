@@ -13,6 +13,17 @@ namespace
 
     void testCliParserDefaults()
     {
+        for (const auto& command : { "run", "run-compiled" })
+        {
+            auto parsed = parseArguments({command, "--save-path=folder with spaces"});
+            require(parsed.success && parsed.arguments.runOptions.savePath == std::filesystem::path("folder with spaces"), "save path accepted by execution commands");
+        }
+        for (const auto& args : std::vector<std::vector<std::string>>{
+            {"run", "--save-path="}, {"run", "--save-path"},
+            {"run", "--save-path=a", "--save-path=b"},
+            {"compile", "--save-path=a"}, {"build", "--save-path=a"},
+            {"validate", "--save-path=a"}})
+            require(!parseArguments(args).success, "invalid save-path argument rejected");
         CliParseResult result =
             parseArguments({});
 

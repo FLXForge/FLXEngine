@@ -297,3 +297,11 @@ Definición compilada
 ```
 
 El script transforma estado local. Las operaciones del Runtime transforman su relación con el mundo.
+
+## Directorio configurable de persistencia
+El contrato normativo de [persistencia](persistence.md) es aplicable.
+La sesión recibe una ruta opcional en FlxSessionOptions::savePath; el standalone
+la propaga desde RunOptions::savePath. Se resuelve una sola vez al cargar:
+omisión = cwd/saves, relativa = cwd al iniciar esa sesión. No depende de Machine,
+no cambia save()/load() ni el formato .flxsave, y no permite fallback silencioso.
+El CLI expone --save-path=<directory> exclusivamente para run y run-compiled.

@@ -138,9 +138,7 @@ if(M_LIBRARIES)
     target_link_libraries(qjs PUBLIC ${M_LIBRARIES})
 endif()
 
-add_executable(flx
-    FLXEngine.cpp
-
+set(FLX_CLI_SOURCES
     engine/cli/CliApplication.h
     engine/cli/CliApplication.cpp
     engine/cli/CliArguments.h
@@ -164,6 +162,11 @@ add_executable(flx
     engine/cli/commands/VersionCommand.h
     engine/cli/commands/VersionCommand.cpp
 
+)
+
+set(FLX_CORE_SOURCES
+    engine/core/FlxSession.h
+    engine/core/FlxSession.cpp
     engine/core/Engine.h
     engine/core/Engine.cpp
     engine/core/EngineResult.h
@@ -277,63 +280,36 @@ add_executable(flx
     engine/debug/Logger.h
     engine/scripting/ScriptModule.h)
 
-if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
-    set_target_properties(
-        flx
-        PROPERTIES
-        WIN32_EXECUTABLE ON
+# Production and testing variants share source/configuration lists. FLX_TESTING
+# changes class layouts and hooks, so tests retain a separate engine build.
+function(configure_flx_core target)
+    target_compile_features(${target} PUBLIC cxx_std_20)
+    target_include_directories(${target} PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/engine"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
     )
+    target_link_libraries(${target} PUBLIC raylib nlohmann_json::nlohmann_json yaml-cpp::yaml-cpp qjs)
+endfunction()
+
+add_library(flx-core STATIC ${FLX_CORE_SOURCES})
+configure_flx_core(flx-core)
+add_library(flx-cli STATIC ${FLX_CLI_SOURCES})
+target_link_libraries(flx-cli PUBLIC flx-core)
+add_executable(flx FLXEngine.cpp)
+target_link_libraries(flx PRIVATE flx-cli)
+
+if(WIN32 AND FLX_WINDOWS_SUBSYSTEM)
+    set_target_properties(flx PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 
-target_include_directories(
-    flx
-    PRIVATE
-    "${CMAKE_CURRENT_BINARY_DIR}/generated"
-    ${quickjs_SOURCE_DIR}
-)
-
-target_link_libraries(
-    flx
-    PRIVATE
-    raylib
-    nlohmann_json::nlohmann_json
-    yaml-cpp::yaml-cpp
-    qjs
-)
-
 enable_testing()
-
-get_target_property(FLX_TEST_SOURCES flx SOURCES)
-list(REMOVE_ITEM FLX_TEST_SOURCES FLXEngine.cpp)
-
-add_library(
-    flx-test-engine
-    STATIC
-    ${FLX_TEST_SOURCES}
+add_library(flx-test-engine STATIC
+    ${FLX_CORE_SOURCES}
+    ${FLX_CLI_SOURCES}
     tests/audio/LegacyMusicSynthesis.cpp
 )
-
-target_compile_definitions(
-    flx-test-engine
-    PUBLIC
-    FLX_TESTING
-)
-
-target_include_directories(
-    flx-test-engine
-    PUBLIC
-    "${CMAKE_CURRENT_BINARY_DIR}/generated"
-    ${quickjs_SOURCE_DIR}
-)
-
-target_link_libraries(
-    flx-test-engine
-    PUBLIC
-    raylib
-    nlohmann_json::nlohmann_json
-    yaml-cpp::yaml-cpp
-    qjs
-)
+configure_flx_core(flx-test-engine)
+target_compile_definitions(flx-test-engine PUBLIC FLX_TESTING)
 
 add_library(
     flx-test-support
@@ -447,3 +423,13 @@ target_link_libraries(flx-audio-device-tests PRIVATE flx-test-engine)
 
 add_flx_test_suite(flx-text-rasterization-tests tests/runtime/TextRasterizationTests.cpp)
 set_tests_properties(flx-text-rasterization-tests PROPERTIES SKIP_RETURN_CODE 77)
+
+add_flx_test_suite(flx-attachment-isolation-tests tests/runtime/AttachmentIsolationTests.cpp)
+
+add_flx_test_suite(flx-session-tests tests/session/FlxSessionTests.cpp)
+add_executable(flx-core-consumer-tests tests/session/CoreConsumerTests.cpp)
+target_link_libraries(flx-core-consumer-tests PRIVATE flx-core)
+add_test(NAME flx-core-consumer-tests COMMAND flx-core-consumer-tests)
+
+add_flx_test_suite(flx-session-device-tests tests/session/FlxSessionDeviceTests.cpp)
+set_tests_properties(flx-session-device-tests PROPERTIES SKIP_RETURN_CODE 77)

@@ -101,6 +101,13 @@
 <p>Related: <a class="link" href="api/world.html#show"><code>show()</code></a>, <a class="link" href="api/world.html#kill"><code>kill()</code></a>.</p>
 </section>
 <h2 id="persistence">Persistence</h2>
+<h3>Save directory</h3>
+<p>The portable default uses <code>saves/</code> relative to the working directory at session startup. The host application can supply another location, for example for an installed or packaged application. Each session resolves its path once; later working directory changes do not redirect it.</p>
+<p>In the CLI, <code>run</code> and <code>run-compiled</code> accept <code>--save-path=&lt;directory&gt;</code>. It is not supported by <code>compile</code> or <code>build</code>. An explicitly empty path is rejected. The directory is created on save; access failures are diagnosed without falling back to another location. <code>load()</code> retains its default-value behavior when data cannot be recovered.</p>
+<pre><code>flx run game.flx --save-path="./qa/slot1"
+flx run game.flx --save-path="./qa/slot2"
+flx run-compiled game.flxc --save-path="C:/Games/MyGame/saves"</code></pre>
+<p>The <code>.flxsave</code> extension and binary format remain unchanged. Runs or sessions sharing a directory may also share save files with the same name. No per-game subdirectories are added automatically.</p>
 <p>Persistence stores only boolean, number and string. It is independent of in-memory local/global state. Does not save the entire World.</p>
 <section data-api-symbol="save">
 <h3 id="save">save()</h3>

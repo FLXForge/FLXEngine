@@ -25,25 +25,38 @@ void AudioSystem::init()
 
     InitAudioDevice();
     initialized = IsAudioDeviceReady();
+    ownsDevice = initialized;
+}
+
+bool AudioSystem::attachDevice()
+{
+    if (initialized)
+    {
+        return !ownsDevice;
+    }
+    initialized = IsAudioDeviceReady();
+    ownsDevice = false;
+    return initialized;
 }
 
 void AudioSystem::shutdown()
 {
-    if (!initialized)
-    {
-        return;
-    }
-
     for (auto& activeSound : activeSounds)
     {
-        UnloadSound(activeSound.sound);
+        if (activeSound.loaded)
+        {
+            UnloadSound(activeSound.sound);
+        }
     }
-
     activeSounds.clear();
     stopMusic();
-
-    CloseAudioDevice();
+    if (initialized && ownsDevice)
+    {
+        CloseAudioDevice();
+    }
     initialized = false;
+    ownsDevice = false;
+    nextSoundOrder = 0;
 }
 
 void AudioSystem::update()

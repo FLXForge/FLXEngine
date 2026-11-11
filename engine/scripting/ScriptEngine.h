@@ -29,7 +29,7 @@ struct JSContext;
 class ScriptEngine
 {
 public:
-    ScriptEngine();
+    explicit ScriptEngine(const std::optional<std::filesystem::path>& savePath = std::nullopt);
     ~ScriptEngine();
 
     void eval(const std::string& code);

@@ -18,6 +18,8 @@ public:
     ~AudioSystem();
 
     void init();
+    // Borrow an already initialized host device; shutdown releases only our resources.
+    bool attachDevice();
     void shutdown();
     void update();
 
@@ -91,6 +93,7 @@ private:
     int activeMusicVoiceUse() const;
 
     bool initialized = false;
+    bool ownsDevice = false;
     int sampleRate = 44100;
     uint64_t nextSoundOrder = 0;
     AudioChipDefinition chip;

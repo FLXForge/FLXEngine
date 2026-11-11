@@ -202,24 +202,37 @@ jobs:
                   if [ -n "$interface" ]; then
                     read -r -a saved_dns <<< "$(resolvectl dns "$interface" | sed 's/^[^:]*: //')"
                     for resolver in $candidates; do
-                      usable=1
-                      for host in archive.ubuntu.com security.ubuntu.com; do
-                        answers=$(dig +time=2 +tries=1 "@$resolver" "$host" A +noall +answer |
-                          awk '$4 == "A" { print $5 }') || answers=''
-                        printf 'Resolver %s; host %s; A answers: %s\n' "$resolver" "$host" "$answers" |
-                          tee -a diagnostics/apt-alternate-dns.log
-                        if [ -z "$answers" ]; then usable=0; fi
-                      done
-                      if [ "$usable" -eq 1 ]; then
-                        # Restore DHCP-provided DNS when this setup step exits.
-                        trap 'timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "${saved_dns[@]}"' EXIT
-                        timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "$resolver"
-                        timeout --kill-after=2s 10s sudo resolvectl flush-caches
-                        if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes-after-dns.log; then
-                          recovered=1
+                      for transport in udp tcp; do
+                        dns_transport=()
+                        if [ "$transport" = tcp ]; then dns_transport=(+tcp); fi
+                        usable=1
+                        for host in archive.ubuntu.com security.ubuntu.com; do
+                          answers=$(dig "${dns_transport[@]}" +time=2 +tries=1 "@$resolver" "$host" A +noall +answer |
+                            awk '$4 == "A" { print $5 }') || answers=''
+                          printf 'Resolver %s; transport %s; host %s; A answers: %s\n' "$resolver" "$transport" "$host" "$answers" |
+                            tee -a diagnostics/apt-alternate-dns.log
+                          if [ -z "$answers" ]; then usable=0; fi
+                        done
+                        if [ "$usable" -eq 1 ]; then
+                          if [ "$transport" = tcp ]; then
+                            # glibc use-vc queries the verified resolver via TCP. Preserve
+                            # the original resolv.conf symlink/file and restore it on exit.
+                            dns_backup=$(mktemp "$RUNNER_TEMP/flx-resolv.XXXXXXXX")
+                            sudo cp -P --remove-destination /etc/resolv.conf "$dns_backup"
+                            trap 'sudo cp -P --remove-destination "$dns_backup" /etc/resolv.conf && rm -f -- "$dns_backup" "$dns_backup.tcp"' EXIT
+                            printf 'nameserver %s\noptions use-vc timeout:5 attempts:1\n' "$resolver" > "$dns_backup.tcp"
+                            sudo cp --remove-destination "$dns_backup.tcp" /etc/resolv.conf
+                          else
+                            trap 'timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "${saved_dns[@]}"' EXIT
+                            timeout --kill-after=2s 10s sudo resolvectl dns "$interface" "$resolver"
+                            timeout --kill-after=2s 10s sudo resolvectl flush-caches
+                          fi
+                          if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes-after-dns.log; then
+                            recovered=1
+                          fi
+                          break 2
                         fi
-                        break
-                      fi
+                      done
                     done
                   fi
                 fi

@@ -193,8 +193,51 @@ jobs:
                 if probe_ubuntu_repositories 2>&1 | tee diagnostics/apt-fallback-probes-after-reset.log; then
                   echo 'Resolver recovered; proceeding with the single APT fallback.'
                 else
-                  echo '::error::Ubuntu DNS/HTTPS remains unavailable after one resolver cache reset; see apt-resolver.log and probe logs. Dependencies were not installed.'
-                  exit 1
+                  echo '::warning::Ubuntu domain DNS still fails; checking the kernel.org Ubuntu archive replica.'
+                  # Last resort after confirmed ubuntu.com DNS failure (run 43052664459).
+                  # Verify every existing suite with Ubuntu's keyring before changing APT.
+                  mirror=https://mirrors.edge.kernel.org/ubuntu
+                  for suite in noble noble-updates noble-backports noble-security; do
+                    release="diagnostics/apt-replica-$suite.InRelease"
+                    if timeout --kill-after=2s 20s curl --silent --show-error --fail \
+                        --proto '=https' --connect-timeout 5 --max-time 15 \
+                        --output "$release" "$mirror/dists/$suite/InRelease" &&
+                        gpgv --keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg "$release" &&
+                        grep -qx "Suite: $suite" "$release" &&
+                        grep -qx 'Codename: noble' "$release"; then
+                      echo "Verified Ubuntu signature and suite: $suite"
+                    else
+                      echo "::error::Ubuntu replica verification failed for $suite; refusing to change APT."
+                      exit 1
+                    fi
+                  done 2>&1 | tee diagnostics/apt-replica-verification.log
+                  sudo python3 - <<'PY'
+          import pathlib
+          import re
+          # Preserve deb822 suites/components/Signed-By and third-party repositories.
+          paths = [pathlib.Path('/etc/apt/apt-mirrors.txt'), pathlib.Path('/etc/apt/sources.list')]
+          paths += sorted(pathlib.Path('/etc/apt/sources.list.d').glob('*.sources'))
+          paths += sorted(pathlib.Path('/etc/apt/sources.list.d').glob('*.list'))
+          pattern = r'https?://(?:azure\.archive|archive|security)\.ubuntu\.com/ubuntu(?=[/\s]|$)'
+          for path in paths:
+              if not path.is_file():
+                  continue
+              original = path.read_text()
+              updated, count = re.subn(pattern, 'https://mirrors.edge.kernel.org/ubuntu', original)
+              if count:
+                  if path == pathlib.Path('/etc/apt/apt-mirrors.txt'):
+                      lines = []
+                      seen = False
+                      for line in updated.splitlines(keepends=True):
+                          if line.split() and line.split()[0].rstrip('/') == 'https://mirrors.edge.kernel.org/ubuntu':
+                              if seen:
+                                  continue
+                              seen = True
+                          lines.append(line)
+                      updated = ''.join(lines)
+                  path.write_text(updated)
+          PY
+                  log_apt_sources > diagnostics/apt-sources-replica.log
                 fi
               fi
               # A failed fallback remains fatal, including any third-party repository failure.

@@ -35,14 +35,15 @@ namespace
         return project;
     }
 
-    void verify(const std::filesystem::path& file)
+    void verify(const std::filesystem::path& file, uint32_t expectedFormat = 0)
     {
         auto decoded = CompiledProjectReader::read(file.string());
         for (const auto& diagnostic : decoded.diagnostics.all())
             std::cerr << diagnosticCodeText(diagnostic.code) << " " << diagnostic.message << '\n';
         require(decoded.success, "read fixture without source files");
-        require(decoded.metadata.formatVersion == 12 &&
-            flx::binary::CompiledProjectCodec::FormatVersion == 12, "format 12 contract");
+        require((decoded.metadata.formatVersion == 12 || decoded.metadata.formatVersion == 13) &&
+            flx::binary::CompiledProjectCodec::FormatVersion == 13, "read legacy format 12 and current format 13");
+        if (expectedFormat) require(decoded.metadata.formatVersion == expectedFormat, "fixture must preserve its expected format");
         require(!decoded.metadata.producerVersion.empty(), "producer metadata");
         require(decoded.project.context.name == "Format12CrossPlatform" &&
             decoded.project.rootId == "root", "project identity");
@@ -72,7 +73,7 @@ namespace
         require(number && number->numberValue == 3.5, "JavaScript numeric result");
         require(text && text->stringValue == "caf\xc3\xa9", "JavaScript UTF-8 string result");
         require(flag && flag->booleanValue, "JavaScript boolean result");
-        std::cout << "[PASS] format=12 producer=" << decoded.metadata.producerVersion
+        std::cout << "[PASS] format=" << decoded.metadata.formatVersion << " producer=" << decoded.metadata.producerVersion
             << " objects=2 scripts=1 frames=2 number=3.5 text=UTF-8 flag=true\n";
     }
 }
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
         {
             Diagnostics diagnostics;
             require(CompiledProjectWriter::write(argv[2], fixtureProject(), diagnostics), "write fixture");
-            verify(argv[2]);
+            verify(argv[2], 13);
         }
         else if (argc == 3 && std::string(argv[1]) == "--read-fixture")
         {
@@ -93,12 +94,12 @@ int main(int argc, char** argv)
         }
         else if (argc == 1)
         {
-            verify(FLX_WINDOWS_FIXTURE);
+            verify(FLX_WINDOWS_FIXTURE, 12);
             flx::portability::TemporaryDirectory temporary;
             const auto roundtrip = temporary.path() / "native fixture.flxc";
             Diagnostics diagnostics;
             require(CompiledProjectWriter::write(roundtrip.string(), fixtureProject(), diagnostics), "native writer");
-            verify(roundtrip);
+            verify(roundtrip, 13);
         }
         else
         {

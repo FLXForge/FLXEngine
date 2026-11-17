@@ -8,6 +8,7 @@
 #include <vector>
 
 class RuntimeObject;
+class BitmapTextureCache;
 
 class DrawingRenderer
 {
@@ -26,6 +27,15 @@ public:
         const WorldExtent& worldExtent,
         float rasterWidth,
         float rasterHeight
+    );
+
+    static void render(
+        const std::vector<VisualPrimitive>& primitives,
+        const std::vector<RuntimeObject>& objects,
+        const WorldExtent& worldExtent,
+        float rasterWidth,
+        float rasterHeight,
+        BitmapTextureCache* bitmapCache
     );
 
     static Vector2 logicalToPhysical(

@@ -20,6 +20,9 @@ namespace flx::binary
         float readF32(const std::string& field = "");
         bool readBool(const std::string& field = "");
         std::string readString(const std::string& field = "");
+        // Byte payload shares the aggregate string/payload budget. Length is checked
+        // against validated dimensions before allocating, not after reading a string.
+        std::string readBlob(uint32_t expectedSize, const std::string& field);
         uint32_t readCount(
             uint32_t limit,
             const std::string& field

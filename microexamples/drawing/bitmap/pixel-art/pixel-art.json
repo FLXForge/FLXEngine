@@ -1,0 +1,263 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 320,
+    "y": 240
+  },
+  "size": {
+    "width": 640,
+    "height": 480
+  },
+  "children": {
+    "background": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 640,
+        "height": 480
+      },
+      "visual": {
+        "depth": -10,
+        "color": "#10182B",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "title": {
+      "origin": {
+        "x": 320,
+        "y": 40
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "PIXEL ART / STAR RUNNER",
+            "fontSize": 22
+          }
+        ]
+      }
+    },
+    "subtitle": {
+      "origin": {
+        "x": 320,
+        "y": 438
+      },
+      "visual": {
+        "color": "#92A6C0",
+        "representation": [
+          {
+            "text": "16 x 20 CELLS   /   LOCAL PALETTE   /   POINT FILTER",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "panel": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 320,
+        "height": 328
+      },
+      "visual": {
+        "depth": -5,
+        "color": "#19253E",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "rocket": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 192,
+        "height": 240
+      },
+      "visual": {
+        "palette": {
+          "0": "blank",
+          "1": "#24344D",
+          "2": "#EDF6FF",
+          "3": "#99B9D0",
+          "4": "#5FFFD2",
+          "5": "#FFCA55",
+          "6": "#FF5C77"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "0000000110000000",
+                "0000001221000000",
+                "0000012223100000",
+                "0000122223310000",
+                "0000121111310000",
+                "0000121441310000",
+                "0000121441310000",
+                "0000121111310000",
+                "0000122223310000",
+                "0000122223310000",
+                "0006622223366000",
+                "0066622223366600",
+                "0666622223366660",
+                "0666622223366660",
+                "0666665555666660",
+                "0000665555660000",
+                "0000065555600000",
+                "0000065555600000",
+                "0000005555000000",
+                "0000005555000000"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "star0": {
+      "origin": {
+        "x": 74,
+        "y": 125
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star1": {
+      "origin": {
+        "x": 125,
+        "y": 330
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star2": {
+      "origin": {
+        "x": 510,
+        "y": 95
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star3": {
+      "origin": {
+        "x": 570,
+        "y": 300
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star4": {
+      "origin": {
+        "x": 480,
+        "y": 390
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star5": {
+      "origin": {
+        "x": 100,
+        "y": 210
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "star6": {
+      "origin": {
+        "x": 550,
+        "y": 210
+      },
+      "size": {
+        "width": 3,
+        "height": 3
+      },
+      "visual": {
+        "depth": 0,
+        "color": "#5F7396",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -50,3 +50,14 @@ sensibles para herramientas de diagnóstico locales.
 | `FLX-RUNTIME-00017` | Warning | Se rechazó una nueva carga porque la sesión no estaba en `Empty`. |
 | `FLX-RUNTIME-00018` | Error | La configuración de sesión no es válida, por ejemplo una ruta de guardado vacía o con NUL. |
 | `FLX-RUNTIME-00019` | Error | El delta de actualización es negativo o no finito. |
+
+## 4. Colores declarativos y bitmap (v0.4.0)
+
+| Código | Nombre | Condición |
+| --- | --- | --- |
+| FLX-RESOURCE-00019 | UnknownVisualColor | Color inexistente o clave compacta ausente. |
+| FLX-RESOURCE-00020 | InvalidVisualPalette | Declaración o valor nativo inválido; no se permiten alias encadenados. |
+| FLX-RESOURCE-00021 | InvalidBitmapDeclaration | Matriz, repetición, dimensión o modelo compilado inválido. |
+
+Las referencias conservan los códigos existentes de recurso y miembro ausente,
+con origen, campo, referencia y ruta efectiva cuando estén disponibles.

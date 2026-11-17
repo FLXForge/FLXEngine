@@ -61,6 +61,19 @@ un único contrato:
 -   **CRT** --- efecto visual basado en líneas y píxeles inmediatos.
 -   **Rain** --- composición procedural mediante Drawing.
 
+#### `drawing/bitmap`
+
+Paletas declarativas y la familia bitmap (v0.4.0):
+
+- `pixel-art`: cohete compacto con paleta local.
+- `palette-composition`: paletas compartidas, miembros y overrides independientes.
+- `bitmap-patterns`: motivos arcade mediante repeticiones horizontales y verticales.
+- `mixed-representations`: primitivas, geometría, texto y bitmap con transformación común.
+- `machine-colors`: el mismo JSON con tres Machines para comparar alpha y paleta efectiva.
+
+Cada directorio incluye README, JSON y manifiesto .flx ejecutable. No requiere
+entrada ni audio. Los nuevos .flxc usan formato 13; se mantiene lectura del 12.
+
 ### 2. Mechanics
 
 #### `mechanics`

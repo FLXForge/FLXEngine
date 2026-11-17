@@ -1,5 +1,7 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProject.h"
+#include "../../engine/compiler/CompiledProjectBinary.h"
+#include "../../engine/core/FlxSession.h"
 #include "../../engine/compiler/ProjectCompiler.h"
 #include "../../engine/graphics/DrawingContext.h"
 #include "../../engine/graphics/DrawingRenderer.h"
@@ -1274,11 +1276,107 @@ namespace
 
         require(!emptyBounds.found, "empty text should remain valid without visible glyphs");
     }
+    void testBitmapTextureTransformTransparencyAndOrder()
+    {
+        HiddenTestWindow window;
+        auto data=std::make_shared<BitmapDefinition>();
+        data->width=2;data->height=2;data->pixels={RED,GREEN,BLUE,BLANK};
+        RuntimeObject object("bitmap",{20,15},{8,4},GREEN);
+        object.position={20,15};object.hasSize=true;
+        object.hasVisualColor=true;object.visualColor=GREEN;
+        RepresentationElementDefinition background;
+        background.kind=RepresentationElementKind::Primitive;background.primitive="rectangle";
+        background.hasColor=true;background.color=YELLOW;
+        RepresentationElementDefinition bitmap;bitmap.kind=RepresentationElementKind::Bitmap;bitmap.bitmap=data;
+        object.representation={background,bitmap};
+        BitmapTextureCache cache;
+        std::vector<RuntimeObject> objects;
+        auto render=[&](int width)
+        {
+            RenderTexture2D target=LoadRenderTexture(width,30);
+            BeginTextureMode(target);ClearBackground(MAGENTA);
+            DrawingRenderer::render(RepresentationPrimitiveBuilder::build(object,WHITE),objects,
+                WorldExtent{0,0,40,30},static_cast<float>(width),30,&cache);
+            EndTextureMode();
+            Image image=LoadImageFromTexture(target.texture);ImageFlipVertical(&image);
+            UnloadRenderTexture(target);return image;
+        };
+        Image image=render(40);
+        require(sameColor(GetImageColor(image,18,14),RED),"bitmap top-left and no visual.color tint");
+        require(sameColor(GetImageColor(image,22,14),GREEN),"bitmap top-right orientation");
+        require(sameColor(GetImageColor(image,18,16),BLUE),"bitmap bottom-left orientation");
+        require(sameColor(GetImageColor(image,22,16),YELLOW),"blank uses normal alpha blending over earlier representation");
+        UnloadImage(image);
+        const unsigned texture=cache.get(data).id;
+        image=render(40);UnloadImage(image);
+        require(cache.get(data).id==texture,"immutable bitmap texture reused across frames");
+        object.angle=90;
+        image=render(80);
+        ColorBounds red;
+        for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x)
+            if(sameColor(GetImageColor(image,x,y),RED))includePixel(red,x,y);
+        require(red.found && width(red)==4 && height(red)==4,
+            "bitmap rotates in world space before anisotropic raster scaling");
+        UnloadImage(image);
+        object.angle=0;
+        auto opaque=std::make_shared<BitmapDefinition>(*data);opaque->pixels[3]=BLACK;
+        object.representation[1].bitmap=opaque;
+        image=render(40);
+        require(sameColor(GetImageColor(image,22,16),BLACK),"opaque Machine-projected blank is drawn, never skipped");
+        UnloadImage(image);
+        object.representation={bitmap,background};
+        image=render(40);
+        require(sameColor(GetImageColor(image,18,14),YELLOW),"later primitive covers earlier bitmap");
+        UnloadImage(image);
+    }
+
+    void testBitmapMicroexamplesSourceAndCompiledRendering()
+    {
+        HiddenTestWindow window;
+        const auto previews=testRoot()/"bitmap-previews";
+        std::filesystem::create_directories(previews);
+        const std::vector<std::string> examples={
+            "pixel-art/pixel-art", "palette-composition/palette-composition",
+            "bitmap-patterns/bitmap-patterns", "mixed-representations/mixed-representations",
+            "machine-colors/machine-colors", "machine-colors/machine-colors-opaque",
+            "machine-colors/machine-colors-restricted"};
+        for(const auto& name:examples)
+        {
+            const auto path=std::filesystem::path(FLX_SOURCE_DIR)/"microexamples/drawing/bitmap"/(name+".flx");
+            const auto result=compile(path);
+            require(result.success,"microexample should compile: "+name);
+            const auto stem=std::filesystem::path(name).filename().string();
+            const auto compiled=previews/(stem+".flxc");Diagnostics diagnostics;
+            require(CompiledProjectWriter::write(compiled.string(),result.project,diagnostics),"write bitmap showcase");
+            const auto decoded=CompiledProjectReader::read(compiled.string());
+            require(decoded.success && decoded.metadata.formatVersion==13,"read bitmap showcase format 13");
+            auto render=[&](const CompiledProject& project,bool capture)
+            {
+                FlxSession session;FlxSessionOptions options;options.enableAudio=false;
+                require(session.load(project,options),"load bitmap showcase without audio: "+name);
+                for(int frame=0;frame<3;++frame)require(session.update(1.0f/60.0f)&&session.render(),"render bitmap showcase: "+name);
+                Image image=LoadImageFromTexture(session.output());ImageFlipVertical(&image);
+                require(image.width==640 && image.height==480,"showcase output dimensions");
+                if(capture)require(ExportImage(image,(previews/(stem+".png")).string().c_str()),"export visual QA preview");
+                std::vector<unsigned char> pixels;
+                for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x)
+                {
+                    const Color c=GetImageColor(image,x,y);
+                    pixels.insert(pixels.end(),{c.r,c.g,c.b,c.a});
+                }
+                UnloadImage(image);session.unload();return pixels;
+            };
+            require(render(result.project,true)==render(decoded.project,false),"source and compiled image must match: "+name);
+        }
+    }
+
 }
 
 bool requiresGraphics(const std::string& name)
 {
     return
+        name == "Bitmap microexamples source and compiled rendering" ||
+        name == "Bitmap texture transforms transparency and order" ||
         name == "Renderer scales logical pixel to physical pixels" ||
         name == "Renderer stretches world extent to machine raster" ||
         name == "Local primitive wraps with reference but world primitive does not" ||
@@ -1298,6 +1396,8 @@ bool requiresGraphics(const std::string& name)
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
+        { "Bitmap microexamples source and compiled rendering", testBitmapMicroexamplesSourceAndCompiledRendering },
+        { "Bitmap texture transforms transparency and order", testBitmapTextureTransformTransparencyAndOrder },
         { "Drawing context rejects calls outside draw turn", testDrawingContextRejectsCallsOutsideDrawTurn },
         { "Text bindings preserve logical sizes and coordinates", testTextBindingsPreserveLogicalSizesAndCoordinates },
         { "World and local primitives capture owner reference and transform", testWorldAndLocalPrimitivesCaptureOwnerReferenceAndTransform },

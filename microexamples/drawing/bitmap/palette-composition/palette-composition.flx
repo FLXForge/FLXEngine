@@ -1,0 +1,12 @@
+# Game data
+title=Palette Composition - Arcade Totems
+name=palette-composition
+version=1.0.0
+engine=0.4.0
+
+# Configuration
+path=.
+root=palette-composition
+
+# Notes
+notes=Declarative Bitmap microexample

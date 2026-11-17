@@ -1,0 +1,356 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 320,
+    "y": 240
+  },
+  "size": {
+    "width": 640,
+    "height": 480
+  },
+  "children": {
+    "background": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 640,
+        "height": 480
+      },
+      "visual": {
+        "depth": -10,
+        "color": "#10182B",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "title": {
+      "origin": {
+        "x": 320,
+        "y": 40
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "MIXED REPRESENTATIONS",
+            "fontSize": 22
+          }
+        ]
+      }
+    },
+    "subtitle": {
+      "origin": {
+        "x": 320,
+        "y": 438
+      },
+      "visual": {
+        "color": "#92A6C0",
+        "representation": [
+          {
+            "text": "PRIMITIVE -> GEOMETRY -> BITMAP -> TEXT   /   SHARED TRANSFORM",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "badge0": {
+      "origin": {
+        "x": 125,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "mechanics": {
+        "rotation": {
+          "angle": -18
+        }
+      },
+      "visual": {
+        "color": "magenta",
+        "palette": {
+          "0": "blank",
+          "1": "#FFC75A",
+          "2": "#5FFFD2",
+          "3": "#344663"
+        },
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "color": "#1D2C47"
+          },
+          {
+            "geometry": [
+              {
+                "x": 0,
+                "y": -90
+              },
+              {
+                "x": 90,
+                "y": 0
+              },
+              {
+                "x": 0,
+                "y": 90
+              },
+              {
+                "x": -90,
+                "y": 0
+              }
+            ],
+            "mode": "close",
+            "color": "#5C7296"
+          },
+          {
+            "bitmap": {
+              "pixels": [
+                "0000001111000000",
+                "0000111111110000",
+                "0001122002211000",
+                "0012200000022100",
+                "0112000000002110",
+                "0120000000000210",
+                "1120000000000211",
+                "1100333333330011",
+                "1100333333330011",
+                "1120000000000211",
+                "0120000000000210",
+                "0112000000002110",
+                "0012200000022100",
+                "0001122002211000",
+                "0000111111110000",
+                "0000001111000000"
+              ]
+            },
+            "size": {
+              "width": "90%",
+              "height": "90%"
+            }
+          },
+          {
+            "text": "FLX",
+            "fontSize": 24,
+            "color": "white"
+          }
+        ]
+      }
+    },
+    "angle0": {
+      "origin": {
+        "x": 125,
+        "y": 370
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "-18 DEG",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "badge1": {
+      "origin": {
+        "x": 320,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "mechanics": {
+        "rotation": {
+          "angle": 0
+        }
+      },
+      "visual": {
+        "color": "magenta",
+        "palette": {
+          "0": "blank",
+          "1": "#FFC75A",
+          "2": "#5FFFD2",
+          "3": "#344663"
+        },
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "color": "#1D2C47"
+          },
+          {
+            "geometry": [
+              {
+                "x": 0,
+                "y": -90
+              },
+              {
+                "x": 90,
+                "y": 0
+              },
+              {
+                "x": 0,
+                "y": 90
+              },
+              {
+                "x": -90,
+                "y": 0
+              }
+            ],
+            "mode": "close",
+            "color": "#5C7296"
+          },
+          {
+            "bitmap": {
+              "pixels": [
+                "0000001111000000",
+                "0000111111110000",
+                "0001122002211000",
+                "0012200000022100",
+                "0112000000002110",
+                "0120000000000210",
+                "1120000000000211",
+                "1100333333330011",
+                "1100333333330011",
+                "1120000000000211",
+                "0120000000000210",
+                "0112000000002110",
+                "0012200000022100",
+                "0001122002211000",
+                "0000111111110000",
+                "0000001111000000"
+              ]
+            },
+            "size": {
+              "width": "90%",
+              "height": "90%"
+            }
+          },
+          {
+            "text": "FLX",
+            "fontSize": 24,
+            "color": "white"
+          }
+        ]
+      }
+    },
+    "angle1": {
+      "origin": {
+        "x": 320,
+        "y": 370
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "0 DEG",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "badge2": {
+      "origin": {
+        "x": 515,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "mechanics": {
+        "rotation": {
+          "angle": 18
+        }
+      },
+      "visual": {
+        "color": "magenta",
+        "palette": {
+          "0": "blank",
+          "1": "#FFC75A",
+          "2": "#5FFFD2",
+          "3": "#344663"
+        },
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "color": "#1D2C47"
+          },
+          {
+            "geometry": [
+              {
+                "x": 0,
+                "y": -90
+              },
+              {
+                "x": 90,
+                "y": 0
+              },
+              {
+                "x": 0,
+                "y": 90
+              },
+              {
+                "x": -90,
+                "y": 0
+              }
+            ],
+            "mode": "close",
+            "color": "#5C7296"
+          },
+          {
+            "bitmap": {
+              "pixels": [
+                "0000001111000000",
+                "0000111111110000",
+                "0001122002211000",
+                "0012200000022100",
+                "0112000000002110",
+                "0120000000000210",
+                "1120000000000211",
+                "1100333333330011",
+                "1100333333330011",
+                "1120000000000211",
+                "0120000000000210",
+                "0112000000002110",
+                "0012200000022100",
+                "0001122002211000",
+                "0000111111110000",
+                "0000001111000000"
+              ]
+            },
+            "size": {
+              "width": "90%",
+              "height": "90%"
+            }
+          },
+          {
+            "text": "FLX",
+            "fontSize": 24,
+            "color": "white"
+          }
+        ]
+      }
+    },
+    "angle2": {
+      "origin": {
+        "x": 515,
+        "y": 370
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "18 DEG",
+            "fontSize": 12
+          }
+        ]
+      }
+    }
+  }
+}

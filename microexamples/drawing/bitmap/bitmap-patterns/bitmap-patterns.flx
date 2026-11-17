@@ -1,0 +1,12 @@
+# Game data
+title=Bitmap Patterns - Signal Weave
+name=bitmap-patterns
+version=1.0.0
+engine=0.4.0
+
+# Configuration
+path=.
+root=bitmap-patterns
+
+# Notes
+notes=Declarative Bitmap microexample

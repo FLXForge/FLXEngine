@@ -4,7 +4,7 @@
 - Documento: especificación normativa
 - Ámbito: persistencia binaria de `CompiledProject`
 - Versión inicial: 0.3.0
-- Formato vigente: 10
+- Formato vigente: 13
 - Estado: consolidado
 
 ## 1. Propósito
@@ -32,7 +32,7 @@ producerVersion
 ```
 Formato vigente:
 ```text
-FormatVersion = 11
+FormatVersion = 13
 ```
 Códigos:
 - FLX-BINARY-00013 InvalidCompiledProjectMagic
@@ -247,3 +247,29 @@ documentos
 → representación
 → ejecución
 ```
+
+## 23. Bitmap y compatibilidad del formato 13 (v0.4.0)
+
+El writer escribe formato 13. El reader admite 12 y 13; el resto se rechaza.
+El formato 12 se lee sin añadir campos ni reinterpretar etiquetas. Su fixture
+Windows permanece intacto. Un reader antiguo no puede ejecutar un bitmap 13.
+
+Las etiquetas existentes conservan 0=primitive, 1=geometry y 2=text.
+La etiqueta 3=bitmap solo es válida en formato 13 y añade, después de los
+campos comunes del elemento:
+
+```text
+u8 width (1..255)
+u8 height (1..255)
+u32 byteLength = width * height * 4
+RGBA bytes, orden por filas; un byte por canal R, G, B, A
+```
+
+No se persisten texturas, alias ni paletas declarativas. Los colores ya han
+pasado por Machine. El reader valida dimensiones y longitud exacta antes de
+reservar el payload. Writer y validator comprueban el número de píxeles.
+
+Los bytes del payload comparten con los strings el presupuesto agregado de
+96 MiB; el límite físico de 64 MiB sigue vigente. Un bitmap es un registro con
+payload acotado, no 65.025 entradas del presupuesto de elementos. Esto permite
+255x255 sin relajar MaxTotalDecodedElements. El payload es binario, no UTF-8.

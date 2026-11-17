@@ -46,6 +46,7 @@ Cada elemento de `representation` debe declarar exactamente una familia:
 primitive
 geometry
 text
+bitmap
 ```
 
 No se mezclan familias dentro del mismo elemento.
@@ -127,7 +128,7 @@ El texto declarativo es representación del mundo. No sustituye a `draw_text()`,
 
 ## 7. Color
 
-Un elemento puede declarar su propio `color`. Si no lo declara, usa `visual.color`. Si `visual.color` también está ausente, el renderer usa el color efectivo por defecto.
+Para primitive, geometry y text, un elemento puede declarar su propio `color`. Si no lo declara, usa `visual.color`. Si `visual.color` también está ausente, el renderer usa el color efectivo por defecto.
 
 La proyección del color por Video Chip se aplica durante compilación, no como filtro por frame.
 
@@ -139,6 +140,19 @@ restore_color(object);
 ```
 
 `apply_color` cambia el color visual runtime del objeto. `restore_color` recupera el color declarado al crear la instancia, incluida la ausencia de color declarado.
+
+## 7.1 Paletas y Bitmap (v0.4.0)
+
+`visual.palette` compone nombres locales; la última definición prevalece. Las
+claves exactas se buscan antes que los colores nativos. Los valores de paleta
+no pueden encadenar alias. Un color declarativo desconocido es un error.
+
+`bitmap` declara una matriz expandida de 1..255 por dimensión. Cada píxel pasa
+por Machine y no recibe tintado de visual.color. El tamaño hereda el del objeto
+o usa las dimensiones naturales de la matriz si el objeto carece de size.
+
+Gramática, referencias, repeticiones y validación se definen en
+[Paletas y Bitmap](visual-bitmap-palette.md).
 
 ## 8. Invariantes
 
@@ -152,3 +166,7 @@ restore_color(object);
 - VIS-008 Geometry usa puntos locales al pivot.
 - VIS-009 Geometry fill usa regla par-impar.
 - VIS-010 Text requiere `fontSize`.
+
+- VIS-011 Las paletas son locales y se resuelven antes del runtime sin alias encadenados.
+- VIS-012 Todos los píxeles de bitmap pasan por Machine, incluido blank.
+- VIS-013 Bitmap conserva orden y transformaciones sin tintado por color del objeto.

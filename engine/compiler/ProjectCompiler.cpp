@@ -384,6 +384,12 @@ void ProjectCompiler::projectDefinitionColors(
 
     for (auto& element : definition.visual.representation)
     {
+        if (element.bitmap)
+        {
+            auto bitmap = std::make_shared<BitmapDefinition>(*element.bitmap);
+            for (auto& pixel : bitmap->pixels) pixel = VideoColorProcessor::project(pixel, video);
+            element.bitmap = std::move(bitmap);
+        }
         if (!element.hasColor)
         {
             continue;

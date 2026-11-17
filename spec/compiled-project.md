@@ -305,7 +305,7 @@ La validación defensiva del Runtime no sustituye a la del Compiler o del lector
 Formato vigente:
 
 ```text
-FormatVersion = 2
+FormatVersion = 13
 ```
 
 Incluye conceptualmente:
@@ -448,7 +448,7 @@ Deben existir pruebas para:
 - grid;
 - ejecución sin fuentes;
 - escritura y lectura `.flxc`;
-- rechazo de formato anterior;
+- lectura compatible del formato 12 y rechazo de formatos no admitidos;
 - recursos duplicados;
 - equivalencia entre fuentes y binario;
 - orden determinista.
@@ -469,3 +469,11 @@ fuente
 ```
 
 El Runtime recibe significado, no documentos.
+
+## 21. Paletas y bitmap (v0.4.0)
+
+La compilación consume visual.palette y sus referencias. El modelo conserva
+colores concretos y bitmaps normalizados e inmutables. Cada píxel se proyecta
+por VideoColorProcessor antes de registrar recursos. Las texturas son propiedad
+interna del mundo gráfico y no se crean al compilar o leer un archivo.
+Véanse [Paletas y Bitmap](visual-bitmap-palette.md) y [formato 13](compiled-binary.md).

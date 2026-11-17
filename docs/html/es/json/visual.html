@@ -29,7 +29,8 @@
             <ul>
                 <li><code>color</code> — string. <i>Opcional.</i> Color base de los elementos que no declaran uno propio.</li>
                 <li><code>depth</code> — integer. <i>Default: 0.</i> Los valores menores se dibujan antes.</li>
-                <li><code>representation</code> — array de elementos. <i>Opcional.</i> Cada elemento pertenece exactamente a una familia: primitive, geometry o text.</li>
+                <li><code>palette</code> — mapa local o composición ordenada de mapas y referencias. Opcional.</li>
+                <li><code>representation</code> — array de elementos. <i>Opcional.</i> Cada elemento pertenece exactamente a una familia: primitive, geometry, text o bitmap.</li>
             </ul>
             <div class="code-card">
                 <div class="code-header">visual mínimo</div>
@@ -48,9 +49,9 @@
 }</code></pre>
             </div>
             <h2 id="color">color</h2>
-            <p>La prioridad es color del elemento → <code>visual.color</code> → blanco. Se admiten strings hexadecimales <code>#RGB</code> y <code>#RRGGBB</code>, y los nombres siguientes, sin distinguir mayúsculas:</p>
+            <p>Para primitive, geometry y text, la prioridad es color del elemento → <code>visual.color</code> → blanco. Se admiten strings hexadecimales <code>#RGB</code> y <code>#RRGGBB</code>, y los nombres siguientes, sin distinguir mayúsculas:</p>
             <p><code>lightgray</code>, <code>lightgrey</code>, <code>gray</code>, <code>grey</code>, <code>darkgray</code>, <code>darkgrey</code>, <code>yellow</code>, <code>gold</code>, <code>orange</code>, <code>pink</code>, <code>red</code>, <code>maroon</code>, <code>green</code>, <code>lime</code>, <code>darkgreen</code>, <code>skyblue</code>, <code>blue</code>, <code>darkblue</code>, <code>purple</code>, <code>violet</code>, <code>darkpurple</code>, <code>beige</code>, <code>brown</code>, <code>darkbrown</code>, <code>white</code>, <code>black</code>, <code>blank</code>, <code>magenta</code>, <code>raywhite</code>.</p>
-            <p>Un color desconocido genera un aviso y usa el fallback. Los strings JSON siempre llevan comillas.</p>
+            <p>Un color declarativo desconocido produce un error de compilación; no se usa un color de reserva. Los strings JSON siempre llevan comillas.</p>
             <div class="code-card">
                 <div class="code-header">Color base y override</div>
 <pre><code data-schema="object">{
@@ -193,6 +194,43 @@
 }</code></pre>
             </div>
             <p>La geometría visual y los <a class="link" href="json/collision.html#collisions">colliders</a> son declaraciones independientes.</p>
+<h2 id="palette">palette · v0.4.0</h2>
+<p>Mapa local opcional o composición ordenada de mapas y referencias; la última definición prevalece. Las claves exactas se buscan antes que los colores nativos y pueden redefinir incluso <code>blank</code>. Los valores son colores nativos o hexadecimales, nunca otros alias. Las referencias relativas, lógicas y <code>archivo:miembro</code> conservan el archivo de origen; no se modifican mapas compartidos.</p>
+<h2 id="bitmap">bitmap · v0.4.0</h2>
+<p>Matriz rectangular de 1 a 255 píxeles por dimensión. Una cadena compacta usa claves de un carácter Unicode; un array explícito admite nombres nativos, hexadecimales o claves completas. <code>row</code> y <code>pattern</code> admiten <code>repeat</code> entero positivo (por defecto 1), sin patrones recursivos. Se validan los límites después de expandir.</p>
+<p>Se respetan pivot, ángulo y orden de composición. El tamaño hereda el del objeto o usa las dimensiones naturales de la matriz si falta. El elemento admite size numérico o porcentual, como las primitivas. No crea tamaño espacial ni colisión. Ni visual.color ni el color del elemento tiñen los píxeles.</p>
+<p>Todos los píxeles pasan por Machine. <code>blank</code> solicita transparencia; <code>color.alpha: false</code> puede hacerlo opaco. Las texturas internas no requieren assets externos. Se escribe formato 13 y se conserva lectura del 12. No hay paletas dinámicas, importación de imágenes ni tintado de bitmaps.</p>
+<div class="code-card"><pre><code data-schema="object">{
+  &quot;visual&quot;: {
+    &quot;palette&quot;: [
+      &quot;./commons/palette.json&quot;,
+      {
+        &quot;0&quot;: &quot;blank&quot;,
+        &quot;1&quot;: &quot;#FF8800&quot;
+      }
+    ],
+    &quot;representation&quot;: [
+      {
+        &quot;bitmap&quot;: {
+          &quot;pixels&quot;: [
+            &quot;00100&quot;,
+            &quot;01110&quot;,
+            {
+              &quot;row&quot;: [
+                {
+                  &quot;pattern&quot;: &quot;1&quot;,
+                  &quot;repeat&quot;: 5
+                }
+              ]
+            },
+            &quot;01110&quot;,
+            &quot;00100&quot;
+          ]
+        }
+      }
+    ]
+  }
+}</code></pre></div>
             <hr>
             <details>
                 <summary>Fuentes de esta página · v0.3.0</summary>

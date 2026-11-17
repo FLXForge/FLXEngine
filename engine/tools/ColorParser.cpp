@@ -99,10 +99,7 @@ namespace
     }
 }
 
-Color ColorParser::parse(
-    const std::string& value,
-    Color fallback
-)
+std::optional<Color> ColorParser::tryParse(const std::string& value)
 {
     const auto hexColor =
         parseHexColor(value);
@@ -155,6 +152,13 @@ Color ColorParser::parse(
         return it->second;
     }
 
+    return std::nullopt;
+}
+
+Color ColorParser::parse(const std::string& value, Color fallback)
+{
+    const auto color = tryParse(value);
+    if (color) return *color;
     Logger::warning(
         "json",
         "Unknown color '" + value + "', using fallback"

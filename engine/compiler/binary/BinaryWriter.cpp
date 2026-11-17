@@ -79,6 +79,12 @@ namespace flx::binary
         }
     }
 
+    void BinaryWriter::writeBlob(const std::string& value)
+    {
+        // Same length-prefixed byte layout and aggregate budget; no UTF-8 semantics.
+        writeString(value);
+    }
+
     void BinaryWriter::writeCount(
         size_t value,
         uint32_t limit,

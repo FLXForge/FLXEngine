@@ -108,6 +108,18 @@ namespace flx::binary
         return value;
     }
 
+    std::string BinaryReader::readBlob(uint32_t expectedSize, const std::string& field)
+    {
+        const uint32_t size = readU32(field);
+        if (size != expectedSize || size > MaxStringSize)
+            throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue,
+                "Bitmap RGBA byte length does not match its dimensions", field);
+        accountStringBytes(size, field);
+        std::string value(size, '\0');
+        if (size) readBytes(value.data(), size, field);
+        return value;
+    }
+
     uint32_t BinaryReader::readCount(
         uint32_t limit,
         const std::string& field

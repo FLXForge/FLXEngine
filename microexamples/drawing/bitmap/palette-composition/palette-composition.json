@@ -1,0 +1,206 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 320,
+    "y": 240
+  },
+  "size": {
+    "width": 640,
+    "height": 480
+  },
+  "children": {
+    "background": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 640,
+        "height": 480
+      },
+      "visual": {
+        "depth": -10,
+        "color": "#10182B",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "title": {
+      "origin": {
+        "x": 320,
+        "y": 40
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "PALETTE COMPOSITION",
+            "fontSize": 22
+          }
+        ]
+      }
+    },
+    "subtitle": {
+      "origin": {
+        "x": 320,
+        "y": 438
+      },
+      "visual": {
+        "color": "#92A6C0",
+        "representation": [
+          {
+            "text": "ONE SOURCE PALETTE   /   ORDERED OVERRIDES   /   NO SHARED MUTATION",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "panel0": {
+      "origin": {
+        "x": 120,
+        "y": 245
+      },
+      "size": {
+        "width": 180,
+        "height": 240
+      },
+      "visual": {
+        "depth": -5,
+        "color": "#1C2942",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "totem0": {
+      "like": "./commons/totem.json",
+      "origin": {
+        "x": 120,
+        "y": 245
+      },
+      "visual": {
+        "palette": [
+          "./commons/palette.json"
+        ]
+      }
+    },
+    "label0": {
+      "origin": {
+        "x": 120,
+        "y": 350
+      },
+      "visual": {
+        "color": "#DCEAFF",
+        "representation": [
+          {
+            "text": "ORIGINAL",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "panel1": {
+      "origin": {
+        "x": 320,
+        "y": 245
+      },
+      "size": {
+        "width": 180,
+        "height": 240
+      },
+      "visual": {
+        "depth": -5,
+        "color": "#1C2942",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "totem1": {
+      "like": "./commons/totem.json",
+      "origin": {
+        "x": 320,
+        "y": 245
+      },
+      "visual": {
+        "palette": [
+          "./commons/palette.json",
+          "./commons/colors.json:arcade"
+        ]
+      }
+    },
+    "label1": {
+      "origin": {
+        "x": 320,
+        "y": 350
+      },
+      "visual": {
+        "color": "#DCEAFF",
+        "representation": [
+          {
+            "text": "ARCADE",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "panel2": {
+      "origin": {
+        "x": 520,
+        "y": 245
+      },
+      "size": {
+        "width": 180,
+        "height": 240
+      },
+      "visual": {
+        "depth": -5,
+        "color": "#1C2942",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "totem2": {
+      "like": "./commons/totem.json",
+      "origin": {
+        "x": 520,
+        "y": 245
+      },
+      "visual": {
+        "palette": [
+          "./commons/palette.json",
+          "./commons/colors.json:solar",
+          {
+            "p": "#FF88D2",
+            "s": "#5FFFD2"
+          }
+        ]
+      }
+    },
+    "label2": {
+      "origin": {
+        "x": 520,
+        "y": 350
+      },
+      "visual": {
+        "color": "#DCEAFF",
+        "representation": [
+          {
+            "text": "LOCAL",
+            "fontSize": 12
+          }
+        ]
+      }
+    }
+  }
+}

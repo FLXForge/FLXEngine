@@ -173,3 +173,11 @@ Las referencias pertenecen al lenguaje del desarrollador.
 Los ResourceId pertenecen al lenguaje del Runtime.
 
 La compilación transforma uno en otro.
+
+## 17. Datos de paleta (v0.4.0)
+
+Las entradas string de visual.palette reutilizan las raíces, caché, miembros y
+diagnósticos del resolver. Pueden ser relativas, absolutas lógicas o seleccionar
+un miembro. El destino es un mapa de colores: claves como visual, like y behavior
+no se interpretan como bloques de objeto. Se conserva la procedencia del visual
+externo y de los overrides. Véase [Paletas y Bitmap](visual-bitmap-palette.md).

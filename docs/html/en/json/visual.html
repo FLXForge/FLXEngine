@@ -29,7 +29,8 @@
             <ul>
                 <li><code>color</code> — string. <i>Optional.</i> Base color for elements that do not declare their own.</li>
                 <li><code>depth</code> — integer. <i>Default: 0.</i> Lower values are drawn first.</li>
-                <li><code>representation</code> — array of elements. <i>Optional.</i> Each element belongs to exactly one family: primitive, geometry or text.</li>
+                <li><code>palette</code> — local map or ordered composition of maps and references. Optional.</li>
+                <li><code>representation</code> — array of elements. <i>Optional.</i> Each element belongs to exactly one family: primitive, geometry, text or bitmap.</li>
             </ul>
             <div class="code-card">
                 <div class="code-header">Minimal visual</div>
@@ -48,9 +49,9 @@
 }</code></pre>
             </div>
             <h2 id="color">color</h2>
-            <p>The priority is element color → <code>visual.color</code> → white. Hexadecimal strings are supported: <code>#RGB</code> and <code>#RRGGBB</code>, along with the following case-insensitive names:</p>
+            <p>For primitive, geometry and text, the priority is element color → <code>visual.color</code> → white. Hexadecimal strings are supported: <code>#RGB</code> and <code>#RRGGBB</code>, along with the following case-insensitive names:</p>
             <p><code>lightgray</code>, <code>lightgrey</code>, <code>gray</code>, <code>grey</code>, <code>darkgray</code>, <code>darkgrey</code>, <code>yellow</code>, <code>gold</code>, <code>orange</code>, <code>pink</code>, <code>red</code>, <code>maroon</code>, <code>green</code>, <code>lime</code>, <code>darkgreen</code>, <code>skyblue</code>, <code>blue</code>, <code>darkblue</code>, <code>purple</code>, <code>violet</code>, <code>darkpurple</code>, <code>beige</code>, <code>brown</code>, <code>darkbrown</code>, <code>white</code>, <code>black</code>, <code>blank</code>, <code>magenta</code>, <code>raywhite</code>.</p>
-            <p>An unknown color generates a warning and uses the fallback. JSON strings always require quotes.</p>
+            <p>An unknown declarative color is a compilation error; no fallback color is substituted. JSON strings always require quotes.</p>
             <div class="code-card">
                 <div class="code-header">Base color and override</div>
 <pre><code data-schema="object">{
@@ -193,6 +194,43 @@
 }</code></pre>
             </div>
             <p>Visual geometry and <a class="link" href="json/collision.html#collisions">colliders</a> are independent declarations.</p>
+<h2 id="palette">palette · v0.4.0</h2>
+<p>Optional local map or ordered composition of maps and references; last definition wins. Exact keys are checked before native colors and may shadow even <code>blank</code>. Values are native colors or hexadecimal literals, never other aliases. Relative, logical and <code>file:member</code> references retain their declaring file; shared maps are never mutated.</p>
+<h2 id="bitmap">bitmap · v0.4.0</h2>
+<p>Rectangular matrix of 1 to 255 pixels per dimension. Compact strings use single Unicode-character palette keys; explicit arrays accept native names, hexadecimal literals or complete keys. <code>row</code> and <code>pattern</code> accept positive integer <code>repeat</code> (default 1), without recursive patterns. Limits are checked after expansion.</p>
+<p>Pivot, angle and composition order are preserved. Size inherits from the object or uses natural matrix dimensions when absent. Elements accept numeric or percentage size like primitives. A bitmap creates no spatial size or collision. Neither visual.color nor element color tints pixels.</p>
+<p>Every pixel passes through Machine. <code>blank</code> requests transparency; <code>color.alpha: false</code> may make it opaque. Internal textures require no external assets. The writer uses format 13 and the reader still accepts 12. Dynamic palettes, image imports and bitmap tinting are not supported.</p>
+<div class="code-card"><pre><code data-schema="object">{
+  &quot;visual&quot;: {
+    &quot;palette&quot;: [
+      &quot;./commons/palette.json&quot;,
+      {
+        &quot;0&quot;: &quot;blank&quot;,
+        &quot;1&quot;: &quot;#FF8800&quot;
+      }
+    ],
+    &quot;representation&quot;: [
+      {
+        &quot;bitmap&quot;: {
+          &quot;pixels&quot;: [
+            &quot;00100&quot;,
+            &quot;01110&quot;,
+            {
+              &quot;row&quot;: [
+                {
+                  &quot;pattern&quot;: &quot;1&quot;,
+                  &quot;repeat&quot;: 5
+                }
+              ]
+            },
+            &quot;01110&quot;,
+            &quot;00100&quot;
+          ]
+        }
+      }
+    ]
+  }
+}</code></pre></div>
             <hr>
             <details>
                 <summary>Sources for this page · v0.3.0</summary>

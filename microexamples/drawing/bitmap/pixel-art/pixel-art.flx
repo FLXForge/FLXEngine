@@ -1,0 +1,12 @@
+# Game data
+title=Pixel Art - Star Runner
+name=pixel-art
+version=1.0.0
+engine=0.4.0
+
+# Configuration
+path=.
+root=pixel-art
+
+# Notes
+notes=Declarative Bitmap microexample

@@ -5,6 +5,7 @@
 #include "../audio/MusicDefinition.h"
 #include "../audio/SoundDefinition.h"
 #include "ScriptValue.h"
+#include "BitmapDefinition.h"
 
 #include <map>
 #include <memory>
@@ -140,7 +141,8 @@ enum class RepresentationElementKind
 {
     Primitive,
     Geometry,
-    Text
+    Text,
+    Bitmap
 };
 
 struct RepresentationElementDefinition
@@ -155,6 +157,7 @@ struct RepresentationElementDefinition
     int fontSize = 0;
     Color color = WHITE;
     bool hasColor = false;
+    std::shared_ptr<const BitmapDefinition> bitmap;
 };
 
 struct VisualDefinition

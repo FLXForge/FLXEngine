@@ -4,6 +4,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include "../runtime/BitmapDefinition.h"
 
 enum class VisualPrimitiveKind
 {
@@ -36,4 +38,5 @@ struct VisualPrimitive
     std::string geometryMode = "open";
     std::string text;
     std::vector<Vector2> points;
+    std::shared_ptr<const BitmapDefinition> bitmap;
 };

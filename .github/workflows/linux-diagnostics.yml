@@ -223,7 +223,7 @@ jobs:
               raise SystemExit("Xvfb coverage incomplete: inspect skipped or missing graphics tests")
           PY
 
-      - name: CLI smoke and format-12 exchange fixture
+      - name: CLI smoke, format-12 reader and format-13 exchange fixture
         id: smoke
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
@@ -236,7 +236,7 @@ jobs:
             done
             build/flx-format12-portability-tests
             build/flx-format12-portability-tests --write-fixture \
-              "diagnostics/format12-linux-${{ matrix.compiler }}.flxc"
+              "diagnostics/format13-linux-${{ matrix.compiler }}.flxc"
             ldd build/flx
           } 2>&1 | tee diagnostics/smoke.log
 

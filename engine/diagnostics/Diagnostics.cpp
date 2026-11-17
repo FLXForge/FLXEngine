@@ -53,6 +53,10 @@ namespace
             { DiagnosticCode::MissingStateMachineState, "FLX-RESOURCE-00017", "MissingStateMachineState", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine references a missing state." },
             { DiagnosticCode::InvalidStateTransitionTarget, "FLX-RESOURCE-00018", "InvalidStateTransitionTarget", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "State machine transition target is invalid." },
 
+            { DiagnosticCode::UnknownVisualColor, "FLX-RESOURCE-00019", "UnknownVisualColor", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Visual color is not a palette key or a native color." },
+            { DiagnosticCode::InvalidVisualPalette, "FLX-RESOURCE-00020", "InvalidVisualPalette", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Palette declaration or native entry value is invalid." },
+            { DiagnosticCode::InvalidBitmapDeclaration, "FLX-RESOURCE-00021", "InvalidBitmapDeclaration", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Bitmap matrix or repetition is invalid." },
+
             { DiagnosticCode::MachineInformationUnclassified, "FLX-MACHINE-00000", "MachineInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::MACHINE, "Unclassified informational machine diagnostic." },
             { DiagnosticCode::MachineWarningUnclassified, "FLX-MACHINE-00001", "MachineWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::MACHINE, "Unclassified machine warning." },
             { DiagnosticCode::MachineErrorUnclassified, "FLX-MACHINE-00002", "MachineErrorUnclassified", DiagnosticSeverity::Error, DiagnosticDomain::MACHINE, "Unclassified machine error." },

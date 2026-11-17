@@ -6,9 +6,32 @@
   "additionalProperties": false,
 
   "properties": {
+    "palette": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/paletteMap"
+        },
+        {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "$ref": "#/$defs/paletteMap"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Ordered palette composition, last key wins. References use the existing FLX source reference syntax. Aliases are local and case sensitive."
+    },
+
     "color": {
       "type": "string",
-      "description": "Base visual color. Representation elements may override it."
+      "description": "Palette key, native FLX color or #RGB/#RRGGBB. Unknown colors fail compilation. Never tints bitmap pixels."
     },
 
     "depth": {
@@ -140,11 +163,148 @@
       ]
     },
 
+    "nativeColor": {
+      "type": "string",
+      "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|[lL][iI][gG][hH][tT][gG][rR][aA][yY]|[lL][iI][gG][hH][tT][gG][rR][eE][yY]|[gG][rR][aA][yY]|[gG][rR][eE][yY]|[dD][aA][rR][kK][gG][rR][aA][yY]|[dD][aA][rR][kK][gG][rR][eE][yY]|[yY][eE][lL][lL][oO][wW]|[gG][oO][lL][dD]|[oO][rR][aA][nN][gG][eE]|[pP][iI][nN][kK]|[rR][eE][dD]|[mM][aA][rR][oO][oO][nN]|[gG][rR][eE][eE][nN]|[lL][iI][mM][eE]|[dD][aA][rR][kK][gG][rR][eE][eE][nN]|[sS][kK][yY][bB][lL][uU][eE]|[bB][lL][uU][eE]|[dD][aA][rR][kK][bB][lL][uU][eE]|[pP][uU][rR][pP][lL][eE]|[vV][iI][oO][lL][eE][tT]|[dD][aA][rR][kK][pP][uU][rR][pP][lL][eE]|[bB][eE][iI][gG][eE]|[bB][rR][oO][wW][nN]|[dD][aA][rR][kK][bB][rR][oO][wW][nN]|[wW][hH][iI][tT][eE]|[bB][lL][aA][cC][kK]|[bB][lL][aA][nN][kK]|[mM][aA][gG][eE][nN][tT][aA]|[rR][aA][yY][wW][hH][iI][tT][eE])$",
+      "description": "Native FLX color, case insensitive, or #RGB/#RRGGBB. Palette values never resolve aliases."
+    },
+
+    "paletteMap": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/nativeColor"
+      }
+    },
+
+    "bitmapPattern": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 255,
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+
+    "horizontalPattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pattern"
+      ],
+      "properties": {
+        "pattern": {
+          "$ref": "#/$defs/bitmapPattern"
+        },
+        "repeat": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "default": 1
+        }
+      }
+    },
+
+    "bitmapRow": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 255,
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/horizontalPattern"
+              }
+            ]
+          }
+        }
+      ]
+    },
+
+    "repeatedRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row"
+      ],
+      "properties": {
+        "row": {
+          "$ref": "#/$defs/bitmapRow"
+        },
+        "repeat": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "default": 1
+        }
+      }
+    },
+
+    "bitmapElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bitmap"
+      ],
+      "properties": {
+        "bitmap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pixels"
+          ],
+          "properties": {
+            "pixels": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 255,
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/bitmapRow"
+                  },
+                  {
+                    "$ref": "#/$defs/repeatedRow"
+                  }
+                ]
+              },
+              "description": "Expanded dimensions must be rectangular and 1..255; the compiler checks expanded dimensions and all color tokens."
+            }
+          }
+        },
+        "size": {
+          "$ref": "#/$defs/representationSize"
+        },
+        "color": {
+          "type": "string",
+          "description": "Validated but does not tint bitmap pixels."
+        }
+      }
+    },
+
     "representationElement": {
       "oneOf": [
         { "$ref": "#/$defs/primitiveElement" },
         { "$ref": "#/$defs/geometryElement" },
-        { "$ref": "#/$defs/textElement" }
+        { "$ref": "#/$defs/textElement" },
+        { "$ref": "#/$defs/bitmapElement" }
       ]
     }
   }

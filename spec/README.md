@@ -365,3 +365,7 @@ Cada documento debe indicar, cuando sea relevante:
 - partes consolidadas;
 - partes pendientes;
 - reglas todavía no consideradas estables.
+
+## Representación declarativa v0.4.0
+
+- [Paletas y Bitmap](visual-bitmap-palette.md).

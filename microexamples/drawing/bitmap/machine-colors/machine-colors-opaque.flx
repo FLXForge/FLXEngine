@@ -1,0 +1,13 @@
+# Game data
+title=Machine Colors - Ghost Lab
+name=machine-colors-opaque
+version=1.0.0
+engine=0.4.0
+
+# Configuration
+path=.
+root=machine-colors
+machine=machine-colors-opaque.yml
+
+# Notes
+notes=Declarative Bitmap microexample

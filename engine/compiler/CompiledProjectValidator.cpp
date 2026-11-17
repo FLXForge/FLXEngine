@@ -457,6 +457,16 @@ bool CompiledProjectValidator::validate(
         const ObjectDefinition& object =
             objectPair.second;
 
+        for (const auto& element : object.visual.representation)
+        {
+            if ((element.kind == RepresentationElementKind::Bitmap &&
+                    (!element.bitmap || !element.bitmap->valid())) ||
+                (element.kind != RepresentationElementKind::Bitmap && element.bitmap))
+                diagnostics.error(DiagnosticCode::InvalidBitmapDeclaration,
+                    "Invalid compiled bitmap dimensions, pixels or representation kind", source,
+                    objectId + ".visual.representation.bitmap");
+        }
+
         if (objectId == project.rootId && object.component)
         {
             diagnostics.error(

@@ -414,6 +414,7 @@ RuntimeLoadResult RuntimeWorld::load(
     ScriptEngine& scriptEngine
 )
 {
+    bitmapTextures.clear();
     RuntimeLoadResult result;
 
     objects.clear();
@@ -676,7 +677,8 @@ void RuntimeWorld::draw(
             objects,
             worldExtent,
             screenWidth,
-            screenHeight
+            screenHeight,
+            &bitmapTextures
         );
     }
 

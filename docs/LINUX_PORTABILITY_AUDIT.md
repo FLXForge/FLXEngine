@@ -651,6 +651,19 @@ cd flx-0.4.0-linux-x86_64
 Conservar BUILD_INFO.txt y los logs al comunicar resultados de integración.
 La validación del nuevo paquete Linux permanece pendiente de ese run real.
 
+## 14. Evolución bitmap / formato 13 (v0.4.0)
+
+El nuevo writer de paletas/bitmap produce formato 13. El reader mantiene el
+fixture Windows de formato 12 sin cambios; las conclusiones anteriores sobre
+ese fixture son históricas y se conservan. El consumidor comprueba explícitamente
+12 para el fixture guardado y 13 para los nuevos roundtrips.
+
+Los nuevos artefactos de intercambio se llaman format13-linux-GCC.flxc y
+format13-linux-Clang.flxc. No se cambia el workflow oficial de releases.
+La representación bitmap y su nuevo formato requieren repetir el diagnóstico
+Linux después de revisar y publicar estos cambios. Las comprobaciones Windows
+no sustituyen esa ejecución de Linux ni la validación física de audio/input.
+
 ## Fuentes externas contrastadas
 
 - [Opciones de raylib 6.0](https://github.com/raysan5/raylib/blob/6.0/CMakeOptions.txt)

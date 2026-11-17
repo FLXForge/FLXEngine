@@ -4,6 +4,7 @@
 #include "../collision/CollisionDebugFrame.h"
 #include "ObjectDefinition.h"
 #include "RayCastResult.h"
+#include "../graphics/BitmapTextureCache.h"
 #include "RuntimeObject.h"
 
 #include <string>
@@ -200,5 +201,6 @@ private:
     bool automaticInstantiationFailed = false;
     std::string automaticInstantiationFailure;
     std::vector<ResourceId> automaticInstantiationStack;
+    BitmapTextureCache bitmapTextures;
     size_t automaticInstantiationCreated = 0;
 };

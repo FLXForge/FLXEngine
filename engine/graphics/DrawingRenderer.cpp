@@ -1,4 +1,6 @@
 #include "DrawingRenderer.h"
+#include "BitmapTextureCache.h"
+#include <rlgl.h>
 
 #include <algorithm>
 #include <cmath>
@@ -565,7 +567,8 @@ namespace
     void drawPrimitiveAt(
         const VisualPrimitive& primitive,
         Vector2 offset,
-        const RenderTransform& transform
+        const RenderTransform& transform,
+        BitmapTextureCache& bitmapCache
     )
     {
         if (primitive.kind == VisualPrimitiveKind::Pixel)
@@ -631,6 +634,27 @@ namespace
 
         const Vector2 center =
             add(primitive.a, offset);
+
+        if (primitive.bitmap)
+        {
+            const Texture2D texture = bitmapCache.get(primitive.bitmap);
+            const auto points = rectanglePoints(center, primitive.size, primitive.angle);
+            // Rotate in world coordinates BEFORE anisotropic world-to-raster scaling.
+            const int indices[] = {0, 3, 2, 1};
+            const Vector2 uv[] = {{0, 0}, {0, 1}, {1, 1}, {1, 0}};
+            rlSetTexture(texture.id);
+            rlBegin(RL_QUADS);
+            rlColor4ub(255, 255, 255, 255);
+            for (int i = 0; i < 4; ++i)
+            {
+                const Vector2 point = transformPoint(points[indices[i]], transform);
+                rlTexCoord2f(uv[i].x, uv[i].y);
+                rlVertex2f(point.x, point.y);
+            }
+            rlEnd();
+            rlSetTexture(0);
+            return;
+        }
 
         if (primitive.primitive == "triangle")
         {
@@ -846,6 +870,18 @@ void DrawingRenderer::render(
     float rasterHeight
 )
 {
+    render(primitives, objects, worldExtent, rasterWidth, rasterHeight, nullptr);
+}
+
+void DrawingRenderer::render(
+    const std::vector<VisualPrimitive>& primitives,
+    const std::vector<RuntimeObject>& objects,
+    const WorldExtent& worldExtent,
+    float rasterWidth,
+    float rasterHeight,
+    BitmapTextureCache* bitmapCache
+)
+{
     (void)objects;
 
     if (worldExtent.width <= 0.0f ||
@@ -856,6 +892,8 @@ void DrawingRenderer::render(
         return;
     }
 
+    BitmapTextureCache temporaryCache;
+    BitmapTextureCache& textures = bitmapCache ? *bitmapCache : temporaryCache;
     const RenderTransform transform{
         worldExtent,
         rasterWidth,
@@ -875,7 +913,8 @@ void DrawingRenderer::render(
             drawPrimitiveAt(
                 primitive,
                 offset,
-                transform
+                transform,
+                textures
             );
         }
     }

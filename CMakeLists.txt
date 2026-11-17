@@ -238,6 +238,10 @@ set(FLX_CORE_SOURCES
     engine/graphics/DrawingContext.cpp
     engine/graphics/RepresentationPrimitiveBuilder.h
     engine/graphics/RepresentationPrimitiveBuilder.cpp
+    engine/graphics/BitmapTextureCache.h
+    engine/graphics/BitmapTextureCache.cpp
+    engine/runtime/BitmapDefinition.h
+    engine/loading/VisualDeclarations.inl
     engine/graphics/DrawingRenderer.h
     engine/graphics/DrawingRenderer.cpp
     engine/graphics/FadeSystem.h
@@ -356,6 +360,7 @@ add_flx_test_suite(flx-cli-diagnostic-printer-tests tests/cli/DiagnosticPrinterT
 add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests.cpp)
 add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
+add_flx_test_suite(flx-visual-bitmap-tests tests/loading/VisualBitmapTests.cpp)
 add_flx_test_suite(flx-audio-system-tests tests/audio/AudioSystemTests.cpp)
 add_flx_test_suite(flx-input-characterization-tests tests/input/InputCharacterizationTests.cpp)
 add_flx_test_suite(flx-collision-geometry-tests tests/collision/CollisionGeometryTests.cpp)

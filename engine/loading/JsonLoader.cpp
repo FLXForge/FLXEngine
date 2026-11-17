@@ -486,8 +486,12 @@ namespace
         JsonLoadSession& session,
         const std::string& reference,
         const std::filesystem::path& declaringFile,
-        const std::string& field
+        const std::string& field,
+        bool rawValue = false
     );
+
+    void normalizeVisualPalette(JsonLoadSession& session, Json& visual,
+        const std::filesystem::path& sourceFile);
 
     bool resolveBlockReference(
         JsonLoadSession& session,
@@ -538,6 +542,7 @@ namespace
                 object[key].erase("__childSourceFiles");
             }
 
+            if (key == "visual") normalizeVisualPalette(session, object[key], resolvedReference.sourceFile);
             return true;
         }
 
@@ -573,6 +578,7 @@ namespace
             object[key].erase("__childSourceFiles");
         }
 
+        if (key == "visual") normalizeVisualPalette(session, object[key], blockPath);
         return true;
     }
 
@@ -601,6 +607,8 @@ namespace
             }
         }
 
+        if (object.contains("visual") && object["visual"].is_object())
+            normalizeVisualPalette(session, object["visual"], currentFile);
         return true;
     }
 
@@ -669,10 +677,17 @@ namespace
                 return false;
             }
 
+            // A selected member may not have visited its visual while resolving the
+            // containing file. Normalize the base before merging consumer overrides.
+            if (resolvedReference.data.contains("visual") && resolvedReference.data["visual"].is_object())
+                normalizeVisualPalette(session, resolvedReference.data["visual"], resolvedReference.sourceFile);
+
             Json override =
                 object;
 
             override.erase("like");
+            if (override.contains("visual") && override["visual"].is_object())
+                normalizeVisualPalette(session, override["visual"], currentFile);
 
             if (override.contains("behavior"))
             {
@@ -802,6 +817,8 @@ namespace
             object;
 
         override.erase("like");
+        if (override.contains("visual") && override["visual"].is_object())
+            normalizeVisualPalette(session, override["visual"], currentFile);
 
         if (override.contains("behavior"))
         {
@@ -1095,6 +1112,7 @@ namespace
         {
             ++count;
         }
+        if (element.contains("bitmap")) ++count;
 
         return count;
     }
@@ -1116,9 +1134,12 @@ namespace
         );
     }
 
+#include "VisualDeclarations.inl"
+
     RepresentationElementDefinition parseRepresentationElement(
         JsonLoadSession& session,
         const Json& rawElement,
+        const VisualPalette& palette,
         const std::filesystem::path& sourceFile,
         const std::string& field
     )
@@ -1161,7 +1182,7 @@ namespace
         {
             throw std::runtime_error(
                 "Invalid Representation element '" + field +
-                "': expected exactly one of primitive, geometry or text"
+                "': expected exactly one of primitive, geometry, text or bitmap"
             );
         }
 
@@ -1177,12 +1198,20 @@ namespace
             }
 
             definition.color =
-                ColorParser::parse(
-                    element["color"].get<std::string>(),
-                    WHITE
-                );
+                visualColor(session, element["color"].get<std::string>(), palette,
+                    sourceFile, field + ".color");
             definition.hasColor =
                 true;
+        }
+
+        if (element.contains("bitmap"))
+        {
+            rejectRepresentationProperty(element, "mode", "bitmap");
+            rejectRepresentationProperty(element, "fontSize", "bitmap");
+            definition.kind = RepresentationElementKind::Bitmap;
+            definition.size = parseRepresentationSize(element);
+            definition.bitmap = parseBitmap(session, element["bitmap"], palette, sourceFile, field + ".bitmap");
+            return definition;
         }
 
         if (element.contains("primitive"))
@@ -1333,6 +1362,11 @@ namespace
         const Json& visual =
             object["visual"];
 
+        VisualPalette palette;
+        if (visual.contains("palette"))
+            for (auto it = visual["palette"].begin(); it != visual["palette"].end(); ++it)
+                palette[it.key()] = *ColorParser::tryParse(it.value().get<std::string>());
+
         if (visual.contains("color"))
         {
             if (!visual["color"].is_string())
@@ -1344,10 +1378,8 @@ namespace
             }
 
             definition.visual.color =
-                ColorParser::parse(
-                    visual["color"].get<std::string>(),
-                    WHITE
-                );
+                visualColor(session, visual["color"].get<std::string>(), palette,
+                    sourceFile, "visual.color");
             definition.visual.hasColor =
                 true;
         }
@@ -1381,6 +1413,7 @@ namespace
                 parseRepresentationElement(
                     session,
                     element,
+                    palette,
                     sourceFile,
                     "visual.representation." + std::to_string(index)
                 )
@@ -2191,10 +2224,11 @@ namespace
         JsonLoadSession& session,
         const std::string& reference,
         const std::filesystem::path& declaringFile,
-        const std::string& field
+        const std::string& field,
+        bool rawValue
     )
     {
-        if (!isFlxReference(reference))
+        if (!rawValue && !isFlxReference(reference))
         {
             return {};
         }
@@ -2211,7 +2245,7 @@ namespace
             ? ""
             : reference.substr(separator + 1);
 
-        if (path.empty() || path == "/")
+        if ((path.empty() && !(rawValue && separator != std::string::npos && !key.empty())) || path == "/")
         {
             Logger::error(
                 "json",
@@ -2232,7 +2266,8 @@ namespace
         }
 
         const std::filesystem::path referencePath =
-            resolveFlxReferencePath(session, path);
+            isFlxReference(path) ? resolveFlxReferencePath(session, path) :
+            path.empty() ? declaringFile : resolvePath(declaringFile, path);
 
         if (referencePath.empty())
         {
@@ -2270,7 +2305,11 @@ namespace
 
         Json resolved;
 
-        if (!resolveLike(session, referencePath, data, resolved, field))
+        if (rawValue)
+        {
+            resolved = data;
+        }
+        else if (!resolveLike(session, referencePath, data, resolved, field))
         {
             return {};
         }

@@ -41,7 +41,11 @@ namespace
         const auto& codes =
             registeredDiagnosticCodes();
 
-        require(codes.size() == 100, "registry should include the session diagnostic codes");
+        require(codes.size() == 103, "registry should include session and declarative visual diagnostic codes");
+
+        require(diagnosticCodeText(DiagnosticCode::UnknownVisualColor) == std::string("FLX-RESOURCE-00019"), "stable unknown visual color code");
+        require(diagnosticCodeText(DiagnosticCode::InvalidVisualPalette) == std::string("FLX-RESOURCE-00020"), "stable invalid palette code");
+        require(diagnosticCodeText(DiagnosticCode::InvalidBitmapDeclaration) == std::string("FLX-RESOURCE-00021"), "stable invalid bitmap code");
 
         std::set<std::string> textValues;
         std::set<std::string> identifiers;

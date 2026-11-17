@@ -198,16 +198,21 @@ namespace flx::binary
                 return 1u;
             case RepresentationElementKind::Text:
                 return 2u;
+            case RepresentationElementKind::Bitmap:
+                return 3u;
             }
 
-            return 0u;
+            throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue,
+                "Invalid representation element kind", "object.visual.representation.kind");
         }
 
         RepresentationElementKind representationKindFromValue(
             uint8_t value,
-            const std::string& field
+            const std::string& field,
+            uint32_t formatVersion
         )
         {
+            if (value == 3u && formatVersion >= 13) return RepresentationElementKind::Bitmap;
             if (value == 0u)
             {
                 return RepresentationElementKind::Primitive;
@@ -297,17 +302,36 @@ namespace flx::binary
             writer.writeI32(element.fontSize);
             writeColor(writer, element.color);
             writer.writeBool(element.hasColor);
+            if (element.kind == RepresentationElementKind::Bitmap)
+            {
+                if (!element.bitmap || !element.bitmap->valid())
+                    throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue,
+                        "Invalid bitmap dimensions or pixel count", "object.visual.representation.bitmap");
+                writer.writeU8(static_cast<uint8_t>(element.bitmap->width));
+                writer.writeU8(static_cast<uint8_t>(element.bitmap->height));
+                std::string rgba;
+                rgba.reserve(element.bitmap->pixels.size() * 4);
+                for (const Color pixel : element.bitmap->pixels)
+                {
+                    rgba.push_back(static_cast<char>(pixel.r));
+                    rgba.push_back(static_cast<char>(pixel.g));
+                    rgba.push_back(static_cast<char>(pixel.b));
+                    rgba.push_back(static_cast<char>(pixel.a));
+                }
+                writer.writeBlob(rgba);
+            }
         }
 
         RepresentationElementDefinition readRepresentationElement(
-            BinaryReader& reader
+            BinaryReader& reader, uint32_t formatVersion
         )
         {
             RepresentationElementDefinition element;
             element.kind =
                 representationKindFromValue(
                     reader.readU8("object.visual.representation.kind"),
-                    "object.visual.representation.kind"
+                    "object.visual.representation.kind",
+                    formatVersion
                 );
             element.primitive =
                 reader.readString("object.visual.representation.primitive");
@@ -342,6 +366,23 @@ namespace flx::binary
                 readColor(reader);
             element.hasColor =
                 reader.readBool("object.visual.representation.color");
+            if (element.kind == RepresentationElementKind::Bitmap)
+            {
+                auto bitmap = std::make_shared<BitmapDefinition>();
+                bitmap->width = reader.readU8("bitmap.width");
+                bitmap->height = reader.readU8("bitmap.height");
+                if (!bitmap->width || !bitmap->height)
+                    throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue,
+                        "Bitmap dimensions must be 1..255", "bitmap");
+                const uint32_t count = static_cast<uint32_t>(bitmap->width * bitmap->height);
+                const auto rgba = reader.readBlob(count * 4u, "bitmap.rgba");
+                bitmap->pixels.reserve(count);
+                for (size_t i = 0; i < rgba.size(); i += 4)
+                    bitmap->pixels.push_back(Color{static_cast<unsigned char>(rgba[i]),
+                        static_cast<unsigned char>(rgba[i+1]), static_cast<unsigned char>(rgba[i+2]),
+                        static_cast<unsigned char>(rgba[i+3])});
+                element.bitmap = std::move(bitmap);
+            }
             return element;
         }
 
@@ -367,7 +408,7 @@ namespace flx::binary
             writer.writeBool(visual.hasRepresentation);
         }
 
-        VisualDefinition readVisual(BinaryReader& reader)
+        VisualDefinition readVisual(BinaryReader& reader, uint32_t formatVersion)
         {
             VisualDefinition visual;
             visual.color = readColor(reader);
@@ -384,7 +425,7 @@ namespace flx::binary
 
             for (uint32_t i = 0; i < representationCount; ++i)
             {
-                visual.representation.push_back(readRepresentationElement(reader));
+                visual.representation.push_back(readRepresentationElement(reader, formatVersion));
             }
 
             visual.hasRepresentation =
@@ -1381,7 +1422,7 @@ namespace flx::binary
             writeStringVector(writer, object.iteratorPattern);
         }
 
-        ObjectDefinition readObject(BinaryReader& reader)
+        ObjectDefinition readObject(BinaryReader& reader, uint32_t formatVersion)
         {
             ObjectDefinition object;
             object.id = reader.readString("object.id");
@@ -1397,7 +1438,7 @@ namespace flx::binary
             object.attachOnCreate = reader.readBool("object.attach.born");
             object.visible = reader.readBool("object.visible");
             object.hasVisual = reader.readBool("object.visual");
-            object.visual = readVisual(reader);
+            object.visual = readVisual(reader, formatVersion);
             object.origin = readVector2(reader);
             object.hasOrigin = reader.readBool("object.origin");
             object.size = readVector2(reader);
@@ -1705,7 +1746,7 @@ namespace flx::binary
         decoded.metadata.formatVersion =
             reader.readU32("formatVersion");
 
-        if (decoded.metadata.formatVersion != FormatVersion)
+        if (decoded.metadata.formatVersion != FormatVersion && decoded.metadata.formatVersion != 12)
         {
             throw BinaryException(
                 DiagnosticCode::UnsupportedCompiledProjectFormat,
@@ -1746,7 +1787,7 @@ namespace flx::binary
 
             if (!decoded.project.resources.addObject(
                 id,
-                readObject(reader)
+                readObject(reader, decoded.metadata.formatVersion)
             ))
             {
                 throw BinaryException(

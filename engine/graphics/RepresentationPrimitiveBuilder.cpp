@@ -103,6 +103,20 @@ std::vector<VisualPrimitive> RepresentationPrimitiveBuilder::build(
                     ? object.visualColor
                     : fallbackColor;
 
+        if (element.kind == RepresentationElementKind::Bitmap)
+        {
+            if (!element.bitmap || !element.bitmap->valid()) continue;
+            primitive.primitive = "bitmap";
+            primitive.bitmap = element.bitmap;
+            primitive.color = WHITE; // A bitmap is never tinted by object/element color.
+            const float width = object.hasSize ? object.size.x : static_cast<float>(element.bitmap->width);
+            const float height = object.hasSize ? object.size.y : static_cast<float>(element.bitmap->height);
+            resolveAxis(element.size.width, width, true, primitive.size.x);
+            resolveAxis(element.size.height, height, true, primitive.size.y);
+            primitives.push_back(std::move(primitive));
+            continue;
+        }
+
         if (element.kind == RepresentationElementKind::Primitive)
         {
             primitive.primitive =

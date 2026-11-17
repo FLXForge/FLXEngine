@@ -1,0 +1,30 @@
+{
+  "size": {
+    "width": 156,
+    "height": 132
+  },
+  "visual": {
+    "palette": [
+      "./palette.json"
+    ],
+    "representation": [
+      {
+        "bitmap": {
+          "pixels": [
+            "0001111111000",
+            "001ppppppp100",
+            "01ppvpppvpp10",
+            "1ppp1ppp1ppp1",
+            "1pppppsppppp1",
+            "01ppppppppp10",
+            "001psssss1000",
+            "001p1p1p1p100",
+            "01p01p1p01p10",
+            "1p001p1p001p1",
+            "0000100100000"
+          ]
+        }
+      }
+    ]
+  }
+}

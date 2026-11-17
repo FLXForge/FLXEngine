@@ -1,0 +1,323 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 320,
+    "y": 240
+  },
+  "size": {
+    "width": 640,
+    "height": 480
+  },
+  "children": {
+    "background": {
+      "origin": {
+        "x": 320,
+        "y": 240
+      },
+      "size": {
+        "width": 640,
+        "height": 480
+      },
+      "visual": {
+        "depth": -10,
+        "color": "#10182B",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      }
+    },
+    "title": {
+      "origin": {
+        "x": 320,
+        "y": 40
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "MACHINE COLORS / GHOST LAB",
+            "fontSize": 22
+          }
+        ]
+      }
+    },
+    "subtitle": {
+      "origin": {
+        "x": 320,
+        "y": 438
+      },
+      "visual": {
+        "color": "#92A6C0",
+        "representation": [
+          {
+            "text": "SAME JSON   /   ALPHA + PALETTE ARE MACHINE CAPABILITIES",
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "ghost0": {
+      "origin": {
+        "x": 150,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "palette": {
+          "0": "blank",
+          "1": "#10182B",
+          "p": "#5FFFD2",
+          "s": "#617AE3",
+          "v": "white"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "0000000000000000",
+                "0000ppppppps0000",
+                "000ppppppppss000",
+                "00pppppppppsss00",
+                "0ppppppppppssss0",
+                "0pppvvppppvvsss0",
+                "0pppv1ppppv1sss0",
+                "0pppv1ppppv1sss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0pp00pp00pp00ss0",
+                "0000000000000000"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "caption0": {
+      "origin": {
+        "x": 150,
+        "y": 350
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "MINT",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "ghost1": {
+      "origin": {
+        "x": 320,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "palette": {
+          "0": "blank",
+          "1": "#10182B",
+          "p": "#FF88D2",
+          "s": "#617AE3",
+          "v": "white"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "0000000000000000",
+                "0000ppppppps0000",
+                "000ppppppppss000",
+                "00pppppppppsss00",
+                "0ppppppppppssss0",
+                "0pppvvppppvvsss0",
+                "0pppv1ppppv1sss0",
+                "0pppv1ppppv1sss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0pp00pp00pp00ss0",
+                "0000000000000000"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "caption1": {
+      "origin": {
+        "x": 320,
+        "y": 350
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "ROSE",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "ghost2": {
+      "origin": {
+        "x": 490,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "palette": {
+          "0": "blank",
+          "1": "#10182B",
+          "p": "#FFCA55",
+          "s": "#617AE3",
+          "v": "white"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "0000000000000000",
+                "0000ppppppps0000",
+                "000ppppppppss000",
+                "00pppppppppsss00",
+                "0ppppppppppssss0",
+                "0pppvvppppvvsss0",
+                "0pppv1ppppv1sss0",
+                "0pppv1ppppv1sss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0ppppppppppssss0",
+                "0pp00pp00pp00ss0",
+                "0000000000000000"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "caption2": {
+      "origin": {
+        "x": 490,
+        "y": 350
+      },
+      "visual": {
+        "color": "#E9F2FF",
+        "representation": [
+          {
+            "text": "SOLAR",
+            "fontSize": 12
+          }
+        ]
+      }
+    },
+    "checker0": {
+      "origin": {
+        "x": 150,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "depth": -5,
+        "palette": {
+          "a": "#243651",
+          "b": "#4B5D7D"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "abab",
+                "baba",
+                "abab",
+                "baba"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "checker1": {
+      "origin": {
+        "x": 320,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "depth": -5,
+        "palette": {
+          "a": "#243651",
+          "b": "#4B5D7D"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "abab",
+                "baba",
+                "abab",
+                "baba"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "checker2": {
+      "origin": {
+        "x": 490,
+        "y": 245
+      },
+      "size": {
+        "width": 144,
+        "height": 144
+      },
+      "visual": {
+        "depth": -5,
+        "palette": {
+          "a": "#243651",
+          "b": "#4B5D7D"
+        },
+        "representation": [
+          {
+            "bitmap": {
+              "pixels": [
+                "abab",
+                "baba",
+                "abab",
+                "baba"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

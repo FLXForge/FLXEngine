@@ -1,0 +1,12 @@
+# Game data
+title=Mixed Representations - FLX Emblems
+name=mixed-representations
+version=1.0.0
+engine=0.4.0
+
+# Configuration
+path=.
+root=mixed-representations
+
+# Notes
+notes=Declarative Bitmap microexample

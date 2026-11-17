@@ -135,7 +135,10 @@ enum class DiagnosticCode
     SessionAudioUnavailable,
     SessionLoadInvalidState,
     InvalidSessionConfiguration,
-    InvalidSessionDelta
+    InvalidSessionDelta,
+    UnknownVisualColor,
+    InvalidVisualPalette,
+    InvalidBitmapDeclaration
 };
 
 struct SourcePosition

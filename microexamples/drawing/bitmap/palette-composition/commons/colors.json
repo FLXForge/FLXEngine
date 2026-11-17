@@ -1,0 +1,10 @@
+{
+  "arcade": {
+    "p": "#81A4FF",
+    "s": "#FFCF5A"
+  },
+  "solar": {
+    "p": "#FFCF5A",
+    "s": "#FF5D95"
+  }
+}

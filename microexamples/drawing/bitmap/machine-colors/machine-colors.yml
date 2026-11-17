@@ -1,0 +1,8 @@
+machine:
+  video:
+    screen:
+      width: 640
+      height: 480
+      color: "#10182B"
+    color:
+      alpha: true

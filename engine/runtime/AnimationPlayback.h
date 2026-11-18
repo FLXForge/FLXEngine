@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObjectDefinition.h"
+#include <functional>
 #include "../diagnostics/Diagnostics.h"
 
 // Internal CPU-only evaluation. No JS bindings, spatial writes or device calls.
@@ -64,6 +65,10 @@ public:
 
     // Pure materialization: uncontrolled properties use the supplied LIVE base.
     AnimationAppearance appearance(const AnimationBaseAppearance& base) const;
+    // Validate a whole local layer before emitting graphics. Re-evaluation never
+    // advances the clock; the callback must publish nothing on failure.
+    bool validateAppearance(const AnimationBaseAppearance& base,
+        const std::function<bool(const AnimationAppearance&)>& validate, Diagnostics& diagnostics);
     AnimationPlaybackStatus status() const { return playbackStatus; }
     std::optional<std::string> current() const;
     bool active() const;
@@ -89,6 +94,8 @@ private:
     AnimationControls controlled;
     AnimationReference capturedReference;
     Layer lastValid;
+    Layer graphicalFallback;
+    double cycleIndex = 0.0;
     double elapsedTime = 0.0;
     double cycleTime = 0.0;
     bool numericReported = false;

@@ -10,6 +10,7 @@
 #include "../graphics/DrawingContext.h"
 #include "../graphics/DrawingRenderer.h"
 #include "../graphics/RepresentationPrimitiveBuilder.h"
+#include "../graphics/DeclarativeGeometry.h"
 #include "../scripting/ScriptEngine.h"
 
 #include <algorithm>
@@ -649,11 +650,16 @@ void RuntimeWorld::draw(
 
         drawingContext.begin(*object, primitives);
 
+        Diagnostics visualDiagnostics;
         std::vector<VisualPrimitive> representationPrimitives =
             RepresentationPrimitiveBuilder::build(
                 *object,
-                WHITE
+                WHITE,
+                RepresentationRenderContext{worldExtent,screenWidth,screenHeight,GetFontDefault()},
+                visualDiagnostics
             );
+        for(const auto& diagnostic:visualDiagnostics.all())
+            Logger::warning("animation", std::string(diagnosticCodeText(diagnostic.code))+" "+object->runtimeId+" "+diagnostic.field+": "+diagnostic.message);
 
         primitives.insert(
             primitives.end(),

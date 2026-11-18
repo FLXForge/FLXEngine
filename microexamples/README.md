@@ -72,7 +72,15 @@ Paletas declarativas y la familia bitmap (v0.4.0):
 - `machine-colors`: el mismo JSON con tres Machines para comparar alpha y paleta efectiva.
 
 Cada directorio incluye README, JSON y manifiesto .flx ejecutable. No requiere
-entrada ni audio. Los nuevos .flxc usan formato 13; se mantiene lectura del 12.
+entrada ni audio. Los nuevos .flxc usan formato 14; se mantiene lectura de 12 y 13.
+
+#### [`animation/persist-order`](animation/persist-order/README.md)
+
+Orden estático first → sustituible → last, visible aun sin reproducción.
+El microejemplo muestra marco azul, interior rojo y centro verde con un solo
+objeto de tres representaciones. No usa scripts ni afirma que haya API temporal.
+Las poses animadas mixtas están preparadas como fixtures de tests, no como ejemplos
+visuales ejecutables hasta disponer de bindings y avance temporal integrado.
 
 ### 2. Mechanics
 

@@ -235,6 +235,8 @@ set(FLX_CORE_SOURCES
     engine/tools/ColorParser.cpp
     engine/tools/TextTools.h
     engine/tools/TextTools.cpp
+    engine/graphics/DeclarativeGeometry.h
+    engine/graphics/DeclarativeGeometry.cpp
     engine/graphics/VisualPrimitive.h
     engine/graphics/DrawingContext.h
     engine/graphics/DrawingContext.cpp
@@ -382,7 +384,7 @@ add_flx_test_suite(flx-compiler-resource-graph-tests tests/compiler/ResourceGrap
 add_flx_test_suite(flx-compiled-binary-tests tests/compiled/CompiledProjectBinaryTests.cpp)
 add_flx_test_suite(flx-runtime-compiled-tests tests/runtime/CompiledRuntimeTests.cpp)
 add_flx_test_suite(flx-runtime-lifecycle-tests tests/runtime/RuntimeLifecycleTests.cpp)
-add_flx_test_suite(flx-runtime-drawing-tests tests/runtime/RuntimeDrawingTests.cpp)
+add_flx_test_suite(flx-runtime-drawing-tests tests/runtime/RuntimeDrawingTests.cpp tests/runtime/AnimationRenderingTests.cpp)
 add_flx_test_suite(flx-runtime-mechanics-tests tests/runtime/RuntimeMechanicsTests.cpp)
 add_flx_test_suite(flx-runtime-timer-tests tests/runtime/RuntimeTimerTests.cpp)
 add_flx_test_suite(flx-engine-host-tests tests/runtime/EngineHostTests.cpp)

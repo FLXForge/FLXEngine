@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "animation.schema.json",
-  "title": "FLX Animation declarations (no playback yet)",
+  "title": "FLX Animation declarations (no public playback yet)",
   "type": "object",
   "propertyNames": {
     "minLength": 1
@@ -172,5 +172,5 @@
       ]
     }
   },
-  "description": "Declarative validation and compilation only. Compiler checks finite values, duplicate names/times and color/palette validity. Keys beyond duration warn and remain serialized. No JavaScript API, playback or animated rendering is provided in this phase."
+  "description": "Declarative validation and compiled storage. Compiler checks finite values, duplicate names/times and color/palette validity. Keys beyond duration warn and remain serialized. The internal evaluator/renderer is implemented; no JavaScript playback API or automatic World advance is available."
 }

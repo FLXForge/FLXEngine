@@ -97,6 +97,7 @@ draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, he
 </section>
 <h2 id="visual">Runtime visual state</h2>
 <section data-api-symbol="apply_color">
+<p>An internally started Animation with active color keys has visual priority during RUNNING, PAUSED and DONE. <code>apply_color</code> and <code>restore_color</code> still update the runtime base: removing Animation reveals that current base, including absence of declared color. Bitmap and explicit element colors are not tinted. This layer does not transform <code>draw_*</code>, including local modes. A JavaScript Animation playback API is not available yet. See <a class="link" href="json/visual.html#persist">Visual</a>.</p>
 <h3 id="apply-color">apply_color()</h3>
 <div class="code-card"><div class="code-header">Signatures</div><pre><code>apply_color(object: RuntimeObject, color: string): void;</code></pre></div>
 <p>Overrides the instance's live visual color with <code>color</code>, for example <code>"#ff0000"</code>. Does not rewrite the declarative JSON representation and is not the color parameter of an immediate primitive.</p>

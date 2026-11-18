@@ -58,3 +58,12 @@ integration; no current visual capability is claimed.
 
 Architecture, numeric recovery and integration limits are documented in
 [the evaluator implementation note](../../docs/ANIMATION_EVALUATOR.md).
+
+## Animation renderer fixture (phase 3)
+
+`animation/renderer-object.json` is a real object declaration with palette,
+persistent elements, mixed replacement, color and combined visual transforms.
+Graphics tests compile it, write/read format 14 and compare real rendered pixels
+using only internal C++ playback calls. It is not advertised as an executable
+JavaScript Animation example. The separate `microexamples/animation/persist-order`
+project is executable now: it demonstrates the static grouping without playback.

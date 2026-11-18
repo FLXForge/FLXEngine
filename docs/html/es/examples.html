@@ -472,6 +472,9 @@
             </section>
     FIN DE LA PLANTILLA -->
 
+            <section id="animation-persist-order"><h2>Microejemplo · persist-order</h2><p>Una idea: el orden <code>persist:first → sustituible → persist:last</code> se aplica incluso sin reproducir Animation. El JSON declara rojo, verde y azul; el resultado muestra marco azul, interior rojo y centro verde. No requiere scripts, entrada ni audio. Consulta <a class="link" href="json/visual.html#persist">persist en Visual</a>.</p><pre><code>flx run microexamples/animation/persist-order/persist-order.flx
+flx compile --output=persist-order.flxc microexamples/animation/persist-order/persist-order.flx
+flx run-compiled persist-order.flxc</code></pre><p>Ejecutar desde la raíz del repositorio. Las poses con transformación temporal siguen siendo fixtures internos, no microejemplos con API JS disponible.</p></section>
             <div id="doc-path"></div>
         </article>
     </main>

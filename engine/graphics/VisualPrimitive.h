@@ -6,6 +6,9 @@
 #include <vector>
 #include <memory>
 #include "../runtime/BitmapDefinition.h"
+#include "../runtime/AnimationPlayback.h"
+
+struct DeclarativeMesh;
 
 enum class VisualPrimitiveKind
 {
@@ -39,4 +42,7 @@ struct VisualPrimitive
     std::string text;
     std::vector<Vector2> points;
     std::shared_ptr<const BitmapDefinition> bitmap;
+    AnimationTransform visualTransform;
+    std::shared_ptr<const DeclarativeMesh> mesh;
+    std::vector<std::shared_ptr<const DeclarativeMesh>> presentationMeshes;
 };

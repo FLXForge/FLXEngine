@@ -1,9 +1,11 @@
-# Animation — evaluador temporal interno, fase 2
+# Animation — núcleo temporal y renderer, fases 2 y 3
 
 Esta nota describe la implementación CPU de `spec/animation.md`. El contrato
 normativo no cambia. No existe todavía una API JavaScript de Animation ni
-conexión del evaluador con `RuntimeWorld::update` o con el renderer. Un proyecto
-puede declarar/compilar Animation, pero no reproducirla visualmente todavía.
+conexión del evaluador con `RuntimeWorld::update`. La fase 3 conecta su apariencia
+con el renderer declarativo, comprobada mediante control interno C++. Los proyectos
+siguen sin poder iniciar reproducción por JavaScript. `persist` está disponible
+sin reproducción y tiene un microejemplo ejecutable.
 El formato sigue siendo 14, con lectura de 12/13; la versión del motor no cambia.
 
 ## Arquitectura
@@ -83,8 +85,8 @@ provocar primero un overflow innecesario en la suma del tiempo.
 Un fallo de reloj mantiene reloj, estado y última contribución válidos. Un fallo
 de pose con reloj representable confirma ese reloj/estado, incluso DONE, pero
 retiene la contribución visual anterior completa. Una primera pose inválida tras
-sustitución usa la contribución previa como respaldo; la referencia selectiva de
-la reproducción nueva permanece independiente. Una evaluación posterior válida
+sustitución usa la contribución previa limitada a los componentes controlados por
+la reproducción nueva como respaldo; su referencia selectiva permanece independiente. Una evaluación posterior válida
 sustituye todo el respaldo. Stop siempre lo retira.
 
 `FLX-RUNTIME-00020 InvalidAnimationOperation` informa entradas internas inválidas.
@@ -118,7 +120,7 @@ de cambios en origen, posición, tamaño, ángulo, velocidades, colliders, visib
 estado, profundidad, presencia de color y timers. Las suites existentes protegen
 el dibujo, Timer, lifecycle, consumidores flx-core y ejemplos ya ejecutables.
 
-## Validación local de esta entrega
+## Validación local de fase 2 (histórica)
 
 Windows x86-64, MSVC y CMake Release: compilación limpia de flx, flx-core,
 consumidores y pruebas. CTest completo: 36/36; suite CPU: 18 grupos sin skips.
@@ -141,3 +143,89 @@ pruebas incorporan los dos códigos. Las páginas Object/Diagnostics ES y EN ref
 el estado parcial sin publicar APIs JS. La única precisión normativa añadida en
 esta fase es la división binary64 redondeada aprobada explícitamente para los
 límites temporales, con su caso de aceptación en `spec/animation.md`.
+
+## Renderer declarativo — fase 3
+
+`RepresentationPrimitiveBuilder` consume `appearance(base)` sin escribir en el
+estado espacial del RuntimeObject. World captura y valida todas las primitivas
+antes de los callbacks draw. El snapshot conserva recursos inmutables y geometría;
+play/stop posteriores no lo reescriben. El dibujo inmediato no pasa por esta capa.
+
+`DeclarativeGeometry` prepara posiciones en binary64 y comprueba conversiones
+world/raster/clip-space antes de emitir datos. Cada presentación wrap se valida
+con los offsets históricos de la instancia; no se cambian bounds, colliders ni
+su selección de presentaciones. La transformación es escala → rotación animada
+→ offset → rotación/posición mundial → raster, manteniendo el pivot.
+
+Los quads bitmap y de glifos conservan UV al corregir winding tras espejos. Bitmap
+usa la caché existente del World y color WHITE; no se reinterpreta la matriz ni
+se suben texturas nuevas por frame. Text usa el atlas predeterminado existente,
+sin crear render textures o fuentes para animar.
+
+El texto parte de las métricas y el espaciado raster históricos, incluidos centrado
+por línea, multilínea, UTF-8, tabs y terminación NUL. Ese contorno base se expresa
+en coordenadas locales mediante la inversa de la proyección y rotación del objeto;
+a partir de ahí se aplica la composición normativa. Una transformación identidad
+mantiene el camino histórico. No se corrige ni se promete corregir la nitidez de
+texto pequeño. Los trazos de primitive/geometry conservan su grosor raster histórico;
+se transforman sus puntos, sin introducir una API de grosor.
+
+Para geometría fill se conserva par-impar, incluido el contorno. El barrido se
+recorta al viewport: es clipping de raster, no un clamp de valores Animation.
+Esto limita el trabajo a filas visibles y evita casts enteros fuera de rango.
+Los trazos preparados se calculan con aritmética double antes de estrechar a
+float, evitando overflow del cálculo de longitud de DrawLineEx. Una geometry de
+un punto transforma su celda histórica completa, también bajo escala cero.
+
+`AnimationPlayback::validateAppearance` es el puente numérico sin dependencia de
+raylib: acepta un callback de validación de la contribución completa. No avanza
+elapsed, ciclos o estados. Permite reevaluar también PAUSED/DONE para recuperar
+una pose válida sin recapturar referencia. El respaldo gráfico solo se confirma
+cuando todas las familias/presentaciones han pasado. Tanto el respaldo CPU como
+el gráfico se proyectan a la máscara de la reproducción nueva: no pueden retener
+color, representación, offset o rotación que esta no controle (ANIM-003/014).
+
+Si el candidato no es representable, se conserva el respaldo local válido y se
+usa la supresión de diagnóstico de la misma reproducción. World registra el
+código y la identidad de instancia mediante Logger, como los avisos runtime
+existentes; el overload validado también recibe Diagnostics para consumidores
+internos. Si el contexto/estado base actual tampoco permite emitir el respaldo,
+se omite la contribución declarativa completa, sin clamp, geometría parcial ni
+fallo de proceso. La retirada de Animation sigue mostrando la base runtime.
+
+El overload de build con contexto es la ruta de producción para validar y recuperar
+antes de emitir. El overload const histórico produce snapshots sin validar contra
+un viewport; un consumidor que reproduzca Animation debe usar la ruta con contexto
+para obtener recuperación por instancia. Los overloads históricos de renderer sin
+caché siguen siendo conveniencias; World siempre aporta su caché persistente.
+
+## Pruebas y ejemplos — fase 3
+
+Se amplía `flx-runtime-drawing-tests` con geometría CPU y gráficos de contexto real,
+sin añadir otro workflow. Su ejecución Xvfb existente incluye estas pruebas; bajo
+FLX_TEST_HEADLESS se omite explícitamente solo el caso gráfico nuevo.
+
+Se comprueban analíticamente orden de transformaciones, salida anisotrópica, métricas
+de una fuente sintética sin dispositivo, presencia de persist y respaldo filtrado.
+Con contexto real se comparan píxeles para identidad de todas las familias, ambos
+espejos y UV, transformación combinada, texto contra referencia afín independiente,
+colores, sección vacía, celda de geometry, snapshot, dibujo inmediato y caché.
+`renderer-object.json` produce los mismos píxeles abierto y compilado. El ejemplo
+persist-order se ejecuta por FlxSession en ambos modos y comprueba azul/rojo/verde.
+
+No se añaden bindings, avance automático, formatos nuevos ni workflows de release.
+La validación Linux/GCC/Clang real deberá repetirse en el runner. La fase gráfica
+no elimina las limitaciones del atlas/fuente predeterminada y el muestreo puntual.
+
+### Resultado local de fase 3
+
+Windows x86-64 / MSVC / Release: compilación limpia de flx, flx-core y consumidores;
+CTest completo 36/36. La suite de dibujo incluye sus casos CPU y de contexto real.
+La ejecución dirigida sin dispositivo pasa el evaluador temporal y los casos CPU
+de dibujo; el caso nuevo de píxeles se omite explícitamente en headless y se ejecuta
+con contexto real en la pasada nativa. No se ha ejecutado Linux localmente.
+
+Se añadieron regresiones de clipping con segmentos de magnitud 1e30 y polígonos
+1e8: deben producir el trazo y el relleno visibles esperados sin perder precisión
+al intersectar el viewport ni recorrer filas fuera de pantalla. La banda raster
+de un píxel conserva las reglas de extremos de GL_LINES, sin alterar Animation.

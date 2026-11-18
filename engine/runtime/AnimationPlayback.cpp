@@ -126,7 +126,23 @@ bool AnimationPlayback::play(const std::string& name,
         capturedReference.color = selected->from == AnimationFrom::Current ? previous.color : base.color;
     if (controlled.representation)
         capturedReference.replaceable = selected->from == AnimationFrom::Current ? previous.replaceable : base.replaceable;
-    elapsedTime = cycleTime = 0.0;
+    // A fallback is a contribution of the NEW animation, not ownership of the
+    // previous playback's uncontrolled properties (ANIM-003/014).
+    auto project = [&](const Layer& old) {
+        Layer result;
+        result.controls = controlled;
+        if (controlled.offsetX) result.transform.offsetX = old.transform.offsetX;
+        if (controlled.offsetY) result.transform.offsetY = old.transform.offsetY;
+        if (controlled.rotation) result.transform.rotation = old.transform.rotation;
+        if (controlled.scaleX) result.transform.scaleX = old.transform.scaleX;
+        if (controlled.scaleY) result.transform.scaleY = old.transform.scaleY;
+        if (controlled.color) result.color = old.controls.color ? old.color : base.color;
+        if (controlled.representation) result.replaceable = old.controls.representation ? old.replaceable : base.replaceable;
+        return result;
+    };
+    lastValid = project(lastValid);
+    graphicalFallback = project(graphicalFallback);
+    elapsedTime = cycleTime = cycleIndex = 0.0;
     numericReported = false;
     playbackStatus = AnimationPlaybackStatus::Running;
     // lastValid intentionally survives until the entire new layer is valid.
@@ -141,6 +157,7 @@ void AnimationPlayback::pause()
 
 void AnimationPlayback::stop()
 {
+    if (playbackStatus == AnimationPlaybackStatus::Absent) return;
     *this = AnimationPlayback{};
 }
 
@@ -190,6 +207,7 @@ bool AnimationPlayback::advance(double delta, Diagnostics& diagnostics)
     }
     elapsedTime = next;
     cycleTime = time;
+    cycleIndex = cycles;
     if (!selected->loop && next == selected->duration) playbackStatus = AnimationPlaybackStatus::Done;
     return evaluate(time, cycles, diagnostics);
 }
@@ -248,6 +266,20 @@ AnimationAppearance AnimationPlayback::appearance(const AnimationBaseAppearance&
     // A valid layer contains neutral values for components it does not control.
     result.transform = lastValid.transform;
     return result;
+}
+
+bool AnimationPlayback::validateAppearance(const AnimationBaseAppearance& base,
+    const std::function<bool(const AnimationAppearance&)>& validate, Diagnostics& diagnostics)
+{
+    const bool evaluated = !selected || evaluate(cycleTime, cycleIndex, diagnostics);
+    if (evaluated && validate(appearance(base)))
+    {
+        graphicalFallback = lastValid;
+        return true;
+    }
+    numericFailure(diagnostics, "graphical geometry/conversion is not representable");
+    lastValid = graphicalFallback;
+    return validate(appearance(base)); // An invalid base cannot be repaired by clamping.
 }
 
 std::optional<std::string> AnimationPlayback::current() const

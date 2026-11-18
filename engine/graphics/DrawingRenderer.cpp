@@ -1,5 +1,7 @@
 #include "DrawingRenderer.h"
 #include "BitmapTextureCache.h"
+#include "DeclarativeGeometry.h"
+#include <limits>
 #include <rlgl.h>
 
 #include <algorithm>
@@ -487,10 +489,10 @@ namespace
                 std::max(maxY, point.y);
         }
 
-        const int firstY =
-            static_cast<int>(std::ceil(minY));
-        const int lastY =
-            static_cast<int>(std::floor(maxY));
+        // A one-pixel guard band preserves GL line endpoint/diamond coverage while
+        // bounding scan work even for a huge valid offscreen polygon.
+        const int firstY = static_cast<int>(std::max(-1.0f,std::min(transform.rasterHeight+1,std::ceil(minY))));
+        const int lastY = static_cast<int>(std::max(-2.0f,std::min(transform.rasterHeight+1,std::floor(maxY))));
 
         for (int y = firstY; y <= lastY; ++y)
         {
@@ -536,10 +538,8 @@ namespace
 
             for (size_t i = 0; i + 1 < intersections.size(); i += 2)
             {
-                const int startX =
-                    static_cast<int>(std::ceil(intersections[i]));
-                const int endX =
-                    static_cast<int>(std::floor(intersections[i + 1]));
+                const int startX = static_cast<int>(std::max(-1.0f,std::min(transform.rasterWidth+1,std::ceil(intersections[i]))));
+                const int endX = static_cast<int>(std::max(-2.0f,std::min(transform.rasterWidth+1,std::floor(intersections[i + 1]))));
 
                 if (endX < startX)
                 {
@@ -562,6 +562,151 @@ namespace
             color,
             transform
         );
+    }
+
+    double area(Vector2 a,Vector2 b,Vector2 c)
+    {
+        return (static_cast<double>(b.x)-a.x)*(static_cast<double>(c.y)-a.y)-
+            (static_cast<double>(b.y)-a.y)*(static_cast<double>(c.x)-a.x);
+    }
+
+    void preparedTriangle(Vector2 a,Vector2 b,Vector2 c,Color color)
+    {
+        const double winding=area(a,b,c);
+        if(winding==0)return;
+        if(winding>0)std::swap(b,c);
+        DrawTriangle(a,b,c,color);
+    }
+
+    void preparedQuad(const DeclarativeQuad& quad,unsigned int texture,Color color)
+    {
+        const double winding=area(quad.points[0],quad.points[1],quad.points[2]);
+        if(winding==0)return;
+        const int forward[]={0,1,2,3},reverse[]={0,3,2,1};
+        const int* order=winding<0?forward:reverse;
+        rlSetTexture(texture);rlBegin(RL_QUADS);rlColor4ub(color.r,color.g,color.b,color.a);
+        for(int i=0;i<4;++i)
+        {
+            const int k=order[i];rlTexCoord2f(quad.uv[k].x,quad.uv[k].y);rlVertex2f(quad.points[k].x,quad.points[k].y);
+        }
+        rlEnd();rlSetTexture(0);
+    }
+
+    // Clip only raster work, never clamp an Animation value. This keeps large
+    // offscreen edges from overflowing DrawLineEx's float length calculation.
+    void preparedLine(Vector2 a,Vector2 b,float width,Color color,const RenderTransform& transform)
+    {
+        const double dx=static_cast<double>(b.x)-a.x,dy=static_cast<double>(b.y)-a.y;
+        const double minX=-static_cast<double>(width),minY=minX;
+        const double maxX=transform.rasterWidth+static_cast<double>(width),maxY=transform.rasterHeight+static_cast<double>(width);
+        std::vector<Vector2> clipped;
+        auto append=[&](double x,double y) {
+            if(!std::isfinite(x)||!std::isfinite(y)||std::abs(x)>std::numeric_limits<float>::max()||std::abs(y)>std::numeric_limits<float>::max())return;
+            // Round to the actual vertex type before testing an intersection on a
+            // viewport corner. This is not a time epsilon or an Animation clamp.
+            const Vector2 point={static_cast<float>(x),static_cast<float>(y)};
+            if(point.x>=minX&&point.x<=maxX&&point.y>=minY&&point.y<=maxY&&
+               point.x>=std::min(a.x,b.x)&&point.x<=std::max(a.x,b.x)&&
+               point.y>=std::min(a.y,b.y)&&point.y<=std::max(a.y,b.y))clipped.push_back(point);
+        };
+        append(a.x,a.y);append(b.x,b.y);
+        // Float endpoints have exact products in double. The line equation
+        // avoids losing a small viewport to cancellation in a + t*(b-a).
+        const double c=std::fma(static_cast<double>(b.x),a.y,-static_cast<double>(a.x)*b.y);
+        if(dx!=0)
+            for(const double x:{minX,maxX})append(x,std::fma(dy,x,c)/dx);
+        if(dy!=0)
+            for(const double y:{minY,maxY})append((dx*y-c)/dy,y);
+        if(clipped.size()<2)return;
+        const bool horizontal=std::abs(dx)>=std::abs(dy);
+        std::sort(clipped.begin(),clipped.end(),[&](Vector2 left,Vector2 right){return horizontal?left.x<right.x:left.y<right.y;});
+        const Vector2 start=clipped.front(),end=clipped.back();
+        const double vx=static_cast<double>(end.x)-start.x,vy=static_cast<double>(end.y)-start.y;
+        const double length=std::hypot(vx,vy);if(length==0)return;
+        const double nx=-vy/length*width/2,ny=vx/length*width/2;
+        const Vector2 q0={static_cast<float>(start.x+nx),static_cast<float>(start.y+ny)};
+        const Vector2 q1={static_cast<float>(end.x+nx),static_cast<float>(end.y+ny)};
+        const Vector2 q2={static_cast<float>(end.x-nx),static_cast<float>(end.y-ny)};
+        const Vector2 q3={static_cast<float>(start.x-nx),static_cast<float>(start.y-ny)};
+        preparedTriangle(q0,q1,q2,color);preparedTriangle(q0,q2,q3,color);
+    }
+
+    void preparedPath(const std::vector<Vector2>& points,bool close,float width,Color color,const RenderTransform& transform)
+    {
+        if(points.size()==1)
+        {
+            const auto p=points.front();
+            if(p.x>=-width && p.x<=transform.rasterWidth && p.y>=-width && p.y<=transform.rasterHeight)
+                DrawRectangle(static_cast<int>(std::round(p.x)),static_cast<int>(std::round(p.y)),static_cast<int>(std::ceil(width)),static_cast<int>(std::ceil(width)),color);
+            return;
+        }
+        for(size_t i=0;i+(close?0:1)<points.size();++i)
+            preparedLine(points[i],points[(i+1)%points.size()],width,color,transform);
+    }
+
+    void preparedEvenOdd(const DeclarativeMesh& mesh,Color color,const RenderTransform& transform)
+    {
+        const auto& points=mesh.points;
+        if(points.size()<3){preparedPath(points,false,mesh.lineWidth,color,transform);return;}
+        if(mesh.collapsed)return;
+        double minY=points[0].y,maxY=minY;
+        for(const auto p:points){minY=std::min(minY,static_cast<double>(p.y));maxY=std::max(maxY,static_cast<double>(p.y));}
+        const int first=static_cast<int>(std::max(-1.0,std::min(static_cast<double>(transform.rasterHeight)+1,std::ceil(minY))));
+        const int last=static_cast<int>(std::max(-2.0,std::min(static_cast<double>(transform.rasterHeight)+1,std::floor(maxY))));
+        for(int y=first;y<=last;++y)
+        {
+            const double scan=y+0.5;std::vector<double> intersections;
+            for(size_t i=0;i<points.size();++i)
+            {
+                const auto a=points[i],b=points[(i+1)%points.size()];
+                if(a.y==b.y || scan<std::min(a.y,b.y) || scan>=std::max(a.y,b.y))continue;
+                intersections.push_back(a.x+(scan-a.y)/(static_cast<double>(b.y)-a.y)*(static_cast<double>(b.x)-a.x));
+            }
+            std::sort(intersections.begin(),intersections.end());
+            for(size_t i=0;i+1<intersections.size();i+=2)
+            {
+                const double x0=std::max(-1.0,std::ceil(intersections[i])),x1=std::min(static_cast<double>(transform.rasterWidth)+1,std::floor(intersections[i+1]));
+                if(x1>=x0)DrawLine(static_cast<int>(x0),y,static_cast<int>(x1),y,color);
+            }
+        }
+        preparedPath(points,true,mesh.lineWidth,color,transform);
+    }
+
+    void drawPrepared(const VisualPrimitive& p,const DeclarativeMesh& mesh,const RenderTransform& transform,BitmapTextureCache& cache)
+    {
+        if(p.bitmap)
+        {
+            if(mesh.points.size()!=4)return;
+            DeclarativeQuad quad;
+            std::copy(mesh.points.begin(),mesh.points.end(),quad.points.begin());
+            quad.uv={Vector2{0,0},Vector2{1,0},Vector2{1,1},Vector2{0,1}};
+            preparedQuad(quad,cache.get(p.bitmap).id,WHITE);return;
+        }
+        if(p.primitive=="text")
+        {
+            for(const auto& glyph:mesh.glyphs)preparedQuad(glyph,mesh.fontTexture,p.color);
+            return;
+        }
+        if(p.primitive=="geometry")
+        {
+            if(mesh.singleCell)
+            {
+                for(size_t i=1;i+1<mesh.points.size();++i)preparedTriangle(mesh.points[0],mesh.points[i],mesh.points[i+1],p.color);
+                return;
+            }
+            if(p.geometryMode=="fill")preparedEvenOdd(mesh,p.color,transform);
+            else preparedPath(mesh.points,p.geometryMode=="close",mesh.lineWidth,p.color,transform);
+            return;
+        }
+        if(isOutlineMode(p.primitiveMode))
+        {
+            preparedPath(mesh.points,true,mesh.lineWidth,p.color,transform);return;
+        }
+        if(mesh.collapsed)return;
+        if(p.primitive=="ellipse")
+            for(size_t i=0;i<mesh.points.size();++i)preparedTriangle(mesh.center,mesh.points[i],mesh.points[(i+1)%mesh.points.size()],p.color);
+        else
+            for(size_t i=1;i+1<mesh.points.size();++i)preparedTriangle(mesh.points[0],mesh.points[i],mesh.points[i+1],p.color);
     }
 
     void drawPrimitiveAt(
@@ -902,6 +1047,21 @@ void DrawingRenderer::render(
 
     for (const VisualPrimitive& primitive : primitives)
     {
+        if(primitive.kind==VisualPrimitiveKind::Representation &&
+            (!DeclarativeGeometry::identity(primitive.visualTransform) || (primitive.mesh && primitive.mesh->transformed) ||
+             std::any_of(primitive.presentationMeshes.begin(),primitive.presentationMeshes.end(),[](const auto& mesh){return mesh->transformed;})))
+        {
+            if(!primitive.presentationMeshes.empty())
+                for(const auto& mesh:primitive.presentationMeshes)drawPrepared(primitive,*mesh,transform,textures);
+            else
+                for(const auto offset:presentationOffsets(primitive,worldExtent))
+                {
+                    DeclarativeMesh mesh;
+                    if(DeclarativeGeometry::prepare(primitive,{worldExtent,rasterWidth,rasterHeight,GetFontDefault()},offset,mesh))
+                        drawPrepared(primitive,mesh,transform,textures);
+                }
+            continue;
+        }
         const std::vector<Vector2> offsets =
             presentationOffsets(
                 primitive,

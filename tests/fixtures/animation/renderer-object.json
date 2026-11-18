@@ -1,0 +1,104 @@
+{
+  "origin": {
+    "x": 32,
+    "y": 32
+  },
+  "size": {
+    "width": 16,
+    "height": 16
+  },
+  "visual": {
+    "palette": {
+      "accent": "#FF00FF"
+    },
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "color": "blue",
+        "persist": "first"
+      },
+      {
+        "geometry": [
+          {
+            "x": -6,
+            "y": -6
+          },
+          {
+            "x": 6,
+            "y": -6
+          },
+          {
+            "x": 0,
+            "y": 6
+          }
+        ],
+        "color": "accent"
+      },
+      {
+        "text": "+",
+        "fontSize": 10,
+        "persist": "last",
+        "color": "yellow"
+      }
+    ]
+  },
+  "animations": {
+    "pose": {
+      "duration": 1,
+      "keys": [
+        {
+          "at": 0,
+          "transform": {
+            "scale": {
+              "x": -1.5,
+              "y": 0.5
+            },
+            "rotation": 45,
+            "offset": {
+              "x": 6,
+              "y": -2
+            }
+          },
+          "color": "#00FFFF",
+          "representation": [
+            {
+              "bitmap": {
+                "pixels": [
+                  [
+                    "red",
+                    "green"
+                  ],
+                  [
+                    "blue",
+                    "blank"
+                  ]
+                ]
+              }
+            },
+            {
+              "text": "A",
+              "fontSize": 8
+            },
+            {
+              "geometry": [
+                {
+                  "x": -4,
+                  "y": -4
+                },
+                {
+                  "x": 4,
+                  "y": -4
+                },
+                {
+                  "x": 0,
+                  "y": 4
+                }
+              ],
+              "mode": "close"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

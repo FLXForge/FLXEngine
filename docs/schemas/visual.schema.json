@@ -104,7 +104,7 @@
             "size": {
               "$ref": "#/$defs/representationSize"
             },
-            "persist": { "enum": [ "first", "last" ], "description": "Base metadata only; grouping is not rendered in declaration phase." },
+            "persist": { "enum": [ "first", "last" ], "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations." },
             "color": {
               "type": "string"
             }
@@ -133,7 +133,7 @@
               "enum": [ "open", "close", "fill" ],
               "default": "open"
             },
-            "persist": { "enum": [ "first", "last" ], "description": "Base metadata only; grouping is not rendered in declaration phase." },
+            "persist": { "enum": [ "first", "last" ], "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations." },
             "color": {
               "type": "string"
             }
@@ -157,7 +157,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "persist": { "enum": [ "first", "last" ], "description": "Base metadata only; grouping is not rendered in declaration phase." },
+            "persist": { "enum": [ "first", "last" ], "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations." },
             "color": {
               "type": "string"
             }
@@ -292,7 +292,7 @@
             }
           }
         },
-        "persist": { "enum": [ "first", "last" ], "description": "Base metadata only; grouping is not rendered in declaration phase." },
+        "persist": { "enum": [ "first", "last" ], "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations." },
         "size": {
           "$ref": "#/$defs/representationSize"
         },
@@ -368,7 +368,7 @@
             "first",
             "last"
           ],
-          "description": "Base metadata only; grouping is not rendered in declaration phase."
+          "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations."
         },
         "primitive": {
           "type": "string",

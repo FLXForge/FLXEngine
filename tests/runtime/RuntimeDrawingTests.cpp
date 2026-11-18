@@ -19,6 +19,9 @@
 #include <variant>
 #include <vector>
 
+void testAnimationGeometryCPU();
+void testAnimationRendering();
+
 using namespace flx::test;
 
 namespace
@@ -1390,12 +1393,15 @@ bool requiresGraphics(const std::string& name)
         name == "One-point geometry builds and draws as logical point" ||
         name == "Rotated ellipse fill and outline respect angle" ||
         name == "Multiline text centers each line" ||
-        name == "Text cases do not depend on RuntimeObject size";
+        name == "Text cases do not depend on RuntimeObject size" ||
+        name == "Animation renderer observable pixels";
 }
 
 int main()
 {
     const std::vector<std::pair<std::string, void(*)()>> tests = {
+        { "Animation geometry CPU and numeric recovery", testAnimationGeometryCPU },
+        { "Animation renderer observable pixels", testAnimationRendering },
         { "Bitmap microexamples source and compiled rendering", testBitmapMicroexamplesSourceAndCompiledRendering },
         { "Bitmap texture transforms transparency and order", testBitmapTextureTransformTransparencyAndOrder },
         { "Drawing context rejects calls outside draw turn", testDrawingContextRejectsCallsOutsideDrawTurn },

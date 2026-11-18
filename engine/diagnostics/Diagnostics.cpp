@@ -56,6 +56,10 @@ namespace
             { DiagnosticCode::UnknownVisualColor, "FLX-RESOURCE-00019", "UnknownVisualColor", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Visual color is not a palette key or a native color." },
             { DiagnosticCode::InvalidVisualPalette, "FLX-RESOURCE-00020", "InvalidVisualPalette", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Palette declaration or native entry value is invalid." },
             { DiagnosticCode::InvalidBitmapDeclaration, "FLX-RESOURCE-00021", "InvalidBitmapDeclaration", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Bitmap matrix or repetition is invalid." },
+            { DiagnosticCode::InvalidAnimationDeclaration, "FLX-RESOURCE-00022", "InvalidAnimationDeclaration", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Invalid animation definition or duplicate name/time." },
+            { DiagnosticCode::InactiveAnimationKey, "FLX-RESOURCE-00023", "InactiveAnimationKey", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Animation key lies beyond duration and remains inactive." },
+            { DiagnosticCode::AnimationWithoutActiveKeys, "FLX-RESOURCE-00024", "AnimationWithoutActiveKeys", DiagnosticSeverity::Warning, DiagnosticDomain::RESOURCE, "Animation has no active keys." },
+            { DiagnosticCode::InvalidVisualPersistence, "FLX-RESOURCE-00025", "InvalidVisualPersistence", DiagnosticSeverity::Error, DiagnosticDomain::RESOURCE, "Invalid or misplaced representation persist value." },
 
             { DiagnosticCode::MachineInformationUnclassified, "FLX-MACHINE-00000", "MachineInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::MACHINE, "Unclassified informational machine diagnostic." },
             { DiagnosticCode::MachineWarningUnclassified, "FLX-MACHINE-00001", "MachineWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::MACHINE, "Unclassified machine warning." },

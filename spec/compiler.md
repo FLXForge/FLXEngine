@@ -271,3 +271,7 @@ El compilador puede evolucionar internamente siempre que mantenga:
 El ProjectCompiler no ejecuta un proyecto ni interpreta su comportamiento.
 
 Su única responsabilidad es transformar un lenguaje declarativo en una representación ejecutable, completamente resuelta, estable y autónoma: **CompiledProject**.
+
+## Animation declarativa (v0.4.0, fase 1)
+
+El compilador conserva definiciones y componentes opcionales de [Animation](animation.md), normaliza keys por tiempo y mantiene las inactivas con warnings. Detecta nombres duplicados antes de sobrescribir y tiempos duplicados antes de ordenar. Reutiliza paletas, representaciones y bitmaps; procesa también los colores y píxeles de keys inactivas mediante Machine. `like`, merge y recursos compartidos mantienen sus reglas existentes. No ejecuta animaciones ni scripts. Escribe formato 14 y conserva lectura 12/13, independiente de la versión del motor.

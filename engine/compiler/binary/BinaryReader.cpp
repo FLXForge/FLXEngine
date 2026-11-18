@@ -53,6 +53,16 @@ namespace flx::binary
         return value;
     }
 
+    double BinaryReader::readF64(const std::string& field)
+    {
+        static_assert(sizeof(double) == 8 && std::numeric_limits<double>::is_iec559);
+        uint64_t bits = readU32(field);
+        bits |= static_cast<uint64_t>(readU32(field)) << 32;
+        double value;
+        std::memcpy(&value, &bits, sizeof(value));
+        return value;
+    }
+
     bool BinaryReader::readBool(const std::string& field)
     {
         const uint8_t value =

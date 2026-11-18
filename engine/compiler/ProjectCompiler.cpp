@@ -37,6 +37,8 @@ namespace
         compiled.visible = definition.visible;
         compiled.hasVisual = definition.hasVisual;
         compiled.visual = definition.visual;
+        compiled.hasAnimations = definition.hasAnimations;
+        compiled.animations = definition.animations;
 
         compiled.origin = definition.origin;
         compiled.hasOrigin = definition.hasOrigin;
@@ -382,7 +384,7 @@ void ProjectCompiler::projectDefinitionColors(
             );
     }
 
-    for (auto& element : definition.visual.representation)
+    auto projectElement = [&](RepresentationElementDefinition& element)
     {
         if (element.bitmap)
         {
@@ -392,7 +394,7 @@ void ProjectCompiler::projectDefinitionColors(
         }
         if (!element.hasColor)
         {
-            continue;
+            return;
         }
 
         element.color =
@@ -400,7 +402,15 @@ void ProjectCompiler::projectDefinitionColors(
                 element.color,
                 video
             );
-    }
+    };
+    for (auto& element : definition.visual.representation) projectElement(element);
+    for (auto& [name, animation] : definition.animations)
+        for (auto& key : animation.keys)
+        {
+            if (key.color) key.color = VideoColorProcessor::project(*key.color, video);
+            if (key.representation)
+                for (auto& element : *key.representation) projectElement(element);
+        }
 
     for (auto& child : definition.children)
     {

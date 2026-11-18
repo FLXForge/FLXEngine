@@ -13,17 +13,10 @@ headless production session, checks format 12 and resource relationships,
 executes the embedded JavaScript and checks deterministic boolean, numeric
 and UTF-8 results through persistence in a temporary directory.
 
-Generate and verify on Windows after building:
-
-```powershell
-build/Release/flx-format12-portability-tests.exe --write-fixture tests/fixtures/format12-windows.flxc
-build/Release/flx-format12-portability-tests.exe --read-fixture tests/fixtures/format12-windows.flxc
-Get-FileHash tests/fixtures/format12-windows.flxc -Algorithm SHA256
-```
-
-Adjust the executable path for a single-configuration Ninja build. Updating
-the fixture also requires updating its hash and recording the new provenance.
-The checked-in file must remain binary in Git.
+The original format-12 writer predates the current codec. Do not regenerate
+this fixture with the current writer: it emits format 14. Verification remains
+available with `flx-format12-portability-tests --read-fixture <file>`.
+The checked-in file and its hash remain unchanged.
 
 The Linux GCC and Clang jobs export their own generated fixtures with the
 diagnostic artifacts. After downloading an artifact, verify the reverse
@@ -35,3 +28,20 @@ build/Release/flx-format12-portability-tests.exe --read-fixture format12-linux-C
 ```
 
 The reverse direction is prepared and requires actual Linux artifacts.
+
+## Format-13 Windows fixtures
+
+`format13-windows.flxc` was generated before this phase changed the writer,
+using the pre-existing MSVC Release `v040-audit-release` portability executable
+(producer FLX 0.4.0). It preserves the same exchange model as
+the format-12 test. `format13-bitmap-windows.flxc` was generated with the same
+pre-existing CLI and contains one bitmap row `[red, blank]`; it verifies the real
+format-13 bitmap layout, not a format-14 file with a patched version byte.
+Both are immutable legacy inputs. Their hashes are recorded alongside them.
+
+## Animation declaration fixture
+
+`animation/declaration.json` is a minimal parser/compiler fixture: sparse keys,
+inactive color/bitmap key, local palette, empty representation and base persist.
+It is not a playable Animation example. Playback, JS and animated rendering are
+not implemented in phase 1. The JSON can later seed a didactic microexample.

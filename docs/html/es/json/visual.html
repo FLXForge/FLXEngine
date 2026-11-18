@@ -87,6 +87,7 @@
   }
 }</code></pre>
             </div>
+            <h2 id="persist">persist · metadato declarativo</h2><p>Los elementos base admiten <code>persist: "first"</code> o <code>"last"</code>. Se valida y conserva en formato 14; se prohíbe en representaciones de keys. El contrato final establece partición estable first + sustituible + last también sin reproducción, pero esta fase todavía no cambia el renderer: no debe esperarse esa agrupación visual. Sin persist se conserva el orden existente. Véase <a class="link" href="json/object.html#animations">Animation declarativa</a>.</p>
             <h2 id="representation">representation</h2>
             <p>Array inline. No se mezclan dos familias dentro de un elemento. Cada familia tiene sus campos propios; no hay campos comunes de posición o rotación por elemento. Los elementos usan la posición y el ángulo del Object.</p>
             <h3 id="primitive">primitive</h3>

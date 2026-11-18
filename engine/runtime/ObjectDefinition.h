@@ -7,8 +7,10 @@
 #include "ScriptValue.h"
 #include "BitmapDefinition.h"
 
+#include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -145,6 +147,8 @@ enum class RepresentationElementKind
     Bitmap
 };
 
+enum class RepresentationPersistence : uint8_t { None, First, Last };
+
 struct RepresentationElementDefinition
 {
     RepresentationElementKind kind = RepresentationElementKind::Primitive;
@@ -158,6 +162,7 @@ struct RepresentationElementDefinition
     Color color = WHITE;
     bool hasColor = false;
     std::shared_ptr<const BitmapDefinition> bitmap;
+    RepresentationPersistence persist = RepresentationPersistence::None;
 };
 
 struct VisualDefinition
@@ -167,6 +172,31 @@ struct VisualDefinition
     int depth = 0;
     std::vector<RepresentationElementDefinition> representation;
     bool hasRepresentation = false;
+};
+
+enum class AnimationFrom : uint8_t { Base, Current };
+
+struct AnimationTransformDefinition
+{
+    std::optional<double> offsetX, offsetY, rotation, scaleX, scaleY;
+};
+
+struct AnimationKeyDefinition
+{
+    double at = 0.0;
+    std::optional<AnimationTransformDefinition> transform;
+    std::optional<Color> color;
+    std::optional<std::vector<RepresentationElementDefinition>> representation;
+};
+
+struct AnimationDefinition
+{
+    double duration = 0.0;
+    bool loop = false;
+    bool hasLoop = false;
+    AnimationFrom from = AnimationFrom::Base;
+    bool hasFrom = false;
+    std::vector<AnimationKeyDefinition> keys;
 };
 
 struct ObjectDefinition
@@ -188,6 +218,8 @@ struct ObjectDefinition
     bool visible = true;
     bool hasVisual = false;
     VisualDefinition visual;
+    bool hasAnimations = false;
+    std::map<std::string, AnimationDefinition> animations;
 
     Vector2 origin = Vector2{ 0.0f, 0.0f };
     bool hasOrigin = false;

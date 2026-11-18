@@ -138,7 +138,11 @@ enum class DiagnosticCode
     InvalidSessionDelta,
     UnknownVisualColor,
     InvalidVisualPalette,
-    InvalidBitmapDeclaration
+    InvalidBitmapDeclaration,
+    InvalidAnimationDeclaration,
+    InactiveAnimationKey,
+    AnimationWithoutActiveKeys,
+    InvalidVisualPersistence
 };
 
 struct SourcePosition

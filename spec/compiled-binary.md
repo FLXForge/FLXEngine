@@ -4,7 +4,7 @@
 - Documento: especificación normativa
 - Ámbito: persistencia binaria de `CompiledProject`
 - Versión inicial: 0.3.0
-- Formato vigente: 13
+- Formato vigente: 14 (lectura compatible de 12 y 13)
 - Estado: consolidado
 
 ## 1. Propósito
@@ -32,7 +32,7 @@ producerVersion
 ```
 Formato vigente:
 ```text
-FormatVersion = 13
+FormatVersion = 14
 ```
 Códigos:
 - FLX-BINARY-00013 InvalidCompiledProjectMagic
@@ -52,6 +52,7 @@ No contiene fuentes necesarias para ejecutar, referencias pendientes, `rootDefin
 - `u32` little-endian
 - `i32` como bits escritos mediante `u32`
 - `f32` IEEE-754 binary32 little-endian
+- `f64` IEEE-754 binary64 little-endian para los campos Animation nuevos del formato 14
 - `bool` como `u8`: 0 o 1
 - `string`: `u32 length` + bytes UTF-8
 
@@ -179,8 +180,9 @@ producerVersion
 ```
 
 ## 17. Compatibilidad
-La v0.3.0 no garantiza compatibilidad con formatos anteriores.
-El lector v3 rechaza v2 explícitamente.
+Nota histórica de v0.3.0: no se garantizaba compatibilidad con formatos anteriores.
+La política vigente escribe 14 y lee 12/13/14, sin reinterpretar los archivos antiguos.
+La referencia histórica al lector v3 y su rechazo de v2 no designa la versión actual del motor; las versiones de formato no soportadas siguen rechazándose.
 Antes de v1 deben definirse política de compatibilidad, migración y estabilidad de `ResourceId`.
 
 ## 18. Seguridad
@@ -250,12 +252,12 @@ documentos
 
 ## 23. Bitmap y compatibilidad del formato 13 (v0.4.0)
 
-El writer escribe formato 13. El reader admite 12 y 13; el resto se rechaza.
+El formato 13 introdujo bitmap. El writer actual escribe 14; el reader admite 12, 13 y 14; el resto se rechaza.
 El formato 12 se lee sin añadir campos ni reinterpretar etiquetas. Su fixture
 Windows permanece intacto. Un reader antiguo no puede ejecutar un bitmap 13.
 
 Las etiquetas existentes conservan 0=primitive, 1=geometry y 2=text.
-La etiqueta 3=bitmap solo es válida en formato 13 y añade, después de los
+La etiqueta 3=bitmap es válida desde el formato 13 y añade, después de los
 campos comunes del elemento:
 
 ```text
@@ -273,3 +275,52 @@ Los bytes del payload comparten con los strings el presupuesto agregado de
 96 MiB; el límite físico de 64 MiB sigue vigente. Un bitmap es un registro con
 payload acotado, no 65.025 entradas del presupuesto de elementos. Esto permite
 255x255 sin relajar MaxTotalDecodedElements. El payload es binario, no UTF-8.
+
+## 24. Animation y persistencia visual: formato 14
+
+La versión de formato es independiente de `producerVersion` y de FLX 0.4.0.
+Los números nuevos de Animation usan `f64` IEEE-754 binary64 little-endian,
+conservando valores finitos y tiempos distintos sin estrecharlos a f32.
+Los campos anteriores mantienen sus primitivas y su orden.
+
+Cada elemento Representation 14 añade `u8 persist` inmediatamente después de
+`hasColor`, antes del payload bitmap si existe: 0=ausente, 1=first, 2=last.
+Los lectores 12/13 no consumen este byte y dejan persist ausente.
+
+Cada objeto 14 añade después de Visual y antes de origin:
+
+```text
+bool hasAnimations
+u32 animationCount
+por nombre en orden lexicográfico:
+  string name
+  f64 duration
+  bool loop
+  bool hasLoop
+  u8 from (0=base, 1=current)
+  bool hasFrom
+  u32 keyCount
+  por key en orden creciente de at (incluidas inactivas):
+    f64 at
+    bool hasTransform
+    si hasTransform:
+      para offset.x, offset.y, rotation, scale.x, scale.y, en ese orden:
+        bool present
+        si present: f64 value
+    bool hasColor
+    si hasColor: cuatro bytes RGBA
+    bool hasRepresentation
+    si hasRepresentation:
+      u32 elementCount
+      elementos Representation 14 en orden declarado (persist debe ser 0)
+```
+
+Los counts usan los límites y presupuestos agregados existentes; no se reserva
+memoria sin validarlos. Nombres duplicados se rechazan antes de insertar en el
+mapa. El validator rechaza tiempos no finitos, negativos, repetidos o sin ordenar,
+duración inválida, transformaciones vacías/no finitas, representaciones inválidas,
+persist en keys y presencia incompatible con los defaults. Un array vacío presente
+no equivale a ausencia. Los colores y bitmaps ya están procesados por Machine.
+Los archivos 12/13 conservan su disposición original y se leen sin Animation.
+No se persisten texturas ni estado de reproducción. Esta fase implementa únicamente
+modelo/carga/compilación; no activa reproducción, API JS ni dibujo animado.

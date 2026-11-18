@@ -302,6 +302,7 @@ namespace flx::binary
             writer.writeI32(element.fontSize);
             writeColor(writer, element.color);
             writer.writeBool(element.hasColor);
+            writer.writeU8(static_cast<uint8_t>(element.persist));
             if (element.kind == RepresentationElementKind::Bitmap)
             {
                 if (!element.bitmap || !element.bitmap->valid())
@@ -366,6 +367,13 @@ namespace flx::binary
                 readColor(reader);
             element.hasColor =
                 reader.readBool("object.visual.representation.color");
+            if (formatVersion >= 14)
+            {
+                const auto persist = reader.readU8("representation.persist");
+                if (persist > static_cast<uint8_t>(RepresentationPersistence::Last))
+                    throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue, "Invalid persist tag", "representation.persist");
+                element.persist = static_cast<RepresentationPersistence>(persist);
+            }
             if (element.kind == RepresentationElementKind::Bitmap)
             {
                 auto bitmap = std::make_shared<BitmapDefinition>();
@@ -1276,6 +1284,95 @@ namespace flx::binary
             return inherit;
         }
 
+        void writeOptionalNumber(BinaryWriter& writer, const std::optional<double>& value)
+        {
+            writer.writeBool(value.has_value());
+            if (value) writer.writeF64(*value);
+        }
+
+        std::optional<double> readOptionalNumber(BinaryReader& reader)
+        {
+            if (!reader.readBool("animation.component.present")) return {};
+            return reader.readF64("animation.component");
+        }
+
+        void writeAnimations(BinaryWriter& writer, const ObjectDefinition& object)
+        {
+            writer.writeBool(object.hasAnimations);
+            writer.writeCount(object.animations.size(), MaxCollectionCount, "animations");
+            for (const auto& [name, animation] : object.animations)
+            {
+                writer.writeString(name);
+                writer.writeF64(animation.duration);
+                writer.writeBool(animation.loop); writer.writeBool(animation.hasLoop);
+                writer.writeU8(static_cast<uint8_t>(animation.from)); writer.writeBool(animation.hasFrom);
+                writer.writeCount(animation.keys.size(), MaxCollectionCount, "animation.keys");
+                for (const auto& key : animation.keys)
+                {
+                    writer.writeF64(key.at);
+                    writer.writeBool(key.transform.has_value());
+                    if (key.transform)
+                    {
+                        const auto& t = *key.transform;
+                        writeOptionalNumber(writer, t.offsetX); writeOptionalNumber(writer, t.offsetY);
+                        writeOptionalNumber(writer, t.rotation);
+                        writeOptionalNumber(writer, t.scaleX); writeOptionalNumber(writer, t.scaleY);
+                    }
+                    writer.writeBool(key.color.has_value());
+                    if (key.color) writeColor(writer, *key.color);
+                    writer.writeBool(key.representation.has_value());
+                    if (key.representation)
+                    {
+                        writer.writeCount(key.representation->size(), MaxCollectionCount, "animation.representation");
+                        for (const auto& element : *key.representation) writeRepresentationElement(writer, element);
+                    }
+                }
+            }
+        }
+
+        void readAnimations(BinaryReader& reader, ObjectDefinition& object, uint32_t formatVersion)
+        {
+            object.hasAnimations = reader.readBool("animations.present");
+            const auto count = reader.readCount(MaxCollectionCount, "animations");
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                const auto name = reader.readString("animation.name");
+                if (object.animations.contains(name))
+                    throw BinaryException(DiagnosticCode::DuplicateCompiledEntry, "Duplicate animation name", "animations." + name);
+                AnimationDefinition animation;
+                animation.duration = reader.readF64("animation.duration");
+                animation.loop = reader.readBool("animation.loop"); animation.hasLoop = reader.readBool("animation.loop.present");
+                const auto from = reader.readU8("animation.from");
+                if (from > static_cast<uint8_t>(AnimationFrom::Current))
+                    throw BinaryException(DiagnosticCode::InvalidCompiledProjectValue, "Invalid animation from tag", "animation.from");
+                animation.from = static_cast<AnimationFrom>(from); animation.hasFrom = reader.readBool("animation.from.present");
+                const auto keyCount = reader.readCount(MaxCollectionCount, "animation.keys");
+                animation.keys.reserve(keyCount);
+                for (uint32_t j = 0; j < keyCount; ++j)
+                {
+                    AnimationKeyDefinition key;
+                    key.at = reader.readF64("animation.at");
+                    if (reader.readBool("animation.transform.present"))
+                    {
+                        AnimationTransformDefinition t;
+                        t.offsetX = readOptionalNumber(reader); t.offsetY = readOptionalNumber(reader);
+                        t.rotation = readOptionalNumber(reader); t.scaleX = readOptionalNumber(reader); t.scaleY = readOptionalNumber(reader);
+                        key.transform = t;
+                    }
+                    if (reader.readBool("animation.color.present")) key.color = readColor(reader);
+                    if (reader.readBool("animation.representation.present"))
+                    {
+                        key.representation.emplace();
+                        const auto elements = reader.readCount(MaxCollectionCount, "animation.representation");
+                        key.representation->reserve(elements);
+                        for (uint32_t k = 0; k < elements; ++k) key.representation->push_back(readRepresentationElement(reader, formatVersion));
+                    }
+                    animation.keys.push_back(std::move(key));
+                }
+                object.animations.emplace(name, std::move(animation));
+            }
+        }
+
         void writeObject(BinaryWriter& writer, const ObjectDefinition& object)
         {
             writer.writeString(object.id);
@@ -1292,6 +1389,7 @@ namespace flx::binary
             writer.writeBool(object.visible);
             writer.writeBool(object.hasVisual);
             writeVisual(writer, object.visual);
+            writeAnimations(writer, object);
             writeVector2(writer, object.origin);
             writer.writeBool(object.hasOrigin);
             writeVector2(writer, object.size);
@@ -1439,6 +1537,7 @@ namespace flx::binary
             object.visible = reader.readBool("object.visible");
             object.hasVisual = reader.readBool("object.visual");
             object.visual = readVisual(reader, formatVersion);
+            if (formatVersion >= 14) readAnimations(reader, object, formatVersion);
             object.origin = readVector2(reader);
             object.hasOrigin = reader.readBool("object.origin");
             object.size = readVector2(reader);
@@ -1746,7 +1845,7 @@ namespace flx::binary
         decoded.metadata.formatVersion =
             reader.readU32("formatVersion");
 
-        if (decoded.metadata.formatVersion != FormatVersion && decoded.metadata.formatVersion != 12)
+        if (decoded.metadata.formatVersion != FormatVersion && decoded.metadata.formatVersion != 12 && decoded.metadata.formatVersion != 13)
         {
             throw BinaryException(
                 DiagnosticCode::UnsupportedCompiledProjectFormat,

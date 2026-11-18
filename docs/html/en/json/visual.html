@@ -87,6 +87,7 @@
   }
 }</code></pre>
             </div>
+            <h2 id="persist">persist · declarative metadata</h2><p>Base elements accept <code>persist: "first"</code> or <code>"last"</code>. It is validated and preserved in format 14 and forbidden in key representations. The final contract specifies stable first + replaceable + last grouping even without playback, but this phase does not change the renderer: that visual grouping is not available yet. Without persist, existing order is preserved. See <a class="link" href="json/object.html#animations">Declarative Animation</a>.</p>
             <h2 id="representation">representation</h2>
             <p>Inline array. Two families cannot be mixed within one element. Each family has its own fields; there are no common per-element position or rotation fields. Elements use the Object's position and angle.</p>
             <h3 id="primitive">primitive</h3>

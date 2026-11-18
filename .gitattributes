@@ -4,6 +4,8 @@
 * text=auto
 cmake/PackageLinuxDiagnostic.sh text eol=lf
 tests/fixtures/format12-windows.flxc binary
+tests/fixtures/format13-windows.flxc binary
+tests/fixtures/format13-bitmap-windows.flxc binary
 
 ###############################################################################
 # Set default behavior for command prompt diff.

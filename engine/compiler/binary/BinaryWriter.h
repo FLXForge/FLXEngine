@@ -19,6 +19,7 @@ namespace flx::binary
         void writeU32(uint32_t value);
         void writeI32(int32_t value);
         void writeF32(float value);
+        void writeF64(double value);
         void writeBool(bool value);
         void writeString(const std::string& value);
         void writeBlob(const std::string& value);

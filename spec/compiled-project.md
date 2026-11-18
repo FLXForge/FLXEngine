@@ -5,7 +5,7 @@
 - **Documento:** especificación normativa
 - **Ámbito:** representación compilada de un proyecto FLX
 - **Versión inicial:** 0.3.0
-- **Formato persistente vigente:** `.flxc` v2
+- **Formato persistente vigente:** `.flxc` 14 (lectura compatible de 12 y 13)
 - **Estado:** consolidación
 
 ---
@@ -305,7 +305,7 @@ La validación defensiva del Runtime no sustituye a la del Compiler o del lector
 Formato vigente:
 
 ```text
-FormatVersion = 13
+FormatVersion = 14
 ```
 
 Incluye conceptualmente:
@@ -448,7 +448,7 @@ Deben existir pruebas para:
 - grid;
 - ejecución sin fuentes;
 - escritura y lectura `.flxc`;
-- lectura compatible del formato 12 y rechazo de formatos no admitidos;
+- lectura compatible de formatos 12 y 13, escritura 14 y rechazo de formatos no admitidos;
 - recursos duplicados;
 - equivalencia entre fuentes y binario;
 - orden determinista.
@@ -476,4 +476,8 @@ La compilación consume visual.palette y sus referencias. El modelo conserva
 colores concretos y bitmaps normalizados e inmutables. Cada píxel se proyecta
 por VideoColorProcessor antes de registrar recursos. Las texturas son propiedad
 interna del mundo gráfico y no se crean al compilar o leer un archivo.
-Véanse [Paletas y Bitmap](visual-bitmap-palette.md) y [formato 13](compiled-binary.md).
+Véanse [Paletas y Bitmap](visual-bitmap-palette.md) y [formato compilado](compiled-binary.md).
+
+## 22. Animation declarativa (v0.4.0, fase 1)
+
+El registro conserva `animations`, presencia de loop/from y componentes de keys, keys inactivas y `persist` base. Paletas y bitmaps usan el procesamiento Machine previo al registro. El formato 14 usa binary64 para números Animation y conserva lectura 12/13, cuyos objetos no reciben Animation ni persistencia visual implícitas. No se serializa reproducción temporal. Esta fase no implementa API JS, reproducción ni renderizado Animation. La versión 14 es del formato, no del motor ni del proyecto. Véase [Animation](animation.md).

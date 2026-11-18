@@ -18,6 +18,7 @@ namespace flx::binary
         uint32_t readU32(const std::string& field = "");
         int32_t readI32(const std::string& field = "");
         float readF32(const std::string& field = "");
+        double readF64(const std::string& field = "");
         bool readBool(const std::string& field = "");
         std::string readString(const std::string& field = "");
         // Byte payload shares the aggregate string/payload budget. Length is checked

@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "animation.schema.json",
+  "title": "FLX Animation declarations (no playback yet)",
+  "type": "object",
+  "propertyNames": {
+    "minLength": 1
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/animation"
+  },
+  "$defs": {
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration",
+        "keys"
+      ],
+      "properties": {
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "from": {
+          "enum": [
+            "base",
+            "current"
+          ],
+          "default": "base"
+        },
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/key"
+          }
+        },
+        "loop": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "at"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "color"
+          ]
+        },
+        {
+          "required": [
+            "representation"
+          ]
+        },
+        {
+          "required": [
+            "transform"
+          ]
+        }
+      ],
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "color": {
+          "type": "string"
+        },
+        "representation": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "visual.schema.json#/$defs/representationElement"
+              },
+              {
+                "not": {
+                  "required": [
+                    "persist"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "transform": {
+          "$ref": "#/$defs/transform"
+        }
+      }
+    },
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "$ref": "#/$defs/axis"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "scale": {
+          "$ref": "#/$defs/axis"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "rotation"
+          ]
+        },
+        {
+          "required": [
+            "offset"
+          ],
+          "properties": {
+            "offset": {
+              "anyOf": [
+                {
+                  "required": [
+                    "x"
+                  ]
+                },
+                {
+                  "required": [
+                    "y"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "required": [
+            "scale"
+          ],
+          "properties": {
+            "scale": {
+              "anyOf": [
+                {
+                  "required": [
+                    "x"
+                  ]
+                },
+                {
+                  "required": [
+                    "y"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "description": "Declarative validation and compilation only. Compiler checks finite values, duplicate names/times and color/palette validity. Keys beyond duration warn and remain serialized. No JavaScript API, playback or animated rendering is provided in this phase."
+}

@@ -10,6 +10,10 @@
       "type": "string"
     },
 
+    "animations": {
+      "$ref": "animation.schema.json"
+    },
+
     "like": {
       "type": "string"
     },

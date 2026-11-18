@@ -26,6 +26,8 @@ namespace
         target.visible = source.visible;
         target.hasVisual = source.hasVisual;
         target.visual = source.visual;
+        target.hasAnimations = source.hasAnimations;
+        target.animations = source.animations;
 
         target.origin = source.origin;
         target.hasOrigin = source.hasOrigin;

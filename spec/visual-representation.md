@@ -160,7 +160,7 @@ Gramática, referencias, repeticiones y validación se definen en
 - VIS-002 `size` pertenece al objeto, no a `visual`.
 - VIS-003 `visual.color` distingue ausencia de valor declarado.
 - VIS-004 `visual.depth` controla solo orden de dibujo.
-- VIS-005 `representation` conserva el orden declarado.
+- VIS-005 `representation` conserva el orden declarado salvo la partición estable explícita `persist:first + sección sustituible + persist:last` definida en [Animation](animation.md). La excepción se aplica también en ABSENT y conserva el orden relativo dentro de cada grupo; sin `persist` no cambia el orden.
 - VIS-006 Cada elemento declara exactamente una familia.
 - VIS-007 Primitive se limita a `rectangle`, `triangle` y `ellipse`.
 - VIS-008 Geometry usa puntos locales al pivot.

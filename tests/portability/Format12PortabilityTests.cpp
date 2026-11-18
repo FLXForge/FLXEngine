@@ -41,8 +41,8 @@ namespace
         for (const auto& diagnostic : decoded.diagnostics.all())
             std::cerr << diagnosticCodeText(diagnostic.code) << " " << diagnostic.message << '\n';
         require(decoded.success, "read fixture without source files");
-        require((decoded.metadata.formatVersion == 12 || decoded.metadata.formatVersion == 13) &&
-            flx::binary::CompiledProjectCodec::FormatVersion == 13, "read legacy format 12 and current format 13");
+        require((decoded.metadata.formatVersion == 12 || decoded.metadata.formatVersion == 13 || decoded.metadata.formatVersion == 14) &&
+            flx::binary::CompiledProjectCodec::FormatVersion == 14, "read legacy formats 12/13 and current format 14");
         if (expectedFormat) require(decoded.metadata.formatVersion == expectedFormat, "fixture must preserve its expected format");
         require(!decoded.metadata.producerVersion.empty(), "producer metadata");
         require(decoded.project.context.name == "Format12CrossPlatform" &&
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
         {
             Diagnostics diagnostics;
             require(CompiledProjectWriter::write(argv[2], fixtureProject(), diagnostics), "write fixture");
-            verify(argv[2], 13);
+            verify(argv[2], 14);
         }
         else if (argc == 3 && std::string(argv[1]) == "--read-fixture")
         {
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
             const auto roundtrip = temporary.path() / "native fixture.flxc";
             Diagnostics diagnostics;
             require(CompiledProjectWriter::write(roundtrip.string(), fixtureProject(), diagnostics), "native writer");
-            verify(roundtrip, 13);
+            verify(roundtrip, 14);
         }
         else
         {

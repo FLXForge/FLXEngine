@@ -165,19 +165,19 @@ int main()
                 Json::array({Json{{"row","1"},{"other",1}}})};
             for(const auto& rows:invalid) error(visual(rows,{{"1","red"}}),DiagnosticCode::InvalidBitmapDeclaration);
         }},
-        {"maximum bitmap and compiled format 13 roundtrip stay bounded", [] {
+        {"maximum bitmap and compiled format 14 roundtrip stay bounded", [] {
             auto v=visual(Json::array({Json{{"row",std::string(255,'1')},{"repeat",255}}}),{{"1","#A1B2C3"}});
             auto manifest=source(v);auto result=compile(manifest);
             require(root(result).visual.representation[0].bitmap->pixels.size()==65025,"255 by 255 accepted");
             const auto file=manifest.parent_path()/"bitmap.flxc";Diagnostics diagnostics;
             require(CompiledProjectWriter::write(file.string(),result.project,diagnostics),"maximum bitmap writes with aggregate payload budget");
             auto read=CompiledProjectReader::read(file.string());
-            require(read.success && read.metadata.formatVersion==13,"format 13 roundtrip");
+            require(read.success && read.metadata.formatVersion==14,"format 14 roundtrip");
             const auto bitmap=read.project.resources.findObject(read.project.rootId)->visual.representation[0].bitmap;
             require(bitmap->width==255 && bitmap->height==255 && equal(bitmap->pixels.back(),Color{161,178,195,255}),"pixels survive codec");
             std::ifstream input(file,std::ios::binary);std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(input)),{});
             bytes[4]=12;writeBinary(file,bytes);require(!CompiledProjectReader::read(file.string()).success,"format 12 must reject a bitmap tag");
-            bytes[4]=13;bytes.resize(bytes.size()-1);writeBinary(file,bytes);require(!CompiledProjectReader::read(file.string()).success,"truncated bitmap/project rejected");
+            bytes[4]=14;bytes.resize(bytes.size()-1);writeBinary(file,bytes);require(!CompiledProjectReader::read(file.string()).success,"truncated bitmap/project rejected");
             auto broken=std::make_shared<BitmapDefinition>();broken->width=2;broken->height=2;broken->pixels={RED};
             auto object=*result.project.resources.findObject(result.project.rootId);object.visual.representation[0].bitmap=broken;
             ResourceRegistry resources;require(resources.addObject(result.project.rootId,object),"invalid object fixture");result.project.resources=std::move(resources);

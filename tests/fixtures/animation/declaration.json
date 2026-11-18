@@ -1,0 +1,58 @@
+{
+  "visual": {
+    "palette": {
+      "accent": "#123456",
+      "x": "blank"
+    },
+    "representation": [
+      {
+        "primitive": "rectangle",
+        "persist": "first"
+      },
+      {
+        "text": "!",
+        "fontSize": 8,
+        "persist": "last"
+      }
+    ]
+  },
+  "animations": {
+    "pulse": {
+      "duration": 1,
+      "loop": false,
+      "from": "current",
+      "keys": [
+        {
+          "at": 2,
+          "color": "accent",
+          "representation": [
+            {
+              "bitmap": {
+                "pixels": [
+                  "xx"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "at": 0.5,
+          "transform": {
+            "offset": {
+              "x": 0
+            },
+            "rotation": 720,
+            "scale": {
+              "x": -1,
+              "y": 0
+            }
+          }
+        },
+        {
+          "at": 0,
+          "representation": []
+        }
+      ]
+    }
+  }
+}

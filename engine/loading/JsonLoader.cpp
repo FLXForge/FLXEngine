@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <set>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -196,7 +198,8 @@ namespace
 
     bool loadJson(
         const std::filesystem::path& path,
-        Json& data
+        Json& data,
+        Diagnostics* diagnostics = nullptr
     )
     {
         std::ifstream file(path);
@@ -213,7 +216,29 @@ namespace
 
         try
         {
-            file >> data;
+            struct ObjectKeys { std::string member; bool animations = false; std::unordered_set<std::string> names; };
+            std::vector<ObjectKeys> stack;
+            data = Json::parse(file, [&](int, Json::parse_event_t event, Json& value) {
+                if (event == Json::parse_event_t::object_start)
+                {
+                    const bool animations = !stack.empty() && !stack.back().animations && stack.back().member == "animations";
+                    stack.push_back({"", animations, {}});
+                }
+                else if (event == Json::parse_event_t::key && !stack.empty())
+                {
+                    auto& current = stack.back();
+                    current.member = value.get<std::string>();
+                    if (current.animations && !current.names.insert(current.member).second)
+                    {
+                        const auto message = "Duplicate animation name before JSON overwrite: " + current.member;
+                        if (diagnostics) diagnostics->error(DiagnosticCode::InvalidAnimationDeclaration,
+                            message, genericPathString(path), "animations." + current.member);
+                        throw std::runtime_error(message + " in " + genericPathString(path));
+                    }
+                }
+                else if (event == Json::parse_event_t::object_end) stack.pop_back();
+                return true;
+            });
         }
         catch (const Json::parse_error& error)
         {
@@ -322,7 +347,7 @@ namespace
             return true;
         }
 
-        if (!loadJson(normalized, data))
+        if (!loadJson(normalized, data, session.diagnostics))
         {
             return false;
         }
@@ -493,6 +518,44 @@ namespace
     void normalizeVisualPalette(JsonLoadSession& session, Json& visual,
         const std::filesystem::path& sourceFile);
 
+    bool normalizeAnimationRepresentations(JsonLoadSession& session, Json& object,
+        const std::filesystem::path& sourceFile)
+    {
+        if (!object.contains("animations") || !object["animations"].is_object()) return true;
+        for (auto& animation : object["animations"].items())
+        {
+            auto& node = animation.value();
+            if (!node.is_object() || !node.contains("keys") || !node["keys"].is_array()) continue;
+            // Detect duplicate times before a consumer override can replace the array.
+            std::set<double> times;
+            for (auto& key : node["keys"])
+            {
+                if (key.is_object() && key.contains("at") && key["at"].is_number())
+                {
+                    const double at = key["at"].get<double>();
+                    if (std::isfinite(at) && !times.insert(at).second)
+                    {
+                        const auto field = "animations." + animation.key() + ".keys.at";
+                        const std::string message = "Duplicate animation key time before normalization/override";
+                        if (session.diagnostics) session.diagnostics->error(DiagnosticCode::InvalidAnimationDeclaration,
+                            message, genericPathString(sourceFile), field);
+                        throw std::runtime_error(field + ": " + message);
+                    }
+                }
+                if (!key.is_object() || !key.contains("representation") || !key["representation"].is_array()) continue;
+                for (auto& element : key["representation"])
+                {
+                    if (!element.is_object() || !element.contains("like")) continue;
+                    Json resolved;
+                    if (!resolveLike(session, sourceFile, element, resolved,
+                        "animations." + animation.key() + ".keys.representation")) return false;
+                    element = std::move(resolved);
+                }
+            }
+        }
+        return true;
+    }
+
     bool resolveBlockReference(
         JsonLoadSession& session,
         const std::filesystem::path& currentFile,
@@ -554,7 +617,7 @@ namespace
 
         Json block;
 
-        if (!loadJson(blockPath, block))
+        if (!loadJson(blockPath, block, session.diagnostics))
         {
             return false;
         }
@@ -609,7 +672,7 @@ namespace
 
         if (object.contains("visual") && object["visual"].is_object())
             normalizeVisualPalette(session, object["visual"], currentFile);
-        return true;
+        return normalizeAnimationRepresentations(session, object, currentFile);
     }
 
     bool resolveLike(
@@ -681,6 +744,7 @@ namespace
             // containing file. Normalize the base before merging consumer overrides.
             if (resolvedReference.data.contains("visual") && resolvedReference.data["visual"].is_object())
                 normalizeVisualPalette(session, resolvedReference.data["visual"], resolvedReference.sourceFile);
+            if (!normalizeAnimationRepresentations(session, resolvedReference.data, resolvedReference.sourceFile)) return false;
 
             Json override =
                 object;
@@ -688,6 +752,7 @@ namespace
             override.erase("like");
             if (override.contains("visual") && override["visual"].is_object())
                 normalizeVisualPalette(session, override["visual"], currentFile);
+            if (!normalizeAnimationRepresentations(session, override, currentFile)) return false;
 
             if (override.contains("behavior"))
             {
@@ -784,7 +849,7 @@ namespace
 
         Json base;
 
-        if (!loadJson(basePath, base))
+        if (!loadJson(basePath, base, session.diagnostics))
         {
             addReferenceError(
                 session,
@@ -819,6 +884,7 @@ namespace
         override.erase("like");
         if (override.contains("visual") && override["visual"].is_object())
             normalizeVisualPalette(session, override["visual"], currentFile);
+        if (!normalizeAnimationRepresentations(session, override, currentFile)) return false;
 
         if (override.contains("behavior"))
         {
@@ -904,6 +970,7 @@ namespace
             "collisions",
             "behavior",
             "states",
+            "animations",
             "sounds",
             "music",
             "children",
@@ -1141,7 +1208,8 @@ namespace
         const Json& rawElement,
         const VisualPalette& palette,
         const std::filesystem::path& sourceFile,
-        const std::string& field
+        const std::string& field,
+        bool allowPersist = true
     )
     {
         Json element =
@@ -1187,6 +1255,15 @@ namespace
         }
 
         RepresentationElementDefinition definition;
+        if (element.contains("persist"))
+        {
+            if (!allowPersist || !element["persist"].is_string() ||
+                (element["persist"] != "first" && element["persist"] != "last"))
+                visualError(session, DiagnosticCode::InvalidVisualPersistence, sourceFile,
+                    field + ".persist", "persist must be first/last and is allowed only in base visual.representation");
+            definition.persist = element["persist"] == "first"
+                ? RepresentationPersistence::First : RepresentationPersistence::Last;
+        }
 
         if (element.contains("color"))
         {
@@ -1332,6 +1409,121 @@ namespace
             element["fontSize"].get<int>();
 
         return definition;
+    }
+
+    void parseAnimations(JsonLoadSession& session, const Json& object,
+        const std::filesystem::path& sourceFile, ObjectDefinition& definition)
+    {
+        if (!object.contains("animations")) return;
+        definition.hasAnimations = true;
+        auto fail = [&](const std::string& field, const std::string& message) -> void {
+            visualError(session, DiagnosticCode::InvalidAnimationDeclaration, sourceFile, field, message);
+        };
+        auto number = [&](const Json& value, const std::string& field) -> double {
+            if (!value.is_number()) fail(field, "Expected a finite number");
+            const double result = value.get<double>();
+            if (!std::isfinite(result)) fail(field, "Expected a finite number");
+            return result;
+        };
+        const auto& declarations = object["animations"];
+        if (!declarations.is_object()) fail("animations", "Expected an animation dictionary");
+        VisualPalette palette;
+        if (object.contains("visual") && object["visual"].is_object() && object["visual"].contains("palette"))
+            for (auto it = object["visual"]["palette"].begin(); it != object["visual"]["palette"].end(); ++it)
+                palette[it.key()] = *ColorParser::tryParse(it.value().get<std::string>());
+        for (auto it = declarations.begin(); it != declarations.end(); ++it)
+        {
+            const std::string field = "animations." + it.key();
+            if (it.key().empty() || !it.value().is_object()) fail(field, "Expected a nonempty name and animation object");
+            const auto& node = it.value();
+            AnimationDefinition animation;
+            if (!node.contains("duration")) fail(field + ".duration", "duration is required");
+            animation.duration = number(node["duration"], field + ".duration");
+            if (animation.duration <= 0) fail(field + ".duration", "duration must be positive");
+            if (node.contains("loop"))
+            {
+                if (!node["loop"].is_boolean()) fail(field + ".loop", "Expected a boolean");
+                animation.loop = node["loop"].get<bool>(); animation.hasLoop = true;
+            }
+            if (node.contains("from"))
+            {
+                if (!node["from"].is_string() || (node["from"] != "base" && node["from"] != "current"))
+                    fail(field + ".from", "Expected base or current");
+                animation.from = node["from"] == "base" ? AnimationFrom::Base : AnimationFrom::Current;
+                animation.hasFrom = true;
+            }
+            if (!node.contains("keys") || !node["keys"].is_array() || node["keys"].empty())
+                fail(field + ".keys", "Expected a nonempty key array");
+            std::set<double> times;
+            size_t index = 0, active = 0;
+            for (const auto& key : node["keys"])
+            {
+                const auto keyField = field + ".keys." + std::to_string(index++);
+                if (!key.is_object() || !key.contains("at")) fail(keyField, "Expected key object with at");
+                AnimationKeyDefinition parsed;
+                parsed.at = number(key["at"], keyField + ".at");
+                if (parsed.at < 0 || !times.insert(parsed.at).second)
+                    fail(keyField + ".at", "Negative or duplicate key time");
+                if (key.contains("transform"))
+                {
+                    const auto& transform = key["transform"];
+                    if (!transform.is_object()) fail(keyField + ".transform", "Expected a transform object");
+                    AnimationTransformDefinition t;
+                    for (const auto& name : {"offset", "scale"})
+                    {
+                        if (!transform.contains(name)) continue;
+                        const auto& axis = transform[name];
+                        if (!axis.is_object()) fail(keyField + ".transform." + name, "Expected an axis object");
+                        auto& x = std::string(name) == "offset" ? t.offsetX : t.scaleX;
+                        auto& y = std::string(name) == "offset" ? t.offsetY : t.scaleY;
+                        if (axis.contains("x")) x = number(axis["x"], keyField + ".transform." + name + ".x");
+                        if (axis.contains("y")) y = number(axis["y"], keyField + ".transform." + name + ".y");
+                    }
+                    if (transform.contains("rotation")) t.rotation = number(transform["rotation"], keyField + ".transform.rotation");
+                    if (!t.offsetX && !t.offsetY && !t.rotation && !t.scaleX && !t.scaleY)
+                        fail(keyField + ".transform", "Transform must contain an animatable component");
+                    parsed.transform = t;
+                }
+                if (key.contains("color"))
+                {
+                    if (!key["color"].is_string()) fail(keyField + ".color", "Expected a color token");
+                    parsed.color = visualColor(session, key["color"].get<std::string>(), palette, sourceFile, keyField + ".color");
+                }
+                if (key.contains("representation"))
+                {
+                    if (!key["representation"].is_array()) fail(keyField + ".representation", "Expected a representation array");
+                    parsed.representation.emplace();
+                    size_t elementIndex = 0;
+                    for (const auto& element : key["representation"])
+                    {
+                        const auto elementField = keyField + ".representation." + std::to_string(elementIndex++);
+                        try
+                        {
+                            parsed.representation->push_back(parseRepresentationElement(session, element, palette,
+                                sourceFile, elementField, false));
+                        }
+                        catch (const std::exception& error)
+                        {
+                            if (!session.diagnostics || !session.diagnostics->hasErrors()) fail(elementField, error.what());
+                            throw;
+                        }
+                    }
+                }
+                if (!parsed.transform && !parsed.color && !parsed.representation)
+                    fail(keyField, "Key must contain transform, color or representation");
+                if (parsed.at > animation.duration)
+                {
+                    if (session.diagnostics) session.diagnostics->warning(DiagnosticCode::InactiveAnimationKey,
+                        "Key beyond duration is retained but inactive", genericPathString(sourceFile), keyField);
+                }
+                else ++active;
+                animation.keys.push_back(std::move(parsed));
+            }
+            std::sort(animation.keys.begin(), animation.keys.end(), [](const auto& a, const auto& b) { return a.at < b.at; });
+            if (!active && session.diagnostics) session.diagnostics->warning(DiagnosticCode::AnimationWithoutActiveKeys,
+                "Animation has no active keys", genericPathString(sourceFile), field);
+            definition.animations.emplace(it.key(), std::move(animation));
+        }
     }
 
     void parseVisual(
@@ -2180,7 +2372,7 @@ namespace
 
             Json soundData;
 
-            if (!loadJson(soundPath, soundData))
+            if (!loadJson(soundPath, soundData, session.diagnostics))
             {
                 return Json{};
             }
@@ -2962,7 +3154,7 @@ namespace
 
             Json musicData;
 
-            if (!loadJson(musicPath, musicData))
+            if (!loadJson(musicPath, musicData, session.diagnostics))
             {
                 return Json{};
             }
@@ -3699,6 +3891,7 @@ namespace
         parseLocal(object, definition);
         parseControl(object, definition);
         parseVisual(session, object, sourceFile, definition);
+        parseAnimations(session, object, sourceFile, definition);
         parseMechanics(object, definition);
         parseInherit(object, definition);
         parseAttach(object, definition);
@@ -3772,7 +3965,7 @@ ObjectDefinition JsonLoader::loadObjectDefinition(
 
     Json data;
 
-    if (!loadJson(objectPath, data))
+    if (!loadJson(objectPath, data, session.diagnostics))
     {
         throw std::runtime_error(
             "JSON object could not be loaded: " +

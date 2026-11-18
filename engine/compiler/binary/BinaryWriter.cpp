@@ -45,6 +45,15 @@ namespace flx::binary
         writeU32(bits);
     }
 
+    void BinaryWriter::writeF64(double value)
+    {
+        static_assert(sizeof(double) == 8 && std::numeric_limits<double>::is_iec559);
+        uint64_t bits;
+        std::memcpy(&bits, &value, sizeof(bits));
+        writeU32(static_cast<uint32_t>(bits));
+        writeU32(static_cast<uint32_t>(bits >> 32));
+    }
+
     void BinaryWriter::writeBool(bool value)
     {
         writeU8(value ? 1u : 0u);

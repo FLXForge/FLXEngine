@@ -58,6 +58,10 @@ sensibles para herramientas de diagnóstico locales.
 | FLX-RESOURCE-00019 | UnknownVisualColor | Color inexistente o clave compacta ausente. |
 | FLX-RESOURCE-00020 | InvalidVisualPalette | Declaración o valor nativo inválido; no se permiten alias encadenados. |
 | FLX-RESOURCE-00021 | InvalidBitmapDeclaration | Matriz, repetición, dimensión o modelo compilado inválido. |
+| FLX-RESOURCE-00022 | InvalidAnimationDeclaration | Declaración Animation inválida o nombre/tiempo duplicado. |
+| FLX-RESOURCE-00023 | InactiveAnimationKey | Warning: key posterior a duration, conservada pero inactiva. |
+| FLX-RESOURCE-00024 | AnimationWithoutActiveKeys | Warning: ninguna key activa. |
+| FLX-RESOURCE-00025 | InvalidVisualPersistence | persist inválido o declarado en una key. |
 
 Las referencias conservan los códigos existentes de recurso y miembro ausente,
 con origen, campo, referencia y ruta efectiva cuando estén disponibles.

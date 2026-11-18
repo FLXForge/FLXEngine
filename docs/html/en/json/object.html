@@ -48,6 +48,7 @@
             <p>The root schema has <code>additionalProperties: false</code>. Only the following properties are allowed; keys in named maps are defined within each block.</p>
             <ul>
                 <li><a class="link" href="json/object.html#schema"><code>$schema</code></a>: string; validation metadata.</li>
+                <li><a class="link" href="json/object.html#animations"><code>animations</code></a>: optional declarative dictionary; no playback in this phase.</li>
                 <li><a class="link" href="json/composition.html#like"><code>like</code></a>: string; composition from a base.</li>
                 <li><a class="link" href="json/creation.html#spawn"><code>spawn</code></a>: auto or manual.</li>
                 <li><a class="link" href="json/creation.html#component"><code>component</code></a>: boolean; integrates the child into its parent's logical entity.</li>
@@ -80,7 +81,36 @@
   &quot;$schema&quot;: &quot;https://flxforge.github.io/FLXEngine/schemas/object.schema.json&quot;
 }</code></pre>
             </div>
-            <h2 id="origin">origin</h2>
+            <h2 id="animations">Declarative Animation · phase 1</h2>
+<p>The optional root <code>animations</code> dictionary is loaded, validated and compiled. This phase does not play animations, expose a JavaScript API, apply animated transforms or render persistent grouping.</p><p>Names must be unique and nonempty; duplicates are rejected before overwrite. Optional fields preserve presence; omission does not introduce an animated value. <code>like</code> and overrides retain existing merge rules: objects merge and arrays replace. Representation elements reuse Visual and Bitmap rules, including existing composition.</p><table><thead><tr><th>Field</th><th>Rule</th></tr></thead><tbody><tr><td><code>duration</code></td><td>finite number &gt; 0; seconds</td></tr><tr><td><code>from</code></td><td><code>base</code> / <code>current</code>; default <code>base</code></td></tr><tr><td><code>keys</code></td><td>nonempty array; each key contains <code>at</code> and transform, color or representation</td></tr><tr><td><code>loop</code></td><td>boolean; default <code>false</code></td></tr></tbody></table>
+<p>Keys are sorted by finite nonnegative <code>at</code>; duplicate times are errors, including beyond duration. A key at <code>duration</code> is valid. Later keys are retained with a warning; an animation without active keys adds another warning. <code>transform</code> accepts optional finite <code>offset.x/y</code>, <code>rotation</code> and <code>scale.x/y</code> components and cannot be empty. Zero and negative scale are valid. <code>color</code> uses the effective palette and Machine. <code>representation</code> accepts all four families and <code>[]</code>, but forbids <code>persist</code>, including through like. Inactive keys are validated and processed too.</p>
+<div class="code-card"><pre><code data-schema="object">{
+  &quot;animations&quot;: {
+    &quot;pulse&quot;: {
+      &quot;duration&quot;: 1,
+      &quot;keys&quot;: [
+        {
+          &quot;at&quot;: 0,
+          &quot;transform&quot;: {
+            &quot;scale&quot;: {
+              &quot;x&quot;: 1
+            }
+          }
+        },
+        {
+          &quot;at&quot;: 1,
+          &quot;transform&quot;: {
+            &quot;scale&quot;: {
+              &quot;x&quot;: 1.2
+            }
+          }
+        }
+      ]
+    }
+  }
+}</code></pre></div>
+<p><a class="link" href="../../schemas/animation.schema.json">animation.schema.json</a> · <a class="link" href="json/visual.html#persist">persist</a> · <a class="link" href="cli.html#compile">Compilation</a></p>
+                        <h2 id="origin">origin</h2>
             <p>Optional object with numeric coordinates <code>x</code> and <code>y</code>; each omitted axis is <code>0</code>. X increases to the right and Y downward. This is the object's position, not the corner of its logical box. For children, the rules of <a class="link" href="json/creation.html">Creation</a> determine how the initial position is obtained from the parent, <code>origin</code>, <code>offset</code> and the creation mode.</p>
             <div class="code-card">
                 <div class="code-header">origin</div>

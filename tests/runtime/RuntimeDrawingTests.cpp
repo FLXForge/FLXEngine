@@ -1349,7 +1349,7 @@ namespace
             const auto compiled=previews/(stem+".flxc");Diagnostics diagnostics;
             require(CompiledProjectWriter::write(compiled.string(),result.project,diagnostics),"write bitmap showcase");
             const auto decoded=CompiledProjectReader::read(compiled.string());
-            require(decoded.success && decoded.metadata.formatVersion==13,"read bitmap showcase format 13");
+            require(decoded.success && decoded.metadata.formatVersion==14,"read bitmap showcase format 14");
             auto render=[&](const CompiledProject& project,bool capture)
             {
                 FlxSession session;FlxSessionOptions options;options.enableAudio=false;

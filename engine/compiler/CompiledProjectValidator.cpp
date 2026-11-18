@@ -1,11 +1,14 @@
 #include "CompiledProjectValidator.h"
 
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 #include <vector>
 
 namespace
 {
+#include "AnimationValidation.inl"
+
     bool detectAutomaticCycleFrom(
         const ResourceId& objectId,
         const CompiledProject& project,
@@ -456,6 +459,8 @@ bool CompiledProjectValidator::validate(
             objectPair.first;
         const ObjectDefinition& object =
             objectPair.second;
+
+        validateAnimationDefinitions(object, diagnostics, source, objectId);
 
         for (const auto& element : object.visual.representation)
         {

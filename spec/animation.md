@@ -1,8 +1,10 @@
-# Animation — contrato normativo propuesto para FLX v0.4.0
+# Animation — contrato normativo para FLX v0.4.0
 
-**Estado:** propuesta consolidada, pendiente de validación contra implementación y aprobación en repositorio.  
+**Estado:** contrato aprobado para implementación; conformidad de la implementación pendiente de validación.
 **Ámbito:** representación visual declarativa y reproducción por `RuntimeObject`.  
 **Dependencias normativas:** `spec/visual-representation.md`, `spec/visual-bitmap-palette.md`, `spec/spatial_model.md`, `spec/scripting/runtime_object.md`, `spec/scripting/timer.md`.
+
+**Integración de compilación:** `spec/compiler.md`, `spec/compiled-project.md` y `spec/compiled-binary.md`. Las extensiones y discrepancias documentales acotadas se identifican en la sección 12; este documento no declara implementado el formato 14.
 
 ## 1. Propósito y límites
 
@@ -13,6 +15,8 @@ Una instancia PUEDE reproducir **una sola** animación a la vez. No hay blending
 ## 2. Declaración
 
 `animations` es un diccionario opcional en la raíz de la definición de objeto, al mismo nivel que `visual` y `states`. Cada clave es un nombre no vacío y único.
+
+Los nombres duplicados dentro de una misma declaración de `animations` DEBEN detectarse y rechazarse antes de que un parser, mapa, normalización o lectura binaria sobrescriba una entrada. No es válido conservar silenciosamente la primera o la última. Esta regla no redefine las reglas existentes de composición y overrides entre declaraciones diferentes, ni la precedencia de claves de `visual.palette`.
 
 ```json
 {
@@ -90,6 +94,8 @@ El escalado y la rotación se aplican respecto al pivot local existente. Los col
 
 `color` es un token de color declarativo válido según el sistema Visual/Palette existente. No se introduce una nueva sintaxis JSON RGBA en este contrato. El motor resuelve los colores con la paleta efectiva y Machine según los contratos vigentes; la interpolación es lineal **por canal RGBA normalizado** entre colores ya resueltos. El redondeo final a canales enteros debe ser consistente en todas las rutas de ejecución.
 
+Los destinos declarados y el color declarado de referencia pasan por el procesamiento Machine existente antes de la reproducción. Una referencia runtime se captura como su color efectivo, sin reprocesarla. La interpolación NO DEBE volver a proyectarse por Machine en cada frame: los colores intermedios pueden no pertenecer a una paleta discreta. El color por defecto se captura tal como lo usa el renderer; no se introduce una proyección adicional ni una declaración de color para suplir su ausencia.
+
 Solo afecta al color base efectivo `visual.color` heredado por `primitive`, `geometry` y `text` que no declaren color propio. No tiñe bitmaps ni elementos con color explícito. Si el objeto carece de `visual.color`, la referencia es el color efectivo por defecto del renderer, sin convertir esa ausencia en una declaración permanente.
 
 `apply_color()` y `restore_color()` siguen modificando el color runtime. Cuando la animación contiene al menos una key activa de `color`, su capa visual tiene prioridad durante RUNNING, PAUSED y DONE. El color runtime puede cambiar sin recalcular la interpolación ya iniciada. Al detener la animación, se muestra el color runtime vigente, incluida la ausencia de color declarado.
@@ -110,6 +116,8 @@ base persist:first (orden relativo original)
 
 Los elementos persistentes no se duplican al cambiar de animación ni al capturar `from: "current"`; se dibujan una vez y reciben la misma transformación visual animada que el resto. No se admite intercalarlos entre elementos animables.
 
+Este orden se aplica también en ABSENT, antes de reproducir y después de `stop_animation()`. Sin reproducción, la sección sustituible es la sección base sin `persist`. La partición es estable: conserva el orden declarado dentro de cada uno de los tres grupos y no modifica el array fuente. Sin elementos `persist`, el orden es exactamente el de Visual Representation. La agrupación es una extensión explícita para elementos que optan por `persist`, no una ordenación de objetos por profundidad ni una alteración del dibujo inmediato.
+
 La sustitución de representación NO altera el tamaño, posición, collider ni profundidad del RuntimeObject. Los elementos sustitutos respetan las reglas de tamaño, color, bitmap y paleta existentes.
 
 ## 4. Referencia inicial, keys parciales y evaluación
@@ -117,9 +125,13 @@ La sustitución de representación NO altera el tamaño, posición, collider ni 
 Al comenzar una reproducción nueva se captura una **referencia inmutable para esa reproducción**:
 
 - `from: "base"`: apariencia runtime sin la capa de Animation anterior, incluyendo modificaciones runtime vigentes (por ejemplo `apply_color`).
-- `from: "current"`: apariencia efectiva en el instante de la sustitución, incluida la animación anterior si estaba RUNNING, PAUSED o DONE.
+- `from: "current"`: apariencia efectiva en el instante de la sustitución, incluida la animación anterior si estaba RUNNING, PAUSED o DONE, limitada a las propiedades controladas por la nueva animación.
 
-La referencia incluye color, sección sustituible de representación y transformación visual efectiva. Los elementos `persist` permanecen anclados a la representación base y nunca se copian en la sección sustituible.
+El conjunto controlado se determina exclusivamente por las keys activas (`at <= duration`) de la nueva animación. Para transformación, se calcula por componente: `offset.x`, `offset.y`, `rotation`, `scale.x` y `scale.y`. Color y representación son propiedades independientes. Una key inactiva no amplía este conjunto.
+
+La referencia incluye únicamente los componentes controlados: color efectivo, sección sustituible o componentes de transformación, según corresponda. Los componentes de transformación no controlados toman su valor neutro; el color no controlado sigue el color runtime vigente y la representación no controlada usa la sección sustituible base. No se heredan contribuciones de una animación anterior para propiedades que la nueva no controla. Una animación con todas las keys inactivas no conserva efectos de la reproducción sustituida.
+
+La captura es inmutable solo para las propiedades controladas. Los elementos `persist` permanecen anclados a la representación base y nunca se copian en la sección sustituible. Capturar representación no captura una textura ni el estado de reproducción de otra instancia.
 
 La transformación neutra de Animation es `offset=(0,0)`, `rotation=0`, `scale=(1,1)`. Para una reproducción iniciada desde `base`, estos valores describen la apariencia sin Animation. Para una reproducción desde `current`, los valores de keys de `offset` y `rotation` se interpretan como **desplazamientos respecto a la referencia capturada**; los de `scale` como factores respecto a ella. Esto permite que una key `rotation: 0` en `at: 0` conserve la orientación capturada y que `rotation: 180` la incremente en 180°.
 
@@ -138,6 +150,14 @@ Para color, las keys contienen **destinos absolutos**; se interpola desde el col
 
 El tiempo `at` es relativo al **ciclo actual**. La reproducción usa tiempo transcurrido y número de ciclos atravesados, nunca sumas por frame de transformaciones o escalas.
 
+### 5.0 Límites temporales deterministas
+
+Sea `E >= 0` el tiempo transcurrido de reproducción y `d > 0` su duración. Sin loop, se evalúa `t = min(E, d)` y `E >= d` produce DONE. Con loop, se usan `n = floor(E / d)` y `t = E - n * d`, con `0 <= t < d`. En un múltiplo exacto `E = k * d`, se evalúa el inicio del ciclo `k`, con `t = 0`; `animation_left()` devuelve `d`, no cero. Al iniciar también se usa `n = 0`, `t = 0`.
+
+Una key discreta se aplica cuando `at <= t`; la igualdad no se difiere al frame siguiente. La key de cierre `at = d` se evalúa al finalizar una reproducción sin loop y al calcular el cierre/acumulación de un ciclo con loop, aunque no se dibuje por separado. No se introducen ventanas epsilon que adelanten o retrasen keys ni un límite de ciclos procesados por update.
+
+La misma referencia y el mismo tiempo transcurrido representado DEBEN producir la misma pose y consultas, independientemente del número de renders o de cómo se haya atravesado los ciclos. Las pruebas de partición temporal usarán totales exactamente representables o una tolerancia numérica explícita para el error de acumulación; no exigirán igualdad binaria entre sumas flotantes distintas ni permitirán cambiar de ciclo mediante tolerancias. Las operaciones temporales y sus conversiones DEBEN comprobar representabilidad antes de consumir un resultado inválido.
+
 ### 5.1 `loop: false`
 
 La reproducción llega a `duration`, evalúa su pose final, pasa a DONE y retiene la apariencia final hasta que se reinicie, sustituya o detenga.
@@ -153,7 +173,7 @@ Cada ciclo se evalúa desde la **misma referencia capturada al iniciar la reprod
 - **Color:** no se acumula; en cada ciclo se interpola desde el mismo color de referencia capturado al comenzar la reproducción. Los destinos son absolutos.
 - **Representation:** no se acumula; cada ciclo comienza con la sección sustituible de referencia capturada y aplica sus keys discretas.
 
-El motor DEBE evitar desbordamientos y valores no finitos en geometría y transformación, diagnosticando valores no representables sin provocar un fallo del proceso. No se define un límite artificial de escala ni una normalización angular silenciosa.
+El motor DEBE evitar desbordamientos y valores no finitos en geometría y transformación, conforme a la recuperación de la sección 8.1. No se define un límite artificial de escala ni una normalización angular silenciosa.
 
 La key en `at: duration` participa en la pose de cierre y en el cálculo del desplazamiento neto, incluso si un frame salta directamente al siguiente ciclo. La evaluación del ciclo nuevo no exige renderizar separadamente el fotograma final del anterior.
 
@@ -200,7 +220,9 @@ Al sustituir una animación, la nueva aplica su propia política `from` y la ant
 - Cada instancia mantiene su propia reproducción; dos instancias del mismo objeto declarado no comparten estado animado.
 - El avance de Animation usa el tiempo de simulación del objeto y NO depende de visibilidad. `hide()` no pausa Animation; `state_to()` no la reinicia.
 - Una instancia destruida no sigue avanzando Animation. La animación no sobrevive a la destrucción ni se transfiere a otra instancia.
-- Una llamada `play_animation()` debe hacer observable inmediatamente el nuevo estado y la pose de `at=0` durante el callback que la solicita. El avance posterior debe respetar la misma política de fases temporales que Timer, evitando dobles avances en un frame.
+- Una llamada `play_animation()` debe establecer inmediatamente el nuevo estado y evaluar la pose de `at=0`, sujeta a la recuperación numérica de la sección 8.1. Las consultas posteriores del callback observan el estado nuevo; no se añade una API de consulta de pose. Esto no reconstruye primitivas ya capturadas por el dibujo.
+- Se conserva el snapshot existente: la representación declarativa de un objeto se captura antes de sus callbacks `draw`. Un play, pause, stop o cambio de animación solicitado desde `draw` no modifica retroactivamente ese snapshot; su efecto visual aparece en la siguiente captura. Un `from: "current"` posterior captura el estado efectivo actualizado, no una imagen del snapshot ya emitido. No se reordena ni transforma por Animation el dibujo inmediato.
+- El avance temporal ocurre una sola vez por update, en la fase temporal posterior a collision y anterior a dead/eliminación, como Timer. Un inicio en `action`, `motion` o `collision` conserva `at=0` durante ese callback y, si sigue RUNNING, recibe el delta en esa fase del mismo update. Un inicio en `born` durante la carga conserva `at=0` hasta el primer update; una creación durante un update recibe avance solo si alcanza viva la fase temporal pendiente. Un inicio desde `draw`, posterior a esa fase, no recibe un avance retroactivo. Renderizar o consultar no avanza el reloj. `dead` puede consultar el estado final antes de eliminar la instancia.
 - La renderización consume la apariencia efectiva, pero nunca escribe la transformación animada en `RuntimeObject` ni en Collision.
 
 ## 8. Validación y diagnóstico
@@ -211,14 +233,25 @@ Warnings no bloqueantes: keys con `at > duration`; ninguna key activa. No se des
 
 Las entradas JS inválidas no deben mutar la animación vigente y deben permitir continuar el script, siguiendo el patrón de Timer. Los códigos concretos de diagnóstico se asignarán conforme al registro existente, sin inventar códigos que puedan colisionar.
 
+### 8.1 Recuperación numérica
+
+Una evaluación que produzca componentes, geometría o conversiones no finitos o no representables NO DEBE entregar esos valores al renderer ni finalizar el proceso o la sesión. Se conserva la última apariencia válida de la capa Animation de esa instancia, de forma atómica: no se publica una mezcla de componentes nuevos y anteriores. Se conservan datos visuales locales válidos, no píxeles de pantalla ni una copia de las propiedades espaciales del objeto.
+
+Antes de una primera pose válida, la apariencia de respaldo es la apariencia efectiva válida inmediatamente anterior al inicio o sustitución. Esta retención de emergencia no incorpora propiedades a la referencia de `from: "current"` ni permite heredarlas después de una evaluación válida. `stop_animation()` siempre elimina la capa, incluido el respaldo, y vuelve a la apariencia runtime base con el orden de `persist`.
+
+El fallo visual no pausa ni reinicia la reproducción: cuando el tiempo candidato es representable, se actualizan normalmente reloj, estado y consultas, incluido DONE. Si el propio avance temporal no es representable, no se confirma ese avance y se conservan el último reloj y estado válidos. La evaluación puede recuperarse al obtener un candidato válido; no hay saltos artificiales de tiempo, clamps ni sustitución de NaN por cero.
+
+Se emite un diagnóstico en el primer fallo numérico de cada reproducción, como máximo uno por reproducción e instancia, aunque se repita, cambie de causa o desaparezca y reaparezca en frames posteriores. Reanudar no reinicia esta supresión; iniciar una reproducción nueva sí. Las consultas y renders repetidos no deben multiplicar el diagnóstico. Esta supresión no afecta a diagnósticos de argumentos JS ni errores de definición. No se añade un estado público de error ni se cambia la semántica de Timer.
+
 ## 9. Compilación, formato y rendimiento
 
 - Las definiciones y representaciones de keys se validan y normalizan antes de ejecución.
 - Los colores y bitmaps se procesan conforme al contrato Machine existente; **no** se regeneran texturas ni se reinterpretan matrices de píxeles en cada frame.
-- El formato compilado y el loader DEBEN conservar duración, loop, from, keys, representaciones y orden semántico. Modo abierto y compilado DEBEN producir el mismo resultado.
+- El formato compilado y el loader DEBEN conservar duración, loop, from, keys, componentes presentes/ausentes, representaciones, `persist` y orden semántico, incluidas las keys inactivas. Modo abierto y compilado DEBEN producir el mismo resultado.
 - Los recursos compartidos de representación son inmutables; la reproducción por instancia solo guarda referencia temporal, estado y apariencia efectiva.
 - El renderer DEBE aplicar transformaciones locales a las cuatro familias (`primitive`, `geometry`, `text`, `bitmap`) y a los elementos persistentes.
-- El formato de serialización, número de versión y migraciones se decidirán durante la integración del compilador, sin alterar este contrato público.
+- La integración Animation escribirá `.flxc` con `formatVersion = 14`. El lector conservará compatibilidad con formatos 12 y 13, además de 14. Los archivos antiguos se interpretan sin Animation ni `persist`, conservando su apariencia y semántica originales; no se inventan animaciones o datos perdidos. Un binario 14 se identifica como 14 aunque no declare animaciones. No se afirma que lectores antiguos puedan leerlo.
+- `formatVersion` es independiente de la versión del motor y de `producerVersion`; adoptar 14 no cambia por sí mismo la versión del producto. La disposición binaria detallada se documentará al implementar el codec, respetando endianness, límites, presupuestos, validación de duplicados y serialización determinista existentes. El Reader valida el modelo 14 sin consultar fuentes ni ejecutar JS; los nombres duplicados no se reparan sobrescribiendo entradas.
 
 ## 10. Pruebas mínimas de conformidad
 
@@ -236,6 +269,19 @@ Las entradas JS inválidas no deben mutar la animación vigente y deben permitir
 12. Equivalencia de ejecución abierta/compilada y de diferentes tamaños de delta temporal.
 13. Renderizado con primitivas, geometría, texto, bitmap y paleta Machine; sin recreación de textura por frame.
 
+### 10.1 Casos de aceptación de integración
+
+Estos casos son obligatorios y complementan las pruebas anteriores. Salvo las comprobaciones específicas de lectura antigua o errores de fuente, deben cubrir ejecución abierta y formato 14 cuando corresponda.
+
+1. **Formato y autonomía:** escribir 14, retirar las fuentes y cargarlo con las mismas keys parciales, inactivas y `persist`. Cargar fixtures válidos 12 y 13 sin Animation conserva su resultado anterior; una versión no soportada sigue rechazándose.
+2. **Snapshot de draw:** un objeto capturado con apariencia A inicia B desde `draw`. Las consultas del mismo hook identifican B; la captura emitida mantiene A. Una segunda captura sin update muestra B en `at=0`, y renders adicionales no avanzan el reloj. Stop y sustitución desde `draw` respetan la misma frontera.
+3. **Captura selectiva:** A aporta offset, escala, color y representación. B con `from: "current"` solo declara rotación: captura únicamente la rotación efectiva; offset y escala quedan neutros y reaparecen color y sección sustituible runtime base. Si B controla solo `offset.x`, no hereda `offset.y`. Keys inactivas no amplían lo capturado. Si B controla color, su referencia capturada no cambia con un `apply_color` posterior.
+4. **Persistencia sin reproducción:** una base declarada en orden `[sustituible-A, last-A, first-A, sustituible-B, first-B, last-B]` se dibuja `[first-A, first-B, sustituible-A, sustituible-B, last-A, last-B]` en ABSENT y tras stop. Una key `representation: []` deja solo los grupos persistentes. Cambiar o recapturar animación no los duplica; sin `persist` se conserva el orden original.
+5. **Recuperación numérica:** después de una pose válida, provocar un resultado no finito o no representable y comprobar retención atómica local, continuidad de la sesión, ausencia de valores inválidos enviados al renderer y un único diagnóstico durante muchos updates/renders de esa reproducción. Cubrir fallo inicial, sustitución, fallo del reloj, recuperación posterior, DONE, pausa/reanudación sin nuevo diagnóstico y stop retirando el respaldo. Una reproducción nueva puede emitir su propio diagnóstico.
+6. **Duplicados antes de sobrescritura:** dos miembros con el mismo nombre dentro del mismo `animations` fuente, incluso idénticos, producen error antes de construir una tabla que los colapse. Entradas duplicadas en el binario 14 también se rechazan. La composición de paleta mantiene su precedencia existente y no se confunde con esta prohibición.
+7. **Límites y partición temporal:** con referencia neutra, duración 1 y offset X desde 0 hasta 10, `loop+current` produce 10 en `E=1` y 25 en `E=2.5`; `loop+base` produce 0 y 5 respectivamente. En `E=1`, ambos loops tienen `left=1` y no DONE. Sin loop, `E>=1` da offset 10, DONE y `left=0`. Un update de 2.5 y diez de 0.25 producen el mismo resultado. Una representación declarada solo en `at=1` queda como cierre sin loop y no persiste en el inicio del ciclo siguiente con loop. Cubrir también keys de transformación no neutras en cero conforme a la fórmula de la sección 5.3, sin redefinir `Dend` como diferencia entre keys.
+8. **Color sin reproyección:** entre destinos efectivos rojo `(255,0,0,255)` y azul `(0,0,255,255)`, el punto medio tiene RGBA normalizado `(0.5,0,0.5,1)`, convertido a canales enteros con el mismo criterio de redondeo en abierto y compilado, aunque una paleta discreta no contenga ese resultado. No se ejecuta una nueva proyección Machine por frame; los elementos de color propio y bitmap no cambian. La ausencia de `visual.color` permanece ausente tras stop.
+
 ## 11. Invariantes
 
 - ANIM-001 Una instancia reproduce como máximo una animación.
@@ -251,13 +297,23 @@ Las entradas JS inválidas no deben mutar la animación vigente y deben permitir
 - ANIM-011 Los cambios runtime no reescriben una interpolación ya iniciada.
 - ANIM-012 La evaluación temporal no depende del número de frames.
 - ANIM-013 El comportamiento público es equivalente en modo abierto y compilado.
+- ANIM-014 La captura de `from: "current"` no retiene propiedades sin keys activas en la nueva animación; transformación se controla por componente.
+- ANIM-015 Las llamadas desde `draw` actualizan reproducción, pero nunca reescriben el snapshot ya capturado ni avanzan tiempo por renderizar.
+- ANIM-016 La partición estable `first + sustituible + last` se aplica también en ABSENT, sin duplicar elementos ni cambiar el orden de objetos.
+- ANIM-017 Un resultado numérico inválido conserva atómicamente la última apariencia local válida; nunca se entrega geometría no finita al renderer.
+- ANIM-018 Los fallos numéricos generan como máximo un diagnóstico por reproducción e instancia, sin abortar la sesión ni crear un estado público nuevo.
+- ANIM-019 Los nombres duplicados se rechazan antes de cualquier sobrescritura, tanto en fuente como en el binario.
+- ANIM-020 Los límites de ciclo usan intervalos `[0,duration)`; la key de cierre participa en el cierre y la acumulación, sin exigir un render intermedio.
+- ANIM-021 La interpolación usa colores efectivos ya procesados y no reproyecta por Machine durante la reproducción.
+- ANIM-022 La escritura usa formato 14 y la lectura conserva 12/13; no se confunde versión de formato con versión del motor.
 
-## 12. Aspectos de implementación que requieren comprobación, no nuevas funciones
+## 12. Compatibilidad normativa y comprobaciones de implementación
 
-1. Confirmar el orden exacto de las fases de actualización frente a Timer y la disponibilidad de pose `at=0` dentro de hooks.
-2. Confirmar la representación interna del color efectivo por defecto y su proyección Machine para interpolación RGBA.
-3. Confirmar que el renderer puede componer escalas negativas y no uniformes en las cuatro familias sin alterar Collision.
-4. Confirmar el mecanismo de versionado del formato compilado y la vida útil de las texturas de keys.
-5. Definir política diagnóstica para overflow numérico y límites de precisión temporal sin introducir clamps arbitrarios.
+1. **RuntimeObject y modelo espacial:** permanecen intactos sus valores públicos, identidad, vigencia de wrappers, pivot, mecánicas y colliders. La apariencia y su respaldo numérico son locales y separados de esas propiedades.
+2. **Timer:** se conservan sus convenciones de pausa, DONE, stop y fase temporal. Animation no modifica sus funciones ni introduce una política global de pausa. La recuperación numérica aquí definida pertenece únicamente a Animation.
+3. **Visual y Bitmap:** se conserva snapshot, composición entre objetos, familias, reglas de tamaño, color heredado y ausencia de tintado bitmap. La proyección Machine sigue siendo previa a ejecución; las texturas siguen siendo recursos internos reutilizados por mundo y no se serializan. Debe verificarse la transformación firmada/no uniforme de las cuatro familias sin alterar Collision ni el dibujo inmediato.
+4. **Extensión de orden:** VIS-005 de `spec/visual-representation.md` establece sin excepción que `representation` conserva el orden declarado. La agrupación `persist` aprobada en este documento es una excepción explícita para declaraciones con `persist`, incluso sin reproducción; el orden relativo se conserva dentro de cada grupo y las declaraciones anteriores no cambian. La redacción de VIS-005 y la referencia al orden en Bitmap requieren armonización documental posterior, sin revertir esta decisión funcional. No se modifican esos documentos en esta intervención.
+5. **Compilación:** se mantienen autonomía de `CompiledProject`, resolución previa, validación sin ejecución, límites de recursos y determinismo binario. `spec/compiled-binary.md` describe actualmente el formato implementado 13 y `spec/compiled-project.md` conserva una referencia a formato persistente v2. El formato 14 aprobado aquí es el objetivo de integración; ambas referencias deberán armonizarse con el codec al implementarlo. No se afirma una migración ya realizada ni se cambian documentos ajenos en esta intervención.
+6. **Comprobaciones pendientes:** verificar la representación y redondeo de color efectivo, precisión y representabilidad temporal, recuperación numérica, detección temprana de duplicados, vida útil de bitmaps y compatibilidad real 12/13/14 mediante los casos de la sección 10.1. Estas obligaciones no autorizan clamps, APIs adicionales ni cambios de semántica para simplificar la implementación.
 
 Estas comprobaciones son requisitos de integración y pruebas; no justifican ampliar la API pública.

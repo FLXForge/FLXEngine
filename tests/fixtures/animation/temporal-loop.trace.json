@@ -1,0 +1,33 @@
+{
+  "purpose": "CPU-only loop+current trace; not a public FLX project or playback API",
+  "steps": [
+    {
+      "delta": 0.25,
+      "x": 2.5,
+      "rotation": 180,
+      "scaleX": 1.25,
+      "left": 0.75
+    },
+    {
+      "delta": 0.75,
+      "x": 10,
+      "rotation": 720,
+      "scaleX": 1,
+      "left": 1
+    },
+    {
+      "delta": 1.5,
+      "x": 25,
+      "rotation": 1800,
+      "scaleX": 1.5,
+      "left": 0.5
+    },
+    {
+      "delta": 10,
+      "x": 125,
+      "rotation": 9000,
+      "scaleX": 1.5,
+      "left": 0.5
+    }
+  ]
+}

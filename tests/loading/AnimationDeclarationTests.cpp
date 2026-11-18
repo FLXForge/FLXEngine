@@ -1,6 +1,8 @@
 #include "../support/TestSupport.h"
 #include "../../engine/compiler/CompiledProjectBinary.h"
 #include "../../engine/compiler/CompiledProjectValidator.h"
+#include "../../engine/runtime/AnimationPlayback.h"
+#include "../../engine/runtime/RuntimeObjectBuilder.h"
 #include "../../engine/compiler/binary/BinaryReader.h"
 #include "../../engine/compiler/binary/BinaryWriter.h"
 #include "../../engine/compiler/binary/CompiledProjectCodec.h"
@@ -231,6 +233,61 @@ int main()
                 if(mutation==2) std::fill_n(broken.begin()+start+12,4,255); // key count budget
                 writeBinary(file,broken);require(!CompiledProjectReader::read(file.string()).success,"malformed animation record rejected");
             }
+        }},
+        {"CPU evaluator matches source and format14 definitions", [] {
+            std::ifstream input(std::filesystem::path(FLX_SOURCE_DIR)/"tests/fixtures/animation/temporal-loop.json");
+            Json object;input>>object;const auto manifest=source(object.dump());const auto result=compile(manifest);const auto& open=root(result);
+            const auto file=manifest.parent_path()/"temporal.flxc";Diagnostics d;
+            require(CompiledProjectWriter::write(file.string(),result.project,d),"write temporal fixture");
+            const auto loaded=CompiledProjectReader::read(file.string());require(loaded.success && loaded.metadata.formatVersion==14,"read temporal fixture");
+            const auto& binary=*loaded.project.resources.findObject(loaded.project.rootId);
+            const auto base=AnimationBaseAppearance::capture(open.visual.representation);
+            AnimationPlayback a,b;require(a.play("travel",open.animations,base,d) && b.play("travel",binary.animations,base,d),"play compiled definitions internally");
+            std::ifstream expected(std::filesystem::path(FLX_SOURCE_DIR)/"tests/fixtures/animation/temporal-loop.trace.json");Json trace;expected>>trace;
+            for(const auto& step:trace["steps"])
+            {
+                require(a.advance(step["delta"],d) && b.advance(step["delta"],d),"advance both definitions");
+                const auto first=a.appearance(base),second=b.appearance(base);
+                require(first.transform.offsetX==second.transform.offsetX && first.transform.rotation==second.transform.rotation &&
+                    first.transform.scaleX==second.transform.scaleX && a.left()==b.left(),"source and binary evaluate identically");
+                require(first.transform.offsetX==step["x"] && first.transform.rotation==step["rotation"] &&
+                    first.transform.scaleX==step["scaleX"] && a.left()==step["left"],"compiled fixture matches independent expected trace");
+            }
+            require(!d.hasErrors(),"evaluation is nonfatal");
+        }},
+        {"rounded decimal cycle boundary agrees in source and format14", [] {
+            std::ifstream input(std::filesystem::path(FLX_SOURCE_DIR)/"tests/fixtures/animation/temporal-loop.json");Json object;input>>object;
+            object["animations"]["travel"]["duration"]=0.1;object["animations"]["travel"]["keys"][1]["at"]=0.1;
+            const auto manifest=source(object.dump());const auto result=compile(manifest);const auto& open=root(result);
+            const auto file=manifest.parent_path()/"decimal.flxc";Diagnostics d;
+            require(CompiledProjectWriter::write(file.string(),result.project,d),"write decimal duration");
+            const auto loaded=CompiledProjectReader::read(file.string());require(loaded.success,"read decimal duration");
+            const auto& binary=*loaded.project.resources.findObject(loaded.project.rootId);
+            const auto base=AnimationBaseAppearance::capture({});
+            for(const auto* definitions:{&open.animations,&binary.animations})
+            {
+                AnimationPlayback player;require(player.play("travel",*definitions,base,d) && player.advance(1,d),"evaluate rounded quotient");
+                const auto pose=player.appearance(base);
+                require(player.left()==0.1 && pose.transform.offsetX==100 && pose.transform.rotation==7200 && pose.transform.scaleX==1,"ten cycles with rounded multiplication and zero remainder");
+            }
+            require(d.empty(),"decimal boundary is not a numeric failure");
+        }},
+        {"RuntimeObject owns independent playback without spatial or physics writes", [] {
+            ObjectDefinition definition;definition.hasOrigin=true;definition.origin={10,20};definition.hasSize=true;definition.size={30,40};
+            definition.mechanics.rotation.angle=35;definition.hasVisual=true;definition.visual.hasColor=false;
+            definition.collisions["body"].offset={2,3};definition.collisions["body"].size={4,5,true,true};
+            AnimationDefinition a;a.duration=1;AnimationTransformDefinition t;t.offsetX=100;t.offsetY=200;t.rotation=720;t.scaleX=-2;t.scaleY=0;
+            AnimationKeyDefinition key;key.at=1;key.transform=t;definition.animations["move"]=a;definition.animations["move"].keys={key};
+            auto first=RuntimeObjectBuilder::build(definition,"first","");auto second=RuntimeObjectBuilder::build(definition,"second","");
+            first.visible=false;first.state="sentinel";first.stateTime=3;first.velocity={6,7};first.angularVelocity=8;first.depth=9;
+            first.timers["timer"]={2,1,RuntimeTimerStatus::Paused};
+            const auto base=AnimationBaseAppearance::capture(first.representation,WHITE,first.hasVisualColor);Diagnostics d;
+            require(first.animation.play("move",definition.animations,base,d) && first.animation.advance(1,d),"per-instance evaluator");
+            require(second.animation.status()==AnimationPlaybackStatus::Absent,"new instance does not inherit playback");
+            require(first.position.x==10 && first.position.y==20 && first.origin.x==10 && first.origin.y==20 && first.size.x==30 && first.size.y==40 && first.angle==35,"spatial state unchanged");
+            require(first.velocity.x==6 && first.velocity.y==7 && first.angularVelocity==8 && first.collisions.at("body").offset.x==2 && first.collisions.at("body").size.width==4,"physics and colliders unchanged");
+            require(!first.visible && first.state=="sentinel" && first.stateTime==3 && first.depth==9 && !first.hasVisualColor && first.timers.at("timer").left==1,"visibility/state/depth/color-presence/timers unchanged");
+            require(first.animation.done() && first.animation.appearance(base).transform.rotation==720,"separate evaluated appearance");
         }},
         {"legacy formats12 and13 retain absent Animation", [] {
             for(const auto& name:{"format12-windows.flxc","format13-windows.flxc"})

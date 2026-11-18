@@ -142,7 +142,9 @@ enum class DiagnosticCode
     InvalidAnimationDeclaration,
     InactiveAnimationKey,
     AnimationWithoutActiveKeys,
-    InvalidVisualPersistence
+    InvalidVisualPersistence,
+    InvalidAnimationOperation,
+    AnimationNumericRecovery
 };
 
 struct SourcePosition

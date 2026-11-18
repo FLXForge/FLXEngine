@@ -65,3 +65,15 @@ sensibles para herramientas de diagnóstico locales.
 
 Las referencias conservan los códigos existentes de recurso y miembro ausente,
 con origen, campo, referencia y ruta efectiva cuando estén disponibles.
+
+## Animation: diagnósticos internos del evaluador CPU (fase 2)
+
+| Código | Identificador | Severidad y efecto |
+| --- | --- | --- |
+| FLX-RUNTIME-00020 | InvalidAnimationOperation | Warning: operación interna inválida; reproducción intacta. |
+| FLX-RUNTIME-00021 | AnimationNumericRecovery | Warning: retiene última contribución válida; como máximo uno por reproducción e instancia. |
+
+El evaluador recibe una colección Diagnostics; todavía no hay bindings JS ni
+conexión con el update de sesión. Estos códigos no añaden estados públicos ni
+alteran las convenciones de Timer. Consultar o renderizar no emite diagnósticos
+numéricos nuevos. Reanudar conserva la supresión; una reproducción nueva la reinicia.

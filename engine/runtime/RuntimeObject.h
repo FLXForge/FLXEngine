@@ -2,6 +2,7 @@
 
 #include "ObjectDefinition.h"
 #include "WorldExtent.h"
+#include "AnimationPlayback.h"
 #include "ScriptValue.h"
 
 #include <string>
@@ -44,6 +45,7 @@ public:
     std::unordered_map<std::string, MusicDefinition> music;
     std::unordered_map<std::string, SoundDefinition> sounds;
     std::unordered_map<std::string, RuntimeTimer> timers;
+    AnimationPlayback animation;
     std::string creationMode = "individual";
     GridCreationRules gridRules;
     bool gridPatternIsRows = false;

@@ -1,0 +1,35 @@
+{
+  "animations": {
+    "travel": {
+      "duration": 1,
+      "from": "current",
+      "loop": true,
+      "keys": [
+        {
+          "at": 0,
+          "transform": {
+            "offset": {
+              "x": 0
+            },
+            "rotation": 0,
+            "scale": {
+              "x": 1
+            }
+          }
+        },
+        {
+          "at": 1,
+          "transform": {
+            "offset": {
+              "x": 10
+            },
+            "rotation": 720,
+            "scale": {
+              "x": 2
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -118,6 +118,8 @@ namespace
             { DiagnosticCode::SessionLoadInvalidState, "FLX-RUNTIME-00017", "SessionLoadInvalidState", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Unload the session before loading another project." },
             { DiagnosticCode::InvalidSessionConfiguration, "FLX-RUNTIME-00018", "InvalidSessionConfiguration", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Invalid session configuration." },
             { DiagnosticCode::InvalidSessionDelta, "FLX-RUNTIME-00019", "InvalidSessionDelta", DiagnosticSeverity::Error, DiagnosticDomain::RUNTIME, "Session frame delta must be finite and non-negative." },
+            { DiagnosticCode::InvalidAnimationOperation, "FLX-RUNTIME-00020", "InvalidAnimationOperation", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Invalid internal Animation operation; playback is unchanged." },
+            { DiagnosticCode::AnimationNumericRecovery, "FLX-RUNTIME-00021", "AnimationNumericRecovery", DiagnosticSeverity::Warning, DiagnosticDomain::RUNTIME, "Animation retains its last valid appearance after an unrepresentable result." },
 
             { DiagnosticCode::BuildInformationUnclassified, "FLX-BUILD-00000", "BuildInformationUnclassified", DiagnosticSeverity::Info, DiagnosticDomain::BUILD, "Unclassified informational build diagnostic." },
             { DiagnosticCode::BuildWarningUnclassified, "FLX-BUILD-00001", "BuildWarningUnclassified", DiagnosticSeverity::Warning, DiagnosticDomain::BUILD, "Unclassified build warning." },

@@ -45,3 +45,16 @@ Both are immutable legacy inputs. Their hashes are recorded alongside them.
 inactive color/bitmap key, local palette, empty representation and base persist.
 It is not a playable Animation example. Playback, JS and animated rendering are
 not implemented in phase 1. The JSON can later seed a didactic microexample.
+
+## CPU temporal evaluation fixtures (Animation phase 2)
+
+`animation/temporal-loop.json` uses the actual object declaration syntax from
+phase 1: a loop+current animation with offset, rotation and scale. It has no JS
+or playable project yet. `animation/temporal-loop.trace.json` is test data with
+hand-calculated deltas and expected poses, not public FLX syntax. The standalone
+CPU suite and the source/format-14 equivalence test share those expectations.
+The fixture can later seed one didactic microexample after playback/rendering
+integration; no current visual capability is claimed.
+
+Architecture, numeric recovery and integration limits are documented in
+[the evaluator implementation note](../../docs/ANIMATION_EVALUATOR.md).

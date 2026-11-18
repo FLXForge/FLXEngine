@@ -191,6 +191,8 @@ set(FLX_CORE_SOURCES
     engine/compiler/ProjectCompiler.h
     engine/compiler/ProjectCompiler.cpp
 
+    engine/runtime/AnimationPlayback.h
+    engine/runtime/AnimationPlayback.cpp
     engine/runtime/RuntimeObject.h
     engine/runtime/ScriptValue.h
     engine/runtime/RuntimeObject.cpp 
@@ -362,6 +364,16 @@ add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
 add_flx_test_suite(flx-visual-bitmap-tests tests/loading/VisualBitmapTests.cpp)
 add_flx_test_suite(flx-animation-declaration-tests tests/loading/AnimationDeclarationTests.cpp)
+# CPU-only evaluator: no raylib/QuickJS library, window, audio or CLI linkage.
+add_executable(flx-animation-evaluation-tests
+    tests/runtime/AnimationEvaluationTests.cpp
+    engine/runtime/AnimationPlayback.cpp
+    engine/diagnostics/Diagnostics.cpp
+)
+target_include_directories(flx-animation-evaluation-tests PRIVATE ${raylib_SOURCE_DIR}/src)
+target_link_libraries(flx-animation-evaluation-tests PRIVATE nlohmann_json::nlohmann_json)
+target_compile_definitions(flx-animation-evaluation-tests PRIVATE FLX_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME flx-animation-evaluation-tests COMMAND flx-animation-evaluation-tests)
 add_flx_test_suite(flx-audio-system-tests tests/audio/AudioSystemTests.cpp)
 add_flx_test_suite(flx-input-characterization-tests tests/input/InputCharacterizationTests.cpp)
 add_flx_test_suite(flx-collision-geometry-tests tests/collision/CollisionGeometryTests.cpp)

@@ -155,7 +155,7 @@
             },
             "fontSize": {
               "type": "integer",
-              "minimum": 1
+              "description": "Required integer. The existing declarative renderer uses at least 1 for text size."
             },
             "persist": { "enum": [ "first", "last" ], "description": "Base-only stable first/replaceable/last grouping, including without playback; forbidden in animation key representations." },
             "color": {

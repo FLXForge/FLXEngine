@@ -677,3 +677,17 @@ no sustituyen esa ejecución de Linux ni la validación física de audio/input.
   [ALSA de desarrollo en Ubuntu 24.04](https://packages.ubuntu.com/noble/libasound2-dev).
 - [Permisos de artefactos de Actions](https://github.com/actions/upload-artifact#permission-loss)
   para el transporte del tarball.
+
+## Animation, auditoría final de fase 5
+
+La validación local actual de Animation es Windows/MSVC; no se ha ejecutado Linux
+para el diff de fase 5. WSL no está instalado. Los resultados Linux históricos de
+este documento no acreditan las fases finales de Animation. Véase
+[ANIMATION_FINAL_AUDIT.md](ANIMATION_FINAL_AUDIT.md) para la matriz y reservas.
+
+Sin cambios del workflow: CTest headless incorpora flx-animation-audit-tests y las
+regresiones nuevas; Xvfb ya selecciona flx-runtime-drawing-tests con los casos de
+snapshot/recuperación abierta14 y bitmap-invader. Tras publicar la desarrolladora
+el diff, ejecutar linux-diagnostics con GCC/Clang y revisar los logs internos:
+ningún caso Animation debe aparecer como SKIP en la pasada gráfica. No se considera
+que la configuración estática del workflow demuestre su ejecución con Xvfb.

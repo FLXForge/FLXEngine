@@ -10,6 +10,7 @@
 #include "../../engine/scripting/ScriptEngine.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -1416,7 +1417,7 @@ namespace
     void testAnimationMicroexamplesGraphics()
     {
         HiddenTestWindow window;
-        for(const std::string name:{"interpolation","loop-base","loop-current","pause-resume","representation","color"}) {
+        for(const std::string name:{"bitmap-invader","interpolation","loop-base","loop-current","pause-resume","representation","color"}) {
             const auto compiled=flx::test::compile(std::filesystem::path(FLX_SOURCE_DIR)/"microexamples/animation"/name/(name+".flx"));
             require(compiled.success,"compile animation visual microexample "+name);
             Diagnostics diagnostics;const auto binary=testRoot()/(name+"-visual.flxc");
@@ -1426,6 +1427,8 @@ namespace
             for(const auto* project:{&compiled.project,&decoded.project}) {
                 FlxSession session;FlxSessionOptions options;options.enableAudio=false;options.savePath=testRoot()/"animation-example-saves";
                 require(session.load(*project,options),"load animation example");
+                BitmapTextureCache invaderCache;
+                std::array<unsigned int,5> invaderTextures{};
                 for(int frame=0;frame<=16;++frame) {
                     require(session.render(),"render Animation example");
                     auto image=LoadImageFromTexture(session.output());ImageFlipVertical(&image);
@@ -1434,6 +1437,22 @@ namespace
                         const auto c=GetImageColor(image,x,y);pixels.insert(pixels.end(),{c.r,c.g,c.b,c.a});
                     }
                     if(mode==0) expected.push_back(pixels);else require(pixels==expected[frame],"open/compiled rendered pixels "+name);
+                    if(name=="bitmap-invader") {
+                        auto* o=session.testObject("sample");require(o,"bitmap sample");
+                        const auto appearance=o->animation.appearance(AnimationBaseAppearance::capture(o->representation));
+                        const auto bitmap=appearance.replaceable->at(0).bitmap;
+                        require(bitmap&&bitmap->width==11&&bitmap->height==8,"invader bitmap dimensions");
+                        for(int y=0;y<8;++y)for(int x=0;x<11;++x) {
+                            const auto expectedColor=bitmap->pixels[y*11+x];
+                            const int px=static_cast<int>((94+(x+.5)*12)*image.width/320);
+                            const int py=static_cast<int>((72+(y+.5)*12)*image.height/240);
+                            require(sameColor(GetImageColor(image,px,py),expectedColor.a?expectedColor:BLACK),"visible invader palette/transparency/frame/orientation");
+                        }
+                        const auto texture=invaderCache.get(bitmap);
+                        if(frame<5) invaderTextures[frame]=texture.id;
+                        else require(texture.id==invaderTextures[frame%5],"warm loop reuses the five frame textures");
+                        if(frame>=5)require(pixels==expected[frame%5],"five-frame loop returns to exact rendered frame");
+                    }
                     if(name=="color") {
                         const auto explicitColor=GetImageColor(image,image.width*120/320,image.height/2);
                         require(sameColor(explicitColor,WHITE),"explicit white stays white under animated inherited color");
@@ -1446,9 +1465,78 @@ namespace
                     }
                     UnloadImage(image);if(frame<16)require(session.update(.25),"advance Animation example");
                 }
+                if(name=="bitmap-invader")
+                    for(int a=0;a<5;++a)for(int b=a+1;b<5;++b)
+                        require(expected[a]!=expected[b],"all five invader frames are visibly distinct");
                 require(expected[0]!=expected[4],"microexample visibly changes: "+name);
                 session.unload();++mode;
             }
+        }
+    }
+
+    void testAnimationAcceptanceOpenCompiled()
+    {
+        HiddenTestWindow window;
+        const auto manifest=createMinimalProject("animation_audit_snapshot");
+        writeFile(manifest.parent_path()/"game/root.json",R"({
+          "delimit":true,"origin":{"x":32,"y":32},"size":{"width":64,"height":64},
+          "visual":{"representation":[{"primitive":"rectangle","size":{"width":8,"height":8}}]},
+          "behavior":{"scripts":["audit"]},
+          "animations":{
+            "pose":{"duration":1,"keys":[{"at":0,"transform":{"offset":{"x":8,"y":2},"rotation":45,"scale":{"x":1.25,"y":0.75}},"color":"#ff0000","representation":[{"primitive":"ellipse","size":{"width":8,"height":8}}]}]},
+            "turn":{"duration":1,"from":"current","keys":[{"at":0,"transform":{"rotation":0}},{"at":2,"transform":{"offset":{"y":1000}}}]},
+            "huge":{"duration":1,"keys":[{"at":0,"transform":{"scale":{"x":1e300}},"color":"blue"}]}
+          }
+        })");
+        writeFile(manifest.parent_path()/"game/audit.js",R"(
+          function draw(o) {
+            const frame=read_local(o,'draws')||0;
+            if(frame===0) play_animation(o,'pose');
+            if(frame===1) play_animation(o,'turn');
+            if(frame===2) play_animation(o,'huge');
+            if(frame===3) pause_animation(o);
+            if(frame===4) {play_animation(o,'huge');stop_animation(o);}
+            write_local(o,'draws',frame+1);
+            write_local(o,'current',animation_current(o)===null?'absent':animation_current(o));
+            write_local(o,'left',animation_left(o));
+          }
+        )");
+        const auto source=flx::test::compile(manifest);require(source.success,"compile acceptance snapshot/recovery source");
+        Diagnostics diagnostics;const auto binary=manifest.parent_path()/"audit.flxc";
+        require(CompiledProjectWriter::write(binary.string(),source.project,diagnostics),"write acceptance binary");
+        std::filesystem::remove_all(manifest.parent_path()/"game");
+        const auto decoded=CompiledProjectReader::read(binary.string());require(decoded.success,"load acceptance without source files");
+        std::vector<std::vector<unsigned char>> expected;int mode=0;
+        for(const auto* project:{&source.project,&decoded.project}) {
+            StreamCapture capture;
+            FlxSession session;FlxSessionOptions options;options.enableAudio=false;options.savePath=testRoot()/"audit-saves";
+            require(session.load(*project,options),"acceptance load");
+            for(int frame=0;frame<6;++frame) {
+                require(session.render(),"numeric graphical failure must not fail session");
+                auto* o=session.testObject("root");require(o,"acceptance root");
+                const auto current=o->animation.current();
+                if(frame==0)require(current=="pose"&&o->animation.left()==1,"draw play queries immediately, time zero");
+                if(frame==1) {
+                    const auto base=AnimationBaseAppearance::capture(o->representation,o->hasVisualColor?o->visualColor:WHITE,o->hasVisualColor);
+                    const auto pose=o->animation.appearance(base);
+                    require(current=="turn"&&o->animation.reference().transform.rotation==45,"draw current captures effective controlled rotation");
+                    require(pose.transform.offsetX==0&&pose.transform.offsetY==0&&pose.transform.scaleX==1&&pose.transform.scaleY==1,"current drops uncontrolled axes and scales, inactive keys do not control");
+                    require(sameColor(pose.color,WHITE)&&pose.replaceable->at(0).primitive=="rectangle","current drops previous color and representation");
+                }
+                if(frame==3)require(o->animation.paused()&&o->animation.left()==1,"numeric fallback pause retains clock");
+                if(frame>=4)require(!current,"draw stop immediate query");
+                auto image=LoadImageFromTexture(session.output());ImageFlipVertical(&image);
+                auto pixel=[&](int x,int y){return GetImageColor(image,image.width*x/64,image.height*y/64);};
+                require(sameColor(pixel(frame==1?40:32,32),frame==1?Color{255,0,0,255}:WHITE),"snapshot/substitution/atomic numeric fallback exact pixels");
+                require(sameColor(pixel(frame==1?32:40,32),BLACK),"old offset does not leak through current or recovery");
+                std::vector<unsigned char> pixels;
+                for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x){auto c=GetImageColor(image,x,y);pixels.insert(pixels.end(),{c.r,c.g,c.b,c.a});}
+                if(mode==0)expected.push_back(pixels);else require(pixels==expected[frame],"acceptance source/binary pixels");
+                UnloadImage(image);
+            }
+            const auto log=capture.output.str()+capture.error.str();
+            require(countOccurrences(log,"FLX-RUNTIME-00021")==1,"one graphical numeric diagnostic over repeated renders and pause/resume");
+            session.unload();++mode;
         }
     }
 
@@ -1474,6 +1562,7 @@ bool requiresGraphics(const std::string& name)
         name == "Multiline text centers each line" ||
         name == "Text cases do not depend on RuntimeObject size" ||
         name == "Animation renderer observable pixels" ||
+        name == "Animation audited source compiled acceptance" ||
         name == "Animation JavaScript draw snapshots" ||
         name == "Animation microexamples open and compiled pixels";
 }
@@ -1483,6 +1572,7 @@ int main()
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "Animation geometry CPU and numeric recovery", testAnimationGeometryCPU },
         { "Animation renderer observable pixels", testAnimationRendering },
+        { "Animation audited source compiled acceptance", testAnimationAcceptanceOpenCompiled },
         { "Animation JavaScript draw snapshots", testAnimationJavaScriptSnapshots },
         { "Animation microexamples open and compiled pixels", testAnimationMicroexamplesGraphics },
         { "Bitmap microexamples source and compiled rendering", testBitmapMicroexamplesSourceAndCompiledRendering },

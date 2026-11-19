@@ -77,19 +77,31 @@ namespace
 
 static std::vector<VisualPrimitive> buildAppearance(
     const RuntimeObject& object,
-    const AnimationAppearance& appearance
+    const AnimationAppearance& appearance,
+    const AnimationRepresentation* baseElements = nullptr
 )
 {
     std::vector<VisualPrimitive> primitives;
-    size_t count=0;
-    for(const auto& group:{appearance.first,appearance.replaceable,appearance.last})if(group)count+=group->size();
+    const AnimationRepresentation* groups[] = {
+        appearance.first.get(), appearance.replaceable.get(), appearance.last.get()
+    };
+    constexpr RepresentationPersistence partitions[] = {
+        RepresentationPersistence::First, RepresentationPersistence::None, RepresentationPersistence::Last
+    };
+    size_t count = baseElements ? baseElements->size() : 0;
+    if (!baseElements)
+        for (const auto* group : groups) if (group) count += group->size();
     primitives.reserve(count);
 
-    for(const auto& group:{appearance.first,appearance.replaceable,appearance.last})
+    // ABSENT borrows the base only for this capture. Output primitives still own
+    // their snapshot data; stable persist ordering needs no copied partitions.
+    for (size_t index = 0; index < 3; ++index)
     {
-        if(!group)continue;
+        const auto* group = baseElements ? baseElements : groups[index];
+        if (!group) continue;
         for (const RepresentationElementDefinition& element : *group)
         {
+            if (baseElements && element.persist != partitions[index]) continue;
             VisualPrimitive primitive;
             primitive.kind =
                 VisualPrimitiveKind::Representation;
@@ -167,6 +179,12 @@ static std::vector<VisualPrimitive> buildAppearance(
 
 std::vector<VisualPrimitive> RepresentationPrimitiveBuilder::build(const RuntimeObject& object, Color fallbackColor)
 {
+    if (object.animation.status() == AnimationPlaybackStatus::Absent)
+    {
+        AnimationAppearance base;
+        base.color = object.hasVisualColor ? object.visualColor : fallbackColor;
+        return buildAppearance(object, base, &object.representation);
+    }
     const auto base=AnimationBaseAppearance::capture(object.representation,
         object.hasVisualColor?object.visualColor:fallbackColor,object.hasVisualColor);
     return buildAppearance(object,object.animation.appearance(base));
@@ -175,11 +193,15 @@ std::vector<VisualPrimitive> RepresentationPrimitiveBuilder::build(const Runtime
 std::vector<VisualPrimitive> RepresentationPrimitiveBuilder::build(RuntimeObject& object, Color fallbackColor,
     const RepresentationRenderContext& context, Diagnostics& diagnostics)
 {
-    const auto base=AnimationBaseAppearance::capture(object.representation,
-        object.hasVisualColor?object.visualColor:fallbackColor,object.hasVisualColor);
+    const bool absent = object.animation.status() == AnimationPlaybackStatus::Absent;
+    AnimationBaseAppearance base;
+    base.color = object.hasVisualColor ? object.visualColor : fallbackColor;
+    base.hasRuntimeColor = object.hasVisualColor;
+    if (!absent)
+        base = AnimationBaseAppearance::capture(object.representation, base.color, base.hasRuntimeColor);
     std::vector<VisualPrimitive> result;
     const bool valid=object.animation.validateAppearance(base,[&](const AnimationAppearance& appearance) {
-        auto candidate=buildAppearance(object,appearance);
+        auto candidate=buildAppearance(object,appearance,absent ? &object.representation : nullptr);
         for(auto& primitive:candidate)
         {
             for(const auto offset:DeclarativeGeometry::presentationOffsets(primitive,context.world))

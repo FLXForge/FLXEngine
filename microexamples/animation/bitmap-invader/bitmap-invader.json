@@ -1,0 +1,139 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 160,
+    "y": 120
+  },
+  "size": {
+    "width": 320,
+    "height": 240
+  },
+  "children": {
+    "sample": {
+      "origin": {
+        "x": 160,
+        "y": 120
+      },
+      "size": {
+        "width": 132,
+        "height": 96
+      },
+      "visual": {
+        "palette": {
+          ".": "blank",
+          "G": "#65ff79"
+        },
+        "representation": []
+      },
+      "animations": {
+        "march": {
+          "duration": 1.25,
+          "loop": true,
+          "from": "base",
+          "keys": [
+            {
+              "at": 0.0,
+              "representation": [
+                {
+                  "bitmap": {
+                    "pixels": [
+                      "..G.....G..",
+                      "...G...G...",
+                      "..GGGGGGG..",
+                      ".GG.GGG.GG.",
+                      "GGGGGGGGGGG",
+                      ".GGGGGGGGG.",
+                      "..G.....G..",
+                      ".GG.....GG."
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "at": 0.25,
+              "representation": [
+                {
+                  "bitmap": {
+                    "pixels": [
+                      "..G.....G..",
+                      "G..G...G..G",
+                      "G.GGGGGGG.G",
+                      "GGG.GGG.GGG",
+                      "GGGGGGGGGGG",
+                      ".GGGGGGGGG.",
+                      "..G.....G..",
+                      "..GG...GG.."
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "at": 0.5,
+              "representation": [
+                {
+                  "bitmap": {
+                    "pixels": [
+                      "G.G.....G.G",
+                      "G..G...G..G",
+                      "G.GGGGGGG.G",
+                      "GGG.GGG.GGG",
+                      "GGGGGGGGGGG",
+                      ".GGGGGGGGG.",
+                      ".G.......G.",
+                      "G.........G"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "at": 0.75,
+              "representation": [
+                {
+                  "bitmap": {
+                    "pixels": [
+                      "..G.....G..",
+                      "G..G...G..G",
+                      "G.GGGGGGG.G",
+                      "GGG.GGG.GGG",
+                      "GGGGGGGGGGG",
+                      ".GGGGGGGGG.",
+                      "..G.....G..",
+                      "...GG.GG..."
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "at": 1.0,
+              "representation": [
+                {
+                  "bitmap": {
+                    "pixels": [
+                      "..G.....G..",
+                      "...G...G...",
+                      "..GGGGGGG..",
+                      ".GG.GGG.GG.",
+                      "GGGGGGGGGGG",
+                      ".GGGGGGGGG.",
+                      ".G.......G.",
+                      "..GG...GG.."
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "bitmap-invader"
+        ]
+      }
+    }
+  }
+}

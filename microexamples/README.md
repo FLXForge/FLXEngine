@@ -87,6 +87,7 @@ visuales ejecutables hasta disponer de bindings y avance temporal integrado.
 Cada ejemplo inicia explícitamente desde born, sin autoplay. Abierto y compilado
 conservan el mismo comportamiento. Cada README incluye comandos y resultado ES/EN.
 
+- [`animation/bitmap-invader`](animation/bitmap-invader/README.md) · cinco fotogramas bitmap en loop / five-frame bitmap loop
 - [`animation/color`](animation/color/README.md)
 - [`animation/interpolation`](animation/interpolation/README.md)
 - [`animation/loop-base`](animation/loop-base/README.md)

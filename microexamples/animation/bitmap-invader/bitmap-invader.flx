@@ -1,0 +1,6 @@
+title=Animation Bitmap Invader
+name=animation-bitmap-invader
+version=1.0.0
+engine=0.4.0
+path=.
+root=bitmap-invader

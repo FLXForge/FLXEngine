@@ -362,7 +362,7 @@ namespace
 
     void testMicroexamplesOpenCompiled()
     {
-        for(const std::string name:{"interpolation","loop-base","loop-current","pause-resume","representation","color","persist-order"}) {
+        for(const std::string name:{"bitmap-invader","interpolation","loop-base","loop-current","pause-resume","representation","color","persist-order"}) {
             const auto path=std::filesystem::path(FLX_SOURCE_DIR)/"microexamples/animation"/name/(name+".flx");
             const auto compiled=compile(path);require(compiled.success,"compile microexample "+name);
             Diagnostics diagnostics;const auto binary=testRoot()/("animation-"+name+".flxc");
@@ -375,6 +375,14 @@ namespace
                 for(int frame=0;frame<=24;++frame) {
                     auto& o=requireObject(h.world,"sample");const auto appearance=o.animation.appearance(AnimationBaseAppearance::capture(o.representation,o.visualColor,o.hasVisualColor));
                     traces[index].insert(traces[index].end(),{o.animation.left(),appearance.transform.offsetX,appearance.transform.rotation,double(appearance.color.r),double(appearance.replaceable->size()),double(o.animation.paused())});
+                    if(name=="bitmap-invader") {
+                        const auto* definition=project->resources.findObject(o.definitionId);
+                        require(definition,"bitmap invader definition");
+                        const auto& keys=definition->animations.at("march").keys;
+                        require(keys.size()==5&&appearance.replaceable->size()==1,"five bitmap key frames");
+                        require(appearance.replaceable->at(0).bitmap==keys[frame%5].representation->at(0).bitmap,"exact discrete frame at each boundary including loop restart");
+                        require(o.animation.active()&&!o.animation.done(),"bitmap animation loops without DONE");
+                    }
                     if(frame==2&&name=="interpolation") require(appearance.transform.offsetX==20,"JS interpolation visible offset");
                     if(frame==12&&name=="loop-current") require(appearance.transform.offsetX==60,"current cumulative example");
                     if(frame==12&&name=="loop-base") require(appearance.transform.offsetX==30,"base reset example");
@@ -388,6 +396,50 @@ namespace
             require(traces[0]==traces[1],"source/compiled execution equivalence "+name);
         }
     }
+    void testMachinePaletteNoReprojection()
+    {
+        const auto manifest=createMinimalProject("animation_audit_machine");
+        writeFile(manifest,"name=AnimationAudit\npath=game\nroot=root\nmachine=machine.yml\n");
+        writeFile(manifest.parent_path()/"machine.yml","machine:\n  video:\n    color:\n      palette: ['#ff0000', '#0000ff']\n");
+        writeFile(manifest.parent_path()/"game/root.json",R"({
+          "visual":{"color":"#ff0000","representation":[{"primitive":"rectangle"}]},
+          "behavior":{"scripts":["start"]},
+          "animations":{
+            "shade":{"duration":1,"keys":[{"at":1,"color":"#0000ff"}]},
+            "next":{"duration":1,"from":"current","keys":[{"at":1,"color":"#ff0000"}]},
+            "overflow":{"duration":1,"loop":true,"from":"current","keys":[{"at":0,"color":"#ff0000"},{"at":1,"transform":{"offset":{"x":1e308}},"color":"#0000ff"}]}
+          }
+        })");
+        writeFile(manifest.parent_path()/"game/start.js","function born(o){play_animation(o,'shade');}");
+        const auto source=compile(manifest);require(source.success,"compile discrete Machine palette");
+        Diagnostics diagnostics;const auto binary=manifest.parent_path()/"machine.flxc";
+        require(CompiledProjectWriter::write(binary.string(),source.project,diagnostics),"write Machine Animation");
+        const auto loaded=CompiledProjectReader::read(binary.string());require(loaded.success,"read Machine Animation");
+        for(const auto* project:{&source.project,&loaded.project}) {
+            RuntimeHarness h;h.project=*project;require(h.load().success,"load Machine Animation runtime");h.update(.5);
+            const auto& o=requireObject(h.world,"root");
+            const auto appearance=o.animation.appearance(AnimationBaseAppearance::capture(o.representation,o.visualColor,o.hasVisualColor));
+            require(appearance.color.r==128&&appearance.color.g==0&&appearance.color.b==128&&appearance.color.a==255,
+                "Machine effective endpoints interpolate outside discrete palette without reprojection");
+            check(h,"play_animation(o,'next');apply_color(o,'#0000ff')");h.update(.5);
+            const auto base=AnimationBaseAppearance::capture(o.representation,o.visualColor,o.hasVisualColor);
+            const auto captured=o.animation.appearance(base);
+            require(captured.color.r==192&&captured.color.b==64,"current color reference remains captured after apply_color, no Machine reprojection");
+            check(h,"stop_animation(o);play_animation(o,'overflow')");h.update(.5);
+            const auto valid=o.animation.appearance(base);
+            StreamCapture capture;
+            h.update(2);
+            require(o.animation.elapsed()==2.5&&o.animation.left()==.5,"CPU failure preserves representable World clock");
+            const auto retained=o.animation.appearance(base);
+            require(retained.transform.offsetX==valid.transform.offsetX&&retained.color.r==valid.color.r&&retained.color.b==valid.color.b,"CPU fallback is atomic in source and compiled World");
+            check(h,"pause_animation(o);play_animation(o,'overflow')");
+            for(int frame=0;frame<8;++frame)h.update(1);
+            require(countOccurrences(capture.output.str()+capture.error.str(),"FLX-RUNTIME-00021")==1,"World CPU recovery warns once, including resume");
+            check(h,"stop_animation(o);play_animation(o,'overflow')");h.update(3);
+            require(countOccurrences(capture.output.str()+capture.error.str(),"FLX-RUNTIME-00021")==2,"new playback owns its diagnostic lifetime");
+        }
+    }
+
 }
 
 int main()
@@ -399,7 +451,8 @@ int main()
         {"spawn color and spatial invariants",testSpawnAndColor},
         {"collision and State",testCollisionAndState},
         {"post-temporal iterator creation",testPostTemporalCreation},
-        {"microexamples open and compiled",testMicroexamplesOpenCompiled}
+        {"microexamples open and compiled",testMicroexamplesOpenCompiled},
+        {"Machine palette midpoint source and compiled",testMachinePaletteNoReprojection}
     };
     int failures=0;
     for(const auto& [name,test]:tests)try{test();std::cout<<"[PASS] "<<name<<'\n';}catch(const std::exception& e){++failures;std::cerr<<"[FAIL] "<<name<<": "<<e.what()<<'\n';}

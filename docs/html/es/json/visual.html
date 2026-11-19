@@ -173,7 +173,7 @@
             <h3 id="text">text</h3>
             <ul>
                 <li><code>text</code> — string. <i>Obligatorio.</i> Contenido mostrado.</li>
-                <li><code>fontSize</code> — integer ≥ 1. <i>Obligatorio; sin default contractual.</i> Tamaño de fuente.</li>
+                <li><code>fontSize</code> — integer. <i>Obligatorio; sin default contractual.</i> Tamaño de fuente; el renderer conserva su mínimo histórico de 1 al dibujar.</li>
                 <li><code>color</code> — string. <i>Opcional.</i> Override del color base.</li>
             </ul>
             <p>Text no admite <code>mode</code> ni <code>size</code>. El tamaño se expresa explícitamente con <code>fontSize</code>; el bloque no declara ajuste automático a la caja lógica.</p>

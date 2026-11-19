@@ -2,6 +2,7 @@
 #include "../../engine/compiler/CompiledProjectBinary.h"
 #include "../../engine/compiler/CompiledProjectValidator.h"
 #include "../../engine/runtime/AnimationPlayback.h"
+#include "../../engine/graphics/RepresentationPrimitiveBuilder.h"
 #include "../../engine/runtime/RuntimeObjectBuilder.h"
 #include "../../engine/compiler/binary/BinaryReader.h"
 #include "../../engine/compiler/binary/BinaryWriter.h"
@@ -93,6 +94,26 @@ int main()
             require(!has(result.diagnostics,DiagnosticCode::InactiveAnimationKey) && !has(result.diagnostics,DiagnosticCode::AnimationWithoutActiveKeys),"duration key is active");
             require(key.representation->size()==4 && key.representation->at(0).size.width.percentage && key.representation->at(3).bitmap,"families use shared visual parser");
             require(key.transform->rotation && !key.transform->offsetX && !key.transform->offsetY,"empty axis does not invent components");
+        }},
+        {"text font size keeps historical integer contract", [] {
+            for(int size:{-1,0,1}) {
+                auto node=fixture();
+                node["visual"]["representation"]=Json::array({{{"text","base"},{"fontSize",size}}});
+                node["animations"]["pulse"]["keys"]=Json::array({{{"at",0},{"representation",Json::array({{{"text","key"},{"fontSize",size}}})}}});
+                const auto manifest=source(node.dump());const auto result=compile(manifest);const auto& object=root(result);
+                require(object.visual.representation[0].fontSize==size,"base text integer preserved");
+                require(object.animations.at("pulse").keys[0].representation->at(0).fontSize==size,"Animation uses same text contract");
+                Diagnostics diagnostics;const auto file=manifest.parent_path()/"text.flxc";
+                require(CompiledProjectWriter::write(file.string(),result.project,diagnostics),"serialize historical text size");
+                const auto loaded=CompiledProjectReader::read(file.string());require(loaded.success,"load historical text size");
+                auto o=RuntimeObjectBuilder::build(*loaded.project.resources.findObject(loaded.project.rootId),"text","");
+                const auto snapshot=RepresentationPrimitiveBuilder::build(o,WHITE);
+                require(snapshot.size()==1&&snapshot[0].fontSize==1,"existing graphical size floor, independent of Animation");
+                const auto& definition=*loaded.project.resources.findObject(loaded.project.rootId);
+                require(o.animation.play("pulse",definition.animations,AnimationBaseAppearance::capture(o.representation),diagnostics),"play historical text key");
+                const auto animated=RepresentationPrimitiveBuilder::build(o,WHITE);
+                require(animated.size()==1&&animated[0].text=="key"&&animated[0].fontSize==1,"Animation reuses the same historical text size rule");
+            }
         }},
         {"invalid animation structures and components", [] {
             auto base=fixture();

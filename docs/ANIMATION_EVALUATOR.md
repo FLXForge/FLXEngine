@@ -321,3 +321,11 @@ Logs locales (ignorados por Git):
   `json/visual.html` y `scripting.html`.
 - Microejemplos: `microexamples/README.md`, README de persist-order y seis directorios
   nuevos indicados arriba, cada uno con `.flx`, `.json`, `.js` y README bilingüe.
+
+## Auditoría final — fase 5
+
+Véase [ANIMATION_FINAL_AUDIT.md](ANIMATION_FINAL_AUDIT.md) para la matriz ANIM,
+evidencia directa/indirecta/ausente, correcciones, mediciones y reservas de cierre.
+La fase 5 incorpora el microejemplo bitmap-invader solicitado: cinco fotogramas en
+loop, con comparación abierta/compilada y píxeles. Los resultados históricos de
+las fases anteriores se mantienen como tales; el dictamen actual no cierra Animation.

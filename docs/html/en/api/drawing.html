@@ -40,9 +40,9 @@
 <article class="doc-content api-reference">
 <p class="eyebrow">FLX Documentation · v0.4.0</p>
 <h1>Drawing / Visual</h1>
-<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><table><caption>Four visual layers</caption><thead><tr><th scope="col">Layer</th><th scope="col">Responsibility</th></tr></thead><tbody><tr><th scope="row">JSON representation</th><td data-label="Responsibility"><a class="link" href="json/visual.html">Declarative visual representation</a> of the object.</td></tr><tr><th scope="row">Immediate drawing</th><td data-label="Responsibility">Primitives emitted during <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</td></tr><tr><th scope="row">Runtime visual state</th><td data-label="Responsibility">Instance color and <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>.</td></tr><tr><th scope="row">Global fade</th><td data-label="Responsibility">Layer over the screen, independent of RuntimeObject.</td></tr></tbody></table>
+<nav aria-label="API families"><p><a class="link" href="api/index.html">Index</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><table><caption>Four visual layers</caption><thead><tr><th scope="col">Layer</th><th scope="col">Responsibility</th></tr></thead><tbody><tr><th scope="row">JSON representation</th><td data-label="Responsibility"><a class="link" href="json/visual.html">Declarative visual representation</a> of the object.</td></tr><tr><th scope="row">Immediate drawing</th><td data-label="Responsibility">Primitives emitted during <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</td></tr><tr><th scope="row">Runtime visual state</th><td data-label="Responsibility">Instance color and <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>.</td></tr><tr><th scope="row">Animation</th><td data-label="Responsibility"><a class="link" href="api/drawing.html#animation">Per-instance appearance playback without changing spatial state.</a></td></tr><tr><th scope="row">Global fade</th><td data-label="Responsibility">Layer over the screen, independent of RuntimeObject.</td></tr></tbody></table>
 <p>Without reference, coordinates are in the world's logical space. With a RuntimeObject as the first argument, they are local to its position and rotate with it. That spatial reference does not change the owner of the current draw. These are not physical coordinates multiplied by output.scale.</p>
-<nav aria-label="On this page"><p><a class="link" href="api/drawing.html#immediate">Immediate drawing</a> · <a class="link" href="api/drawing.html#visual">Runtime visual state</a> · <a class="link" href="api/drawing.html#fade">Global fade</a></p></nav><h2 id="immediate">Immediate drawing</h2>
+<nav aria-label="On this page"><p><a class="link" href="api/drawing.html#immediate">Immediate drawing</a> · <a class="link" href="api/drawing.html#visual">Runtime visual state</a> · <a class="link" href="api/drawing.html#animation">Animation</a> · <a class="link" href="api/drawing.html#fade">Global fade</a></p></nav><h2 id="immediate">Immediate drawing</h2>
 <section data-api-symbol="draw_text">
 <h3 id="draw-text">draw_text()</h3>
 <div class="code-card"><div class="code-header">Signatures</div><pre><code>draw_text(x: number, y: number, text: string, size?: number, color?: string): void;
@@ -97,7 +97,7 @@ draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, he
 </section>
 <h2 id="visual">Runtime visual state</h2>
 <section data-api-symbol="apply_color">
-<p>An internally started Animation with active color keys has visual priority during RUNNING, PAUSED and DONE. <code>apply_color</code> and <code>restore_color</code> still update the runtime base: removing Animation reveals that current base, including absence of declared color. Bitmap and explicit element colors are not tinted. This layer does not transform <code>draw_*</code>, including local modes. A JavaScript Animation playback API is not available yet. See <a class="link" href="json/visual.html#persist">Visual</a>.</p>
+<p>An Animation with active color keys has visual priority during RUNNING, PAUSED and DONE. <code>apply_color</code> and <code>restore_color</code> still update the runtime base: removing Animation reveals that current base, including absence of declared color. Bitmap and explicit element colors are not tinted. This layer does not transform <code>draw_*</code>, including local modes. See <a class="link" href="api/drawing.html#animation">Animation</a> and <a class="link" href="json/visual.html#persist">Visual</a>.</p>
 <h3 id="apply-color">apply_color()</h3>
 <div class="code-card"><div class="code-header">Signatures</div><pre><code>apply_color(object: RuntimeObject, color: string): void;</code></pre></div>
 <p>Overrides the instance's live visual color with <code>color</code>, for example <code>"#ff0000"</code>. Does not rewrite the declarative JSON representation and is not the color parameter of an immediate primitive.</p>
@@ -115,6 +115,46 @@ draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, he
 <div class="code-card"><div class="code-header">JavaScript example</div><pre><code data-example="javascript">restore_color(object);</code></pre></div>
 <p>Related: <a class="link" href="api/drawing.html#apply-color"><code>apply_color()</code></a>.</p>
 </section>
+<h2 id="animation">Animation</h2>
+<p>An instance plays at most one animation declared in <a class="link" href="json/object.html#animations">Object.animations</a>. All eight functions accept a valid RuntimeObject view from the current callback. No mutable object properties are added. Controls return undefined; invalid arguments or unknown names warn, preserve playback and allow execution to continue. Invalid queries return null, false or 0 according to their type.</p>
+<p>Partial keys interpolate offset, unnormalized rotation, scale and color independently; representation switches discretely, including []. Zero/negative scale is valid. Visual transforms apply scale → animated rotation → offset → world transform with the existing pivot. Spatial, physical and logical fields remain unchanged.</p>
+<p><code>from: base</code> captures the runtime base; <code>from: current</code> captures only properties controlled by the incoming animation. Loop+base uses a fixed reference each cycle; loop+current accumulates offset/rotation per cycle, without accumulating scale, color or representation. Keys beyond duration remain stored but inactive. Colors interpolate after Machine without per-frame reprojection. persist:first → replaceable section → persist:last order also applies in ABSENT and after stop.</p>
+<table><caption>State and queries</caption><thead><tr><th>State</th><th>current</th><th>active</th><th>paused</th><th>done</th><th>left</th></tr></thead><tbody>
+<tr><td>ABSENT</td><td>null</td><td>false</td><td>false</td><td>false</td><td>0</td></tr>
+<tr><td>RUNNING</td><td>name</td><td>true</td><td>false</td><td>false</td><td>remaining</td></tr>
+<tr><td>PAUSED</td><td>name</td><td>true</td><td>true</td><td>false</td><td>frozen</td></tr>
+<tr><td>DONE</td><td>name</td><td>false</td><td>false</td><td>true</td><td>0</td></tr></tbody></table>
+<p>World advances Animation once alongside Timer after collision. born starts at time zero; objects present at that temporal phase receive that update's delta. hide does not pause; show and state_to do not restart playback. Destroyed objects do not advance; dead may query the final state before removal.</p>
+<p><strong>draw limit:</strong> play/pause/stop change state and queries immediately, but that turn's representation is already captured. Visual changes appear at the next capture. Objects created from draw consume no delta until a later update. Neither draw nor queries advance the clock; immediate drawing retains its historical rules.</p>
+<h3 id="animation-active">animation_active()</h3>
+<pre><code>animation_active(object)</code></pre>
+<p>Returns true in RUNNING or PAUSED; false in ABSENT and DONE.</p>
+<h3 id="animation-current">animation_current()</h3>
+<pre><code>animation_current(object)</code></pre>
+<p>Returns the selected name, including PAUSED/DONE, or null in ABSENT.</p>
+<h3 id="animation-done">animation_done()</h3>
+<pre><code>animation_done(object)</code></pre>
+<p>Returns true only in DONE. A loop never finishes from elapsed time.</p>
+<h3 id="animation-left">animation_left()</h3>
+<pre><code>animation_left(object)</code></pre>
+<p>Returns remaining seconds, frozen in PAUSED and 0 in ABSENT/DONE. For loops this is the current cycle remainder: exactly at a boundary it returns duration.</p>
+<h3 id="animation-paused">animation_paused()</h3>
+<pre><code>animation_paused(object)</code></pre>
+<p>Returns true only in PAUSED.</p>
+<h3 id="pause-animation">pause_animation()</h3>
+<pre><code>pause_animation(object)</code></pre>
+<p>Pauses RUNNING without clearing time or appearance. Not a toggle; ABSENT, PAUSED and DONE remain unchanged.</p>
+<h3 id="play-animation">play_animation()</h3>
+<pre><code>play_animation(object, name)</code></pre>
+<p>The name must be a nonempty string declared on the object. ABSENT starts; the same name in RUNNING does nothing, in PAUSED resumes without recapture and in DONE restarts with a fresh capture. Another name replaces immediately using its own from policy. DONE retains final appearance until stop, restart or replacement.</p>
+<h3 id="stop-animation">stop_animation()</h3>
+<pre><code>stop_animation(object)</code></pre>
+<p>Removes the entire contribution, including numeric fallback, revealing the current runtime base with persist. Leaves ABSENT, not DONE. Does nothing in ABSENT.</p>
+<pre><code>function born(o) { play_animation(o, "demo"); }
+function action(o) {
+    if (animation_done(o)) stop_animation(o);
+}</code></pre>
+<p><a class="link" href="examples.html#animation-playback">Executable microexamples</a></p>
 <h2 id="fade">Global fade</h2>
 <p>Fade belongs to the entire runtime, not to an instance. Its alpha and transition are global; fade_done only indicates the absence of a transition.</p>
 <section data-api-symbol="fade_on">

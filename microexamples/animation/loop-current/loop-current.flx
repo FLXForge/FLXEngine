@@ -1,0 +1,6 @@
+title=Animation loop-current
+name=animation-loop-current
+version=1.0.0
+engine=0.4.0
+path=.
+root=loop-current

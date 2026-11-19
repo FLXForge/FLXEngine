@@ -1,0 +1,6 @@
+title=Animation pause-resume
+name=animation-pause-resume
+version=1.0.0
+engine=0.4.0
+path=.
+root=pause-resume

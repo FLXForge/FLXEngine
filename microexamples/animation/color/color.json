@@ -1,0 +1,60 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 160,
+    "y": 120
+  },
+  "size": {
+    "width": 320,
+    "height": 240
+  },
+  "children": {
+    "sample": {
+      "origin": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 24,
+        "height": 24
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          },
+          {
+            "primitive": "rectangle",
+            "size": {
+              "width": 8,
+              "height": 8
+            },
+            "color": "white"
+          }
+        ]
+      },
+      "animations": {
+        "demo": {
+          "duration": 2,
+          "loop": true,
+          "keys": [
+            {
+              "at": 0,
+              "color": "red"
+            },
+            {
+              "at": 2,
+              "color": "blue"
+            }
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "color"
+        ]
+      }
+    }
+  }
+}

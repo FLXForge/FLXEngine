@@ -40,9 +40,9 @@
 <article class="doc-content api-reference">
 <p class="eyebrow">Documentación FLX · v0.4.0</p>
 <h1>Drawing / Visual</h1>
-<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><table><caption>Cuatro niveles visuales</caption><thead><tr><th scope="col">Nivel</th><th scope="col">Responsabilidad</th></tr></thead><tbody><tr><th scope="row">Representación JSON</th><td data-label="Responsabilidad"><a class="link" href="json/visual.html">Visual declarativo</a> del objeto.</td></tr><tr><th scope="row">Dibujo inmediato</th><td data-label="Responsabilidad">Primitivas emitidas durante <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</td></tr><tr><th scope="row">Estado visual runtime</th><td data-label="Responsabilidad">Color de la instancia y <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>.</td></tr><tr><th scope="row">Fade global</th><td data-label="Responsabilidad">Capa sobre la pantalla, independiente de RuntimeObject.</td></tr></tbody></table>
+<nav aria-label="Familias API"><p><a class="link" href="api/index.html">Índice</a> · <a class="link" href="api/runtime.html">RuntimeObject / Transform</a> · <a class="link" href="api/world.html">World / Lifecycle</a> · <a class="link" href="api/mechanics.html">Mechanics</a> · <a class="link" href="api/input.html">Input</a> · <a class="link" href="api/collision.html">Collision</a> · <a aria-current="page" class="link" href="api/drawing.html"><strong>Drawing / Visual</strong></a> · <a class="link" href="api/state.html">State / Timers</a> · <a class="link" href="api/audio.html">Audio</a> · <a class="link" href="api/scripting.html">Hooks / Utilities</a></p></nav><table><caption>Cinco niveles visuales</caption><thead><tr><th scope="col">Nivel</th><th scope="col">Responsabilidad</th></tr></thead><tbody><tr><th scope="row">Representación JSON</th><td data-label="Responsabilidad"><a class="link" href="json/visual.html">Visual declarativo</a> del objeto.</td></tr><tr><th scope="row">Dibujo inmediato</th><td data-label="Responsabilidad">Primitivas emitidas durante <a class="link" href="api/scripting.html#draw"><code>draw()</code></a>.</td></tr><tr><th scope="row">Estado visual runtime</th><td data-label="Responsabilidad">Color de la instancia y <a class="link" href="api/runtime.html#depth"><code>depth()</code></a>.</td></tr><tr><th scope="row">Animation</th><td data-label="Responsabilidad"><a class="link" href="api/drawing.html#animation">Reproducción de apariencia por instancia, sin alterar el estado espacial.</a></td></tr><tr><th scope="row">Fade global</th><td data-label="Responsabilidad">Capa sobre la pantalla, independiente de RuntimeObject.</td></tr></tbody></table>
 <p>Sin reference, las coordenadas son del espacio lógico del mundo. Con un RuntimeObject primero, son locales a su posición y giran con él. Esa referencia espacial no cambia quién es el owner del draw actual. No son coordenadas físicas multiplicadas por output.scale.</p>
-<nav aria-label="En esta página"><p><a class="link" href="api/drawing.html#immediate">Dibujo inmediato</a> · <a class="link" href="api/drawing.html#visual">Estado visual runtime</a> · <a class="link" href="api/drawing.html#fade">Fade global</a></p></nav><h2 id="immediate">Dibujo inmediato</h2>
+<nav aria-label="En esta página"><p><a class="link" href="api/drawing.html#immediate">Dibujo inmediato</a> · <a class="link" href="api/drawing.html#visual">Estado visual runtime</a> · <a class="link" href="api/drawing.html#animation">Animation</a> · <a class="link" href="api/drawing.html#fade">Fade global</a></p></nav><h2 id="immediate">Dibujo inmediato</h2>
 <section data-api-symbol="draw_text">
 <h3 id="draw-text">draw_text()</h3>
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>draw_text(x: number, y: number, text: string, size?: number, color?: string): void;
@@ -97,7 +97,7 @@ draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, he
 </section>
 <h2 id="visual">Estado visual runtime</h2>
 <section data-api-symbol="apply_color">
-<p>Una Animation iniciada internamente con keys activas de color tiene prioridad visual durante RUNNING, PAUSED y DONE. <code>apply_color</code> y <code>restore_color</code> siguen actualizando la base runtime: al retirar Animation se muestra esa base vigente, incluida la ausencia de color declarado. No se tiñen bitmap ni elementos con color propio. Esta capa no transforma <code>draw_*</code>, incluidos sus modos locales. Todavía no hay API JavaScript para reproducir Animation. Véase <a class="link" href="json/visual.html#persist">Visual</a>.</p>
+<p>Una Animation con keys activas de color tiene prioridad visual durante RUNNING, PAUSED y DONE. <code>apply_color</code> y <code>restore_color</code> siguen actualizando la base runtime: al retirar Animation se muestra esa base vigente, incluida la ausencia de color declarado. No se tiñen bitmap ni elementos con color propio. Esta capa no transforma <code>draw_*</code>, incluidos sus modos locales. Véase <a class="link" href="api/drawing.html#animation">Animation</a> y <a class="link" href="json/visual.html#persist">Visual</a>.</p>
 <h3 id="apply-color">apply_color()</h3>
 <div class="code-card"><div class="code-header">Firmas</div><pre><code>apply_color(object: RuntimeObject, color: string): void;</code></pre></div>
 <p>Sobrescribe el color visual vivo de la instancia con <code>color</code>, por ejemplo <code>"#ff0000"</code>. No reescribe la representación declarativa JSON ni es el parámetro color de una primitiva inmediata.</p>
@@ -115,6 +115,46 @@ draw_rectangle(reference: RuntimeObject, x: number, y: number, width: number, he
 <div class="code-card"><div class="code-header">Ejemplo JavaScript</div><pre><code data-example="javascript">restore_color(object);</code></pre></div>
 <p>Relacionados: <a class="link" href="api/drawing.html#apply-color"><code>apply_color()</code></a>.</p>
 </section>
+<h2 id="animation">Animation</h2>
+<p>Una instancia reproduce como máximo una animación declarada en <a class="link" href="json/object.html#animations">Object.animations</a>. Las ocho funciones reciben una vista RuntimeObject válida del callback actual. No se añaden propiedades mutables al objeto. Los controles devuelven undefined; los argumentos inválidos o nombres inexistentes emiten warning, dejan intacta la reproducción y permiten continuar. Las consultas inválidas devuelven null, false o 0 según su tipo.</p>
+<p>Las keys parciales interpolan offset, rotación sin normalización angular, escala y color por componente; representation cambia discretamente, incluido []. La escala cero/negativa es válida. La transformación visual aplica escala → rotación animada → offset → transformación mundial con el pivot existente. No cambia campos espaciales, físicos ni lógicos.</p>
+<p><code>from: base</code> captura la base runtime; <code>from: current</code> captura únicamente las propiedades controladas por la nueva animación. En loop+base cada ciclo usa la referencia fija; loop+current acumula offset/rotación por ciclo, sin acumular escala, color ni representación. Las keys posteriores a duration se conservan pero no participan. Los colores se interpolan después de Machine, sin reproyección por frame. El orden persist:first → sección sustituible → persist:last también se aplica en ABSENT y tras stop.</p>
+<table><caption>Estado y consultas</caption><thead><tr><th>Estado</th><th>current</th><th>active</th><th>paused</th><th>done</th><th>left</th></tr></thead><tbody>
+<tr><td>ABSENT</td><td>null</td><td>false</td><td>false</td><td>false</td><td>0</td></tr>
+<tr><td>RUNNING</td><td>nombre</td><td>true</td><td>false</td><td>false</td><td>restante</td></tr>
+<tr><td>PAUSED</td><td>nombre</td><td>true</td><td>true</td><td>false</td><td>congelado</td></tr>
+<tr><td>DONE</td><td>nombre</td><td>false</td><td>false</td><td>true</td><td>0</td></tr></tbody></table>
+<p>World avanza Animation una sola vez junto a Timer después de collision. born inicia en tiempo cero; si el objeto ya existe al llegar a esa fase temporal, recibe el delta de ese update. hide no pausa; show y state_to no reinician. Los destruidos no avanzan; dead puede consultar el estado final antes de eliminar la instancia.</p>
+<p><strong>Límite de draw:</strong> play/pause/stop cambian estado y consultas inmediatamente, pero la representación de ese turno ya está capturada. El cambio visual aparece en la siguiente captura. Crear un objeto desde draw no consume delta hasta un update posterior. Ni draw ni las consultas avanzan el reloj; el dibujo inmediato mantiene sus reglas históricas.</p>
+<h3 id="animation-active">animation_active()</h3>
+<pre><code>animation_active(object)</code></pre>
+<p>Devuelve true en RUNNING o PAUSED; false en ABSENT y DONE.</p>
+<h3 id="animation-current">animation_current()</h3>
+<pre><code>animation_current(object)</code></pre>
+<p>Devuelve el nombre seleccionado, también en PAUSED/DONE, o null en ABSENT.</p>
+<h3 id="animation-done">animation_done()</h3>
+<pre><code>animation_done(object)</code></pre>
+<p>Devuelve true únicamente en DONE. Un loop nunca finaliza por tiempo.</p>
+<h3 id="animation-left">animation_left()</h3>
+<pre><code>animation_left(object)</code></pre>
+<p>Devuelve segundos restantes, congelados en PAUSED y 0 en ABSENT/DONE. Con loop es el resto del ciclo actual: en el límite exacto vuelve a duration.</p>
+<h3 id="animation-paused">animation_paused()</h3>
+<pre><code>animation_paused(object)</code></pre>
+<p>Devuelve true únicamente en PAUSED.</p>
+<h3 id="pause-animation">pause_animation()</h3>
+<pre><code>pause_animation(object)</code></pre>
+<p>Pausa RUNNING sin borrar tiempo ni apariencia. No es toggle; ABSENT, PAUSED y DONE no cambian.</p>
+<h3 id="play-animation">play_animation()</h3>
+<pre><code>play_animation(object, name)</code></pre>
+<p>El nombre debe ser una cadena no vacía declarada en el objeto. Desde ABSENT inicia; el mismo nombre en RUNNING no hace nada, en PAUSED reanuda sin recaptura y en DONE reinicia con nueva captura. Otro nombre sustituye inmediatamente usando su política from. DONE retiene la apariencia final hasta stop, reinicio o sustitución.</p>
+<h3 id="stop-animation">stop_animation()</h3>
+<pre><code>stop_animation(object)</code></pre>
+<p>Retira toda la contribución, incluido el respaldo numérico, y vuelve a la base runtime actual con persist. Deja ABSENT; no marca DONE. Sobre ABSENT no hace nada.</p>
+<pre><code>function born(o) { play_animation(o, "demo"); }
+function action(o) {
+    if (animation_done(o)) stop_animation(o);
+}</code></pre>
+<p><a class="link" href="examples.html#animation-playback">Microejemplos ejecutables</a></p>
 <h2 id="fade">Fade global</h2>
 <p>Fade pertenece al runtime completo, no a una instancia. Su alpha y transición son globales; fade_done sólo indica ausencia de transición.</p>
 <section data-api-symbol="fade_on">

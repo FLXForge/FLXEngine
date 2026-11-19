@@ -1,0 +1,52 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 160,
+    "y": 120
+  },
+  "size": {
+    "width": 320,
+    "height": 240
+  },
+  "children": {
+    "sample": {
+      "origin": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 24,
+        "height": 24
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle"
+          }
+        ]
+      },
+      "animations": {
+        "demo": {
+          "duration": 2,
+          "keys": [
+            {
+              "at": 2,
+              "transform": {
+                "offset": {
+                  "x": 80
+                },
+                "rotation": 90
+              }
+            }
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "interpolation"
+        ]
+      }
+    }
+  }
+}

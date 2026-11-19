@@ -14,8 +14,9 @@ flx compile --output=persist-order.flxc microexamples/animation/persist-order/pe
 flx run-compiled persist-order.flxc
 ```
 
-Este ejemplo ya funciona. No demuestra reproducción temporal ni APIs JavaScript,
-que siguen pendientes. Los recursos de poses animadas están solo en tests/fixtures.
+Este ejemplo no demuestra reproducción temporal ni requiere APIs JavaScript.
+Para reproducción explícita, consulta los ejemplos hermanos interpolation, loop-base,
+loop-current, pause-resume, representation y color.
 
 ## English
 
@@ -24,4 +25,6 @@ after it, even without Animation playback. JSON declares red, green and blue in
 that order; the visible result is a blue border, red rectangle and green center.
 Plain array order would show only blue. Run the commands above from the repository
 root. No scripts, input or audio are required; close the window to finish.
-This example is executable now; temporal playback and JavaScript APIs are not.
+This example does not demonstrate temporal playback or require JavaScript APIs.
+For explicit playback, see the sibling interpolation, loop-base, loop-current,
+pause-resume, representation and color examples.

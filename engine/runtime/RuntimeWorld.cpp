@@ -2242,6 +2242,12 @@ void RuntimeWorld::updateObjectTime(float delta)
             }
         }
 
+        Diagnostics animationDiagnostics;
+        object.animation.advance(static_cast<double>(delta), animationDiagnostics);
+        for (const auto& diagnostic : animationDiagnostics.all())
+            Logger::warning("animation", std::string(diagnosticCodeText(diagnostic.code)) +
+                " " + object.runtimeId + " " + diagnostic.message);
+
         for (auto& timer : object.timers)
         {
             if (timer.second.status != RuntimeTimerStatus::Running)

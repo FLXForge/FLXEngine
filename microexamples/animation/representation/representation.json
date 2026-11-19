@@ -1,0 +1,83 @@
+{
+  "delimit": true,
+  "origin": {
+    "x": 160,
+    "y": 120
+  },
+  "size": {
+    "width": 320,
+    "height": 240
+  },
+  "children": {
+    "sample": {
+      "origin": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 24,
+        "height": 24
+      },
+      "visual": {
+        "color": "white",
+        "representation": [
+          {
+            "primitive": "rectangle",
+            "size": {
+              "width": 40,
+              "height": 40
+            },
+            "color": "blue",
+            "persist": "first"
+          },
+          {
+            "primitive": "rectangle",
+            "color": "red"
+          },
+          {
+            "primitive": "rectangle",
+            "size": {
+              "width": 4,
+              "height": 4
+            },
+            "color": "green",
+            "persist": "last"
+          }
+        ]
+      },
+      "animations": {
+        "demo": {
+          "duration": 3,
+          "keys": [
+            {
+              "at": 1,
+              "representation": [
+                {
+                  "primitive": "ellipse"
+                }
+              ]
+            },
+            {
+              "at": 2,
+              "representation": []
+            },
+            {
+              "at": 3,
+              "representation": [
+                {
+                  "text": "DONE",
+                  "fontSize": 12
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "behavior": {
+        "scripts": [
+          "representation"
+        ]
+      }
+    }
+  }
+}

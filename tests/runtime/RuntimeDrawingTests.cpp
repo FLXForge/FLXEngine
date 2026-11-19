@@ -1373,6 +1373,85 @@ namespace
         }
     }
 
+    void testAnimationJavaScriptSnapshots()
+    {
+        HiddenTestWindow window;
+        RuntimeHarness h;
+        h.addScript("probe",R"(function draw(o) {
+            const frame=read_local(o,'draws')||0;
+            if(frame===0) play_animation(o,'pose');
+            if(frame===1) {pause_animation(o);spawn(o,'child');}
+            if(frame===2) stop_animation(o);
+            write_local(o,'draws',frame+1);
+            write_local(o,'left',animation_left(o));
+            write_local(o,'active',animation_active(o));
+            draw_pixel(o,0,0,'red');
+        })");
+        h.addScript("childProbe","function born(o){play_animation(o,'pose');}");
+        auto root=objectDefinition("root","probe");root.origin={20,15};root.hasOrigin=true;root.size={6,6};root.hasSize=true;
+        root.hasVisual=true;RepresentationElementDefinition rectangle;rectangle.primitive="rectangle";
+        root.visual.representation={rectangle};root.hasAnimations=true;
+        AnimationDefinition a;a.duration=1;AnimationKeyDefinition k;k.at=0;k.transform.emplace();k.transform->offsetX=8;k.color=BLUE;a.keys={k};root.animations["pose"]=a;
+        root.childResources["child"]="child";
+        auto child=objectDefinition("child","childProbe");child.spawnMode="manual";child.hasAnimations=true;child.animations=root.animations;
+        h.addObject(root);h.addObject(child);require(h.load().success,"load JS draw snapshot");
+        auto target=LoadRenderTexture(40,30);
+        for(int frame=0;frame<4;++frame) {
+            BeginTextureMode(target);ClearBackground(BLACK);h.draw();EndTextureMode();
+            auto image=LoadImageFromTexture(target.texture);ImageFlipVertical(&image);
+            require(sameColor(GetImageColor(image,20,15),RED),"immediate local pixel ignores animated offset");
+            require(sameColor(GetImageColor(image,28,15),frame==1||frame==2?BLUE:BLACK),"draw play/stop respects previous visual snapshot");
+            require(sameColor(GetImageColor(image,21,15),frame==0||frame==3?WHITE:BLACK),"base returns only on next capture after draw stop");
+            UnloadImage(image);
+            auto& o=requireObject(h.world,"root");
+            if(frame==0)require(o.animation.left()==1&&localValue(o,"active")==1,"draw play updates queries immediately without time advance");
+            if(frame==1)require(o.animation.paused()&&o.animation.left()==1,"draw pause freezes");
+            if(frame==2)require(!o.animation.current()&&localValue(o,"active")==0,"draw stop queries immediate");
+        }
+        h.scripts.setFrameDelta(.25);h.world.update(h.scripts,.25);
+        require(requireObject(h.world,"child").animation.left()==.75,"draw-created object starts advancing only next update");
+        UnloadRenderTexture(target);
+    }
+
+    void testAnimationMicroexamplesGraphics()
+    {
+        HiddenTestWindow window;
+        for(const std::string name:{"interpolation","loop-base","loop-current","pause-resume","representation","color"}) {
+            const auto compiled=flx::test::compile(std::filesystem::path(FLX_SOURCE_DIR)/"microexamples/animation"/name/(name+".flx"));
+            require(compiled.success,"compile animation visual microexample "+name);
+            Diagnostics diagnostics;const auto binary=testRoot()/(name+"-visual.flxc");
+            require(CompiledProjectWriter::write(binary.string(),compiled.project,diagnostics),"write example");
+            const auto decoded=CompiledProjectReader::read(binary.string());require(decoded.success,"read example");
+            std::vector<std::vector<unsigned char>> expected;int mode=0;
+            for(const auto* project:{&compiled.project,&decoded.project}) {
+                FlxSession session;FlxSessionOptions options;options.enableAudio=false;options.savePath=testRoot()/"animation-example-saves";
+                require(session.load(*project,options),"load animation example");
+                for(int frame=0;frame<=16;++frame) {
+                    require(session.render(),"render Animation example");
+                    auto image=LoadImageFromTexture(session.output());ImageFlipVertical(&image);
+                    std::vector<unsigned char> pixels;pixels.reserve(image.width*image.height*4);
+                    for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x) {
+                        const auto c=GetImageColor(image,x,y);pixels.insert(pixels.end(),{c.r,c.g,c.b,c.a});
+                    }
+                    if(mode==0) expected.push_back(pixels);else require(pixels==expected[frame],"open/compiled rendered pixels "+name);
+                    if(name=="color") {
+                        const auto explicitColor=GetImageColor(image,image.width*120/320,image.height/2);
+                        require(sameColor(explicitColor,WHITE),"explicit white stays white under animated inherited color");
+                        if(frame==4)require(!sameColor(GetImageColor(image,image.width*129/320,image.height/2),WHITE),"inherited outer color actually animates");
+                    }
+                    if(name=="representation")require(sameColor(GetImageColor(image,image.width*120/320,image.height/2),GREEN),"persistent last stays above representation changes");
+                    if(frame==2&&name=="interpolation") {
+                        require(sameColor(GetImageColor(image,image.width*140/320,image.height/2),WHITE),"JS-driven interpolated rectangle has moved to expected center");
+                        require(sameColor(GetImageColor(image,image.width*120/320,image.height/2),BLACK),"old position cleared without spatial mutation");
+                    }
+                    UnloadImage(image);if(frame<16)require(session.update(.25),"advance Animation example");
+                }
+                require(expected[0]!=expected[4],"microexample visibly changes: "+name);
+                session.unload();++mode;
+            }
+        }
+    }
+
 }
 
 bool requiresGraphics(const std::string& name)
@@ -1394,7 +1473,9 @@ bool requiresGraphics(const std::string& name)
         name == "Rotated ellipse fill and outline respect angle" ||
         name == "Multiline text centers each line" ||
         name == "Text cases do not depend on RuntimeObject size" ||
-        name == "Animation renderer observable pixels";
+        name == "Animation renderer observable pixels" ||
+        name == "Animation JavaScript draw snapshots" ||
+        name == "Animation microexamples open and compiled pixels";
 }
 
 int main()
@@ -1402,6 +1483,8 @@ int main()
     const std::vector<std::pair<std::string, void(*)()>> tests = {
         { "Animation geometry CPU and numeric recovery", testAnimationGeometryCPU },
         { "Animation renderer observable pixels", testAnimationRendering },
+        { "Animation JavaScript draw snapshots", testAnimationJavaScriptSnapshots },
+        { "Animation microexamples open and compiled pixels", testAnimationMicroexamplesGraphics },
         { "Bitmap microexamples source and compiled rendering", testBitmapMicroexamplesSourceAndCompiledRendering },
         { "Bitmap texture transforms transparency and order", testBitmapTextureTransformTransparencyAndOrder },
         { "Drawing context rejects calls outside draw turn", testDrawingContextRejectsCallsOutsideDrawTurn },

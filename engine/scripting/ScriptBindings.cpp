@@ -1,6 +1,7 @@
 #include "ScriptBindings.h"
 #include "ScriptEngine.h"
 #include "bindings/AudioBindings.h"
+#include "bindings/AnimationBindings.h"
 #include "bindings/CoreBindings.h"
 #include "bindings/DrawBindings.h"
 #include "bindings/InputBindings.h"
@@ -26,4 +27,5 @@ void ScriptBindings::registerAll(
     SpawnBindings::registerAll(context);
     StateBindings::registerAll(context);
     TimerBindings::registerAll(context);
+    AnimationBindings::registerAll(context);
 }

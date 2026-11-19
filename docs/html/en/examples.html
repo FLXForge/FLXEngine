@@ -455,8 +455,11 @@
 
             <section id="animation-persist-order"><h2>Microexample · persist-order</h2><p>One idea: <code>persist:first → replaceable → persist:last</code> order applies even without Animation playback. JSON declares red, green and blue; the output shows a blue border, red interior and green center. No scripts, input or audio are required. See <a class="link" href="json/visual.html#persist">persist in Visual</a>.</p><pre><code>flx run microexamples/animation/persist-order/persist-order.flx
 flx compile --output=persist-order.flxc microexamples/animation/persist-order/persist-order.flx
-flx run-compiled persist-order.flxc</code></pre><p>Run from the repository root. Temporally transformed poses remain internal fixtures, not microexamples with an available JS playback API.</p></section>
-            <div id="doc-path"></div>
+flx run-compiled persist-order.flxc</code></pre><p>Run from the repository root. The playback examples below use the public JavaScript API.</p></section>
+            <section id="animation-playback"><h2>Animation · playback</h2><p>Minimal examples run from source and compiled projects: inherited/explicit color, interpolation, fixed/cumulative repetition, pause/resume and representation replacement with persistence. Each README explains observable output and commands. persist-order remains a separate static demonstration.</p><ul><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/color"><code>color</code></a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/interpolation"><code>interpolation</code></a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/loop-base"><code>loop-base</code></a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/loop-current"><code>loop-current</code></a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/pause-resume"><code>pause-resume</code></a></li><li><a class="link" href="https://github.com/FLXForge/FLXEngine/tree/feature/v0.4.0/microexamples/animation/representation"><code>representation</code></a></li></ul><pre><code>flx run microexamples/animation/interpolation/interpolation.flx
+flx compile --output=interpolation.flxc microexamples/animation/interpolation/interpolation.flx
+flx run-compiled interpolation.flxc</code></pre><p><a class="link" href="api/drawing.html#animation">API Animation</a></p></section>
+<div id="doc-path"></div>
         </article>
     </main>
 

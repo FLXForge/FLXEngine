@@ -78,9 +78,24 @@ entrada ni audio. Los nuevos .flxc usan formato 14; se mantiene lectura de 12 y 
 
 Orden estático first → sustituible → last, visible aun sin reproducción.
 El microejemplo muestra marco azul, interior rojo y centro verde con un solo
-objeto de tres representaciones. No usa scripts ni afirma que haya API temporal.
+objeto de tres representaciones. No usa scripts; demuestra el orden incluso sin reproducción.
 Las poses animadas mixtas están preparadas como fixtures de tests, no como ejemplos
 visuales ejecutables hasta disponer de bindings y avance temporal integrado.
+
+#### Animation · reproducción / playback
+
+Cada ejemplo inicia explícitamente desde born, sin autoplay. Abierto y compilado
+conservan el mismo comportamiento. Cada README incluye comandos y resultado ES/EN.
+
+- [`animation/color`](animation/color/README.md)
+- [`animation/interpolation`](animation/interpolation/README.md)
+- [`animation/loop-base`](animation/loop-base/README.md)
+- [`animation/loop-current`](animation/loop-current/README.md)
+- [`animation/pause-resume`](animation/pause-resume/README.md)
+- [`animation/representation`](animation/representation/README.md)
+
+`representation` demuestra también persistencia durante sustituciones;
+`persist-order` conserva la demostración estática sin duplicarla.
 
 ### 2. Mechanics
 

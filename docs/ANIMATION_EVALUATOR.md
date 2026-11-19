@@ -1,11 +1,11 @@
-# Animation — núcleo temporal y renderer, fases 2 y 3
+# Animation — evaluación, renderer y lifecycle, fases 2–4
 
-Esta nota describe la implementación CPU de `spec/animation.md`. El contrato
-normativo no cambia. No existe todavía una API JavaScript de Animation ni
-conexión del evaluador con `RuntimeWorld::update`. La fase 3 conecta su apariencia
-con el renderer declarativo, comprobada mediante control interno C++. Los proyectos
-siguen sin poder iniciar reproducción por JavaScript. `persist` está disponible
-sin reproducción y tiene un microejemplo ejecutable.
+Esta nota describe la implementación de `spec/animation.md`; el contrato normativo
+no cambia. La fase 4 publica las ocho funciones JavaScript y conecta el evaluador
+con la fase temporal de `RuntimeWorld::update`, junto a Timer. La fase 3 integra
+la apariencia con el renderer. Los proyectos pueden iniciar, pausar, reanudar y
+retirar Animation explícitamente; no hay autoplay. `persist` funciona también
+sin reproducción. Las secciones de resultados anteriores son históricas.
 El formato sigue siendo 14, con lectura de 12/13; la versión del motor no cambia.
 
 ## Arquitectura
@@ -33,11 +33,11 @@ sin nueva captura; DONE o un nombre distinto inician una reproducción nueva.
 La pose cero se evalúa antes de devolver. Los nombres inválidos dejan intacta la
 reproducción. `pause` no es toggle; `stop` elimina también el respaldo numérico.
 
-`advance(delta, diagnostics)` es una operación explícita del propietario de la
-instancia. No se ha conectado al World en esta fase. El futuro adaptador deberá
-respetar la fase temporal de Timer, el nacimiento/muerte y el snapshot de draw;
-no debe avanzar desde render ni desde consultas. Las pruebas CPU no acreditan
-esa integración pendiente del lifecycle o de JS.
+`advance(delta, diagnostics)` sigue siendo una operación explícita, independiente
+de dispositivos. Desde la fase 4, World la llama una vez por instancia viva en
+su fase temporal, después de collision y junto a Timer. No se llama desde render
+ni desde consultas. Las pruebas CPU conservan su independencia de esa integración;
+las suites QuickJS/World y gráficas comprueban el lifecycle real.
 
 `appearance(base)` y las consultas de estado, nombre y tiempo son puras. La base
 aportada debe describir la misma instancia, con los grupos de representación
@@ -89,17 +89,16 @@ sustitución usa la contribución previa limitada a los componentes controlados 
 la reproducción nueva como respaldo; su referencia selectiva permanece independiente. Una evaluación posterior válida
 sustituye todo el respaldo. Stop siempre lo retira.
 
-`FLX-RUNTIME-00020 InvalidAnimationOperation` informa entradas internas inválidas.
+`FLX-RUNTIME-00020 InvalidAnimationOperation` informa operaciones inválidas, también desde JS.
 `FLX-RUNTIME-00021 AnimationNumericRecovery` es warning recuperable, como máximo
 una vez por reproducción e instancia, incluso si el fallo desaparece y reaparece.
 Reanudar no reinicia esta supresión; una reproducción nueva sí. No se crea estado
 público ERROR ni se marca una sesión como fallida por estos warnings.
 
-La geometría mundial y su conversión posterior a los tipos gráficos todavía no
-se calculan aquí. Una transformación finita binary64 no garantiza que esa futura
-conversión o geometría sea representable. La fase de renderer deberá comprobarlo
-antes de emitir datos gráficos y respetar la misma recuperación normativa; las
-pruebas de fase 2 no validan esa frontera ni resultados rasterizados.
+El evaluador CPU no calcula geometría mundial ni conversiones gráficas. Un valor
+finito binary64 no garantiza representabilidad gráfica. El renderer comprueba esa
+frontera antes de emitir datos y comparte la recuperación normativa; las pruebas
+CPU por sí solas no acreditan resultados rasterizados.
 
 ## Pruebas y fixtures
 
@@ -229,3 +228,96 @@ Se añadieron regresiones de clipping con segmentos de magnitud 1e30 y polígono
 1e8: deben producir el trazo y el relleno visibles esperados sin perder precisión
 al intersectar el viewport ni recorrer filas fuera de pantalla. La banda raster
 de un píxel conserva las reglas de extremos de GL_LINES, sin alterar Animation.
+
+## JavaScript y lifecycle — fase 4
+
+`engine/scripting/bindings/AnimationBindings.h/.cpp` registra exclusivamente
+`animation_active`, `animation_current`, `animation_done`, `animation_left`,
+`animation_paused`, `pause_animation`, `play_animation` y `stop_animation`.
+`ScriptBindings` instala el grupo. No se añaden campos JS al RuntimeObject.
+
+Los adaptadores usan las vistas limitadas a la invocación y la búsqueda inmutable
+`ScriptEngine::findObjectDefinition(object.definitionId)`, ya configurada por World.
+No se duplica el catálogo de definiciones por instancia. El evaluador conserva la
+copia inmutable de la animación seleccionada como antes. Los nombres se convierten
+con longitud explícita: un NUL incrustado no puede truncarse a un nombre válido.
+Controles inválidos retornan undefined; consultas inválidas null/false/0. Se emite
+00020 sin mutación ni excepción por errores ordinarios de argumentos o referencias.
+
+`RuntimeWorld::updateObjectTime` avanza Animation para cada instancia viva, una
+sola vez, junto a Timer. Las advertencias numéricas no hacen fallar la sesión.
+Se preserva el orden action → motion → collision → fase temporal → dead/cleanup →
+mantenimiento de iterator. Los nacidos antes de la fase temporal consumen el delta
+del mismo update; los nacidos después empiezan a avanzar en el siguiente. Hidden
+no pausa, State no reinicia, los muertos no avanzan y dead puede consultar su
+estado antes de eliminación. La API no modifica campos espaciales ni físicos.
+
+El snapshot declarativo se captura antes de los callbacks draw de cada objeto.
+Play/pause/stop desde draw cambian inmediatamente consultas y reproducción, pero
+la imagen ya capturada se consume sin modificaciones. El siguiente render captura
+la nueva apariencia; renderizar repetidamente no avanza el tiempo. El dibujo
+inmediato sigue usando la transformación espacial histórica.
+
+### Pruebas, documentación y ejemplos de fase 4
+
+- Nueva suite `flx-animation-integration-tests`: QuickJS y World reales, las ocho
+  funciones y estados, pausa no toggle, reinicio/sustitución, current, loop,
+  argumentos inválidos/nombres con NUL/vistas caducadas, continuidad y diagnóstico,
+  born/action/motion/collision, hidden/show, dead, State, spawn e iterator después
+  de la fase temporal, aislamiento, color en RUNNING/PAUSED/DONE y Timer independiente.
+- La suite gráfica existente añade callbacks JS con comprobaciones de píxeles:
+  play/stop desde draw respetan el snapshot; pausa no consume tiempo; dibujo
+  inmediato no se transforma; creación desde draw consume delta solo al actualizar.
+- Los seis ejemplos nuevos se compilan, serializan a formato 14 y ejecutan en
+  ambos modos. Se comparan trazas temporales y píxeles en cada paso, y expectativas
+  concretas de desplazamiento, pausa/reanudación, color explícito y persistencia.
+  Los casos gráficos se omiten explícitamente al faltar contexto, sin presentar
+  esa pasada como validación gráfica. Se integran en la suite de dibujo que el
+  workflow Linux existente ya ejecuta mediante Xvfb; no se cambia ningún workflow.
+- Referencias públicas ES/EN de API, Object, Visual, lifecycle, scripting,
+  diagnósticos e índices actualizadas. Los ocho símbolos figuran alfabéticamente
+  en A–Z y flx.d.ts. El schema solo actualiza el estado de implementación.
+- `microexamples/animation/{color,interpolation,loop-base,loop-current,pause-resume,
+  representation}` contiene juegos pequeños con born explícito y README ES/EN.
+  representation demuestra persistencia durante sustituciones; persist-order
+  conserva su JSON y manifiesto para enseñar el caso sin reproducción; su README
+  enlaza las nuevas demostraciones. Los recursos temporales
+  de tests anteriores siguen siendo fixtures, no ejemplos de API.
+
+### Resultado local de fase 4
+
+Windows x86-64, MSVC, Release: compilación limpia de flx, flx-core y consumidores;
+CTest completo **37/37**, incluidos QuickJS, Timer, lifecycle, formato 12/13/14 y
+pruebas de contexto gráfico real. No se modifica el codec, la especificación,
+RuntimeObject público, mecánicas, colisiones ni el renderer. Sin commits ni push.
+
+Linux/GCC/Clang y las pruebas gráficas Xvfb deberán ejecutarse en el runner; esta
+validación Windows no las sustituye. Las limitaciones históricas de rasterización
+de texto, atlas y muestreo puntual siguen presentes. No se introducen autoplay,
+blending, audio ni dependencias nuevas.
+
+La pasada dirigida con `FLX_TEST_HEADLESS=1` supera 3/3 suites (integración,
+evaluación y dibujo). Los tres grupos gráficos de Animation se omiten explícitamente
+en esa pasada y se ejecutan en el CTest nativo anterior. Comprobaciones estáticas:
+enlaces/anclas nuevos ES/EN, correspondencia de ocho símbolos, orden A–Z,
+declaraciones únicas de tipos, `node --check` de seis scripts y JSON/schema válidos.
+`flx --version` devuelve 0.4.0; `git diff --check` no detecta errores.
+
+Logs locales (ignorados por Git):
+`out/build/animation-phase4-clean-build.log`, `animation-phase4-ctest.log` y
+`animation-phase4-headless.log` en el mismo directorio.
+
+### Inventario de cambios de fase 4
+
+- Construcción/producción: `CMakeLists.txt`, `engine/runtime/RuntimeWorld.cpp`,
+  `engine/scripting/ScriptBindings.cpp`, nuevos `engine/scripting/bindings/AnimationBindings.{h,cpp}`.
+- Pruebas: nuevo `tests/runtime/AnimationIntegrationTests.cpp` y ampliación de
+  `tests/runtime/RuntimeDrawingTests.cpp`; no se cambian expectativas anteriores.
+- Documentación técnica/tipos/schema: esta nota, `docs/scripts/flx.d.ts` y
+  `docs/schemas/animation.schema.json` (solo descripción de capacidades).
+- Documentación HTML, tanto `docs/html/es` como `docs/html/en`: `api/drawing.html`,
+  `api/index.html`, `api/runtime.html`, `api/scripting.html`, `api/state.html`,
+  `api/world.html`, `diagnostics.html`, `examples.html`, `json/object.html`,
+  `json/visual.html` y `scripting.html`.
+- Microejemplos: `microexamples/README.md`, README de persist-order y seis directorios
+  nuevos indicados arriba, cada uno con `.flx`, `.json`, `.js` y README bilingüe.

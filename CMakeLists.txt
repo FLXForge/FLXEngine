@@ -282,6 +282,8 @@ set(FLX_CORE_SOURCES
     engine/scripting/bindings/SpawnBindings.cpp
     engine/scripting/bindings/StateBindings.h
     engine/scripting/bindings/StateBindings.cpp
+    engine/scripting/bindings/AnimationBindings.h
+    engine/scripting/bindings/AnimationBindings.cpp
     engine/scripting/bindings/TimerBindings.h
     engine/scripting/bindings/TimerBindings.cpp
     engine/debug/Logger.cpp
@@ -365,6 +367,7 @@ add_flx_test_suite(flx-project-manifest-tests tests/project/ProjectManifestTests
 add_flx_test_suite(flx-diagnostics-tests tests/diagnostics/DiagnosticsTests.cpp)
 add_flx_test_suite(flx-loading-reference-tests tests/loading/ReferenceResolutionTests.cpp)
 add_flx_test_suite(flx-visual-bitmap-tests tests/loading/VisualBitmapTests.cpp)
+add_flx_test_suite(flx-animation-integration-tests tests/runtime/AnimationIntegrationTests.cpp)
 add_flx_test_suite(flx-animation-declaration-tests tests/loading/AnimationDeclarationTests.cpp)
 # CPU-only evaluator: no raylib/QuickJS library, window, audio or CLI linkage.
 add_executable(flx-animation-evaluation-tests

@@ -501,6 +501,31 @@ declare function state_entered(object: RuntimeObject): boolean;
  */
 declare function state_time(object: RuntimeObject): number;
 
+// Animation: per-instance visual playback; queries never advance time.
+/** Returns true in RUNNING or PAUSED; false in ABSENT and DONE. Invalid views warn and return the neutral value without mutation. */
+declare function animation_active(object: RuntimeObject): boolean;
+
+/** Returns the selected name, including PAUSED/DONE, or null in ABSENT. Invalid views warn and return the neutral value without mutation. */
+declare function animation_current(object: RuntimeObject): string | null;
+
+/** Returns true only in DONE. A loop never finishes from elapsed time. Invalid views warn and return the neutral value without mutation. */
+declare function animation_done(object: RuntimeObject): boolean;
+
+/** Returns remaining seconds, frozen in PAUSED and 0 in ABSENT/DONE. For loops this is the current cycle remainder: exactly at a boundary it returns duration. Invalid views warn and return the neutral value without mutation. */
+declare function animation_left(object: RuntimeObject): number;
+
+/** Returns true only in PAUSED. Invalid views warn and return the neutral value without mutation. */
+declare function animation_paused(object: RuntimeObject): boolean;
+
+/** Pauses RUNNING without clearing time or appearance. Not a toggle; ABSENT, PAUSED and DONE remain unchanged. Invalid views warn and return the neutral value without mutation. */
+declare function pause_animation(object: RuntimeObject): void;
+
+/** The name must be a nonempty string declared on the object. ABSENT starts; the same name in RUNNING does nothing, in PAUSED resumes without recapture and in DONE restarts with a fresh capture. Another name replaces immediately using its own from policy. DONE retains final appearance until stop, restart or replacement. Calls from draw affect the next representation capture; queries change immediately. Invalid views warn and return the neutral value without mutation. */
+declare function play_animation(object: RuntimeObject, name: string): void;
+
+/** Removes the entire contribution, including numeric fallback, revealing the current runtime base with persist. Leaves ABSENT, not DONE. Does nothing in ABSENT. Invalid views warn and return the neutral value without mutation. */
+declare function stop_animation(object: RuntimeObject): void;
+
 /**
  * Starts, resumes, or redefines a named timer owned by the object.
  *

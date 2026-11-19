@@ -1,0 +1,6 @@
+title=Animation interpolation
+name=animation-interpolation
+version=1.0.0
+engine=0.4.0
+path=.
+root=interpolation
